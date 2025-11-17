@@ -122,6 +122,10 @@ export class Database {
       .run();
   }
 
+  async deleteMessage(id: string): Promise<void> {
+    await this.db.prepare('DELETE FROM messages WHERE id = ?').bind(id).run();
+  }
+
   // Files
   async getFilesByDeal(dealId: string): Promise<FileRecord[]> {
     const result = await this.db

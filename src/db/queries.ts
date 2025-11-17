@@ -155,11 +155,18 @@ export class Database {
   }
 
   // Settings
-  async getSettings(): Promise<Settings | null> {
+  async getSettings(): Promise<any> {
     const result = await this.db
       .prepare('SELECT * FROM settings WHERE id = 1')
-      .first<Settings>();
+      .first();
     return result || null;
+  }
+
+  async updateSetting(key: string, value: string): Promise<void> {
+    await this.db
+      .prepare(`UPDATE settings SET ${key} = ?, updated_at = datetime('now') WHERE id = 1`)
+      .bind(value)
+      .run();
   }
 
   async updateSettings(updates: Partial<Settings>): Promise<void> {
@@ -171,5 +178,89 @@ export class Database {
       .prepare(`UPDATE settings SET ${setClause}, updated_at = datetime('now') WHERE id = 1`)
       .bind(...values)
       .run();
+  }
+
+  // Notifications
+  async getNotificationsByUser(userId: string): Promise<any[]> {
+    const result = await this.db
+      .prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC')
+      .bind(userId)
+      .all();
+    return result.results || [];
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    const result = await this.db
+      .prepare('SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0')
+      .bind(userId)
+      .first<{ count: number }>();
+    return result?.count || 0;
+  }
+
+  async getNotificationById(id: string): Promise<any | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM notifications WHERE id = ?')
+      .bind(id)
+      .first();
+    return result || null;
+  }
+
+  async markNotificationAsRead(id: string): Promise<void> {
+    await this.db
+      .prepare('UPDATE notifications SET is_read = 1 WHERE id = ?')
+      .bind(id)
+      .run();
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<void> {
+    await this.db
+      .prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?')
+      .bind(userId)
+      .run();
+  }
+
+  async createNotification(
+    userId: string,
+    dealId: string | null,
+    type: string,
+    title: string,
+    message: string
+  ): Promise<string> {
+    const id = crypto.randomUUID();
+    await this.db
+      .prepare(`
+        INSERT INTO notifications (id, user_id, deal_id, type, title, message, is_read)
+        VALUES (?, ?, ?, ?, ?, ?, 0)
+      `)
+      .bind(id, userId, dealId, type, title, message)
+      .run();
+    return id;
+  }
+
+  async deleteNotification(id: string): Promise<void> {
+    await this.db
+      .prepare('DELETE FROM notifications WHERE id = ?')
+      .bind(id)
+      .run();
+  }
+
+  // Users
+  async getAllUsers(): Promise<any[]> {
+    const result = await this.db
+      .prepare('SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC')
+      .all();
+    return result.results || [];
+  }
+
+  async createNewUser(email: string, passwordHash: string, name: string, role: string): Promise<string> {
+    const id = crypto.randomUUID();
+    await this.db
+      .prepare(`
+        INSERT INTO users (id, email, password_hash, name, role)
+        VALUES (?, ?, ?, ?, ?)
+      `)
+      .bind(id, email, passwordHash, name, role)
+      .run();
+    return id;
   }
 }

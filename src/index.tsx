@@ -9,6 +9,8 @@ import deals from './routes/deals';
 import messages from './routes/messages';
 import files from './routes/files';
 import proposals from './routes/proposals';
+import settings from './routes/settings';
+import notifications from './routes/notifications';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -26,6 +28,8 @@ app.route('/api/deals', deals);
 app.route('/api/messages', messages);
 app.route('/api/files', files);
 app.route('/api/proposals', proposals);
+app.route('/api/settings', settings);
+app.route('/api/notifications', notifications);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {
@@ -103,6 +107,22 @@ app.get('*', (c) => {
     
     .input-field {
       @apply w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gold;
+    }
+    
+    .notification-filter {
+      @apply px-4 py-2 rounded font-medium text-sm transition-colors border border-gray-300 hover:border-gold;
+    }
+    
+    .notification-filter.active {
+      @apply bg-gold text-white border-gold;
+    }
+    
+    input[type="checkbox"]:checked + span {
+      @apply text-gold font-bold;
+    }
+    
+    label:has(input[type="checkbox"]:checked) {
+      @apply border-gold bg-gold bg-opacity-5;
     }
   </style>
 </head>
@@ -231,6 +251,200 @@ app.get('*', (c) => {
           <h2 class="text-2xl font-bold text-navy mb-4" id="deal-title">案件詳細</h2>
           <div id="deal-detail-content">
             <!-- 案件詳細がここに表示されます -->
+          </div>
+        </div>
+      </div>
+
+      <!-- お知らせ画面 -->
+      <div id="notifications-page" class="hidden">
+        <div class="mb-6 flex items-center justify-between">
+          <h2 class="text-2xl font-bold text-navy">
+            <i class="fas fa-bell mr-2"></i>お知らせ
+          </h2>
+          <button id="btn-mark-all-read" class="btn-secondary">
+            <i class="fas fa-check-double mr-2"></i>全て既読にする
+          </button>
+        </div>
+
+        <!-- 通知フィルター -->
+        <div class="card mb-4">
+          <div class="flex space-x-4">
+            <button class="notification-filter active" data-type="ALL">
+              <i class="fas fa-list mr-2"></i>すべて
+            </button>
+            <button class="notification-filter" data-type="NEW_DEAL">
+              <i class="fas fa-folder-plus mr-2"></i>新規案件
+            </button>
+            <button class="notification-filter" data-type="NEW_MESSAGE">
+              <i class="fas fa-comment mr-2"></i>メッセージ
+            </button>
+            <button class="notification-filter" data-type="DEADLINE">
+              <i class="fas fa-clock mr-2"></i>期限通知
+            </button>
+            <button class="notification-filter" data-type="MISSING_INFO">
+              <i class="fas fa-exclamation-triangle mr-2"></i>未入力項目
+            </button>
+          </div>
+        </div>
+
+        <!-- 通知一覧 -->
+        <div id="notifications-list" class="space-y-4">
+          <div class="text-center py-12 text-gray-500">
+            <i class="fas fa-bell text-6xl mb-4"></i>
+            <p>通知を読み込み中...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 設定画面 -->
+      <div id="settings-page" class="hidden">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-navy">
+            <i class="fas fa-cog mr-2"></i>設定
+          </h2>
+        </div>
+
+        <!-- ビジネスデイ設定 -->
+        <div class="card mb-6">
+          <h3 class="text-lg font-bold text-navy mb-4">
+            <i class="fas fa-calendar-check text-gold mr-2"></i>ビジネスデイ設定
+          </h3>
+          <p class="text-sm text-gray-600 mb-4">
+            営業日として扱う曜日を選択してください。48時間期限計算に使用されます。
+          </p>
+          <div class="grid grid-cols-7 gap-2" id="business-days-selector">
+            <label class="flex flex-col items-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gold transition-colors">
+              <input type="checkbox" name="business-day" value="0" class="mb-2">
+              <span class="text-sm font-medium">日</span>
+            </label>
+            <label class="flex flex-col items-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gold transition-colors">
+              <input type="checkbox" name="business-day" value="1" class="mb-2" checked>
+              <span class="text-sm font-medium">月</span>
+            </label>
+            <label class="flex flex-col items-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gold transition-colors">
+              <input type="checkbox" name="business-day" value="2" class="mb-2" checked>
+              <span class="text-sm font-medium">火</span>
+            </label>
+            <label class="flex flex-col items-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gold transition-colors">
+              <input type="checkbox" name="business-day" value="3" class="mb-2" checked>
+              <span class="text-sm font-medium">水</span>
+            </label>
+            <label class="flex flex-col items-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gold transition-colors">
+              <input type="checkbox" name="business-day" value="4" class="mb-2" checked>
+              <span class="text-sm font-medium">木</span>
+            </label>
+            <label class="flex flex-col items-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gold transition-colors">
+              <input type="checkbox" name="business-day" value="5" class="mb-2" checked>
+              <span class="text-sm font-medium">金</span>
+            </label>
+            <label class="flex flex-col items-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gold transition-colors">
+              <input type="checkbox" name="business-day" value="6" class="mb-2">
+              <span class="text-sm font-medium">土</span>
+            </label>
+          </div>
+          <div class="mt-4">
+            <button id="btn-save-business-days" class="btn-primary">
+              <i class="fas fa-save mr-2"></i>保存
+            </button>
+          </div>
+        </div>
+
+        <!-- 休日管理 -->
+        <div class="card mb-6">
+          <h3 class="text-lg font-bold text-navy mb-4">
+            <i class="fas fa-calendar-times text-gold mr-2"></i>休日管理
+          </h3>
+          <p class="text-sm text-gray-600 mb-4">
+            祝日や会社独自の休日を登録してください。48時間期限計算時にスキップされます。
+          </p>
+          
+          <!-- 休日追加フォーム -->
+          <div class="mb-4 flex space-x-2">
+            <input type="date" id="new-holiday-date" class="input-field flex-1">
+            <input type="text" id="new-holiday-desc" class="input-field flex-1" placeholder="説明（例：元日、創立記念日）">
+            <button id="btn-add-holiday" class="btn-primary">
+              <i class="fas fa-plus mr-2"></i>追加
+            </button>
+          </div>
+
+          <!-- 休日一覧 -->
+          <div id="holidays-list" class="space-y-2 max-h-64 overflow-y-auto">
+            <p class="text-center text-gray-500 py-4">休日を読み込み中...</p>
+          </div>
+        </div>
+
+        <!-- ストレージ設定 -->
+        <div class="card mb-6">
+          <h3 class="text-lg font-bold text-navy mb-4">
+            <i class="fas fa-database text-gold mr-2"></i>ストレージ設定
+          </h3>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              案件ごとのストレージ上限（MB）
+            </label>
+            <input type="number" id="storage-limit" class="input-field" min="10" max="500" step="10" value="50">
+            <p class="text-xs text-gray-500 mt-1">
+              各案件でアップロードできるファイルの合計サイズ上限です。
+            </p>
+          </div>
+          <button id="btn-save-storage" class="btn-primary">
+            <i class="fas fa-save mr-2"></i>保存
+          </button>
+        </div>
+
+        <!-- ユーザー管理（管理者専用） -->
+        <div id="user-management-section" class="card mb-6 hidden">
+          <h3 class="text-lg font-bold text-navy mb-4">
+            <i class="fas fa-users text-gold mr-2"></i>ユーザー管理
+          </h3>
+          
+          <!-- 新規ユーザー追加 -->
+          <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h4 class="font-bold text-navy mb-3">新規ユーザー追加</h4>
+            <div class="grid grid-cols-2 gap-4 mb-3">
+              <input type="email" id="new-user-email" class="input-field" placeholder="メールアドレス">
+              <input type="text" id="new-user-name" class="input-field" placeholder="氏名">
+              <input type="password" id="new-user-password" class="input-field" placeholder="パスワード">
+              <select id="new-user-role" class="input-field">
+                <option value="AGENT">エージェント（売側）</option>
+                <option value="ADMIN">管理者（買側）</option>
+              </select>
+            </div>
+            <button id="btn-create-user" class="btn-primary">
+              <i class="fas fa-user-plus mr-2"></i>ユーザー追加
+            </button>
+          </div>
+
+          <!-- ユーザー一覧 -->
+          <div id="users-list">
+            <h4 class="font-bold text-navy mb-3">登録ユーザー一覧</h4>
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+              <p class="text-center text-gray-500 py-4">ユーザーを読み込み中...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- APIキー情報 -->
+        <div class="card">
+          <h3 class="text-lg font-bold text-navy mb-4">
+            <i class="fas fa-key text-gold mr-2"></i>API情報
+          </h3>
+          <p class="text-sm text-gray-600 mb-3">
+            外部サービス連携用の情報です。変更が必要な場合は管理者に連絡してください。
+          </p>
+          <div class="bg-gray-50 p-4 rounded">
+            <div class="mb-2">
+              <label class="text-xs font-medium text-gray-500">OpenAI API（提案生成用）</label>
+              <p class="text-sm font-mono text-gray-700">設定済み</p>
+            </div>
+            <div class="mb-2">
+              <label class="text-xs font-medium text-gray-500">OCR API（書類読取用）</label>
+              <p class="text-sm font-mono text-gray-700">設定済み</p>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-gray-500">メール通知API</label>
+              <p class="text-sm font-mono text-gray-700">設定済み</p>
+            </div>
           </div>
         </div>
       </div>

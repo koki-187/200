@@ -19,6 +19,8 @@ if (state.token) {
 const loginPage = document.getElementById('login-page');
 const dashboardPage = document.getElementById('dashboard-page');
 const dealDetailPage = document.getElementById('deal-detail-page');
+const notificationsPage = document.getElementById('notifications-page');
+const settingsPage = document.getElementById('settings-page');
 const dealsList = document.getElementById('deals-list');
 
 // ログインフォーム
@@ -69,13 +71,17 @@ document.getElementById('nav-deals')?.addEventListener('click', (e) => {
 // ナビゲーション - お知らせタブ
 document.getElementById('nav-notifications')?.addEventListener('click', (e) => {
   e.preventDefault();
-  alert('お知らせ機能は現在開発中です。\n\n今後のアップデートでリリース予定です。');
+  if (state.token) {
+    showNotifications();
+  }
 });
 
 // ナビゲーション - 設定タブ
 document.getElementById('nav-settings')?.addEventListener('click', (e) => {
   e.preventDefault();
-  alert('設定機能は現在開発中です。\n\n今後のアップデートでリリース予定です。');
+  if (state.token) {
+    showSettings();
+  }
 });
 
 // ログアウト
@@ -89,6 +95,8 @@ document.getElementById('btn-logout')?.addEventListener('click', () => {
   loginPage.classList.remove('hidden');
   dashboardPage.classList.add('hidden');
   dealDetailPage.classList.add('hidden');
+  notificationsPage.classList.add('hidden');
+  settingsPage.classList.add('hidden');
 });
 
 // ダッシュボード表示
@@ -97,6 +105,8 @@ async function showDashboard() {
   loginPage.classList.add('hidden');
   dashboardPage.classList.remove('hidden');
   dealDetailPage.classList.add('hidden');
+  notificationsPage.classList.add('hidden');
+  settingsPage.classList.add('hidden');
   
   await loadDeals();
 }
@@ -194,8 +204,11 @@ async function showDealDetail(dealId) {
     const response = await axios.get(`/deals/${dealId}`);
     state.currentDeal = response.data.deal;
     
+    loginPage.classList.add('hidden');
     dashboardPage.classList.add('hidden');
     dealDetailPage.classList.remove('hidden');
+    notificationsPage.classList.add('hidden');
+    settingsPage.classList.add('hidden');
     
     document.getElementById('deal-title').textContent = state.currentDeal.title;
     renderDealDetail();
@@ -400,6 +413,342 @@ function updateHeaderVisibility(isLoggedIn) {
     banner.style.display = isLoggedIn ? 'block' : 'none';
   }
 }
+
+// お知らせページ表示
+async function showNotifications() {
+  updateHeaderVisibility(true);
+  loginPage.classList.add('hidden');
+  dashboardPage.classList.add('hidden');
+  dealDetailPage.classList.add('hidden');
+  settingsPage.classList.add('hidden');
+  notificationsPage.classList.remove('hidden');
+  
+  await loadNotifications();
+}
+
+// お知らせ読み込み
+async function loadNotifications(filterType = 'ALL') {
+  try {
+    const response = await axios.get('/notifications');
+    let notifications = response.data.notifications || [];
+    
+    // フィルター適用
+    if (filterType !== 'ALL') {
+      notifications = notifications.filter(n => n.type === filterType);
+    }
+    
+    renderNotifications(notifications);
+  } catch (error) {
+    console.error('Failed to load notifications:', error);
+    document.getElementById('notifications-list').innerHTML = `
+      <div class="text-center py-12 text-red-500">
+        <i class="fas fa-exclamation-triangle text-6xl mb-4"></i>
+        <p>お知らせの読み込みに失敗しました</p>
+      </div>
+    `;
+  }
+}
+
+// お知らせレンダリング
+function renderNotifications(notifications) {
+  const list = document.getElementById('notifications-list');
+  
+  if (notifications.length === 0) {
+    list.innerHTML = `
+      <div class="text-center py-12 text-gray-500">
+        <i class="fas fa-bell-slash text-6xl mb-4"></i>
+        <p>お知らせはありません</p>
+      </div>
+    `;
+    return;
+  }
+  
+  list.innerHTML = notifications.map(notif => {
+    const iconMap = {
+      'NEW_DEAL': 'fa-folder-plus',
+      'NEW_MESSAGE': 'fa-comment',
+      'DEADLINE': 'fa-clock',
+      'MISSING_INFO': 'fa-exclamation-triangle'
+    };
+    
+    const colorMap = {
+      'NEW_DEAL': 'text-blue-500',
+      'NEW_MESSAGE': 'text-green-500',
+      'DEADLINE': 'text-orange-500',
+      'MISSING_INFO': 'text-red-500'
+    };
+    
+    const icon = iconMap[notif.type] || 'fa-bell';
+    const color = colorMap[notif.type] || 'text-gray-500';
+    
+    return `
+      <div class="card ${notif.is_read ? 'opacity-60' : 'border-l-4 border-gold'}" data-notification-id="${notif.id}">
+        <div class="flex items-start">
+          <div class="mr-4">
+            <i class="fas ${icon} ${color} text-2xl"></i>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="font-bold text-navy">${escapeHtml(notif.title)}</h3>
+              ${!notif.is_read ? '<span class="badge bg-gold text-white">未読</span>' : ''}
+            </div>
+            <p class="text-gray-700 mb-2">${escapeHtml(notif.message)}</p>
+            <div class="flex items-center justify-between text-sm text-gray-500">
+              <span>${formatDate(notif.created_at)}</span>
+              <div class="flex space-x-2">
+                ${!notif.is_read ? `
+                  <button onclick="markAsRead('${notif.id}')" class="text-gold hover:text-gold-dark">
+                    <i class="fas fa-check mr-1"></i>既読にする
+                  </button>
+                ` : ''}
+                <button onclick="deleteNotification('${notif.id}')" class="text-red-500 hover:text-red-700">
+                  <i class="fas fa-trash mr-1"></i>削除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 通知フィルター
+document.querySelectorAll('.notification-filter').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('.notification-filter').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    const type = e.target.dataset.type;
+    loadNotifications(type);
+  });
+});
+
+// 全て既読にする
+document.getElementById('btn-mark-all-read')?.addEventListener('click', async () => {
+  try {
+    await axios.put('/notifications/read-all');
+    loadNotifications();
+    alert('すべての通知を既読にしました');
+  } catch (error) {
+    alert('既読処理に失敗しました');
+  }
+});
+
+// 既読にする
+async function markAsRead(notificationId) {
+  try {
+    await axios.put(`/notifications/${notificationId}/read`);
+    loadNotifications();
+  } catch (error) {
+    alert('既読処理に失敗しました');
+  }
+}
+
+// 通知削除
+async function deleteNotification(notificationId) {
+  if (!confirm('この通知を削除しますか?')) return;
+  
+  try {
+    await axios.delete(`/notifications/${notificationId}`);
+    loadNotifications();
+  } catch (error) {
+    alert('通知の削除に失敗しました');
+  }
+}
+
+// 設定ページ表示
+async function showSettings() {
+  updateHeaderVisibility(true);
+  loginPage.classList.add('hidden');
+  dashboardPage.classList.add('hidden');
+  dealDetailPage.classList.add('hidden');
+  notificationsPage.classList.add('hidden');
+  settingsPage.classList.remove('hidden');
+  
+  // 管理者専用セクションの表示制御
+  const userMgmtSection = document.getElementById('user-management-section');
+  if (state.user?.role === 'ADMIN' && userMgmtSection) {
+    userMgmtSection.classList.remove('hidden');
+  }
+  
+  await loadSettings();
+}
+
+// 設定読み込み
+async function loadSettings() {
+  try {
+    const response = await axios.get('/settings');
+    const settings = response.data.settings;
+    
+    // ビジネスデイ設定
+    if (settings.business_days) {
+      const businessDays = JSON.parse(settings.business_days);
+      document.querySelectorAll('input[name="business-day"]').forEach(checkbox => {
+        checkbox.checked = businessDays.includes(parseInt(checkbox.value));
+      });
+    }
+    
+    // 休日一覧
+    if (settings.holidays) {
+      const holidays = JSON.parse(settings.holidays);
+      renderHolidays(holidays);
+    } else {
+      renderHolidays([]);
+    }
+    
+    // ストレージ上限
+    if (settings.storage_limit_mb) {
+      document.getElementById('storage-limit').value = settings.storage_limit_mb;
+    }
+    
+    // ユーザー一覧（管理者のみ）
+    if (state.user?.role === 'ADMIN') {
+      await loadUsers();
+    }
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+    alert('設定の読み込みに失敗しました');
+  }
+}
+
+// 休日レンダリング
+function renderHolidays(holidays) {
+  const list = document.getElementById('holidays-list');
+  
+  if (holidays.length === 0) {
+    list.innerHTML = '<p class="text-center text-gray-500 py-4">登録された休日はありません</p>';
+    return;
+  }
+  
+  list.innerHTML = holidays.map(h => `
+    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+      <div>
+        <span class="font-medium text-navy">${h.date}</span>
+        <span class="text-gray-600 ml-3">${escapeHtml(h.description || '休日')}</span>
+      </div>
+      <button onclick="deleteHoliday('${h.date}')" class="text-red-500 hover:text-red-700">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+// ビジネスデイ保存
+document.getElementById('btn-save-business-days')?.addEventListener('click', async () => {
+  const checkedDays = Array.from(document.querySelectorAll('input[name="business-day"]:checked'))
+    .map(cb => parseInt(cb.value));
+  
+  try {
+    await axios.put('/settings', { business_days: checkedDays });
+    alert('ビジネスデイ設定を保存しました');
+  } catch (error) {
+    alert('保存に失敗しました');
+  }
+});
+
+// 休日追加
+document.getElementById('btn-add-holiday')?.addEventListener('click', async () => {
+  const date = document.getElementById('new-holiday-date').value;
+  const description = document.getElementById('new-holiday-desc').value;
+  
+  if (!date) {
+    alert('日付を選択してください');
+    return;
+  }
+  
+  try {
+    await axios.post('/settings/holidays', { date, description });
+    document.getElementById('new-holiday-date').value = '';
+    document.getElementById('new-holiday-desc').value = '';
+    loadSettings();
+  } catch (error) {
+    alert('休日の追加に失敗しました');
+  }
+});
+
+// 休日削除
+async function deleteHoliday(date) {
+  if (!confirm(`${date}を休日から削除しますか?`)) return;
+  
+  try {
+    await axios.delete(`/settings/holidays/${date}`);
+    loadSettings();
+  } catch (error) {
+    alert('休日の削除に失敗しました');
+  }
+}
+
+// ストレージ設定保存
+document.getElementById('btn-save-storage')?.addEventListener('click', async () => {
+  const limit = parseInt(document.getElementById('storage-limit').value);
+  
+  if (limit < 10 || limit > 500) {
+    alert('ストレージ上限は10MB〜500MBの範囲で設定してください');
+    return;
+  }
+  
+  try {
+    await axios.put('/settings', { storage_limit_mb: limit });
+    alert('ストレージ設定を保存しました');
+  } catch (error) {
+    alert('保存に失敗しました');
+  }
+});
+
+// ユーザー一覧読み込み
+async function loadUsers() {
+  try {
+    const response = await axios.get('/settings/users');
+    const users = response.data.users || [];
+    
+    const usersList = document.querySelector('#users-list .space-y-2');
+    if (users.length === 0) {
+      usersList.innerHTML = '<p class="text-center text-gray-500 py-4">登録ユーザーはいません</p>';
+      return;
+    }
+    
+    usersList.innerHTML = users.map(u => `
+      <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+        <div class="flex-1">
+          <div class="font-medium text-navy">${escapeHtml(u.name)}</div>
+          <div class="text-sm text-gray-600">${escapeHtml(u.email)}</div>
+        </div>
+        <div class="flex items-center space-x-3">
+          <span class="badge ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">
+            ${u.role === 'ADMIN' ? '管理者' : 'エージェント'}
+          </span>
+          <span class="text-xs text-gray-500">${formatDate(u.created_at)}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Failed to load users:', error);
+  }
+}
+
+// ユーザー作成
+document.getElementById('btn-create-user')?.addEventListener('click', async () => {
+  const email = document.getElementById('new-user-email').value;
+  const name = document.getElementById('new-user-name').value;
+  const password = document.getElementById('new-user-password').value;
+  const userRole = document.getElementById('new-user-role').value;
+  
+  if (!email || !name || !password) {
+    alert('すべての項目を入力してください');
+    return;
+  }
+  
+  try {
+    await axios.post('/settings/users', { email, name, password, userRole });
+    document.getElementById('new-user-email').value = '';
+    document.getElementById('new-user-name').value = '';
+    document.getElementById('new-user-password').value = '';
+    alert('ユーザーを追加しました');
+    loadUsers();
+  } catch (error) {
+    alert('ユーザーの追加に失敗しました: ' + (error.response?.data?.error || error.message));
+  }
+});
 
 // 初期化 - ページ読み込み時の処理
 document.addEventListener('DOMContentLoaded', () => {

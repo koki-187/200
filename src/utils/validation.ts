@@ -1,0 +1,159 @@
+import { z } from 'zod';
+
+/**
+ * Zodバリデーションスキーマ定義
+ */
+
+// ユーザー認証スキーマ
+export const loginSchema = z.object({
+  email: z.string().email('有効なメールアドレスを入力してください'),
+  password: z.string().min(6, 'パスワードは6文字以上で入力してください')
+});
+
+export const registerSchema = z.object({
+  email: z.string().email('有効なメールアドレスを入力してください'),
+  password: z.string().min(8, 'パスワードは8文字以上で入力してください')
+    .regex(/[A-Z]/, 'パスワードには大文字を含めてください')
+    .regex(/[a-z]/, 'パスワードには小文字を含めてください')
+    .regex(/[0-9]/, 'パスワードには数字を含めてください'),
+  name: z.string().min(1, '名前を入力してください').max(100, '名前は100文字以内で入力してください'),
+  role: z.enum(['ADMIN', 'AGENT'], { errorMap: () => ({ message: '有効な役割を選択してください' }) }),
+  company_name: z.string().optional()
+});
+
+// 案件関連スキーマ
+export const dealSchema = z.object({
+  title: z.string().min(1, '案件名を入力してください').max(200, '案件名は200文字以内で入力してください'),
+  seller_id: z.string().min(1, '売主担当者を選択してください'),
+  status: z.enum(['NEW', 'IN_REVIEW', 'REPLIED', 'CLOSED'], { 
+    errorMap: () => ({ message: '有効なステータスを選択してください' }) 
+  }).optional(),
+  location: z.string().max(500, '所在地は500文字以内で入力してください').optional(),
+  land_area: z.string().max(100, '面積は100文字以内で入力してください').optional(),
+  zoning: z.string().max(100, '用途地域は100文字以内で入力してください').optional(),
+  building_coverage: z.string().max(50, '建蔽率は50文字以内で入力してください').optional(),
+  floor_area_ratio: z.string().max(50, '容積率は50文字以内で入力してください').optional(),
+  road_info: z.string().max(500, '接道状況は500文字以内で入力してください').optional(),
+  current_use: z.string().max(200, '現況は200文字以内で入力してください').optional(),
+  station: z.string().max(200, '最寄駅は200文字以内で入力してください').optional(),
+  walk_minutes: z.number().int().min(0).max(999).optional(),
+  desired_price: z.string().max(100, '希望価格は100文字以内で入力してください').optional(),
+  remarks: z.string().max(2000, '備考は2000文字以内で入力してください').optional()
+});
+
+export const dealUpdateSchema = dealSchema.partial().extend({
+  id: z.string().min(1, '案件IDが必要です')
+});
+
+// メッセージスキーマ
+export const messageSchema = z.object({
+  deal_id: z.string().min(1, '案件IDが必要です'),
+  content: z.string().min(1, 'メッセージを入力してください').max(5000, 'メッセージは5000文字以内で入力してください')
+});
+
+// ファイルアップロードスキーマ（メタデータ検証）
+export const fileMetadataSchema = z.object({
+  filename: z.string().min(1).max(255),
+  size: z.number().int().positive().max(10 * 1024 * 1024), // 10MB
+  type: z.string().regex(/^(application\/pdf|image\/(jpeg|jpg|png|gif)|application\/(vnd\.ms-excel|vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document)|application\/zip|text\/plain)$/, 
+    '許可されていないファイル形式です')
+});
+
+// 設定スキーマ
+export const businessDaysSchema = z.object({
+  business_days: z.array(z.number().int().min(0).max(6)).min(1, '最低1つの営業日を選択してください')
+});
+
+export const holidaySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '有効な日付形式（YYYY-MM-DD）で入力してください'),
+  description: z.string().min(1, '説明を入力してください').max(200, '説明は200文字以内で入力してください')
+});
+
+export const storageLimitSchema = z.object({
+  storage_limit_mb: z.number().int().min(10).max(1000)
+});
+
+// Proposal スキーマ
+export const proposalSchema = z.object({
+  deal_id: z.string().min(1, '案件IDが必要です'),
+  buyer_profile: z.object({
+    budget: z.string().optional(),
+    preferences: z.string().optional(),
+    timeline: z.string().optional()
+  }).optional()
+});
+
+// OCR スキーマ
+export const ocrSchema = z.object({
+  file_type: z.enum(['image', 'pdf']),
+  file_size: z.number().int().positive().max(10 * 1024 * 1024)
+});
+
+// 通知スキーマ
+export const notificationFilterSchema = z.object({
+  type: z.enum(['ALL', 'NEW_DEAL', 'NEW_MESSAGE', 'DEADLINE', 'MISSING_INFO']).optional(),
+  is_read: z.boolean().optional()
+});
+
+/**
+ * バリデーションヘルパー関数
+ */
+
+export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): { 
+  success: boolean; 
+  data?: T; 
+  errors?: string[] 
+} {
+  try {
+    const validData = schema.parse(data);
+    return { success: true, data: validData };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errors = error.errors.map(err => {
+        const path = err.path.join('.');
+        return `${path}: ${err.message}`;
+      });
+      return { success: false, errors };
+    }
+    return { success: false, errors: ['バリデーションエラーが発生しました'] };
+  }
+}
+
+/**
+ * XSS対策: HTMLエスケープ
+ */
+export function escapeHtml(text: string): string {
+  const map: { [key: string]: string } = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (char) => map[char]);
+}
+
+/**
+ * SQLインジェクション対策: パラメータ化クエリを強制
+ * （注意: D1では自動的にパラメータ化されますが、明示的にチェック）
+ */
+export function sanitizeSqlInput(input: string): string {
+  // D1はパラメータ化クエリを使用するため、ここではログ用のサニタイズのみ
+  return input.replace(/[';\-\-]/g, '');
+}
+
+/**
+ * ファイル名のサニタイズ
+ */
+export function sanitizeFilename(filename: string): string {
+  // 危険な文字を削除
+  return filename.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_');
+}
+
+/**
+ * パス・トラバーサル対策
+ */
+export function isValidPath(path: string): boolean {
+  // ../ や .\ を含まないことを確認
+  return !/\.\.[/\\]/.test(path);
+}

@@ -30,8 +30,12 @@ settings.put('/', async (c: Context) => {
     const updates = await c.req.json()
     const db = new Database(c.env.DB)
     
-    // 設定の更新
+    // 設定の更新（Zodバリデーション付き）
     if (updates.business_days !== undefined) {
+      const validation = validateData(businessDaysSchema, { business_days: updates.business_days });
+      if (!validation.success) {
+        return c.json({ error: 'Validation failed', details: validation.errors }, 400);
+      }
       await db.updateSetting('business_days', JSON.stringify(updates.business_days))
     }
     
@@ -40,6 +44,10 @@ settings.put('/', async (c: Context) => {
     }
     
     if (updates.storage_limit_mb !== undefined) {
+      const validation = validateData(storageLimitSchema, { storage_limit_mb: updates.storage_limit_mb });
+      if (!validation.success) {
+        return c.json({ error: 'Validation failed', details: validation.errors }, 400);
+      }
       await db.updateSetting('storage_limit_mb', updates.storage_limit_mb.toString())
     }
     

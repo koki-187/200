@@ -1,11 +1,11 @@
--- Insert default admin user (password: admin123 - bcrypt hash)
+-- Insert default admin user (password: Admin!2025 - PBKDF2 hash)
 INSERT OR IGNORE INTO users (id, email, password_hash, name, role) VALUES 
-  ('admin-001', 'admin@example.com', '$2b$10$E2TpXnj0uuOMTq9WIOPes.TcvOyvkd24HX65tFiYE.6xTI6qHukUK', '管理者', 'ADMIN');
+  ('admin-001', 'admin@example.com', 'fHQgNXa/fL3cCB584fulO4XJFqeTTSwXwYo6Kg09Lr8rc/S6sIIaDarScC9lb5ZN', '管理者', 'ADMIN');
 
--- Insert test seller users (password: agent123 for all - bcrypt hash)
+-- Insert test seller users (password: agent123 for all - PBKDF2 hash)
 INSERT OR IGNORE INTO users (id, email, password_hash, name, role, company_name) VALUES 
-  ('seller-001', 'seller1@example.com', '$2b$10$urE1Sd65OKG4R9bl7V.xH.jV8.e9KyM6kMwkwHxHjTqZ12s.bk9hy', '田中太郎', 'AGENT', '不動産ABC株式会社'),
-  ('seller-002', 'seller2@example.com', '$2b$10$urE1Sd65OKG4R9bl7V.xH.jV8.e9KyM6kMwkwHxHjTqZ12s.bk9hy', '佐藤花子', 'AGENT', '株式会社XYZ不動産');
+  ('seller-001', 'seller1@example.com', 'GGokNgSZ2ygBJjUiuI0MhyiwHsNMrul1K95P5UJkMK3eFV6YtOuLaQVBez5rMPW3', '田中太郎', 'AGENT', '不動産ABC株式会社'),
+  ('seller-002', 'seller2@example.com', 'GGokNgSZ2ygBJjUiuI0MhyiwHsNMrul1K95P5UJkMK3eFV6YtOuLaQVBez5rMPW3', '佐藤花子', 'AGENT', '株式会社XYZ不動産');
 
 -- Insert default settings
 INSERT OR IGNORE INTO settings (id, workdays, holidays, max_storage_per_deal) VALUES 

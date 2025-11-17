@@ -1,20 +1,98 @@
-import bcrypt from 'bcryptjs';
 import { sign, verify } from '@tsndr/cloudflare-worker-jwt';
 
 /**
- * bcryptパスワードハッシュ化（本番対応）
- * ソルト付き、10ラウンド
+ * PBKDF2パスワードハッシュ化（Cloudflare Workers互換）
+ * Web Crypto API使用、100,000イテレーション
  */
 export async function hashPassword(password: string): Promise<string> {
-  const salt = await bcrypt.genSalt(10);
-  return await bcrypt.hash(password, salt);
+  // ランダムソルト生成（16バイト）
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  
+  // TextEncoderでパスワードをバイト配列に変換
+  const encoder = new TextEncoder();
+  const passwordBytes = encoder.encode(password);
+  
+  // PBKDF2キー導出
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    passwordBytes,
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    256  // 256ビット = 32バイト
+  );
+  
+  // ソルトとハッシュを結合してBase64エンコード
+  const hashArray = new Uint8Array(derivedBits);
+  const combined = new Uint8Array(salt.length + hashArray.length);
+  combined.set(salt, 0);
+  combined.set(hashArray, salt.length);
+  
+  return btoa(String.fromCharCode(...combined));
 }
 
 /**
- * bcryptパスワード検証
+ * PBKDFパスワード検証
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return await bcrypt.compare(password, hash);
+  try {
+    // Base64デコード
+    const combined = Uint8Array.from(atob(hash), c => c.charCodeAt(0));
+    
+    // ソルトとハッシュを分離
+    const salt = combined.slice(0, 16);
+    const storedHash = combined.slice(16);
+    
+    // パスワードを同じ方法でハッシュ化
+    const encoder = new TextEncoder();
+    const passwordBytes = encoder.encode(password);
+    
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      passwordBytes,
+      'PBKDF2',
+      false,
+      ['deriveBits']
+    );
+    
+    const derivedBits = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt: salt,
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      keyMaterial,
+      256
+    );
+    
+    const computedHash = new Uint8Array(derivedBits);
+    
+    // タイミング攻撃耐性のある比較
+    if (computedHash.length !== storedHash.length) {
+      return false;
+    }
+    
+    let result = 0;
+    for (let i = 0; i < computedHash.length; i++) {
+      result |= computedHash[i] ^ storedHash[i];
+    }
+    
+    return result === 0;
+  } catch (error) {
+    console.error('Password verification error:', error);
+    return false;
+  }
 }
 
 /**

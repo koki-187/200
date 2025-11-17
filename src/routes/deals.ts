@@ -58,6 +58,12 @@ deals.post('/', adminOnly, async (c) => {
     const body = await c.req.json();
     const userId = c.get('userId') as string;
 
+    // Zodバリデーション
+    const validation = validateData(dealSchema, body);
+    if (!validation.success) {
+      return c.json({ error: 'Validation failed', details: validation.errors }, 400);
+    }
+
     const db = new Database(c.env.DB);
     const settings = await db.getSettings();
     const holidays = settings ? JSON.parse(settings.holidays) : [];
@@ -104,6 +110,12 @@ deals.put('/:id', async (c) => {
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
     const body = await c.req.json();
+
+    // Zodバリデーション
+    const validation = validateData(dealUpdateSchema, { ...body, id: dealId });
+    if (!validation.success) {
+      return c.json({ error: 'Validation failed', details: validation.errors }, 400);
+    }
 
     const db = new Database(c.env.DB);
     const deal = await db.getDealById(dealId);

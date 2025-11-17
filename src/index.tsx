@@ -85,10 +85,12 @@ app.get('*', (c) => {
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0A1A2F">
   <title>200棟アパート用地仕入れプロジェクト</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="/static/responsive.css" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
@@ -175,7 +177,8 @@ app.get('*', (c) => {
             <i class="fas fa-building text-gold text-2xl"></i>
             <h1 class="text-xl font-bold">200棟アパート用地仕入れプロジェクト</h1>
           </div>
-          <nav class="flex items-center space-x-6">
+          <!-- デスクトップナビゲーション -->
+          <nav class="hidden md:flex items-center space-x-6">
             <a href="#" class="hover:text-gold transition-colors" id="nav-deals">案件</a>
             <a href="#" class="hover:text-gold transition-colors" id="nav-notifications">お知らせ</a>
             <a href="#" class="hover:text-gold transition-colors" id="nav-settings">設定</a>
@@ -183,9 +186,27 @@ app.get('*', (c) => {
               <i class="fas fa-sign-out-alt mr-2"></i>ログアウト
             </button>
           </nav>
+          
+          <!-- モバイルハンバーガーメニュー -->
+          <div class="mobile-menu-toggle md:hidden" id="mobile-menu-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </div>
       </div>
     </header>
+    
+    <!-- モバイルナビゲーション -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+    <nav class="mobile-nav" id="mobile-nav">
+      <ul class="mobile-nav-list">
+        <li><a href="#" id="mobile-nav-deals"><i class="fas fa-th-large"></i>案件</a></li>
+        <li><a href="#" id="mobile-nav-notifications"><i class="fas fa-bell"></i>お知らせ</a></li>
+        <li><a href="#" id="mobile-nav-settings"><i class="fas fa-cog"></i>設定</a></li>
+        <li><a href="#" id="mobile-btn-logout"><i class="fas fa-sign-out-alt"></i>ログアウト</a></li>
+      </ul>
+    </nav>
 
     <!-- お知らせバナー -->
     <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
@@ -680,6 +701,7 @@ app.get('*', (c) => {
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="/static/toast.js"></script>
   <script src="/static/app.js?v=${Date.now()}"></script>
 </body>
 </html>

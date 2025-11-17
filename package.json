@@ -24,13 +24,13 @@
   },
   "dependencies": {
     "@tsndr/cloudflare-worker-jwt": "^3.2.0",
-    "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
     "hono": "^4.10.6",
     "jspdf": "^3.0.3",
     "nanoid": "^5.0.9",
     "openai": "^6.9.0",
-    "resend": "^6.4.2"
+    "resend": "^6.4.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20250705.0",

@@ -3,17 +3,22 @@ import { Bindings } from '../types';
 import { Database } from '../db/queries';
 import { authMiddleware } from '../utils/auth';
 import { verifyPassword, generateToken } from '../utils/crypto';
+import { loginSchema, registerSchema, validateData } from '../utils/validation';
 
 const auth = new Hono<{ Bindings: Bindings }>();
 
 // ログイン
 auth.post('/login', async (c) => {
   try {
-    const { email, password } = await c.req.json();
+    const body = await c.req.json();
 
-    if (!email || !password) {
-      return c.json({ error: 'Email and password are required' }, 400);
+    // Zodバリデーション
+    const validation = validateData(loginSchema, body);
+    if (!validation.success) {
+      return c.json({ error: 'Validation failed', details: validation.errors }, 400);
     }
+
+    const { email, password } = validation.data;
 
     const db = new Database(c.env.DB);
     const user = await db.getUserByEmail(email);
@@ -77,6 +82,59 @@ auth.get('/me', authMiddleware, async (c) => {
 // ログアウト（クライアント側でトークン削除）
 auth.post('/logout', (c) => {
   return c.json({ message: 'Logged out successfully' });
+});
+
+// 新規ユーザー登録（管理者専用）
+auth.post('/register', authMiddleware, async (c) => {
+  try {
+    const userRole = c.get('role') as string;
+    if (userRole !== 'ADMIN') {
+      return c.json({ error: 'Admin access required' }, 403);
+    }
+
+    const body = await c.req.json();
+
+    // Zodバリデーション
+    const validation = validateData(registerSchema, body);
+    if (!validation.success) {
+      return c.json({ error: 'Validation failed', details: validation.errors }, 400);
+    }
+
+    const { email, password, name, role, company_name } = validation.data;
+
+    const db = new Database(c.env.DB);
+    
+    // メールアドレス重複チェック
+    const existingUser = await db.getUserByEmail(email);
+    if (existingUser) {
+      return c.json({ error: 'Email already exists' }, 409);
+    }
+
+    // パスワードハッシュ化
+    const { hashPassword } = await import('../utils/crypto');
+    const passwordHash = await hashPassword(password);
+
+    // ユーザー作成
+    const { nanoid } = await import('nanoid');
+    const userId = `user-${nanoid(10)}`;
+
+    await db.createUser({
+      id: userId,
+      email,
+      password_hash: passwordHash,
+      name,
+      role,
+      company_name: company_name || null
+    });
+
+    return c.json({ 
+      message: 'User created successfully',
+      user: { id: userId, email, name, role }
+    }, 201);
+  } catch (error) {
+    console.error('Register error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
 });
 
 export default auth;

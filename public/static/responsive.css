@@ -1,0 +1,652 @@
+/**
+ * レスポンシブデザイン & モバイル対応スタイル
+ * 200棟アパート用地仕入れプロジェクト
+ */
+
+/* ==================== ブレークポイント定義 ==================== */
+/* 
+  - Mobile: 320px - 767px
+  - Tablet: 768px - 1023px  
+  - Desktop: 1024px+
+*/
+
+/* ==================== モバイルハンバーガーメニュー ==================== */
+.mobile-menu-toggle {
+  display: none;
+  position: relative;
+  width: 30px;
+  height: 24px;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.mobile-menu-toggle span {
+  display: block;
+  position: absolute;
+  height: 3px;
+  width: 100%;
+  background: white;
+  border-radius: 3px;
+  opacity: 1;
+  left: 0;
+  transition: 0.25s ease-in-out;
+}
+
+.mobile-menu-toggle span:nth-child(1) {
+  top: 0px;
+}
+
+.mobile-menu-toggle span:nth-child(2) {
+  top: 10px;
+}
+
+.mobile-menu-toggle span:nth-child(3) {
+  top: 20px;
+}
+
+.mobile-menu-toggle.active span:nth-child(1) {
+  top: 10px;
+  transform: rotate(135deg);
+}
+
+.mobile-menu-toggle.active span:nth-child(2) {
+  opacity: 0;
+  left: -60px;
+}
+
+.mobile-menu-toggle.active span:nth-child(3) {
+  top: 10px;
+  transform: rotate(-135deg);
+}
+
+/* モバイルナビゲーション */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 80%;
+  max-width: 300px;
+  height: 100vh;
+  background: linear-gradient(180deg, #0A1A2F 0%, #1a2942 100%);
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+  transition: right 0.3s ease-in-out;
+  z-index: 1000;
+  padding: 80px 20px 20px;
+  overflow-y: auto;
+}
+
+.mobile-nav.active {
+  right: 0;
+}
+
+.mobile-nav-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.mobile-nav-overlay.active {
+  opacity: 1;
+}
+
+.mobile-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mobile-nav-list li {
+  margin-bottom: 20px;
+}
+
+.mobile-nav-list a {
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.mobile-nav-list a:hover {
+  background: rgba(201, 168, 106, 0.2);
+  color: #C9A86A;
+}
+
+.mobile-nav-list a i {
+  margin-right: 12px;
+  width: 20px;
+}
+
+/* ==================== スケルトンスクリーン ==================== */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-card {
+  padding: 20px;
+  margin-bottom: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.skeleton-text {
+  height: 16px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.skeleton-text:last-child {
+  width: 80%;
+}
+
+/* ==================== 空状態デザイン ==================== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  color: #C9A86A;
+  margin-bottom: 24px;
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0A1A2F;
+  margin-bottom: 12px;
+}
+
+.empty-state-description {
+  font-size: 14px;
+  color: #6B7280;
+  margin-bottom: 24px;
+  max-width: 400px;
+}
+
+.empty-state-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 24px;
+  background: #C9A86A;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.empty-state-cta:hover {
+  background: #b89355;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(201, 168, 106, 0.3);
+}
+
+.empty-state-cta i {
+  margin-right: 8px;
+}
+
+/* ==================== カスタムトーストUI ==================== */
+.toast-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9999;
+  max-width: 400px;
+}
+
+.toast {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  animation: toast-slide-in 0.3s ease-out;
+  border-left: 4px solid #C9A86A;
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast.toast-success {
+  border-left-color: #10B981;
+}
+
+.toast.toast-error {
+  border-left-color: #EF4444;
+}
+
+.toast.toast-warning {
+  border-left-color: #F59E0B;
+}
+
+.toast.toast-info {
+  border-left-color: #3B82F6;
+}
+
+.toast-icon {
+  font-size: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.toast-success .toast-icon {
+  color: #10B981;
+}
+
+.toast-error .toast-icon {
+  color: #EF4444;
+}
+
+.toast-warning .toast-icon {
+  color: #F59E0B;
+}
+
+.toast-info .toast-icon {
+  color: #3B82F6;
+}
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-title {
+  font-weight: 600;
+  color: #0A1A2F;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.toast-message {
+  font-size: 13px;
+  color: #6B7280;
+}
+
+.toast-close {
+  cursor: pointer;
+  color: #9CA3AF;
+  font-size: 18px;
+  margin-left: 12px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  color: #4B5563;
+}
+
+/* ==================== カスタムモーダル/ダイアログ ==================== */
+.custom-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(10, 26, 47, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.custom-dialog {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: dialog-slide-up 0.3s ease-out;
+}
+
+@keyframes dialog-slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.custom-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.custom-dialog-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0A1A2F;
+  display: flex;
+  align-items: center;
+}
+
+.custom-dialog-title i {
+  margin-right: 12px;
+  color: #C9A86A;
+}
+
+.custom-dialog-close {
+  cursor: pointer;
+  color: #9CA3AF;
+  font-size: 24px;
+  transition: color 0.2s;
+}
+
+.custom-dialog-close:hover {
+  color: #4B5563;
+}
+
+.custom-dialog-body {
+  padding: 24px;
+}
+
+.custom-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #E5E7EB;
+}
+
+/* ==================== レスポンシブ調整 ==================== */
+
+/* タブレット以下 (768px以下) */
+@media (max-width: 768px) {
+  /* ヘッダー調整 */
+  header .container {
+    padding: 16px 16px;
+  }
+
+  header h1 {
+    font-size: 16px;
+  }
+
+  header .fas.fa-building {
+    font-size: 20px;
+  }
+
+  /* デスクトップナビを非表示 */
+  header nav:not(.mobile-nav) {
+    display: none;
+  }
+
+  /* モバイルメニュートグルを表示 */
+  .mobile-menu-toggle,
+  .mobile-nav,
+  .mobile-nav-overlay {
+    display: block;
+  }
+
+  /* カード調整 */
+  .card {
+    padding: 16px;
+  }
+
+  /* グリッドを1カラムに */
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* 検索とフィルター調整 */
+  .search-filter-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .search-filter-container > * {
+    width: 100% !important;
+  }
+
+  /* ボタン調整 */
+  .btn-primary,
+  .btn-secondary {
+    padding: 12px 16px;
+    font-size: 14px;
+    width: 100%;
+  }
+
+  /* テーブルをカード表示に */
+  table {
+    display: block;
+  }
+
+  table thead {
+    display: none;
+  }
+
+  table tbody {
+    display: block;
+  }
+
+  table tr {
+    display: block;
+    margin-bottom: 16px;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  table td {
+    display: block;
+    text-align: left !important;
+    padding: 8px 0;
+    border: none;
+  }
+
+  table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    display: inline-block;
+    width: 120px;
+    color: #0A1A2F;
+  }
+
+  /* モーダル調整 */
+  .custom-dialog {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .custom-dialog-header,
+  .custom-dialog-body,
+  .custom-dialog-footer {
+    padding: 16px;
+  }
+
+  /* トースト調整 */
+  .toast-container {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: none;
+  }
+
+  /* 案件詳細3カラムを1カラムに */
+  .deal-detail-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* チャットエリア調整 */
+  .chat-messages {
+    max-height: 300px;
+  }
+}
+
+/* スマートフォン (480px以下) */
+@media (max-width: 480px) {
+  /* さらに小さい画面用の調整 */
+  .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  h3 {
+    font-size: 18px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .empty-state {
+    padding: 40px 16px;
+  }
+
+  .empty-state-icon {
+    font-size: 48px;
+  }
+
+  .empty-state-title {
+    font-size: 18px;
+  }
+}
+
+/* デスクトップ (1024px以上) */
+@media (min-width: 1024px) {
+  /* デスクトップ用の最適化 */
+  .container {
+    max-width: 1280px;
+  }
+
+  .deal-detail-layout {
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+  }
+}
+
+/* 大画面 (1440px以上) */
+@media (min-width: 1440px) {
+  .container {
+    max-width: 1400px;
+  }
+}
+
+/* ==================== アクセシビリティ改善 ==================== */
+
+/* フォーカス時のアウトライン */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+a:focus {
+  outline: 2px solid #C9A86A;
+  outline-offset: 2px;
+}
+
+/* 高コントラストモード対応 */
+@media (prefers-contrast: high) {
+  .btn-primary,
+  .btn-secondary {
+    border: 2px solid currentColor;
+  }
+
+  .card {
+    border: 1px solid #0A1A2F;
+  }
+}
+
+/* モーションを抑えたい場合 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==================== プリント用スタイル ==================== */
+@media print {
+  header,
+  nav,
+  .mobile-menu-toggle,
+  .mobile-nav,
+  .toast-container,
+  .custom-dialog,
+  button {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  body {
+    background: white;
+  }
+}

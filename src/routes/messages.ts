@@ -42,10 +42,12 @@ messages.post('/deals/:dealId', async (c) => {
     const dealId = c.req.param('dealId');
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
-    const { content } = await c.req.json();
+    const body = await c.req.json();
 
-    if (!content) {
-      return c.json({ error: 'Content is required' }, 400);
+    // Zodバリデーション
+    const validation = validateData(messageSchema, { ...body, deal_id: dealId });
+    if (!validation.success) {
+      return c.json({ error: 'Validation failed', details: validation.errors }, 400);
     }
 
     const db = new Database(c.env.DB);
@@ -60,11 +62,14 @@ messages.post('/deals/:dealId', async (c) => {
       return c.json({ error: 'Access denied' }, 403);
     }
 
+    // XSS対策: HTMLエスケープ
+    const sanitizedContent = escapeHtml(validation.data.content);
+
     const newMessage: Omit<Message, 'created_at'> = {
       id: nanoid(),
       deal_id: dealId,
       sender_id: userId,
-      content,
+      content: sanitizedContent,
       has_attachments: 0,
       is_read_by_buyer: role === 'ADMIN' ? 1 : 0,
       is_read_by_seller: role === 'AGENT' ? 1 : 0

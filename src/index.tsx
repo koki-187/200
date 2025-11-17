@@ -59,6 +59,24 @@ app.use('*', async (c, next) => {
   
   // 権限ポリシー
   c.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  // パフォーマンス最適化 - キャッシュ戦略
+  const path = c.req.path;
+  
+  // 静的リソースには長期キャッシュを設定
+  if (path.startsWith('/static/') || path.startsWith('/assets/')) {
+    c.header('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+  // APIレスポンスはキャッシュしない
+  else if (path.startsWith('/api/')) {
+    c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    c.header('Pragma', 'no-cache');
+    c.header('Expires', '0');
+  }
+  // HTMLページは短期キャッシュ
+  else {
+    c.header('Cache-Control', 'public, max-age=300, must-revalidate');
+  }
 });
 
 // CORS設定
@@ -128,6 +146,179 @@ app.get('/api/docs', (c) => {
 <body>
   <script id="api-reference" data-url="/api/openapi.json"></script>
   <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+</body>
+</html>
+  `);
+});
+
+// ルートページ - ログイン画面
+app.get('/', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>200戸土地仕入れ管理システム - ログイン</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="max-w-md w-full mx-4">
+    <!-- ログインカード -->
+    <div class="bg-white rounded-2xl shadow-2xl p-8">
+      <!-- ヘッダー -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full mb-4">
+          <i class="fas fa-building text-white text-2xl"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">200戸土地仕入れ管理</h1>
+        <p class="text-gray-500">不動産仲介案件管理システム v2.0</p>
+      </div>
+
+      <!-- エラーメッセージ -->
+      <div id="error-message" class="hidden mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <p class="text-red-600 text-sm flex items-center">
+          <i class="fas fa-exclamation-circle mr-2"></i>
+          <span id="error-text"></span>
+        </p>
+      </div>
+
+      <!-- ログインフォーム -->
+      <form id="login-form" class="space-y-6">
+        <!-- メールアドレス -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-envelope mr-1"></i> メールアドレス
+          </label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email"
+            required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            placeholder="admin@200units.com"
+          >
+        </div>
+
+        <!-- パスワード -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-lock mr-1"></i> パスワード
+          </label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password"
+            required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            placeholder="••••••••••"
+          >
+        </div>
+
+        <!-- ログインボタン -->
+        <button 
+          type="submit"
+          id="login-button"
+          class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-3 rounded-lg hover:from-purple-600 hover:to-indigo-700 transition duration-200 transform hover:scale-105 shadow-lg"
+        >
+          <i class="fas fa-sign-in-alt mr-2"></i>
+          ログイン
+        </button>
+      </form>
+
+      <!-- システム情報 -->
+      <div class="mt-8 pt-6 border-t border-gray-200">
+        <div class="text-center space-y-2">
+          <a href="/api/docs" class="text-purple-600 hover:text-purple-700 text-sm flex items-center justify-center">
+            <i class="fas fa-book mr-2"></i>
+            APIドキュメント
+          </a>
+          <p class="text-xs text-gray-400">
+            <i class="fas fa-shield-alt mr-1"></i>
+            セキュア接続 | v2.0.0
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- フッター -->
+    <div class="text-center mt-6 text-white text-sm">
+      <p class="opacity-80">© 2025 200戸土地仕入れ管理システム</p>
+      <p class="opacity-60 mt-1">Powered by Cloudflare Workers + Hono</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    const loginForm = document.getElementById('login-form');
+    const loginButton = document.getElementById('login-button');
+    const errorMessage = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // エラーメッセージを非表示
+      errorMessage.classList.add('hidden');
+      
+      // ボタンを無効化
+      loginButton.disabled = true;
+      loginButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ログイン中...';
+
+      try {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        const response = await axios.post('/api/auth/login', {
+          email,
+          password
+        });
+
+        if (response.data.token) {
+          // トークンを保存
+          localStorage.setItem('auth_token', response.data.token);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+          
+          // ダッシュボードにリダイレクト（将来実装）
+          alert('ログイン成功！\\n\\nユーザー: ' + response.data.user.name + '\\nロール: ' + response.data.user.role);
+          
+          // API動作確認用に /api/docs にリダイレクト
+          window.location.href = '/api/docs';
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        
+        // エラーメッセージを表示
+        errorMessage.classList.remove('hidden');
+        if (error.response && error.response.data && error.response.data.error) {
+          errorText.textContent = error.response.data.error;
+        } else {
+          errorText.textContent = 'ログインに失敗しました。もう一度お試しください。';
+        }
+        
+        // ボタンを再有効化
+        loginButton.disabled = false;
+        loginButton.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>ログイン';
+      }
+    });
+
+    // デモ用：Enter キーでフォーム送信
+    document.getElementById('password').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        loginForm.dispatchEvent(new Event('submit'));
+      }
+    });
+  </script>
 </body>
 </html>
   `);

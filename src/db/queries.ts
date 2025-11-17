@@ -255,14 +255,7 @@ export class Database {
       .run();
   }
 
-  // Users
-  async getAllUsers(): Promise<any[]> {
-    const result = await this.db
-      .prepare('SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC')
-      .all();
-    return result.results || [];
-  }
-
+  // Users - additional methods
   async createNewUser(email: string, passwordHash: string, name: string, role: string): Promise<string> {
     const id = globalThis.crypto.randomUUID();
     await this.db

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ヘルプセンター - 200戸土地仕入れ管理システム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/dark-mode.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="max-w-6xl mx-auto py-8 px-4">
+        <!-- ヘッダー -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-question-circle mr-2"></i>
+                ヘルプセンター
+            </h1>
+            <p class="text-gray-600">
+                よくある質問と詳しい使い方のガイドです
+            </p>
+            
+            <!-- 検索バー -->
+            <div class="mt-6">
+                <div class="relative">
+                    <input type="text" id="search-input" 
+                           placeholder="質問を検索..." 
+                           class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- カテゴリー -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <button class="category-btn active bg-white p-4 rounded-lg shadow hover:shadow-lg transition text-center" data-category="all">
+                <i class="fas fa-th-large text-3xl text-blue-600 mb-2"></i>
+                <h3 class="font-semibold">すべて</h3>
+            </button>
+            <button class="category-btn bg-white p-4 rounded-lg shadow hover:shadow-lg transition text-center" data-category="getting-started">
+                <i class="fas fa-rocket text-3xl text-green-600 mb-2"></i>
+                <h3 class="font-semibold">はじめに</h3>
+            </button>
+            <button class="category-btn bg-white p-4 rounded-lg shadow hover:shadow-lg transition text-center" data-category="features">
+                <i class="fas fa-cog text-3xl text-purple-600 mb-2"></i>
+                <h3 class="font-semibold">機能</h3>
+            </button>
+            <button class="category-btn bg-white p-4 rounded-lg shadow hover:shadow-lg transition text-center" data-category="troubleshooting">
+                <i class="fas fa-wrench text-3xl text-red-600 mb-2"></i>
+                <h3 class="font-semibold">トラブル</h3>
+            </button>
+        </div>
+
+        <!-- FAQ一覧 -->
+        <div class="space-y-4" id="faq-list">
+            <!-- はじめに -->
+            <div class="faq-item bg-white rounded-lg shadow" data-category="getting-started">
+                <button class="faq-question w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition">
+                    <span class="font-semibold text-gray-800">
+                        <i class="fas fa-user-plus text-blue-600 mr-2"></i>
+                        アカウントの作成方法は？
+                    </span>
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="faq-answer hidden p-6 pt-0 text-gray-600">
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li>トップページの「新規登録」ボタンをクリック</li>
+                        <li>メールアドレス、名前、パスワードを入力</li>
+                        <li>利用規約に同意して「登録」をクリック</li>
+                        <li>登録したメールアドレスに確認メールが送信されます</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="faq-item bg-white rounded-lg shadow" data-category="getting-started">
+                <button class="faq-question w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition">
+                    <span class="font-semibold text-gray-800">
+                        <i class="fas fa-key text-blue-600 mr-2"></i>
+                        パスワードを忘れた場合は？
+                    </span>
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="faq-answer hidden p-6 pt-0 text-gray-600">
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li>ログインページの「パスワードを忘れた方」をクリック</li>
+                        <li>登録したメールアドレスを入力</li>
+                        <li>送信されたリセットリンクから新しいパスワードを設定</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- 機能 -->
+            <div class="faq-item bg-white rounded-lg shadow" data-category="features">
+                <button class="faq-question w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition">
+                    <span class="font-semibold text-gray-800">
+                        <i class="fas fa-folder-plus text-purple-600 mr-2"></i>
+                        新規案件の作成方法は？
+                    </span>
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="faq-answer hidden p-6 pt-0 text-gray-600">
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li>ダッシュボードの「新規案件」ボタンをクリック</li>
+                        <li>物件名、住所、面積、価格などの基本情報を入力</li>
+                        <li>ステータス（調査中、交渉中など）を選択</li>
+                        <li>「保存」ボタンで案件を作成</li>
+                        <li>作成後、詳細情報やファイルを追加できます</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="faq-item bg-white rounded-lg shadow" data-category="features">
+                <button class="faq-question w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition">
+                    <span class="font-semibold text-gray-800">
+                        <i class="fas fa-comment-dots text-purple-600 mr-2"></i>
+                        チャット機能の使い方は？
+                    </span>
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="faq-answer hidden p-6 pt-0 text-gray-600">
+                    <p class="mb-2">各案件にはチャット機能が付いています：</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>案件詳細ページの「チャット」タブを開く</li>
+                        <li>メッセージを入力して送信</li>
+                        <li><code class="bg-gray-100 px-1 rounded">@ユーザー名</code>で特定のメンバーにメンション</li>
+                        <li>ファイルアイコンからファイルを添付可能</li>
+                        <li>過去のメッセージは検索機能で簡単に見つけられます</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="faq-item bg-white rounded-lg shadow" data-category="features">
+                <button class="faq-question w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition">
+                    <span class="font-semibold text-gray-800">
+                        <i class="fas fa-upload text-purple-600 mr-2"></i>
+                        ファイルのアップロード方法は？
+                    </span>
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="faq-answer hidden p-6 pt-0 text-gray-600">
+                    <p class="mb-2">2つの方法でファイルをアップロードできます：</p>
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li><strong>ファイル管理から</strong>: 案件詳細の「ファイル」タブで「アップロード」ボタンをクリック</li>
+                        <li><strong>チャットから</strong>: メッセージ送信時にファイルを添付</li>
+                    </ol>
+                    <p class="mt-2 text-sm text-gray-500">
+                        対応形式: PDF, Word, Excel, 画像ファイル（最大10MB）
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item bg-white rounded-lg shadow" data-category="features">
+                <button class="faq-question w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition">
+                    <span class="font-semibold text-gray-800">
+                        <i class="fas fa-bell text-purple-600 mr-2"></i>
+                        通知設定の変更方法は？
+                    </span>
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="faq-answer hidden p-6 pt-0 text-gray-600">
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li>右上のユーザーメニューから「設定」を選択</li>
+                        <li>「通知設定」タブを開く</li>
+                        <li>メール通知やプッシュ通知の項目をオン/オフ</li>
+                        <li>「保存」ボタンで設定を更新</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- トラブルシューティング -->
+            <div class="faq-item bg-white rounded-lg shadow" data-category="troubleshooting">
+                <button class="faq-question w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition">
+                    <span class="font-semibold text-gray-800">
+                        <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                        ログインできない場合は？
+                    </span>
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="faq-answer hidden p-6 pt-0 text-gray-600">
+                    <p class="mb-2">以下の点を確認してください：</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>メールアドレスとパスワードが正しいか確認</li>
+                        <li>Caps Lockがオンになっていないか確認</li>
+                        <li>ブラウザのキャッシュをクリアしてみる</li>
+                        <li>パスワードリセット機能を試す</li>
+                        <li>それでも解決しない場合は管理者に連絡</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="faq-item bg-white rounded-lg shadow" data-category="troubleshooting">
+                <button class="faq-question w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition">
+                    <span class="font-semibold text-gray-800">
+                        <i class="fas fa-file-excel text-red-600 mr-2"></i>
+                        ファイルがアップロードできない場合は？
+                    </span>
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="faq-answer hidden p-6 pt-0 text-gray-600">
+                    <p class="mb-2">以下を確認してください：</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>ファイルサイズが10MB以下であるか</li>
+                        <li>対応ファイル形式（PDF, Word, Excel, 画像）であるか</li>
+                        <li>インターネット接続が安定しているか</li>
+                        <li>ブラウザを最新バージョンに更新</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="faq-item bg-white rounded-lg shadow" data-category="troubleshooting">
+                <button class="faq-question w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition">
+                    <span class="font-semibold text-gray-800">
+                        <i class="fas fa-sync text-red-600 mr-2"></i>
+                        画面が正しく表示されない場合は？
+                    </span>
+                    <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="faq-answer hidden p-6 pt-0 text-gray-600">
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li>ページを再読み込み（F5キー）</li>
+                        <li>ブラウザのキャッシュとCookieをクリア</li>
+                        <li>別のブラウザで試してみる（Chrome, Firefox, Edge推奨）</li>
+                        <li>ブラウザを最新バージョンに更新</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- お問い合わせ -->
+        <div class="mt-8 bg-blue-50 rounded-lg p-8 text-center">
+            <i class="fas fa-envelope text-4xl text-blue-600 mb-4"></i>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                問題が解決しませんか？
+            </h2>
+            <p class="text-gray-600 mb-4">
+                お気軽にお問い合わせください
+            </p>
+            <a href="mailto:support@example.com" class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-paper-plane mr-2"></i>
+                お問い合わせ
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // FAQ アコーディオン
+        document.querySelectorAll('.faq-question').forEach(button => {
+            button.addEventListener('click', () => {
+                const answer = button.nextElementSibling;
+                const icon = button.querySelector('.fa-chevron-down');
+                
+                answer.classList.toggle('hidden');
+                icon.classList.toggle('rotate-180');
+            });
+        });
+
+        // カテゴリーフィルター
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const category = btn.dataset.category;
+                
+                // ボタンのアクティブ状態を更新
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active', 'ring-2', 'ring-blue-500'));
+                btn.classList.add('active', 'ring-2', 'ring-blue-500');
+                
+                // FAQをフィルター
+                document.querySelectorAll('.faq-item').forEach(item => {
+                    if (category === 'all' || item.dataset.category === category) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // 検索機能
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            
+            document.querySelectorAll('.faq-item').forEach(item => {
+                const question = item.querySelector('.faq-question span').textContent.toLowerCase();
+                const answer = item.querySelector('.faq-answer').textContent.toLowerCase();
+                
+                if (question.includes(query) || answer.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

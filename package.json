@@ -30,6 +30,7 @@
     "git:log": "git log --oneline"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.7.4",
     "@scalar/hono-api-reference": "^0.9.24",
     "@tsndr/cloudflare-worker-jwt": "^3.2.0",
     "@types/react": "^18.3.26",

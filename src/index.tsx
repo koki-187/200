@@ -11,14 +11,20 @@ import files from './routes/files';
 import proposals from './routes/proposals';
 import settings from './routes/settings';
 import notifications from './routes/notifications';
+import notificationSettings from './routes/notification-settings';
+import pushSubscriptions from './routes/push-subscriptions';
 import ocr from './routes/ocr';
 import email from './routes/email';
 import pdf from './routes/pdf';
 import r2 from './routes/r2';
+import backup from './routes/backup';
+import feedback from './routes/feedback';
+import analytics from './routes/analytics';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
 import { apiVersionMiddleware, getApiVersionInfo } from './middleware/api-version';
+import { errorTrackingMiddleware, initializeErrorTracker } from './middleware/error-tracking';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -63,6 +69,12 @@ app.use('/api/*', cors({
   credentials: true
 }));
 
+// エラートラッキング（全APIルートに適用）
+app.use('/api/*', errorTrackingMiddleware());
+
+// APIバージョン管理
+app.use('/api/*', apiVersionMiddleware());
+
 // レート制限適用
 app.use('/api/auth/login', rateLimitPresets.auth);
 app.use('/api/auth/register', rateLimitPresets.auth);
@@ -77,10 +89,15 @@ app.route('/api/files', files);
 app.route('/api/proposals', proposals);
 app.route('/api/settings', settings);
 app.route('/api/notifications', notifications);
+app.route('/api/notification-settings', notificationSettings);
+app.route('/api/push-subscriptions', pushSubscriptions);
 app.route('/api/ocr', ocr);
 app.route('/api/email', email);
 app.route('/api/pdf', pdf);
 app.route('/api/r2', r2);
+app.route('/api/backup', backup);
+app.route('/api/feedback', feedback);
+app.route('/api/analytics', analytics);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>オンボーディングチュートリアル - 200戸土地仕入れ管理システム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/dark-mode.css" rel="stylesheet">
+    <style>
+        .step { display: none; }
+        .step.active { display: block; }
+        .progress-bar { transition: width 0.3s ease; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- プログレスバー -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-2">
+                <h1 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-graduation-cap mr-2"></i>
+                    システムガイド
+                </h1>
+                <span class="text-sm text-gray-600">
+                    <span id="current-step">1</span> / <span id="total-steps">5</span>
+                </span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="progress-bar" class="progress-bar bg-blue-600 h-2 rounded-full" style="width: 20%"></div>
+            </div>
+        </div>
+
+        <!-- ステップ1: ようこそ -->
+        <div class="step active" data-step="1">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="text-center mb-6">
+                    <i class="fas fa-building text-6xl text-blue-600 mb-4"></i>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">
+                        ようこそ！
+                    </h2>
+                    <p class="text-gray-600">
+                        200戸マンション用地取得案件管理システムへようこそ。
+                        <br>このチュートリアルで基本的な使い方を学びましょう。
+                    </p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <i class="fas fa-folder-open text-3xl text-blue-600 mb-2"></i>
+                        <h3 class="font-semibold mb-1">案件管理</h3>
+                        <p class="text-sm text-gray-600">土地取得案件を一元管理</p>
+                    </div>
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <i class="fas fa-comments text-3xl text-green-600 mb-2"></i>
+                        <h3 class="font-semibold mb-1">チャット機能</h3>
+                        <p class="text-sm text-gray-600">リアルタイムコミュニケーション</p>
+                    </div>
+                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                        <i class="fas fa-file-alt text-3xl text-purple-600 mb-2"></i>
+                        <h3 class="font-semibold mb-1">ファイル管理</h3>
+                        <p class="text-sm text-gray-600">関連資料を安全に保存</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ステップ2: 案件管理 -->
+        <div class="step" data-step="2">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-folder-open mr-2"></i>
+                    案件管理
+                </h2>
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <div class="bg-blue-100 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">
+                            <span class="font-bold text-blue-600">1</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">新規案件の作成</h3>
+                            <p class="text-gray-600 text-sm">
+                                「新規案件」ボタンから、土地の住所、面積、価格などの基本情報を入力します。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-blue-100 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">
+                            <span class="font-bold text-blue-600">2</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">ステータス管理</h3>
+                            <p class="text-gray-600 text-sm">
+                                案件は「調査中」「交渉中」「契約済み」などのステータスで管理できます。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-blue-100 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">
+                            <span class="font-bold text-blue-600">3</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">詳細情報の追加</h3>
+                            <p class="text-gray-600 text-sm">
+                                案件詳細ページで、メモ、関連ファイル、チャット履歴を確認・追加できます。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400">
+                    <p class="text-sm text-yellow-800">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        <strong>ヒント:</strong> 案件一覧はステータスや日付でフィルタリングできます。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ステップ3: チャット機能 -->
+        <div class="step" data-step="3">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-comments mr-2"></i>
+                    チャット機能
+                </h2>
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <div class="bg-green-100 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">
+                            <span class="font-bold text-green-600">1</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">メッセージの送信</h3>
+                            <p class="text-gray-600 text-sm">
+                                各案件にはチャット機能があり、チームメンバーとリアルタイムで情報共有できます。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-green-100 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">
+                            <span class="font-bold text-green-600">2</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">@メンション機能</h3>
+                            <p class="text-gray-600 text-sm">
+                                <code class="bg-gray-100 px-1 rounded">@ユーザー名</code> で特定のメンバーに通知できます。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-green-100 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">
+                            <span class="font-bold text-green-600">3</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">ファイル添付</h3>
+                            <p class="text-gray-600 text-sm">
+                                メッセージにファイルを添付して、関連資料を共有できます。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 p-4 bg-blue-50 border-l-4 border-blue-400">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-search mr-2"></i>
+                        <strong>検索機能:</strong> チャット履歴は日付や送信者で検索できます。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ステップ4: ファイル管理 -->
+        <div class="step" data-step="4">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    ファイル管理
+                </h2>
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <div class="bg-purple-100 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">
+                            <span class="font-bold text-purple-600">1</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">ファイルのアップロード</h3>
+                            <p class="text-gray-600 text-sm">
+                                契約書、図面、写真などの関連ファイルを安全にアップロードできます。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-purple-100 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">
+                            <span class="font-bold text-purple-600">2</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">バージョン管理</h3>
+                            <p class="text-gray-600 text-sm">
+                                同じファイルの複数バージョンを管理し、過去のバージョンにも戻せます。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-purple-100 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">
+                            <span class="font-bold text-purple-600">3</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">アクセス管理</h3>
+                            <p class="text-gray-600 text-sm">
+                                ファイルごとにアクセス権限を設定し、セキュリティを確保できます。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 p-4 bg-green-50 border-l-4 border-green-400">
+                    <p class="text-sm text-green-800">
+                        <i class="fas fa-shield-alt mr-2"></i>
+                        <strong>セキュリティ:</strong> すべてのファイルは暗号化されて保存されます。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ステップ5: 完了 -->
+        <div class="step" data-step="5">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="text-center">
+                    <i class="fas fa-check-circle text-6xl text-green-600 mb-4"></i>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">
+                        チュートリアル完了！
+                    </h2>
+                    <p class="text-gray-600 mb-6">
+                        基本的な使い方を学びました。早速システムを使ってみましょう。
+                    </p>
+                    <div class="grid md:grid-cols-2 gap-4 mb-6">
+                        <a href="/help" class="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                            <i class="fas fa-question-circle text-2xl text-blue-600 mb-2"></i>
+                            <h3 class="font-semibold mb-1">ヘルプセンター</h3>
+                            <p class="text-sm text-gray-600">詳しい使い方を確認</p>
+                        </a>
+                        <a href="/glossary" class="block p-4 bg-green-50 rounded-lg hover:bg-green-100 transition">
+                            <i class="fas fa-book text-2xl text-green-600 mb-2"></i>
+                            <h3 class="font-semibold mb-1">用語集</h3>
+                            <p class="text-sm text-gray-600">不動産用語を確認</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ナビゲーションボタン -->
+        <div class="flex justify-between mt-8">
+            <button id="prev-btn" class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-arrow-left mr-2"></i>
+                前へ
+            </button>
+            <button id="skip-btn" class="px-6 py-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition">
+                スキップ
+            </button>
+            <button id="next-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                次へ
+                <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const totalSteps = 5;
+        let currentStep = 1;
+
+        function updateUI() {
+            // ステップ表示
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+
+            // プログレスバー
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+            document.getElementById('current-step').textContent = currentStep;
+            document.getElementById('total-steps').textContent = totalSteps;
+
+            // ボタン状態
+            document.getElementById('prev-btn').disabled = currentStep === 1;
+            document.getElementById('next-btn').textContent = currentStep === totalSteps 
+                ? '完了' 
+                : '次へ ';
+            if (currentStep === totalSteps) {
+                document.getElementById('next-btn').innerHTML = '完了 <i class="fas fa-check ml-2"></i>';
+            } else {
+                document.getElementById('next-btn').innerHTML = '次へ <i class="fas fa-arrow-right ml-2"></i>';
+            }
+        }
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                updateUI();
+            }
+        });
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateUI();
+            } else {
+                window.location.href = '/';
+            }
+        });
+
+        document.getElementById('skip-btn').addEventListener('click', () => {
+            if (confirm('チュートリアルをスキップしますか？')) {
+                window.location.href = '/';
+            }
+        });
+
+        updateUI();
+    </script>
+</body>
+</html>

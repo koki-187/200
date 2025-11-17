@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>不動産用語集 - 200戸土地仕入れ管理システム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/dark-mode.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="max-w-6xl mx-auto py-8 px-4">
+        <!-- ヘッダー -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-book mr-2"></i>
+                不動産用語集
+            </h1>
+            <p class="text-gray-600">
+                土地取得・不動産開発に関する重要用語の解説
+            </p>
+            
+            <!-- 検索バー -->
+            <div class="mt-6">
+                <div class="relative">
+                    <input type="text" id="search-input" 
+                           placeholder="用語を検索..." 
+                           class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 五十音索引 -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="font-semibold text-gray-800 mb-4">五十音で探す</h2>
+            <div class="flex flex-wrap gap-2" id="kana-index">
+                <button class="kana-btn px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" data-kana="あ">あ</button>
+                <button class="kana-btn px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" data-kana="か">か</button>
+                <button class="kana-btn px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" data-kana="さ">さ</button>
+                <button class="kana-btn px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" data-kana="た">た</button>
+                <button class="kana-btn px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" data-kana="な">な</button>
+                <button class="kana-btn px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" data-kana="は">は</button>
+                <button class="kana-btn px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" data-kana="ま">ま</button>
+                <button class="kana-btn px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" data-kana="や">や</button>
+                <button class="kana-btn px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" data-kana="ら">ら</button>
+                <button class="kana-btn px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" data-kana="わ">わ</button>
+            </div>
+        </div>
+
+        <!-- 用語リスト -->
+        <div class="space-y-4" id="glossary-list">
+            <!-- あ行 -->
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="あ">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    相続税路線価
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    相続税や贈与税の計算に使用される、国税庁が定める土地の評価額。毎年7月1日に発表され、主要な道路に面した土地の1平方メートルあたりの価格を示します。
+                </p>
+                <span class="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">評価・査定</span>
+            </div>
+
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="あ">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    青地
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    公図上で青色に着色された土地。水路や河川などの国有地を示します。青地に隣接する土地を取得する際は、境界確定や国有地との境界線確認が必要です。
+                </p>
+                <span class="inline-block px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">土地・地目</span>
+            </div>
+
+            <!-- か行 -->
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="か">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    開発許可
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    都市計画法に基づき、一定規模以上の開発行為（建築物の建築や特定工作物の建設のために行う土地の区画形質の変更）を行う際に必要な許可。市街化区域では1,000㎡以上が対象。
+                </p>
+                <span class="inline-block px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full">許認可</span>
+            </div>
+
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="か">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    容積率
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    建築物の延べ面積の敷地面積に対する割合。用途地域ごとに都市計画で定められた上限があり、建物の規模を決定する重要な要素です。
+                </p>
+                <span class="inline-block px-3 py-1 bg-yellow-100 text-yellow-700 text-sm rounded-full">建築規制</span>
+            </div>
+
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="か">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    建ぺい率
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    建築物の建築面積の敷地面積に対する割合。用途地域ごとに制限があり、敷地内の空地を確保することで、防災や環境保全を図ります。
+                </p>
+                <span class="inline-block px-3 py-1 bg-yellow-100 text-yellow-700 text-sm rounded-full">建築規制</span>
+            </div>
+
+            <!-- さ行 -->
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="さ">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    市街化区域
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    都市計画法に基づき、既に市街地を形成している区域及び概ね10年以内に優先的かつ計画的に市街化を図るべき区域。住宅や商業施設の建築が積極的に認められます。
+                </p>
+                <span class="inline-block px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">都市計画</span>
+            </div>
+
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="さ">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    市街化調整区域
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    市街化を抑制すべき区域。原則として建築物の建築や特定工作物の建設は制限されます。開発には厳しい制限があり、農林漁業用の建物など一定の用途に限定されます。
+                </p>
+                <span class="inline-block px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">都市計画</span>
+            </div>
+
+            <!-- た行 -->
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="た">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    地目
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    不動産登記法で定められた土地の用途による分類。宅地、田、畑、山林、原野、雑種地など23種類あります。地目の変更には登記が必要です。
+                </p>
+                <span class="inline-block px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">土地・地目</span>
+            </div>
+
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="た">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    地積測量図
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    土地の境界点の座標と面積を記載した図面。法務局に保管され、土地の正確な形状と面積を示します。土地取引の際の重要な資料です。
+                </p>
+                <span class="inline-block px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">土地・地目</span>
+            </div>
+
+            <!-- は行 -->
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="は">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    法定地上権
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    抵当権実行により土地と建物の所有者が異なることになった場合、建物所有者が土地利用権を持つという民法の規定。土地取得時には建物の有無と抵当権の有無を確認する必要があります。
+                </p>
+                <span class="inline-block px-3 py-1 bg-orange-100 text-orange-700 text-sm rounded-full">権利関係</span>
+            </div>
+
+            <!-- ま行 -->
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="ま">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    民泊新法
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    住宅宿泊事業法の通称。住宅を活用した宿泊サービスを提供する際のルールを定めた法律。マンション開発時に民泊利用を想定する場合は、管理規約での対応が必要です。
+                </p>
+                <span class="inline-block px-3 py-1 bg-pink-100 text-pink-700 text-sm rounded-full">法規制</span>
+            </div>
+
+            <!-- や行 -->
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="や">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    用途地域
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    都市計画法に基づき定められた、土地利用の大まかなルール。住居系、商業系、工業系の13種類があり、建築できる建物の種類や規模が定められています。
+                </p>
+                <span class="inline-block px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">都市計画</span>
+            </div>
+
+            <!-- ら行 -->
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="ら">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    路線価
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    相続税や贈与税の計算に使用する土地の評価額。国税庁が毎年7月に公表する相続税路線価と、市町村が固定資産税評価に使用する固定資産税路線価があります。
+                </p>
+                <span class="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">評価・査定</span>
+            </div>
+
+            <!-- わ行 -->
+            <div class="term-item bg-white rounded-lg shadow p-6" data-kana="わ">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bookmark text-blue-600 mr-2"></i>
+                    ワンルームマンション規制
+                </h3>
+                <p class="text-gray-600 mb-2">
+                    自治体が定める、ワンルームマンションの建設を規制する条例。専有面積の最低基準や、一定割合のファミリータイプの設置義務などが定められる場合があります。
+                </p>
+                <span class="inline-block px-3 py-1 bg-pink-100 text-pink-700 text-sm rounded-full">法規制</span>
+            </div>
+        </div>
+
+        <!-- 追加情報 -->
+        <div class="mt-8 bg-green-50 rounded-lg p-8">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-3xl text-green-600 mr-4 flex-shrink-0"></i>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">
+                        用語について
+                    </h2>
+                    <p class="text-gray-600 mb-2">
+                        この用語集は、土地取得・マンション開発に関連する基本的な不動産用語を解説しています。
+                    </p>
+                    <p class="text-gray-600">
+                        より詳しい情報が必要な場合は、<a href="/help" class="text-blue-600 hover:underline">ヘルプセンター</a>をご覧いただくか、管理者にお問い合わせください。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 検索機能
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            
+            document.querySelectorAll('.term-item').forEach(item => {
+                const title = item.querySelector('h3').textContent.toLowerCase();
+                const content = item.querySelector('p').textContent.toLowerCase();
+                
+                if (title.includes(query) || content.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // 五十音フィルター
+        document.querySelectorAll('.kana-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const kana = btn.dataset.kana;
+                
+                // ボタンのアクティブ状態を更新
+                document.querySelectorAll('.kana-btn').forEach(b => {
+                    b.classList.remove('bg-blue-500', 'text-white');
+                    b.classList.add('bg-blue-100', 'text-blue-700');
+                });
+                btn.classList.remove('bg-blue-100', 'text-blue-700');
+                btn.classList.add('bg-blue-500', 'text-white');
+                
+                // 用語をフィルター
+                document.querySelectorAll('.term-item').forEach(item => {
+                    if (item.dataset.kana === kana) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                // 該当する最初の用語までスクロール
+                const firstMatch = document.querySelector(`.term-item[data-kana="${kana}"]`);
+                if (firstMatch) {
+                    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

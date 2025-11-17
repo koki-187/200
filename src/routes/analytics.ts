@@ -1,0 +1,388 @@
+import { Hono } from 'hono';
+import { jwt } from 'hono/jwt';
+import type { Bindings } from '../types';
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+// JWT認証を適用
+app.use('*', async (c, next) => {
+  const jwtMiddleware = jwt({
+    secret: c.env.JWT_SECRET || 'default-secret-key-change-in-production',
+  });
+  return jwtMiddleware(c, next);
+});
+
+// KPIダッシュボード - 全体概要
+app.get('/kpi/dashboard', async (c) => {
+  try {
+    // 案件統計
+    const totalDeals = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM deals
+    `).first();
+
+    const dealsByStatus = await c.env.DB.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM deals
+      GROUP BY status
+    `).all();
+
+    const totalValue = await c.env.DB.prepare(`
+      SELECT SUM(estimated_value) as total
+      FROM deals
+      WHERE status IN ('negotiating', 'contracted')
+    `).first();
+
+    // 今月の新規案件
+    const newDealsThisMonth = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM deals
+      WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
+    `).first();
+
+    // 今月の成約件数
+    const contractedThisMonth = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM deals
+      WHERE status = 'contracted'
+        AND strftime('%Y-%m', updated_at) = strftime('%Y-%m', 'now')
+    `).first();
+
+    // アクティブユーザー数
+    const activeUsers = await c.env.DB.prepare(`
+      SELECT COUNT(DISTINCT user_id) as count
+      FROM messages
+      WHERE created_at >= datetime('now', '-30 days')
+    `).first();
+
+    // メッセージ統計
+    const totalMessages = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM messages
+    `).first();
+
+    const messagesThisWeek = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM messages
+      WHERE created_at >= datetime('now', '-7 days')
+    `).first();
+
+    // ファイル統計
+    const totalFiles = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM files WHERE deleted_at IS NULL
+    `).first();
+
+    const filesThisMonth = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM files
+      WHERE created_at >= datetime('now', '-30 days')
+        AND deleted_at IS NULL
+    `).first();
+
+    return c.json({
+      deals: {
+        total: totalDeals?.count || 0,
+        byStatus: dealsByStatus.results,
+        totalValue: totalValue?.total || 0,
+        newThisMonth: newDealsThisMonth?.count || 0,
+        contractedThisMonth: contractedThisMonth?.count || 0,
+      },
+      users: {
+        activeUsers: activeUsers?.count || 0,
+      },
+      messages: {
+        total: totalMessages?.count || 0,
+        thisWeek: messagesThisWeek?.count || 0,
+      },
+      files: {
+        total: totalFiles?.count || 0,
+        thisMonth: filesThisMonth?.count || 0,
+      },
+    });
+  } catch (error: any) {
+    console.error('Failed to get KPI dashboard:', error);
+    return c.json({ error: 'KPIダッシュボードの取得に失敗しました' }, 500);
+  }
+});
+
+// 月次レポート
+app.get('/reports/monthly', async (c) => {
+  const { year, month } = c.req.query();
+  
+  if (!year || !month) {
+    return c.json({ error: 'year と month パラメータが必要です' }, 400);
+  }
+
+  const targetMonth = `${year}-${month.padStart(2, '0')}`;
+
+  try {
+    // 新規案件数
+    const newDeals = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM deals
+      WHERE strftime('%Y-%m', created_at) = ?
+    `).bind(targetMonth).first();
+
+    // 成約件数
+    const contractedDeals = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count, SUM(estimated_value) as total_value
+      FROM deals
+      WHERE status = 'contracted'
+        AND strftime('%Y-%m', updated_at) = ?
+    `).bind(targetMonth).first();
+
+    // 進行中案件数
+    const activeDeals = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM deals
+      WHERE status IN ('investigating', 'negotiating')
+        AND strftime('%Y-%m', created_at) <= ?
+    `).bind(targetMonth + '-31').first();
+
+    // メッセージ数
+    const messages = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM messages
+      WHERE strftime('%Y-%m', created_at) = ?
+    `).bind(targetMonth).first();
+
+    // アップロードファイル数
+    const files = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count, SUM(size) as total_size
+      FROM files
+      WHERE strftime('%Y-%m', created_at) = ?
+        AND deleted_at IS NULL
+    `).bind(targetMonth).first();
+
+    // ユーザーアクティビティ
+    const activeUsers = await c.env.DB.prepare(`
+      SELECT COUNT(DISTINCT user_id) as count
+      FROM messages
+      WHERE strftime('%Y-%m', created_at) = ?
+    `).bind(targetMonth).first();
+
+    return c.json({
+      period: {
+        year: parseInt(year),
+        month: parseInt(month),
+      },
+      deals: {
+        new: newDeals?.count || 0,
+        contracted: contractedDeals?.count || 0,
+        contractedValue: contractedDeals?.total_value || 0,
+        active: activeDeals?.count || 0,
+      },
+      activity: {
+        messages: messages?.count || 0,
+        files: files?.count || 0,
+        filesSize: files?.total_size || 0,
+        activeUsers: activeUsers?.count || 0,
+      },
+    });
+  } catch (error: any) {
+    console.error('Failed to generate monthly report:', error);
+    return c.json({ error: '月次レポートの生成に失敗しました' }, 500);
+  }
+});
+
+// トレンド分析 - 案件推移
+app.get('/trends/deals', async (c) => {
+  const { period = '12' } = c.req.query(); // デフォルト12ヶ月
+
+  try {
+    const months = parseInt(period);
+    
+    // 月別の新規案件数
+    const newDeals = await c.env.DB.prepare(`
+      SELECT 
+        strftime('%Y-%m', created_at) as month,
+        COUNT(*) as count
+      FROM deals
+      WHERE created_at >= datetime('now', '-' || ? || ' months')
+      GROUP BY month
+      ORDER BY month
+    `).bind(months).all();
+
+    // 月別の成約件数
+    const contractedDeals = await c.env.DB.prepare(`
+      SELECT 
+        strftime('%Y-%m', updated_at) as month,
+        COUNT(*) as count,
+        SUM(estimated_value) as total_value
+      FROM deals
+      WHERE status = 'contracted'
+        AND updated_at >= datetime('now', '-' || ? || ' months')
+      GROUP BY month
+      ORDER BY month
+    `).bind(months).all();
+
+    // ステータス別推移
+    const statusTrend = await c.env.DB.prepare(`
+      SELECT 
+        strftime('%Y-%m', created_at) as month,
+        status,
+        COUNT(*) as count
+      FROM deals
+      WHERE created_at >= datetime('now', '-' || ? || ' months')
+      GROUP BY month, status
+      ORDER BY month, status
+    `).bind(months).all();
+
+    return c.json({
+      newDeals: newDeals.results,
+      contractedDeals: contractedDeals.results,
+      statusTrend: statusTrend.results,
+    });
+  } catch (error: any) {
+    console.error('Failed to get deal trends:', error);
+    return c.json({ error: 'トレンドデータの取得に失敗しました' }, 500);
+  }
+});
+
+// トレンド分析 - ユーザーアクティビティ
+app.get('/trends/activity', async (c) => {
+  const { period = '30' } = c.req.query(); // デフォルト30日
+
+  try {
+    const days = parseInt(period);
+    
+    // 日別のメッセージ数
+    const messageActivity = await c.env.DB.prepare(`
+      SELECT 
+        date(created_at) as date,
+        COUNT(*) as count,
+        COUNT(DISTINCT user_id) as active_users
+      FROM messages
+      WHERE created_at >= datetime('now', '-' || ? || ' days')
+      GROUP BY date
+      ORDER BY date
+    `).bind(days).all();
+
+    // 日別のファイルアップロード数
+    const fileActivity = await c.env.DB.prepare(`
+      SELECT 
+        date(created_at) as date,
+        COUNT(*) as count,
+        SUM(size) as total_size
+      FROM files
+      WHERE created_at >= datetime('now', '-' || ? || ' days')
+        AND deleted_at IS NULL
+      GROUP BY date
+      ORDER BY date
+    `).bind(days).all();
+
+    // ユーザー別のアクティビティランキング
+    const topUsers = await c.env.DB.prepare(`
+      SELECT 
+        u.id,
+        u.name,
+        u.email,
+        COUNT(m.id) as message_count,
+        COUNT(DISTINCT m.deal_id) as active_deals
+      FROM users u
+      LEFT JOIN messages m ON u.id = m.user_id 
+        AND m.created_at >= datetime('now', '-' || ? || ' days')
+      GROUP BY u.id
+      ORDER BY message_count DESC
+      LIMIT 10
+    `).bind(days).all();
+
+    return c.json({
+      messageActivity: messageActivity.results,
+      fileActivity: fileActivity.results,
+      topUsers: topUsers.results,
+    });
+  } catch (error: any) {
+    console.error('Failed to get activity trends:', error);
+    return c.json({ error: 'アクティビティデータの取得に失敗しました' }, 500);
+  }
+});
+
+// 成約率分析
+app.get('/analytics/conversion', async (c) => {
+  try {
+    // 全案件の成約率
+    const totalDeals = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM deals
+    `).first();
+
+    const contractedDeals = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM deals WHERE status = 'contracted'
+    `).first();
+
+    const conversionRate = totalDeals && totalDeals.count > 0
+      ? (contractedDeals?.count || 0) / totalDeals.count * 100
+      : 0;
+
+    // ステータス別の案件数
+    const dealsByStatus = await c.env.DB.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM deals
+      GROUP BY status
+    `).all();
+
+    // 平均成約期間（調査中から契約まで）
+    const avgContractTime = await c.env.DB.prepare(`
+      SELECT AVG(julianday(updated_at) - julianday(created_at)) as avg_days
+      FROM deals
+      WHERE status = 'contracted'
+    `).first();
+
+    return c.json({
+      conversionRate: conversionRate.toFixed(2),
+      totalDeals: totalDeals?.count || 0,
+      contractedDeals: contractedDeals?.count || 0,
+      dealsByStatus: dealsByStatus.results,
+      avgContractDays: Math.round(avgContractTime?.avg_days || 0),
+    });
+  } catch (error: any) {
+    console.error('Failed to get conversion analytics:', error);
+    return c.json({ error: '成約率分析の取得に失敗しました' }, 500);
+  }
+});
+
+// エクスポート - CSV形式でレポートをエクスポート
+app.get('/export/deals', async (c) => {
+  const { format = 'json' } = c.req.query();
+
+  try {
+    const { results: deals } = await c.env.DB.prepare(`
+      SELECT 
+        d.*,
+        u.name as created_by_name
+      FROM deals d
+      LEFT JOIN users u ON d.created_by = u.id
+      ORDER BY d.created_at DESC
+    `).all();
+
+    if (format === 'csv') {
+      // CSV形式で出力
+      const headers = ['ID', 'タイトル', 'ステータス', '予想金額', '作成者', '作成日'];
+      const rows = deals.map((d: any) => [
+        d.id,
+        d.title,
+        d.status,
+        d.estimated_value || 0,
+        d.created_by_name,
+        d.created_at,
+      ]);
+
+      const csv = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      return new Response(csv, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="deals-export.csv"',
+        },
+      });
+    }
+
+    return c.json({ deals });
+  } catch (error: any) {
+    console.error('Failed to export deals:', error);
+    return c.json({ error: 'データのエクスポートに失敗しました' }, 500);
+  }
+});
+
+export default app;

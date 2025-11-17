@@ -30,6 +30,7 @@
     "git:log": "git log --oneline"
   },
   "dependencies": {
+    "@scalar/hono-api-reference": "^0.9.24",
     "@tsndr/cloudflare-worker-jwt": "^3.2.0",
     "@types/react": "^18.3.26",
     "@types/react-dom": "^18.3.7",
@@ -44,6 +45,7 @@
     "resend": "^6.4.2",
     "xlsx": "^0.18.5",
     "zod": "^4.1.12",
+    "zod-to-json-schema": "^3.24.6",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

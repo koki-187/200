@@ -18,6 +18,7 @@ import r2 from './routes/r2';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
+import { apiVersionMiddleware, getApiVersionInfo } from './middleware/api-version';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -84,6 +85,35 @@ app.route('/api/r2', r2);
 // ヘルスチェック
 app.get('/api/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// APIバージョン情報
+app.get('/api/version', (c) => {
+  return c.json(getApiVersionInfo());
+});
+
+// OpenAPI仕様書
+app.get('/api/openapi.json', async (c) => {
+  const { generateOpenApiSpec } = await import('./openapi/spec');
+  return c.json(generateOpenApiSpec());
+});
+
+// API Documentation UI
+app.get('/api/docs', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>API Documentation - 200戸土地仕入れ管理システム</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <script id="api-reference" data-url="/api/openapi.json"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+</body>
+</html>
+  `);
 });
 
 // 静的ファイルの配信

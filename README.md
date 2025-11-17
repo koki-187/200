@@ -3,7 +3,8 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-**URL**: https://real-estate-200units-v2.pages.dev
+- **Production URL**: https://e20ab1c4.real-estate-200units-v2.pages.dev
+- **Project URL**: https://real-estate-200units-v2.pages.dev
 
 ### デフォルトログイン情報
 

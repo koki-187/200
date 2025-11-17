@@ -151,6 +151,732 @@ app.get('/api/docs', (c) => {
   `);
 });
 
+// ダッシュボードページ
+app.get('/dashboard', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ダッシュボード - 200戸土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+  <!-- ヘッダー -->
+  <header class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-4">
+        <div class="flex items-center">
+          <i class="fas fa-building text-purple-600 text-2xl mr-3"></i>
+          <h1 class="text-xl font-bold text-gray-800">200戸土地仕入れ管理</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span id="user-name" class="text-gray-700"></span>
+          <span id="user-role" class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700"></span>
+          <button onclick="logout()" class="text-gray-600 hover:text-gray-800">
+            <i class="fas fa-sign-out-alt"></i> ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- KPIカード -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <!-- 総案件数 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">総案件数</p>
+            <p id="total-deals" class="text-3xl font-bold text-gray-900">-</p>
+          </div>
+          <div class="bg-blue-100 rounded-full p-3">
+            <i class="fas fa-folder text-blue-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- 進行中 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">進行中</p>
+            <p id="in-progress-deals" class="text-3xl font-bold text-yellow-600">-</p>
+          </div>
+          <div class="bg-yellow-100 rounded-full p-3">
+            <i class="fas fa-clock text-yellow-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- 回答済み -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">回答済み</p>
+            <p id="replied-deals" class="text-3xl font-bold text-green-600">-</p>
+          </div>
+          <div class="bg-green-100 rounded-full p-3">
+            <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- 完了 -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">完了</p>
+            <p id="closed-deals" class="text-3xl font-bold text-gray-600">-</p>
+          </div>
+          <div class="bg-gray-100 rounded-full p-3">
+            <i class="fas fa-archive text-gray-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ナビゲーションタブ -->
+    <div class="bg-white rounded-lg shadow mb-6">
+      <div class="border-b">
+        <nav class="flex space-x-8 px-6" aria-label="Tabs">
+          <a href="/deals" class="border-b-2 border-purple-600 py-4 px-1 text-sm font-medium text-purple-600">
+            <i class="fas fa-list mr-2"></i>案件一覧
+          </a>
+          <a href="/api/docs" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+            <i class="fas fa-book mr-2"></i>APIドキュメント
+          </a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- 最近の案件 -->
+    <div class="bg-white rounded-lg shadow">
+      <div class="px-6 py-4 border-b">
+        <h2 class="text-lg font-semibold text-gray-900">最近の案件</h2>
+      </div>
+      <div class="p-6">
+        <div id="recent-deals" class="space-y-4">
+          <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+            <p>読み込み中...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    // 認証チェック
+    const token = localStorage.getItem('auth_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!token) {
+      window.location.href = '/';
+    }
+
+    // ユーザー情報表示
+    if (user.name) {
+      document.getElementById('user-name').textContent = user.name;
+      document.getElementById('user-role').textContent = user.role;
+    }
+
+    // ログアウト
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+
+    // KPIデータ取得
+    async function loadKPIs() {
+      try {
+        const response = await axios.get('/api/deals', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        const deals = response.data;
+        const statusCounts = {
+          total: deals.length,
+          NEW: 0,
+          IN_REVIEW: 0,
+          REPLIED: 0,
+          CLOSED: 0
+        };
+
+        deals.forEach(deal => {
+          if (statusCounts[deal.status] !== undefined) {
+            statusCounts[deal.status]++;
+          }
+        });
+
+        document.getElementById('total-deals').textContent = statusCounts.total;
+        document.getElementById('in-progress-deals').textContent = statusCounts.NEW + statusCounts.IN_REVIEW;
+        document.getElementById('replied-deals').textContent = statusCounts.REPLIED;
+        document.getElementById('closed-deals').textContent = statusCounts.CLOSED;
+
+        // 最近の案件を表示
+        displayRecentDeals(deals.slice(0, 5));
+      } catch (error) {
+        console.error('Failed to load KPIs:', error);
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    // 最近の案件を表示
+    function displayRecentDeals(deals) {
+      const container = document.getElementById('recent-deals');
+      
+      if (deals.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-gray-500"><p>案件がありません</p></div>';
+        return;
+      }
+
+      const statusColors = {
+        'NEW': 'bg-blue-100 text-blue-800',
+        'IN_REVIEW': 'bg-yellow-100 text-yellow-800',
+        'REPLIED': 'bg-green-100 text-green-800',
+        'CLOSED': 'bg-gray-100 text-gray-800'
+      };
+
+      const statusLabels = {
+        'NEW': '新規',
+        'IN_REVIEW': 'レビュー中',
+        'REPLIED': '回答済み',
+        'CLOSED': '終了'
+      };
+
+      container.innerHTML = deals.map(deal => \`
+        <div class="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onclick="viewDeal('\${deal.id}')">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-semibold text-gray-900">\${deal.title}</h3>
+            <span class="px-2 py-1 rounded text-xs font-medium \${statusColors[deal.status] || 'bg-gray-100 text-gray-800'}">
+              \${statusLabels[deal.status] || deal.status}
+            </span>
+          </div>
+          <div class="text-sm text-gray-600 space-y-1">
+            <p><i class="fas fa-map-marker-alt mr-2"></i>\${deal.location || '-'}</p>
+            <p><i class="fas fa-calendar mr-2"></i>作成: \${new Date(deal.created_at).toLocaleDateString('ja-JP')}</p>
+          </div>
+        </div>
+      \`).join('');
+    }
+
+    // 案件詳細へ遷移
+    function viewDeal(dealId) {
+      window.location.href = '/deals/' + dealId;
+    }
+
+    // ページ読み込み時
+    loadKPIs();
+  </script>
+</body>
+</html>
+  `);
+});
+
+// 案件一覧ページ
+app.get('/deals', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>案件一覧 - 200戸土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+  <!-- ヘッダー -->
+  <header class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-4">
+        <div class="flex items-center">
+          <a href="/dashboard" class="flex items-center hover:opacity-80">
+            <i class="fas fa-building text-purple-600 text-2xl mr-3"></i>
+            <h1 class="text-xl font-bold text-gray-800">200戸土地仕入れ管理</h1>
+          </a>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span id="user-name" class="text-gray-700"></span>
+          <button onclick="logout()" class="text-gray-600 hover:text-gray-800">
+            <i class="fas fa-sign-out-alt"></i> ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- ページヘッダー -->
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-gray-900">案件一覧</h2>
+      <p class="text-gray-600 mt-1">全ての土地仕入れ案件を管理します</p>
+    </div>
+
+    <!-- フィルター・検索 -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">ステータス</label>
+          <select id="filter-status" onchange="filterDeals()" class="w-full border rounded px-3 py-2">
+            <option value="">全て</option>
+            <option value="NEW">新規</option>
+            <option value="IN_REVIEW">レビュー中</option>
+            <option value="REPLIED">回答済み</option>
+            <option value="CLOSED">終了</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">検索</label>
+          <input type="text" id="search-query" onkeyup="filterDeals()" placeholder="案件名、所在地..." class="w-full border rounded px-3 py-2">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">並び順</label>
+          <select id="sort-by" onchange="sortDeals()" class="w-full border rounded px-3 py-2">
+            <option value="created_at_desc">作成日（新しい順）</option>
+            <option value="created_at_asc">作成日（古い順）</option>
+            <option value="updated_at_desc">更新日（新しい順）</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button onclick="resetFilters()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded">
+            <i class="fas fa-redo mr-2"></i>リセット
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 案件リスト -->
+    <div class="bg-white rounded-lg shadow">
+      <div id="deals-container" class="divide-y">
+        <div class="p-8 text-center text-gray-500">
+          <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+          <p>読み込み中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ページネーション -->
+    <div id="pagination" class="mt-6 flex justify-center"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    const token = localStorage.getItem('auth_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!token) {
+      window.location.href = '/';
+    }
+
+    if (user.name) {
+      document.getElementById('user-name').textContent = user.name;
+    }
+
+    let allDeals = [];
+    let filteredDeals = [];
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+
+    async function loadDeals() {
+      try {
+        const response = await axios.get('/api/deals', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        allDeals = response.data;
+        filteredDeals = [...allDeals];
+        displayDeals();
+      } catch (error) {
+        console.error('Failed to load deals:', error);
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+        document.getElementById('deals-container').innerHTML = 
+          '<div class="p-8 text-center text-red-600"><p>案件の読み込みに失敗しました</p></div>';
+      }
+    }
+
+    function filterDeals() {
+      const status = document.getElementById('filter-status').value;
+      const query = document.getElementById('search-query').value.toLowerCase();
+
+      filteredDeals = allDeals.filter(deal => {
+        const matchStatus = !status || deal.status === status;
+        const matchQuery = !query || 
+          deal.title.toLowerCase().includes(query) || 
+          (deal.location && deal.location.toLowerCase().includes(query));
+        return matchStatus && matchQuery;
+      });
+
+      sortDeals();
+    }
+
+    function sortDeals() {
+      const sortBy = document.getElementById('sort-by').value;
+
+      filteredDeals.sort((a, b) => {
+        if (sortBy === 'created_at_desc') {
+          return new Date(b.created_at) - new Date(a.created_at);
+        } else if (sortBy === 'created_at_asc') {
+          return new Date(a.created_at) - new Date(b.created_at);
+        } else if (sortBy === 'updated_at_desc') {
+          return new Date(b.updated_at) - new Date(a.updated_at);
+        }
+        return 0;
+      });
+
+      displayDeals();
+    }
+
+    function resetFilters() {
+      document.getElementById('filter-status').value = '';
+      document.getElementById('search-query').value = '';
+      document.getElementById('sort-by').value = 'created_at_desc';
+      filteredDeals = [...allDeals];
+      sortDeals();
+    }
+
+    function displayDeals() {
+      const container = document.getElementById('deals-container');
+
+      if (filteredDeals.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center text-gray-500"><p>案件がありません</p></div>';
+        return;
+      }
+
+      const statusColors = {
+        'NEW': 'bg-blue-100 text-blue-800',
+        'IN_REVIEW': 'bg-yellow-100 text-yellow-800',
+        'REPLIED': 'bg-green-100 text-green-800',
+        'CLOSED': 'bg-gray-100 text-gray-800'
+      };
+
+      const statusLabels = {
+        'NEW': '新規',
+        'IN_REVIEW': 'レビュー中',
+        'REPLIED': '回答済み',
+        'CLOSED': '終了'
+      };
+
+      container.innerHTML = filteredDeals.map(deal => \`
+        <div class="p-6 hover:bg-gray-50 cursor-pointer" onclick="viewDeal('\${deal.id}')">
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <div class="flex items-center mb-2">
+                <h3 class="text-lg font-semibold text-gray-900 mr-3">\${deal.title}</h3>
+                <span class="px-2 py-1 rounded text-xs font-medium \${statusColors[deal.status] || 'bg-gray-100 text-gray-800'}">
+                  \${statusLabels[deal.status] || deal.status}
+                </span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                <div>
+                  <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                  <span>\${deal.location || '-'}</span>
+                </div>
+                <div>
+                  <i class="fas fa-ruler-combined mr-2 text-gray-400"></i>
+                  <span>土地面積: \${deal.land_area || '-'}</span>
+                </div>
+                <div>
+                  <i class="fas fa-yen-sign mr-2 text-gray-400"></i>
+                  <span>希望価格: \${deal.desired_price || '-'}</span>
+                </div>
+              </div>
+              <div class="mt-2 text-xs text-gray-500">
+                <span>作成: \${new Date(deal.created_at).toLocaleDateString('ja-JP')}</span>
+                <span class="mx-2">•</span>
+                <span>更新: \${new Date(deal.updated_at).toLocaleDateString('ja-JP')}</span>
+              </div>
+            </div>
+            <div class="ml-4">
+              <i class="fas fa-chevron-right text-gray-400"></i>
+            </div>
+          </div>
+        </div>
+      \`).join('');
+    }
+
+    function viewDeal(dealId) {
+      window.location.href = '/deals/' + dealId;
+    }
+
+    loadDeals();
+  </script>
+</body>
+</html>
+  `);
+});
+
+// 案件詳細ページ
+app.get('/deals/:id', (c) => {
+  const dealId = c.req.param('id');
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>案件詳細 - 200戸土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+  <!-- ヘッダー -->
+  <header class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-4">
+        <div class="flex items-center">
+          <a href="/deals" class="text-gray-600 hover:text-gray-800 mr-4">
+            <i class="fas fa-arrow-left"></i>
+          </a>
+          <a href="/dashboard" class="flex items-center hover:opacity-80">
+            <i class="fas fa-building text-purple-600 text-2xl mr-3"></i>
+            <h1 class="text-xl font-bold text-gray-800">200戸土地仕入れ管理</h1>
+          </a>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span id="user-name" class="text-gray-700"></span>
+          <button onclick="logout()" class="text-gray-600 hover:text-gray-800">
+            <i class="fas fa-sign-out-alt"></i> ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div id="deal-content">
+      <div class="text-center py-12">
+        <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-4"></i>
+        <p class="text-gray-600">読み込み中...</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    const token = localStorage.getItem('auth_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const dealId = '${dealId}';
+
+    if (!token) {
+      window.location.href = '/';
+    }
+
+    if (user.name) {
+      document.getElementById('user-name').textContent = user.name;
+    }
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+
+    async function loadDeal() {
+      try {
+        const response = await axios.get('/api/deals/' + dealId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        const deal = response.data;
+        displayDeal(deal);
+      } catch (error) {
+        console.error('Failed to load deal:', error);
+        if (error.response && error.response.status === 401) {
+          logout();
+        } else if (error.response && error.response.status === 404) {
+          document.getElementById('deal-content').innerHTML = \`
+            <div class="text-center py-12">
+              <i class="fas fa-exclamation-circle text-5xl text-red-500 mb-4"></i>
+              <h2 class="text-2xl font-bold text-gray-900 mb-2">案件が見つかりません</h2>
+              <p class="text-gray-600 mb-6">指定された案件は存在しないか、削除されました。</p>
+              <a href="/deals" class="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700">
+                案件一覧に戻る
+              </a>
+            </div>
+          \`;
+        } else {
+          document.getElementById('deal-content').innerHTML = \`
+            <div class="text-center py-12 text-red-600">
+              <i class="fas fa-exclamation-triangle text-5xl mb-4"></i>
+              <p>案件の読み込みに失敗しました</p>
+            </div>
+          \`;
+        }
+      }
+    }
+
+    function displayDeal(deal) {
+      const statusColors = {
+        'NEW': 'bg-blue-100 text-blue-800',
+        'IN_REVIEW': 'bg-yellow-100 text-yellow-800',
+        'REPLIED': 'bg-green-100 text-green-800',
+        'CLOSED': 'bg-gray-100 text-gray-800'
+      };
+
+      const statusLabels = {
+        'NEW': '新規',
+        'IN_REVIEW': 'レビュー中',
+        'REPLIED': '回答済み',
+        'CLOSED': '終了'
+      };
+
+      document.getElementById('deal-content').innerHTML = \`
+        <!-- ヘッダー -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900 mb-2">\${deal.title}</h2>
+              <span class="px-3 py-1 rounded text-sm font-medium \${statusColors[deal.status] || 'bg-gray-100 text-gray-800'}">
+                \${statusLabels[deal.status] || deal.status}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- タブナビゲーション -->
+        <div class="bg-white rounded-lg shadow mb-6">
+          <div class="border-b">
+            <nav class="flex space-x-8 px-6" aria-label="Tabs">
+              <button onclick="showTab('info')" id="tab-info" class="tab-button border-b-2 border-purple-600 py-4 px-1 text-sm font-medium text-purple-600">
+                <i class="fas fa-info-circle mr-2"></i>基本情報
+              </button>
+              <button onclick="showTab('files')" id="tab-files" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <i class="fas fa-file mr-2"></i>ファイル
+              </button>
+              <button onclick="showTab('messages')" id="tab-messages" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <i class="fas fa-comments mr-2"></i>メッセージ
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        <!-- タブコンテンツ -->
+        <div id="tab-content">
+          <!-- 基本情報タブ -->
+          <div id="content-info" class="tab-content">
+            <div class="bg-white rounded-lg shadow p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">案件詳細情報</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">所在地</label>
+                  <p class="text-gray-900">\${deal.location || '-'}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">最寄り駅</label>
+                  <p class="text-gray-900">\${deal.station || '-'}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">徒歩分数</label>
+                  <p class="text-gray-900">\${deal.walk_minutes ? deal.walk_minutes + '分' : '-'}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">土地面積</label>
+                  <p class="text-gray-900">\${deal.land_area || '-'}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">用途地域</label>
+                  <p class="text-gray-900">\${deal.zoning || '-'}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">建蔽率</label>
+                  <p class="text-gray-900">\${deal.building_coverage || '-'}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">容積率</label>
+                  <p class="text-gray-900">\${deal.floor_area_ratio || '-'}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">高度地区</label>
+                  <p class="text-gray-900">\${deal.height_district || '-'}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">防火地域</label>
+                  <p class="text-gray-900">\${deal.fire_zone || '-'}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">希望価格</label>
+                  <p class="text-gray-900">\${deal.desired_price || '-'}</p>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">道路情報</label>
+                  <p class="text-gray-900">\${deal.road_info || '-'}</p>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">現況</label>
+                  <p class="text-gray-900">\${deal.current_status || '-'}</p>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">備考</label>
+                  <p class="text-gray-900">\${deal.remarks || '-'}</p>
+                </div>
+              </div>
+              <div class="mt-6 pt-6 border-t text-sm text-gray-600">
+                <p><strong>作成日時:</strong> \${new Date(deal.created_at).toLocaleString('ja-JP')}</p>
+                <p><strong>更新日時:</strong> \${new Date(deal.updated_at).toLocaleString('ja-JP')}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ファイルタブ -->
+          <div id="content-files" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">ファイル一覧</h3>
+              <p class="text-gray-600">ファイル管理機能は開発中です。</p>
+            </div>
+          </div>
+
+          <!-- メッセージタブ -->
+          <div id="content-messages" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">メッセージ</h3>
+              <p class="text-gray-600">メッセージ機能は開発中です。</p>
+            </div>
+          </div>
+        </div>
+      \`;
+    }
+
+    function showTab(tab) {
+      // タブボタンのスタイル更新
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('border-purple-600', 'text-purple-600');
+        btn.classList.add('border-transparent', 'text-gray-500');
+      });
+      document.getElementById('tab-' + tab).classList.remove('border-transparent', 'text-gray-500');
+      document.getElementById('tab-' + tab).classList.add('border-purple-600', 'text-purple-600');
+
+      // タブコンテンツの表示切替
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.getElementById('content-' + tab).classList.remove('hidden');
+    }
+
+    loadDeal();
+  </script>
+</body>
+</html>
+  `);
+});
+
 // ルートページ - ログイン画面
 app.get('/', (c) => {
   return c.html(`
@@ -289,11 +1015,8 @@ app.get('/', (c) => {
           localStorage.setItem('auth_token', response.data.token);
           localStorage.setItem('user', JSON.stringify(response.data.user));
           
-          // ダッシュボードにリダイレクト（将来実装）
-          alert('ログイン成功！\\n\\nユーザー: ' + response.data.user.name + '\\nロール: ' + response.data.user.role);
-          
-          // API動作確認用に /api/docs にリダイレクト
-          window.location.href = '/api/docs';
+          // ダッシュボードにリダイレクト
+          window.location.href = '/dashboard';
         }
       } catch (error) {
         console.error('Login error:', error);

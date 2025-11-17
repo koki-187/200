@@ -29,7 +29,7 @@ const feedbackSchema = z.object({
 // フィードバックを送信
 app.post('/', zValidator('json', feedbackSchema), async (c) => {
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
   const data = c.req.valid('json');
 
   try {
@@ -91,7 +91,7 @@ app.post('/', zValidator('json', feedbackSchema), async (c) => {
 // フィードバック一覧を取得（管理者のみ）
 app.get('/', async (c) => {
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
 
   // 管理者権限確認
   const user = await c.env.DB.prepare(`
@@ -145,7 +145,7 @@ app.get('/', async (c) => {
 app.get('/:id', async (c) => {
   const feedbackId = c.req.param('id');
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
 
   try {
     const feedback = await c.env.DB.prepare(`
@@ -184,7 +184,7 @@ app.get('/:id', async (c) => {
 app.patch('/:id/status', async (c) => {
   const feedbackId = c.req.param('id');
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
 
   // 管理者権限確認
   const user = await c.env.DB.prepare(`
@@ -249,7 +249,7 @@ app.get('/:id/screenshot', async (c) => {
 // フィードバック統計を取得（管理者のみ）
 app.get('/stats/summary', async (c) => {
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
 
   // 管理者権限確認
   const user = await c.env.DB.prepare(`

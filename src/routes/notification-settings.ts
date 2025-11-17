@@ -30,7 +30,7 @@ const notificationSettingsSchema = z.object({
 // 通知設定を取得
 app.get('/', async (c) => {
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
 
   const settings = await c.env.DB.prepare(`
     SELECT * FROM notification_settings WHERE user_id = ?
@@ -67,7 +67,7 @@ app.get('/', async (c) => {
 // 通知設定を更新
 app.put('/', zValidator('json', notificationSettingsSchema), async (c) => {
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
   const data = c.req.valid('json');
 
   // 設定が存在するか確認

@@ -27,7 +27,7 @@ const subscriptionSchema = z.object({
 // サブスクリプションを保存
 app.post('/', zValidator('json', subscriptionSchema), async (c) => {
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
   const subscription = c.req.valid('json');
 
   try {
@@ -80,7 +80,7 @@ app.post('/', zValidator('json', subscriptionSchema), async (c) => {
 // サブスクリプションを削除
 app.delete('/', async (c) => {
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
   const { endpoint } = await c.req.json();
 
   if (!endpoint) {
@@ -103,7 +103,7 @@ app.delete('/', async (c) => {
 // ユーザーのサブスクリプション一覧を取得
 app.get('/', async (c) => {
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
 
   try {
     const { results } = await c.env.DB.prepare(`
@@ -123,7 +123,7 @@ app.get('/', async (c) => {
 // テスト通知を送信
 app.post('/test', async (c) => {
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
 
   try {
     // ユーザーのサブスクリプションを取得

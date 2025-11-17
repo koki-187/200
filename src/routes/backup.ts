@@ -12,7 +12,7 @@ app.use('*', async (c, next) => {
   await jwtMiddleware(c, next);
 
   const payload = c.get('jwtPayload');
-  const userId = payload.sub;
+  const userId = payload.userId || payload.sub;
 
   // 管理者権限確認
   const user = await c.env.DB.prepare(`

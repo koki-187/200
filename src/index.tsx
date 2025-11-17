@@ -325,7 +325,7 @@ app.get('/dashboard', (c) => {
           headers: { 'Authorization': 'Bearer ' + token }
         });
 
-        const deals = response.data;
+        const deals = response.data.deals || [];
         const statusCounts = {
           total: deals.length,
           NEW: 0,
@@ -539,7 +539,7 @@ app.get('/deals', (c) => {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         
-        allDeals = response.data;
+        allDeals = response.data.deals || [];
         filteredDeals = [...allDeals];
         displayDeals();
       } catch (error) {
@@ -753,7 +753,7 @@ app.get('/deals/:id', (c) => {
           headers: { 'Authorization': 'Bearer ' + token }
         });
 
-        const deal = response.data;
+        const deal = response.data.deal;
         displayDeal(deal);
       } catch (error) {
         console.error('Failed to load deal:', error);

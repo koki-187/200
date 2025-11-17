@@ -108,7 +108,19 @@ async function showDashboard() {
   notificationsPage.classList.add('hidden');
   settingsPage.classList.add('hidden');
   
+  // 新規案件ボタンの表示制御
+  const newDealBtn = document.getElementById('btn-new-deal');
+  if (newDealBtn) {
+    newDealBtn.style.display = state.user?.role === 'ADMIN' ? 'block' : 'none';
+  }
+  
   await loadDeals();
+  
+  // フィルターとソートのイベントリスナー
+  document.getElementById('filter-status')?.addEventListener('change', renderDeals);
+  document.getElementById('filter-deadline')?.addEventListener('change', renderDeals);
+  document.getElementById('sort-deals')?.addEventListener('change', renderDeals);
+  document.getElementById('search-deals')?.addEventListener('input', renderDeals);
 }
 
 // 案件一覧読み込み
@@ -131,20 +143,65 @@ async function loadDeals() {
 
 // 案件一覧レンダリング
 function renderDeals() {
-  if (state.deals.length === 0) {
+  // フィルター適用
+  let filteredDeals = [...state.deals];
+  
+  const filterStatus = document.getElementById('filter-status')?.value;
+  const filterDeadline = document.getElementById('filter-deadline')?.value;
+  const searchQuery = document.getElementById('search-deals')?.value?.toLowerCase();
+  
+  if (filterStatus) {
+    filteredDeals = filteredDeals.filter(d => d.status === filterStatus);
+  }
+  
+  if (filterDeadline) {
+    filteredDeals = filteredDeals.filter(d => {
+      const status = getDeadlineStatus(d.reply_deadline);
+      return status === filterDeadline;
+    });
+  }
+  
+  if (searchQuery) {
+    filteredDeals = filteredDeals.filter(d => 
+      d.title?.toLowerCase().includes(searchQuery) ||
+      d.location?.toLowerCase().includes(searchQuery) ||
+      d.station?.toLowerCase().includes(searchQuery)
+    );
+  }
+  
+  // ソート適用
+  const sortBy = document.getElementById('sort-deals')?.value || 'updated_at';
+  filteredDeals.sort((a, b) => {
+    if (sortBy === 'updated_at') {
+      return new Date(b.updated_at) - new Date(a.updated_at);
+    } else if (sortBy === 'created_at') {
+      return new Date(b.created_at) - new Date(a.created_at);
+    } else if (sortBy === 'deadline') {
+      if (!a.reply_deadline) return 1;
+      if (!b.reply_deadline) return -1;
+      return new Date(a.reply_deadline) - new Date(b.reply_deadline);
+    } else if (sortBy === 'title') {
+      return (a.title || '').localeCompare(b.title || '');
+    }
+    return 0;
+  });
+  
+  if (filteredDeals.length === 0) {
     dealsList.innerHTML = `
       <div class="text-center py-12 text-gray-500">
-        <i class="fas fa-folder-open text-6xl mb-4"></i>
-        <p>案件がまだありません</p>
-        <button onclick="showNewDealForm()" class="btn-primary mt-4">
-          <i class="fas fa-plus mr-2"></i>最初の案件を作成
-        </button>
+        <i class="fas fa-search text-6xl mb-4"></i>
+        <p>条件に一致する案件が見つかりません</p>
+        ${state.user?.role === 'ADMIN' ? `
+          <button onclick="showNewDealForm()" class="btn-primary mt-4">
+            <i class="fas fa-plus mr-2"></i>新規案件を作成
+          </button>
+        ` : ''}
       </div>
     `;
     return;
   }
   
-  dealsList.innerHTML = state.deals.map(deal => {
+  dealsList.innerHTML = filteredDeals.map(deal => {
     const deadlineStatus = getDeadlineStatus(deal.reply_deadline);
     const statusBadge = getStatusBadge(deal.status);
     const deadlineBadge = getDeadlineBadge(deadlineStatus);
@@ -1066,6 +1123,72 @@ document.getElementById('btn-create-user')?.addEventListener('click', async () =
     alert('ユーザーの追加に失敗しました: ' + (error.response?.data?.error || error.message));
   }
 });
+
+// 新規案件作成モーダル表示
+document.getElementById('btn-new-deal')?.addEventListener('click', async () => {
+  // エージェント一覧を読み込み
+  try {
+    const response = await axios.get('/settings/users');
+    const users = response.data.users || [];
+    const agents = users.filter(u => u.role === 'AGENT');
+    
+    const sellerSelect = document.getElementById('new-deal-seller');
+    sellerSelect.innerHTML = '<option value="">選択してください</option>' + 
+      agents.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${escapeHtml(a.email)})</option>`).join('');
+    
+    document.getElementById('new-deal-modal').classList.remove('hidden');
+  } catch (error) {
+    alert('ユーザー情報の読み込みに失敗しました');
+  }
+});
+
+// 新規案件作成モーダルを閉じる
+function closeNewDealModal() {
+  document.getElementById('new-deal-modal').classList.add('hidden');
+  document.getElementById('new-deal-title').value = '';
+  document.getElementById('new-deal-seller').value = '';
+  document.getElementById('new-deal-location').value = '';
+  document.getElementById('new-deal-station').value = '';
+  document.getElementById('new-deal-walk-minutes').value = '';
+  document.getElementById('new-deal-price').value = '';
+  document.getElementById('new-deal-remarks').value = '';
+}
+
+// 新規案件作成
+async function createNewDeal() {
+  const title = document.getElementById('new-deal-title').value.trim();
+  const sellerId = document.getElementById('new-deal-seller').value;
+  const location = document.getElementById('new-deal-location').value.trim();
+  const station = document.getElementById('new-deal-station').value.trim();
+  const walkMinutes = document.getElementById('new-deal-walk-minutes').value;
+  const desiredPrice = document.getElementById('new-deal-price').value.trim();
+  const remarks = document.getElementById('new-deal-remarks').value.trim();
+  
+  if (!title || !sellerId) {
+    alert('案件名と売主担当者は必須です');
+    return;
+  }
+  
+  try {
+    const newDeal = {
+      title,
+      seller_id: sellerId,
+      location: location || null,
+      station: station || null,
+      walk_minutes: walkMinutes ? parseInt(walkMinutes) : null,
+      desired_price: desiredPrice || null,
+      remarks: remarks || null,
+      status: 'NEW'
+    };
+    
+    await axios.post('/deals', newDeal);
+    closeNewDealModal();
+    alert('案件を作成しました');
+    await loadDeals();
+  } catch (error) {
+    alert('案件の作成に失敗しました: ' + (error.response?.data?.error || error.message));
+  }
+}
 
 // 初期化 - ページ読み込み時の処理
 document.addEventListener('DOMContentLoaded', () => {

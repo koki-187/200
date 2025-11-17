@@ -204,8 +204,25 @@ app.get('*', (c) => {
           </button>
         </div>
 
+        <!-- 検索とソート -->
+        <div class="card mb-4">
+          <div class="flex items-center space-x-4">
+            <div class="flex-1">
+              <input type="text" id="search-deals" class="input-field" placeholder="案件名、所在地、駅名で検索...">
+            </div>
+            <div class="w-48">
+              <select id="sort-deals" class="input-field">
+                <option value="updated_at">更新日時順</option>
+                <option value="created_at">作成日時順</option>
+                <option value="deadline">期限順</option>
+                <option value="title">案件名順</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <!-- フィルター -->
-        <div class="card">
+        <div class="card mb-4">
           <div class="flex items-center space-x-4">
             <div class="flex-1">
               <label class="block text-sm font-medium text-gray-700 mb-2">ステータス</label>
@@ -450,10 +467,156 @@ app.get('*', (c) => {
       </div>
     </main>
 
+    <!-- 新規案件作成モーダル -->
+    <div id="new-deal-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold text-navy">
+            <i class="fas fa-plus-circle text-gold mr-2"></i>新規案件作成
+          </h3>
+          <button onclick="closeNewDealModal()" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">案件名 <span class="text-red-500">*</span></label>
+            <input type="text" id="new-deal-title" class="input-field" placeholder="例: 川崎市幸区塚越四丁目 アパート用地" required>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">売主担当者 <span class="text-red-500">*</span></label>
+            <select id="new-deal-seller" class="input-field" required>
+              <option value="">選択してください</option>
+            </select>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">所在地</label>
+              <input type="text" id="new-deal-location" class="input-field" placeholder="例: 川崎市幸区塚越四丁目">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">最寄駅</label>
+              <input type="text" id="new-deal-station" class="input-field" placeholder="例: 矢向">
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">徒歩分数</label>
+              <input type="number" id="new-deal-walk-minutes" class="input-field" placeholder="4">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">希望価格</label>
+              <input type="text" id="new-deal-price" class="input-field" placeholder="例: 8,000万円">
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">備考</label>
+            <textarea id="new-deal-remarks" class="input-field" rows="3" placeholder="その他の情報..."></textarea>
+          </div>
+          
+          <div class="flex justify-end space-x-3 pt-4 border-t">
+            <button onclick="closeNewDealModal()" class="btn-secondary">
+              <i class="fas fa-times mr-2"></i>キャンセル
+            </button>
+            <button onclick="createNewDeal()" class="btn-primary">
+              <i class="fas fa-check mr-2"></i>作成
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- フッター -->
     <footer class="bg-navy text-white text-center py-6 mt-12">
       <p class="text-sm">© 2025 200棟アパート用地仕入れプロジェクト. All rights reserved.</p>
     </footer>
+
+    <!-- 新規案件作成モーダル -->
+    <div id="new-deal-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-2xl font-bold text-navy">
+              <i class="fas fa-plus-circle text-gold mr-2"></i>新規案件作成
+            </h3>
+            <button id="btn-close-modal" class="text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times text-2xl"></i>
+            </button>
+          </div>
+
+          <form id="new-deal-form" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                案件名 <span class="text-red-500">*</span>
+              </label>
+              <input type="text" id="new-deal-title" class="input-field" placeholder="例: 川崎市幸区塚越四丁目 アパート用地" required>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  エージェント <span class="text-red-500">*</span>
+                </label>
+                <select id="new-deal-seller" class="input-field" required>
+                  <option value="">選択してください</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  ステータス
+                </label>
+                <select id="new-deal-status" class="input-field">
+                  <option value="NEW">新規</option>
+                  <option value="IN_REVIEW">調査中</option>
+                  <option value="REPLIED">一次回答済</option>
+                  <option value="CLOSED">クロージング</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">所在地</label>
+                <input type="text" id="new-deal-location" class="input-field" placeholder="例: 川崎市幸区塚越四丁目">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">最寄駅</label>
+                <input type="text" id="new-deal-station" class="input-field" placeholder="例: 矢向">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">徒歩（分）</label>
+                <input type="number" id="new-deal-walk" class="input-field" placeholder="4">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">土地面積</label>
+                <input type="text" id="new-deal-area" class="input-field" placeholder="218.14㎡">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">希望価格</label>
+                <input type="text" id="new-deal-price" class="input-field" placeholder="8,000万円">
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3 pt-4">
+              <button type="submit" class="btn-primary flex-1">
+                <i class="fas fa-check mr-2"></i>案件を作成
+              </button>
+              <button type="button" id="btn-cancel-modal" class="btn-secondary flex-1">
+                <i class="fas fa-times mr-2"></i>キャンセル
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>

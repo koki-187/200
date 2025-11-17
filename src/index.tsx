@@ -139,7 +139,7 @@ app.get('/api/docs', (c) => {
 <!DOCTYPE html>
 <html>
 <head>
-  <title>API Documentation - 200戸土地仕入れ管理システム</title>
+  <title>API Documentation - 200棟土地仕入れ管理システム</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
@@ -159,24 +159,41 @@ app.get('/dashboard', (c) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ダッシュボード - 200戸土地仕入れ管理システム</title>
+  <title>ダッシュボード - 200棟土地仕入れ管理システム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+  </style>
 </head>
-<body class="bg-gray-50">
+<body>
   <!-- ヘッダー -->
-  <header class="bg-white shadow-sm border-b">
+  <header class="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg border-b border-slate-700">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center py-4">
-        <div class="flex items-center">
-          <i class="fas fa-building text-purple-600 text-2xl mr-3"></i>
-          <h1 class="text-xl font-bold text-gray-800">200戸土地仕入れ管理</h1>
+        <div class="flex items-center space-x-3">
+          <div class="header-logo">
+            <img src="/logo-3d.svg" alt="Logo" class="w-6 h-6" />
+          </div>
+          <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
         </div>
         <div class="flex items-center space-x-4">
-          <span id="user-name" class="text-gray-700"></span>
-          <span id="user-role" class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700"></span>
-          <button onclick="logout()" class="text-gray-600 hover:text-gray-800">
-            <i class="fas fa-sign-out-alt"></i> ログアウト
+          <span id="user-name" class="text-gray-200"></span>
+          <span id="user-role" class="text-xs px-3 py-1 rounded-full bg-blue-600 text-white font-medium"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
           </button>
         </div>
       </div>
@@ -188,7 +205,7 @@ app.get('/dashboard', (c) => {
     <!-- KPIカード -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <!-- 総案件数 -->
-      <div class="bg-white rounded-lg shadow p-6">
+      <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition p-6 border border-slate-200">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600">総案件数</p>
@@ -201,7 +218,7 @@ app.get('/dashboard', (c) => {
       </div>
 
       <!-- 進行中 -->
-      <div class="bg-white rounded-lg shadow p-6">
+      <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition p-6 border border-slate-200">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600">進行中</p>
@@ -214,7 +231,7 @@ app.get('/dashboard', (c) => {
       </div>
 
       <!-- 回答済み -->
-      <div class="bg-white rounded-lg shadow p-6">
+      <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition p-6 border border-slate-200">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600">回答済み</p>
@@ -227,7 +244,7 @@ app.get('/dashboard', (c) => {
       </div>
 
       <!-- 完了 -->
-      <div class="bg-white rounded-lg shadow p-6">
+      <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition p-6 border border-slate-200">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600">完了</p>
@@ -241,10 +258,10 @@ app.get('/dashboard', (c) => {
     </div>
 
     <!-- ナビゲーションタブ -->
-    <div class="bg-white rounded-lg shadow mb-6">
-      <div class="border-b">
+    <div class="bg-white rounded-xl shadow-lg mb-6 border border-slate-200">
+      <div class="border-b border-slate-200">
         <nav class="flex space-x-8 px-6" aria-label="Tabs">
-          <a href="/deals" class="border-b-2 border-purple-600 py-4 px-1 text-sm font-medium text-purple-600">
+          <a href="/deals" class="border-b-2 border-blue-600 py-4 px-1 text-sm font-semibold text-blue-600 hover:text-blue-700 transition">
             <i class="fas fa-list mr-2"></i>案件一覧
           </a>
         </nav>
@@ -252,7 +269,7 @@ app.get('/dashboard', (c) => {
     </div>
 
     <!-- 最近の案件 -->
-    <div class="bg-white rounded-lg shadow">
+    <div class="bg-white rounded-xl shadow-lg border border-slate-200">
       <div class="px-6 py-4 border-b">
         <h2 class="text-lg font-semibold text-gray-900">最近の案件</h2>
       </div>
@@ -398,25 +415,40 @@ app.get('/deals', (c) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>案件一覧 - 200戸土地仕入れ管理システム</title>
+  <title>案件一覧 - 200棟土地仕入れ管理システム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+  </style>
 </head>
-<body class="bg-gray-50">
+<body>
   <!-- ヘッダー -->
-  <header class="bg-white shadow-sm border-b">
+  <header class="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg border-b border-slate-700">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center py-4">
-        <div class="flex items-center">
-          <a href="/dashboard" class="flex items-center hover:opacity-80">
-            <i class="fas fa-building text-purple-600 text-2xl mr-3"></i>
-            <h1 class="text-xl font-bold text-gray-800">200戸土地仕入れ管理</h1>
-          </a>
-        </div>
+        <a href="/dashboard" class="flex items-center space-x-3 hover:opacity-80 transition">
+          <div class="header-logo">
+            <img src="/logo-3d.svg" alt="Logo" class="w-6 h-6" />
+          </div>
+          <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
+        </a>
         <div class="flex items-center space-x-4">
-          <span id="user-name" class="text-gray-700"></span>
-          <button onclick="logout()" class="text-gray-600 hover:text-gray-800">
-            <i class="fas fa-sign-out-alt"></i> ログアウト
+          <span id="user-name" class="text-gray-200"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
           </button>
         </div>
       </div>
@@ -432,11 +464,11 @@ app.get('/deals', (c) => {
     </div>
 
     <!-- フィルター・検索 -->
-    <div class="bg-white rounded-lg shadow p-4 mb-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-slate-200">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">ステータス</label>
-          <select id="filter-status" onchange="filterDeals()" class="w-full border rounded px-3 py-2">
+          <select id="filter-status" onchange="filterDeals()" class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
             <option value="">全て</option>
             <option value="NEW">新規</option>
             <option value="IN_REVIEW">レビュー中</option>
@@ -446,18 +478,18 @@ app.get('/deals', (c) => {
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">検索</label>
-          <input type="text" id="search-query" onkeyup="filterDeals()" placeholder="案件名、所在地..." class="w-full border rounded px-3 py-2">
+          <input type="text" id="search-query" onkeyup="filterDeals()" placeholder="案件名、所在地..." class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">並び順</label>
-          <select id="sort-by" onchange="sortDeals()" class="w-full border rounded px-3 py-2">
+          <select id="sort-by" onchange="sortDeals()" class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
             <option value="created_at_desc">作成日（新しい順）</option>
             <option value="created_at_asc">作成日（古い順）</option>
             <option value="updated_at_desc">更新日（新しい順）</option>
           </select>
         </div>
         <div class="flex items-end">
-          <button onclick="resetFilters()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded">
+          <button onclick="resetFilters()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg transition">
             <i class="fas fa-redo mr-2"></i>リセット
           </button>
         </div>
@@ -465,7 +497,7 @@ app.get('/deals', (c) => {
     </div>
 
     <!-- 案件リスト -->
-    <div class="bg-white rounded-lg shadow">
+    <div class="bg-white rounded-xl shadow-lg border border-slate-200">
       <div id="deals-container" class="divide-y">
         <div class="p-8 text-center text-gray-500">
           <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
@@ -640,28 +672,45 @@ app.get('/deals/:id', (c) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>案件詳細 - 200戸土地仕入れ管理システム</title>
+  <title>案件詳細 - 200棟土地仕入れ管理システム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+  </style>
 </head>
-<body class="bg-gray-50">
+<body>
   <!-- ヘッダー -->
-  <header class="bg-white shadow-sm border-b">
+  <header class="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg border-b border-slate-700">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center py-4">
         <div class="flex items-center">
-          <a href="/deals" class="text-gray-600 hover:text-gray-800 mr-4">
-            <i class="fas fa-arrow-left"></i>
+          <a href="/deals" class="text-gray-300 hover:text-white mr-4 transition">
+            <i class="fas fa-arrow-left text-lg"></i>
           </a>
-          <a href="/dashboard" class="flex items-center hover:opacity-80">
-            <i class="fas fa-building text-purple-600 text-2xl mr-3"></i>
-            <h1 class="text-xl font-bold text-gray-800">200戸土地仕入れ管理</h1>
+          <a href="/dashboard" class="flex items-center space-x-3 hover:opacity-80 transition">
+            <div class="header-logo">
+              <img src="/logo-3d.svg" alt="Logo" class="w-6 h-6" />
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
           </a>
         </div>
         <div class="flex items-center space-x-4">
-          <span id="user-name" class="text-gray-700"></span>
-          <button onclick="logout()" class="text-gray-600 hover:text-gray-800">
-            <i class="fas fa-sign-out-alt"></i> ログアウト
+          <span id="user-name" class="text-gray-200"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
           </button>
         </div>
       </div>
@@ -894,7 +943,7 @@ app.get('/', (c) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>200戸土地仕入れ管理システム - ログイン</title>
+  <title>200棟土地仕入れ管理システム - ログイン</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -952,9 +1001,9 @@ app.get('/', (c) => {
       <!-- ヘッダー -->
       <div class="text-center mb-8">
         <div class="logo-3d mx-auto mb-6">
-          <i class="logo-icon fas fa-building"></i>
+          <img src="/logo-3d.svg" alt="Logo" class="w-full h-full" />
         </div>
-        <h1 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">200戸土地仕入れ管理</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">200棟土地仕入れ管理</h1>
         <p class="text-gray-600 font-medium">不動産仲介案件管理システム</p>
         <p class="text-xs text-gray-400 mt-1">Professional Real Estate Management Platform</p>
       </div>
@@ -1037,7 +1086,7 @@ app.get('/', (c) => {
 
     <!-- フッター -->
     <div class="text-center mt-6 text-gray-300 text-sm">
-      <p class="font-medium">© 2025 200戸土地仕入れ管理システム</p>
+      <p class="font-medium">© 2025 200棟土地仕入れ管理システム</p>
       <p class="text-gray-400 mt-1 text-xs">Powered by Cloudflare Workers + Hono</p>
     </div>
   </div>
@@ -1175,7 +1224,7 @@ self.addEventListener('push', (event) => {
   console.log('Push notification received');
 
   let data = {
-    title: '200戸土地仕入れ管理システム',
+    title: '200棟土地仕入れ管理システム',
     body: '新しい通知があります',
     icon: '/static/icon-192.png',
     badge: '/static/badge-72.png',

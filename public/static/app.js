@@ -58,6 +58,26 @@ document.getElementById('login-form')?.addEventListener('submit', async (e) => {
   }
 });
 
+// ナビゲーション - 案件タブ
+document.getElementById('nav-deals')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (state.token) {
+    showDashboard();
+  }
+});
+
+// ナビゲーション - お知らせタブ
+document.getElementById('nav-notifications')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  alert('お知らせ機能は現在開発中です。\n\n今後のアップデートでリリース予定です。');
+});
+
+// ナビゲーション - 設定タブ
+document.getElementById('nav-settings')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  alert('設定機能は現在開発中です。\n\n今後のアップデートでリリース予定です。');
+});
+
 // ログアウト
 document.getElementById('btn-logout')?.addEventListener('click', () => {
   state.token = null;
@@ -65,6 +85,7 @@ document.getElementById('btn-logout')?.addEventListener('click', () => {
   localStorage.removeItem('token');
   delete axios.defaults.headers.common['Authorization'];
   
+  updateHeaderVisibility(false);
   loginPage.classList.remove('hidden');
   dashboardPage.classList.add('hidden');
   dealDetailPage.classList.add('hidden');
@@ -72,6 +93,7 @@ document.getElementById('btn-logout')?.addEventListener('click', () => {
 
 // ダッシュボード表示
 async function showDashboard() {
+  updateHeaderVisibility(true);
   loginPage.classList.add('hidden');
   dashboardPage.classList.remove('hidden');
   dealDetailPage.classList.add('hidden');
@@ -366,6 +388,19 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// ヘッダーとバナーの表示制御
+function updateHeaderVisibility(isLoggedIn) {
+  const header = document.querySelector('header');
+  const banner = document.querySelector('.bg-blue-50');
+  
+  if (header) {
+    header.style.display = isLoggedIn ? 'block' : 'none';
+  }
+  if (banner) {
+    banner.style.display = isLoggedIn ? 'block' : 'none';
+  }
+}
+
 // 初期化 - ページ読み込み時の処理
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Page loaded, checking authentication...');
@@ -373,8 +408,10 @@ document.addEventListener('DOMContentLoaded', () => {
   
   if (state.token) {
     console.log('Token found, attempting to load dashboard...');
+    updateHeaderVisibility(true);
     showDashboard();
   } else {
     console.log('No token found, showing login page');
+    updateHeaderVisibility(false);
   }
 });

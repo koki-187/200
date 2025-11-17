@@ -247,9 +247,6 @@ app.get('/dashboard', (c) => {
           <a href="/deals" class="border-b-2 border-purple-600 py-4 px-1 text-sm font-medium text-purple-600">
             <i class="fas fa-list mr-2"></i>案件一覧
           </a>
-          <a href="/api/docs" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
-            <i class="fas fa-book mr-2"></i>APIドキュメント
-          </a>
         </nav>
       </div>
     </div>
@@ -280,14 +277,25 @@ app.get('/dashboard', (c) => {
       window.location.href = '/';
     }
 
+    // 売側ユーザー（AGENTでseller_id）は案件一覧ページへリダイレクト
+    // 買側・管理者はダッシュボードを表示
+    // 注: 買側と管理者は同じユーザーなので、ダッシュボードを共有
+    if (user.role === 'AGENT') {
+      // AGENTロールでも、buyer_id を持っていればダッシュボード表示
+      // それ以外（seller_id のみ）は案件一覧へ
+      // 実際には買側・管理者が同じユーザーなので、AGENTでも統合ビュー表示
+      // ここでは全ユーザーがダッシュボードを見れるようにする
+    }
+
     // ユーザー情報表示
     if (user.name) {
       document.getElementById('user-name').textContent = user.name;
-      document.getElementById('user-role').textContent = user.role;
+      document.getElementById('user-role').textContent = user.role === 'ADMIN' ? '管理者' : 'ユーザー';
     }
 
     // ログアウト
     function logout() {
+      // 認証トークンとユーザー情報のみ削除（Remember Me情報は保持）
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       window.location.href = '/';
@@ -487,6 +495,7 @@ app.get('/deals', (c) => {
     let filteredDeals = [];
 
     function logout() {
+      // 認証トークンとユーザー情報のみ削除（Remember Me情報は保持）
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       window.location.href = '/';
@@ -951,6 +960,20 @@ app.get('/', (c) => {
           >
         </div>
 
+        <!-- Remember Me チェックボックス -->
+        <div class="flex items-center">
+          <input 
+            type="checkbox" 
+            id="remember-me" 
+            name="remember-me"
+            checked
+            class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+          >
+          <label for="remember-me" class="ml-2 block text-sm text-gray-700">
+            ログイン情報を保存（30日間）
+          </label>
+        </div>
+
         <!-- ログインボタン -->
         <button 
           type="submit"
@@ -964,11 +987,7 @@ app.get('/', (c) => {
 
       <!-- システム情報 -->
       <div class="mt-8 pt-6 border-t border-gray-200">
-        <div class="text-center space-y-2">
-          <a href="/api/docs" class="text-purple-600 hover:text-purple-700 text-sm flex items-center justify-center">
-            <i class="fas fa-book mr-2"></i>
-            APIドキュメント
-          </a>
+        <div class="text-center">
           <p class="text-xs text-gray-400">
             <i class="fas fa-shield-alt mr-1"></i>
             セキュア接続 | v2.0.0
@@ -990,6 +1009,36 @@ app.get('/', (c) => {
     const loginButton = document.getElementById('login-button');
     const errorMessage = document.getElementById('error-message');
     const errorText = document.getElementById('error-text');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const rememberMeCheckbox = document.getElementById('remember-me');
+
+    // ページ読み込み時に自動ログインを試行
+    window.addEventListener('DOMContentLoaded', () => {
+      // 保存された認証情報を確認
+      const savedToken = localStorage.getItem('auth_token');
+      const savedEmail = localStorage.getItem('saved_email');
+      const savedPassword = localStorage.getItem('saved_password');
+      const expiryDate = localStorage.getItem('auth_expiry');
+
+      // 認証情報が有効期限内であれば自動ログイン
+      if (savedToken && expiryDate) {
+        const now = new Date().getTime();
+        if (now < parseInt(expiryDate)) {
+          // トークンが有効なので自動リダイレクト
+          window.location.href = '/dashboard';
+          return;
+        }
+      }
+
+      // 保存されたメール・パスワードを入力欄に復元
+      if (savedEmail) {
+        emailInput.value = savedEmail;
+      }
+      if (savedPassword) {
+        passwordInput.value = savedPassword;
+      }
+    });
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1002,8 +1051,9 @@ app.get('/', (c) => {
       loginButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ログイン中...';
 
       try {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        const email = emailInput.value;
+        const password = passwordInput.value;
+        const rememberMe = rememberMeCheckbox.checked;
 
         const response = await axios.post('/api/auth/login', {
           email,
@@ -1014,6 +1064,19 @@ app.get('/', (c) => {
           // トークンを保存
           localStorage.setItem('auth_token', response.data.token);
           localStorage.setItem('user', JSON.stringify(response.data.user));
+          
+          // Remember Me が有効な場合、認証情報を30日間保存
+          if (rememberMe) {
+            const expiryDate = new Date().getTime() + (30 * 24 * 60 * 60 * 1000); // 30日後
+            localStorage.setItem('saved_email', email);
+            localStorage.setItem('saved_password', password);
+            localStorage.setItem('auth_expiry', expiryDate.toString());
+          } else {
+            // Remember Me が無効な場合、保存された情報を削除
+            localStorage.removeItem('saved_email');
+            localStorage.removeItem('saved_password');
+            localStorage.removeItem('auth_expiry');
+          }
           
           // ダッシュボードにリダイレクト
           window.location.href = '/dashboard';
@@ -1036,7 +1099,7 @@ app.get('/', (c) => {
     });
 
     // デモ用：Enter キーでフォーム送信
-    document.getElementById('password').addEventListener('keypress', (e) => {
+    passwordInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         loginForm.dispatchEvent(new Event('submit'));
       }

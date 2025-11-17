@@ -3,10 +3,10 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL**: https://c213b06e.real-estate-200units-v2.pages.dev
+- **Production URL**: https://8e5cb9f6.real-estate-200units-v2.pages.dev
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Gallery**: https://c213b06e.real-estate-200units-v2.pages.dev/gallery
-- **Deal Creation**: https://c213b06e.real-estate-200units-v2.pages.dev/deals/new
+- **Gallery**: https://8e5cb9f6.real-estate-200units-v2.pages.dev/gallery
+- **Deal Creation**: https://8e5cb9f6.real-estate-200units-v2.pages.dev/deals/new
 
 ### デフォルトログイン情報
 
@@ -517,6 +517,21 @@ Private - All Rights Reserved
 GenSpark AI Assistant + User
 
 ## 更新履歴
+
+### v2.3.1 (2025-11-17) 🐛
+**バグ修正とプロジェクト名修正リリース**
+
+修正内容:
+- **ユーザーAPI実装**: `/api/auth/users` エンドポイントを追加し、売側ユーザー一覧取得に対応
+- **重複メソッド削除**: `Database.getAllUsers()` の重複定義を修正
+- **静的ファイル配信修正**: `serveStatic` 設定を削除し、Cloudflare Pages自動配信に移行
+- **ビルドプロセス改善**: `fix-routes.cjs` スクリプトを追加し、`_routes.json` 自動修正を実装
+- **プロジェクト名統一**: `webapp` から `real-estate-200units-v2` に統一
+
+技術的改善:
+- ギャラリー画像とロゴPNGが正常にアクセス可能に（HTTP 200）
+- ビルド後に自動的に `/gallery/*` と `/logo-3d.png` を Worker ルーティングから除外
+- ローカル環境と本番環境で一貫した静的ファイル配信
 
 ### v2.3.0 (2025-11-17) 🚀
 **フル機能実装リリース - 全機能完全統合**

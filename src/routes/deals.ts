@@ -29,7 +29,7 @@ deals.get('/', async (c) => {
 // 案件詳細取得
 deals.get('/:id', async (c) => {
   try {
-    const dealId = c.param('id');
+    const dealId = c.req.param('id');
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
 
@@ -100,7 +100,7 @@ deals.post('/', adminOnly, async (c) => {
 // 案件更新
 deals.put('/:id', async (c) => {
   try {
-    const dealId = c.param('id');
+    const dealId = c.req.param('id');
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
     const body = await c.req.json();
@@ -130,7 +130,7 @@ deals.put('/:id', async (c) => {
 // 案件削除（管理者のみ）
 deals.delete('/:id', adminOnly, async (c) => {
   try {
-    const dealId = c.param('id');
+    const dealId = c.req.param('id');
     const db = new Database(c.env.DB);
 
     await db.deleteDeal(dealId);

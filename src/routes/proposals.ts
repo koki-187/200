@@ -12,7 +12,7 @@ proposals.use('*', authMiddleware);
 // AI提案生成
 proposals.post('/deals/:dealId', async (c) => {
   try {
-    const dealId = c.param('dealId');
+    const dealId = c.req.param('dealId');
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
     
@@ -152,7 +152,7 @@ ${JSON.stringify(body.cf_data, null, 2)}
 // 提案取得
 proposals.get('/deals/:dealId/latest', async (c) => {
   try {
-    const dealId = c.param('dealId');
+    const dealId = c.req.param('dealId');
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
 

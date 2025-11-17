@@ -12,7 +12,7 @@ files.use('*', authMiddleware);
 // ファイル一覧取得
 files.get('/deals/:dealId', async (c) => {
   try {
-    const dealId = c.param('dealId');
+    const dealId = c.req.param('dealId');
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
 
@@ -50,7 +50,7 @@ files.get('/deals/:dealId', async (c) => {
 // ファイルアップロード（簡易版 - 実際のファイルストレージは未実装）
 files.post('/deals/:dealId', async (c) => {
   try {
-    const dealId = c.param('dealId');
+    const dealId = c.req.param('dealId');
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
 

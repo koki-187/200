@@ -12,7 +12,7 @@ messages.use('*', authMiddleware);
 // メッセージ一覧取得
 messages.get('/deals/:dealId', async (c) => {
   try {
-    const dealId = c.param('dealId');
+    const dealId = c.req.param('dealId');
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
 
@@ -39,7 +39,7 @@ messages.get('/deals/:dealId', async (c) => {
 // メッセージ作成
 messages.post('/deals/:dealId', async (c) => {
   try {
-    const dealId = c.param('dealId');
+    const dealId = c.req.param('dealId');
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
     const { content } = await c.req.json();

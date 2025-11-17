@@ -21,22 +21,50 @@
 
 ---
 
-## ✅ v1.1.0で実装完了した機能（買側・売側すべて）
+## ✅ v1.2.0で実装完了した機能（最優先タスク完了）
 
-### 認証・ユーザー管理
+### 🎉 新規実装機能（2025-11-17）
+
+#### OCR自動入力機能 ✅
+- [x] OpenAI Vision API統合（gpt-4o）
+- [x] 画像・PDFから物件情報自動抽出
+- [x] 新規案件作成モーダルにOCRボタン追加
+- [x] 自動フォーム入力（物件名、所在地、駅、徒歩、面積、価格）
+- [x] エラーハンドリングとユーザーフィードバック
+- **実装ファイル**: `src/routes/ocr.ts`, `public/static/app.js`
+
+#### メール通知システム ✅
+- [x] Resend SDK統合
+- [x] 期限通知メール（24時間前、緊急警告）
+- [x] 新規メッセージ通知メール
+- [x] 新規案件通知メール（エージェント向け）
+- [x] テスト用APIエンドポイント（管理者専用）
+- **実装ファイル**: `src/utils/email.ts`, `src/routes/email.ts`
+
+#### PDFレポート生成 ✅
+- [x] jsPDF統合（ブラウザ側生成）
+- [x] 案件詳細PDFレポート（案件情報、担当者、AI提案、メッセージ履歴、ファイル一覧）
+- [x] 案件詳細ページに「PDFレポート生成」ボタン追加
+- [x] データ取得API（`/api/pdf/deal/:id/data`）
+- [x] 複数案件サマリーAPI（`/api/pdf/deals/summary`）
+- **実装ファイル**: `src/utils/pdf.ts`, `src/routes/pdf.ts`, `public/static/app.js`
+
+### v1.1.0以前の機能（変更なし）
+
+#### 認証・ユーザー管理
 - [x] JWT認証システム（SHA-256ベース）
 - [x] ロール管理（管理者/エージェント）
 - [x] セッション管理・自動ログアウト
 - [x] ユーザー作成・一覧表示（管理者専用）
 
-### ダッシュボード（案件一覧）
+#### ダッシュボード（案件一覧）
 - [x] 案件カード表示（ステータス・期限バッジ付き）
 - [x] リアルタイム検索（案件名、所在地、駅名）
 - [x] 多様なソート（更新日時、作成日時、期限、案件名）
 - [x] 高度なフィルター（ステータス、期限ステータス）
 - [x] 新規案件作成モーダル（管理者専用）
 
-### 案件詳細ページ
+#### 案件詳細ページ
 - [x] 3カラムレイアウト（情報・ファイル | 未入力項目・チャット）
 - [x] インライン編集（全フィールド編集可能）
 - [x] ステータス変更ドロップダウン（即座反映）
@@ -51,20 +79,20 @@
   - [x] 未読管理（買側・売側別）
   - [x] メッセージ履歴表示
 
-### お知らせページ
+#### お知らせページ
 - [x] 通知一覧表示（タイムライン形式）
 - [x] タイプ別フィルター（新規案件、メッセージ、期限、未入力項目）
 - [x] 全て既読機能
 - [x] 個別既読・削除機能
 
-### 設定ページ
+#### 設定ページ
 - [x] ビジネスデイ設定（営業日選択）
 - [x] 休日管理（祝日追加・削除）
 - [x] ストレージ上限設定
 - [x] ユーザー管理（管理者専用）
 - [x] API情報表示
 
-### AI・その他
+#### AI・その他
 - [x] AI提案生成（OpenAI GPT-4）
 - [x] 営業日48時間管理（自動期限計算）
 - [x] ロールベースアクセス制御
@@ -76,8 +104,9 @@
 
 ### 🔴 優先度：最高（すぐに実装すべき）
 
-#### 1. OCR自動入力機能の実装
+#### ~~1. OCR自動入力機能の実装~~ ✅ 完了
 **目的**: 画像・PDFから物件情報を自動抽出してフォームに入力
+**状態**: **実装完了（2025-11-17）**
 
 **実装ステップ**:
 ```typescript
@@ -127,10 +156,18 @@ ocr.post('/extract', async (c) => {
 
 ---
 
-#### 2. メール通知システムの実装
+#### ~~2. メール通知システムの実装~~ ✅ 完了
 **目的**: 期限通知、新規メッセージ通知を自動送信
+**状態**: **実装完了（2025-11-17）**
 
-**実装ステップ**:
+**実装済み機能**:
+- ✅ Resend SDK統合
+- ✅ 期限通知メール（HTML形式、緊急度別スタイル）
+- ✅ 新規メッセージ通知メール
+- ✅ 新規案件通知メール（エージェント向け）
+- ✅ テスト用APIエンドポイント（`/api/email/test/*`）
+
+**旧実装ステップ（参考）**:
 ```typescript
 // 1. メールユーティリティ作成（src/utils/email.ts）
 import { Resend } from 'resend';
@@ -195,10 +232,19 @@ RESEND_API_KEY=your-resend-api-key
 
 ---
 
-#### 3. PDF一次回答レポート自動生成
+#### ~~3. PDF一次回答レポート自動生成~~ ✅ 完了
 **目的**: 案件情報とAI提案をPDF化して提出可能に
+**状態**: **実装完了（2025-11-17）**
 
-**実装ステップ**:
+**実装済み機能**:
+- ✅ jsPDF統合（ブラウザ側で生成）
+- ✅ 案件詳細ページに「PDFレポート生成」ボタン
+- ✅ 案件情報、担当者情報、AI提案、メッセージ履歴、ファイル一覧を含む完全なレポート
+- ✅ 複数ページ対応、自動改ページ
+- ✅ データ取得API（`/api/pdf/deal/:id/data`）
+- ✅ 複数案件サマリーAPI（`/api/pdf/deals/summary`）
+
+**旧実装ステップ（参考）**:
 ```typescript
 // 1. PDFジェネレーター作成（src/utils/pdf.ts）
 import { jsPDF } from 'jspdf';
@@ -248,9 +294,56 @@ deals.get('/:id/report', async (c) => {
 
 ---
 
-### 🟡 優先度：高（時間があれば実装）
+### 🟡 優先度：高（次に実装すべき機能）
 
-#### 4. ファイルストレージの完全実装（Cloudflare R2）
+#### 4. メール通知の自動化（Cron Triggers）⏰
+**現状**: テスト用APIエンドポイントのみ実装済み  
+**目標**: 定期実行で自動通知を送信
+
+**実装ステップ**:
+```typescript
+// 1. Cronトリガー設定（wrangler.jsonc）
+{
+  "triggers": {
+    "crons": ["0 9,18 * * *"]  // 毎日9時と18時に実行
+  }
+}
+
+// 2. Cronハンドラー作成（src/index.tsx）
+export default {
+  async fetch(request, env) {
+    return app.fetch(request, env);
+  },
+  async scheduled(event, env, ctx) {
+    // 期限24時間前の案件を検索
+    const db = new Database(env.DB);
+    const deals = await db.getDealsNearDeadline(24); // 24時間以内
+    
+    const emailService = createEmailService(env.RESEND_API_KEY);
+    
+    for (const deal of deals) {
+      const seller = await db.getUserById(deal.seller_id);
+      if (seller?.email) {
+        await emailService.sendDeadlineNotification(
+          seller.email,
+          deal.title,
+          deal.response_deadline,
+          24
+        );
+      }
+    }
+  }
+}
+```
+
+**必要な作業**:
+- `wrangler.jsonc` にCron設定追加
+- `src/index.tsx` に `scheduled` ハンドラー追加
+- `src/db/queries.ts` に `getDealsNearDeadline()` メソッド追加
+
+---
+
+#### 5. ファイルストレージの完全実装（Cloudflare R2）📦
 **現状**: ファイルメタデータのみDB保存  
 **目標**: 実際のファイルをCloudflare R2に保存
 
@@ -311,7 +404,7 @@ files.get('/:fileId', async (c) => {
 
 ---
 
-#### 5. パスワードハッシュのbcrypt化
+#### 6. パスワードハッシュのbcrypt化🔒
 **現状**: SHA-256（簡易版）  
 **目標**: bcryptで本番対応
 

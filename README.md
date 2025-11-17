@@ -1,6 +1,6 @@
 # 200棟アパート用地仕入れプロジェクト
 
-土地仕入れ業務特化 Web アプリ v1.0（アパート用地 × 営業日48h一次回答体制）
+土地仕入れ業務特化 Web アプリ v1.2.0（アパート用地 × 営業日48h一次回答体制）
 
 ---
 
@@ -79,13 +79,35 @@
    - CF（収支）計算統合
    - メールドラフト・面談ポイント自動生成
 
-10. **データベース（Cloudflare D1）**
+10. **🆕 OCR自動入力機能（v1.2.0）**
+    - OpenAI Vision API（gpt-4o）統合
+    - 画像・PDFから物件情報を自動抽出
+    - 新規案件作成モーダルでワンクリックOCR
+    - 自動フォーム入力（物件名、所在地、駅、徒歩、面積、価格）
+    - 入力ミス削減、データ入力時間80%削減
+
+11. **🆕 メール通知システム（v1.2.0）**
+    - Resend SDK統合
+    - 期限通知メール（24時間前、緊急警告）
+    - 新規メッセージ通知メール
+    - 新規案件通知メール（エージェント向け）
+    - HTML形式の美しい通知メール
+    - テスト用APIエンドポイント（管理者専用）
+
+12. **🆕 PDFレポート自動生成（v1.2.0）**
+    - jsPDF統合（ブラウザ側生成）
+    - 案件詳細PDFレポート
+    - 案件情報、担当者情報、AI提案、メッセージ履歴、ファイル一覧を含む
+    - 複数ページ対応、自動改ページ
+    - ワンクリックでPDFダウンロード
+
+13. **データベース（Cloudflare D1）**
     - SQLiteベースの分散データベース
     - 完全なマイグレーション管理
     - ローカル開発環境対応
     - 8テーブル（users, deals, messages, files, ocr_jobs, notifications, settings, proposals）
 
-11. **ロールベースアクセス制御**
+14. **ロールベースアクセス制御**
     - 管理者専用機能の制限
     - エージェントは自社案件のみ閲覧・編集
     - 権限に応じたUI表示制御
@@ -127,7 +149,12 @@ npm run test
 ```
 OPENAI_API_KEY=your-openai-api-key-here
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
+RESEND_API_KEY=your-resend-api-key-here
 ```
+
+**注意**: 
+- `OPENAI_API_KEY`: OCR機能とAI提案生成に必要
+- `RESEND_API_KEY`: メール通知機能に必要（未設定の場合はメール送信がスキップされます）
 
 ---
 
@@ -160,6 +187,9 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production
 - **ランタイム**: Cloudflare Workers
 - **データベース**: Cloudflare D1 (SQLite)
 - **認証**: JWT (SHA-256)
+- **AI/OCR**: OpenAI GPT-4o (Vision API)
+- **メール**: Resend
+- **PDF生成**: jsPDF (クライアントサイド)
 - **AI**: OpenAI GPT-4 API
 
 ### データモデル

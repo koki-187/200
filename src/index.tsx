@@ -14,6 +14,7 @@ import notifications from './routes/notifications';
 import ocr from './routes/ocr';
 import email from './routes/email';
 import pdf from './routes/pdf';
+import r2 from './routes/r2';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -69,6 +70,7 @@ app.route('/api/notifications', notifications);
 app.route('/api/ocr', ocr);
 app.route('/api/email', email);
 app.route('/api/pdf', pdf);
+app.route('/api/r2', r2);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {

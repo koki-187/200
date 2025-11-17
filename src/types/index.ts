@@ -107,8 +107,10 @@ export interface Proposal {
 
 export type Bindings = {
   DB: D1Database;
+  R2_FILES: R2Bucket;
   OPENAI_API_KEY: string;
   JWT_SECRET: string;
+  RESEND_API_KEY?: string;
 };
 
 export interface JWTPayload {

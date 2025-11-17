@@ -3,10 +3,10 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL**: https://8e5cb9f6.real-estate-200units-v2.pages.dev
+- **Production URL**: https://f2189b47.real-estate-200units-v2.pages.dev
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Gallery**: https://8e5cb9f6.real-estate-200units-v2.pages.dev/gallery
-- **Deal Creation**: https://8e5cb9f6.real-estate-200units-v2.pages.dev/deals/new
+- **Gallery**: https://f2189b47.real-estate-200units-v2.pages.dev/gallery
+- **Deal Creation**: https://f2189b47.real-estate-200units-v2.pages.dev/deals/new
 
 ### デフォルトログイン情報
 
@@ -517,6 +517,19 @@ Private - All Rights Reserved
 GenSpark AI Assistant + User
 
 ## 更新履歴
+
+### v2.3.2 (2025-11-17) 🎨
+**ロゴデザイン改善リリース**
+
+デザイン改善:
+- **透過背景ロゴ導入**: 黒い背景を完全透過に変更し、UI統合を改善
+- **全ページロゴ更新**: ログイン、ダッシュボード、案件一覧など全ページで透過ロゴを適用
+- **視覚的一貫性向上**: 背景色に関係なくロゴが自然に表示されるように改善
+
+技術的詳細:
+- PNG画像のアルファチャンネルによる完全透過背景
+- 456KB の高品質画像（1024x1024px）
+- ETag キャッシング最適化済み
 
 ### v2.3.1 (2025-11-17) 🐛
 **バグ修正とプロジェクト名修正リリース**

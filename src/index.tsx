@@ -16,6 +16,9 @@ import email from './routes/email';
 import pdf from './routes/pdf';
 import r2 from './routes/r2';
 
+// Middleware
+import { rateLimitPresets } from './middleware/rate-limit';
+
 const app = new Hono<{ Bindings: Bindings }>();
 
 // セキュリティヘッダー設定（全リクエストに適用）
@@ -58,6 +61,12 @@ app.use('/api/*', cors({
   allowHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
+
+// レート制限適用
+app.use('/api/auth/login', rateLimitPresets.auth);
+app.use('/api/auth/register', rateLimitPresets.auth);
+app.use('/api/r2/upload', rateLimitPresets.upload);
+app.use('/api/*', rateLimitPresets.api);
 
 // APIルートのマウント
 app.route('/api/auth', auth);

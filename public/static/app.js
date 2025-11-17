@@ -224,84 +224,240 @@ function renderDealDetail() {
   const statusBadge = getStatusBadge(deal.status);
   const deadlineStatus = getDeadlineStatus(deal.reply_deadline);
   const deadlineBadge = getDeadlineBadge(deadlineStatus);
+  const isEditable = state.user?.role === 'ADMIN' || deal.seller_id === state.user?.id;
+  
+  // 未入力項目をチェック
+  const missingFields = [];
+  const requiredFields = {
+    'location': '所在地',
+    'station': '最寄駅',
+    'walk_minutes': '徒歩分数',
+    'land_area': '土地面積',
+    'zoning': '用途地域',
+    'building_coverage': '建蔽率',
+    'floor_area_ratio': '容積率',
+    'road_info': '接道状況',
+    'current_status': '現況',
+    'desired_price': '希望価格'
+  };
+  
+  for (const [field, label] of Object.entries(requiredFields)) {
+    if (!deal[field] || deal[field] === '' || deal[field] === null) {
+      missingFields.push(label);
+    }
+  }
   
   document.getElementById('deal-detail-content').innerHTML = `
-    <div class="space-y-6">
-      <!-- ヘッダー -->
-      <div class="flex items-center justify-between pb-4 border-b">
-        <div class="flex items-center space-x-3">
-          ${statusBadge}
-          ${deadlineBadge}
+    <div class="grid grid-cols-3 gap-6">
+      <!-- 左カラム: 基本情報とファイル -->
+      <div class="col-span-2 space-y-6">
+        <!-- ヘッダー -->
+        <div class="flex items-center justify-between pb-4 border-b">
+          <div class="flex items-center space-x-3">
+            ${statusBadge}
+            ${deadlineBadge}
+            ${deal.reply_deadline ? `
+              <span class="text-sm text-gray-600">
+                <i class="fas fa-clock mr-1"></i>
+                期限: ${formatDate(deal.reply_deadline)}
+              </span>
+            ` : ''}
+          </div>
+          <div class="flex items-center space-x-3">
+            ${state.user?.role === 'ADMIN' ? `
+              <button onclick="generateProposal()" class="btn-primary">
+                <i class="fas fa-magic mr-2"></i>AI提案生成
+              </button>
+            ` : ''}
+            <select id="deal-status" class="input-field text-sm" ${isEditable ? '' : 'disabled'}>
+              <option value="NEW" ${deal.status === 'NEW' ? 'selected' : ''}>新規</option>
+              <option value="IN_REVIEW" ${deal.status === 'IN_REVIEW' ? 'selected' : ''}>調査中</option>
+              <option value="REPLIED" ${deal.status === 'REPLIED' ? 'selected' : ''}>一次回答済</option>
+              <option value="CLOSED" ${deal.status === 'CLOSED' ? 'selected' : ''}>クロージング</option>
+            </select>
+          </div>
         </div>
-        <div class="flex items-center space-x-3">
-          ${state.user?.role === 'ADMIN' ? `
-            <button onclick="generateProposal()" class="btn-primary">
-              <i class="fas fa-magic mr-2"></i>AI提案生成
-            </button>
+        
+        <!-- 基本情報編集フォーム -->
+        <div class="card">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-navy">
+              <i class="fas fa-info-circle text-gold mr-2"></i>基本情報
+            </h3>
+            ${isEditable ? `
+              <button id="btn-save-deal" class="btn-primary text-sm" onclick="saveDealInfo()">
+                <i class="fas fa-save mr-2"></i>保存
+              </button>
+            ` : ''}
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                所在地 ${!deal.location ? '<span class="text-red-500">*</span>' : ''}
+              </label>
+              <input type="text" id="edit-location" class="input-field text-sm" value="${escapeHtml(deal.location || '')}" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                最寄駅 ${!deal.station ? '<span class="text-red-500">*</span>' : ''}
+              </label>
+              <input type="text" id="edit-station" class="input-field text-sm" value="${escapeHtml(deal.station || '')}" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                徒歩分数 ${!deal.walk_minutes ? '<span class="text-red-500">*</span>' : ''}
+              </label>
+              <input type="number" id="edit-walk-minutes" class="input-field text-sm" value="${deal.walk_minutes || ''}" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                土地面積 ${!deal.land_area ? '<span class="text-red-500">*</span>' : ''}
+              </label>
+              <input type="text" id="edit-land-area" class="input-field text-sm" value="${escapeHtml(deal.land_area || '')}" placeholder="例: 218.14㎡（実測）" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                用途地域 ${!deal.zoning ? '<span class="text-red-500">*</span>' : ''}
+              </label>
+              <input type="text" id="edit-zoning" class="input-field text-sm" value="${escapeHtml(deal.zoning || '')}" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                建蔽率（%） ${!deal.building_coverage ? '<span class="text-red-500">*</span>' : ''}
+              </label>
+              <input type="text" id="edit-building-coverage" class="input-field text-sm" value="${escapeHtml(deal.building_coverage || '')}" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                容積率（%） ${!deal.floor_area_ratio ? '<span class="text-red-500">*</span>' : ''}
+              </label>
+              <input type="text" id="edit-floor-area-ratio" class="input-field text-sm" value="${escapeHtml(deal.floor_area_ratio || '')}" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">高度地区</label>
+              <input type="text" id="edit-height-district" class="input-field text-sm" value="${escapeHtml(deal.height_district || '')}" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">防火地域</label>
+              <input type="text" id="edit-fire-zone" class="input-field text-sm" value="${escapeHtml(deal.fire_zone || '')}" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                接道状況 ${!deal.road_info ? '<span class="text-red-500">*</span>' : ''}
+              </label>
+              <input type="text" id="edit-road-info" class="input-field text-sm" value="${escapeHtml(deal.road_info || '')}" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                現況 ${!deal.current_status ? '<span class="text-red-500">*</span>' : ''}
+              </label>
+              <input type="text" id="edit-current-status" class="input-field text-sm" value="${escapeHtml(deal.current_status || '')}" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                希望価格 ${!deal.desired_price ? '<span class="text-red-500">*</span>' : ''}
+              </label>
+              <input type="text" id="edit-desired-price" class="input-field text-sm" value="${escapeHtml(deal.desired_price || '')}" placeholder="例: 8,000万円" ${isEditable ? '' : 'disabled'}>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">備考</label>
+              <textarea id="edit-remarks" class="input-field text-sm" rows="3" ${isEditable ? '' : 'disabled'}>${escapeHtml(deal.remarks || '')}</textarea>
+            </div>
+          </div>
+        </div>
+        
+        <!-- ファイル管理 -->
+        <div class="card">
+          <h3 class="text-lg font-bold text-navy mb-4">
+            <i class="fas fa-folder text-gold mr-2"></i>添付ファイル
+          </h3>
+          
+          <!-- ファイルアップロード -->
+          ${isEditable ? `
+            <div class="mb-4 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <div class="flex items-center space-x-3">
+                <input type="file" id="file-upload" class="hidden" multiple>
+                <button onclick="document.getElementById('file-upload').click()" class="btn-secondary text-sm">
+                  <i class="fas fa-upload mr-2"></i>ファイルを選択
+                </button>
+                <span id="file-upload-info" class="text-sm text-gray-600">またはドラッグ＆ドロップ</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">
+                PDF, 画像（JPG, PNG）, Excel, Wordファイルをアップロードできます
+              </p>
+            </div>
           ` : ''}
-        </div>
-      </div>
-      
-      <!-- 基本情報 -->
-      <div>
-        <h3 class="text-lg font-bold text-navy mb-3">
-          <i class="fas fa-info-circle text-gold mr-2"></i>基本情報
-        </h3>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">所在地</label>
-            <p class="text-gray-900">${escapeHtml(deal.location || '未入力')}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">最寄駅</label>
-            <p class="text-gray-900">${escapeHtml(deal.station || '未入力')} 徒歩${deal.walk_minutes || '?'}分</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">土地面積</label>
-            <p class="text-gray-900">${escapeHtml(deal.land_area || '未入力')}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">用途地域</label>
-            <p class="text-gray-900">${escapeHtml(deal.zoning || '未入力')}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">建蔽率 / 容積率</label>
-            <p class="text-gray-900">${escapeHtml(deal.building_coverage || '?')}% / ${escapeHtml(deal.floor_area_ratio || '?')}%</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">接道状況</label>
-            <p class="text-gray-900">${escapeHtml(deal.road_info || '未入力')}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">現況</label>
-            <p class="text-gray-900">${escapeHtml(deal.current_status || '未入力')}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">希望価格</label>
-            <p class="text-gray-900">${escapeHtml(deal.desired_price || '未入力')}</p>
+          
+          <!-- ファイル一覧 -->
+          <div id="files-list">
+            <p class="text-center text-gray-500 py-4">ファイルを読み込み中...</p>
           </div>
         </div>
       </div>
       
-      <!-- チャット -->
-      <div>
-        <h3 class="text-lg font-bold text-navy mb-3">
-          <i class="fas fa-comments text-gold mr-2"></i>チャット
-        </h3>
-        <div id="chat-messages" class="bg-gray-50 rounded p-4 mb-4 min-h-[200px]">
-          <p class="text-center text-gray-500">メッセージを読み込み中...</p>
-        </div>
-        <div class="flex space-x-2">
-          <input type="text" id="chat-input" class="input-field flex-1" placeholder="メッセージを入力...">
-          <button onclick="sendMessage()" class="btn-primary">
-            <i class="fas fa-paper-plane"></i>
-          </button>
+      <!-- 右カラム: チャットと未入力項目 -->
+      <div class="space-y-6">
+        <!-- 未入力項目パネル -->
+        ${missingFields.length > 0 ? `
+          <div class="card bg-red-50 border-2 border-red-200">
+            <h3 class="text-lg font-bold text-red-800 mb-3">
+              <i class="fas fa-exclamation-triangle mr-2"></i>未入力項目
+            </h3>
+            <p class="text-sm text-red-700 mb-3">以下の項目が未入力です。情報を入力してください。</p>
+            <ul class="space-y-1">
+              ${missingFields.map(f => `
+                <li class="text-sm text-red-700">
+                  <i class="fas fa-times-circle mr-2"></i>${f}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        ` : `
+          <div class="card bg-green-50 border-2 border-green-200">
+            <h3 class="text-lg font-bold text-green-800 mb-2">
+              <i class="fas fa-check-circle mr-2"></i>全項目入力済み
+            </h3>
+            <p class="text-sm text-green-700">必要な情報がすべて入力されています。</p>
+          </div>
+        `}
+        
+        <!-- チャット -->
+        <div class="card">
+          <h3 class="text-lg font-bold text-navy mb-3">
+            <i class="fas fa-comments text-gold mr-2"></i>チャット
+          </h3>
+          <div id="chat-messages" class="bg-gray-50 rounded p-3 mb-3 max-h-[400px] overflow-y-auto">
+            <p class="text-center text-gray-500">メッセージを読み込み中...</p>
+          </div>
+          <div class="space-y-2">
+            <textarea id="chat-input" class="input-field text-sm" rows="3" placeholder="メッセージを入力..."></textarea>
+            <button onclick="sendMessage()" class="btn-primary w-full text-sm">
+              <i class="fas fa-paper-plane mr-2"></i>送信
+            </button>
+          </div>
         </div>
       </div>
     </div>
   `;
   
+  // ステータス変更時の自動保存
+  if (isEditable) {
+    document.getElementById('deal-status')?.addEventListener('change', async (e) => {
+      try {
+        await axios.put(`/deals/${deal.id}`, { status: e.target.value });
+        state.currentDeal.status = e.target.value;
+        alert('ステータスを更新しました');
+      } catch (error) {
+        alert('ステータスの更新に失敗しました');
+      }
+    });
+    
+    // ファイルアップロードイベント
+    document.getElementById('file-upload')?.addEventListener('change', handleFileUpload);
+  }
+  
   loadMessages(deal.id);
+  loadFiles(deal.id);
 }
 
 // メッセージ読み込み
@@ -342,6 +498,167 @@ async function sendMessage() {
     loadMessages(state.currentDeal.id);
   } catch (error) {
     alert('メッセージの送信に失敗しました');
+  }
+}
+
+// 案件情報保存
+async function saveDealInfo() {
+  const updates = {
+    location: document.getElementById('edit-location').value,
+    station: document.getElementById('edit-station').value,
+    walk_minutes: parseInt(document.getElementById('edit-walk-minutes').value) || null,
+    land_area: document.getElementById('edit-land-area').value,
+    zoning: document.getElementById('edit-zoning').value,
+    building_coverage: document.getElementById('edit-building-coverage').value,
+    floor_area_ratio: document.getElementById('edit-floor-area-ratio').value,
+    height_district: document.getElementById('edit-height-district').value,
+    fire_zone: document.getElementById('edit-fire-zone').value,
+    road_info: document.getElementById('edit-road-info').value,
+    current_status: document.getElementById('edit-current-status').value,
+    desired_price: document.getElementById('edit-desired-price').value,
+    remarks: document.getElementById('edit-remarks').value
+  };
+  
+  try {
+    await axios.put(`/deals/${state.currentDeal.id}`, updates);
+    state.currentDeal = { ...state.currentDeal, ...updates };
+    alert('案件情報を保存しました');
+    renderDealDetail();
+  } catch (error) {
+    alert('保存に失敗しました: ' + (error.response?.data?.error || error.message));
+  }
+}
+
+// ファイル一覧読み込み
+async function loadFiles(dealId) {
+  try {
+    const response = await axios.get(`/files/deals/${dealId}`);
+    const files = response.data.files || [];
+    
+    renderFiles(files);
+  } catch (error) {
+    console.error('Failed to load files:', error);
+    document.getElementById('files-list').innerHTML = `
+      <p class="text-center text-red-500 py-4">ファイルの読み込みに失敗しました</p>
+    `;
+  }
+}
+
+// ファイル一覧レンダリング
+function renderFiles(files) {
+  const list = document.getElementById('files-list');
+  
+  if (files.length === 0) {
+    list.innerHTML = '<p class="text-center text-gray-500 py-4">添付ファイルはありません</p>';
+    return;
+  }
+  
+  const totalSize = files.reduce((sum, f) => sum + (f.size_bytes || 0), 0);
+  const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+  const limitMB = 50; // デフォルト50MB
+  const usagePercent = (totalSize / (limitMB * 1024 * 1024) * 100).toFixed(1);
+  
+  list.innerHTML = `
+    <!-- ストレージ使用状況 -->
+    <div class="mb-4 p-3 bg-gray-50 rounded">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-medium text-gray-700">ストレージ使用状況</span>
+        <span class="text-xs text-gray-600">${totalSizeMB}MB / ${limitMB}MB</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="bg-gold h-2 rounded-full" style="width: ${Math.min(usagePercent, 100)}%"></div>
+      </div>
+      ${usagePercent > 80 ? `
+        <p class="text-xs text-orange-600 mt-1">
+          <i class="fas fa-exclamation-triangle mr-1"></i>
+          ストレージ容量が残りわずかです
+        </p>
+      ` : ''}
+    </div>
+    
+    <!-- ファイル一覧 -->
+    <div class="space-y-2">
+      ${files.map(file => {
+        const iconMap = {
+          'application/pdf': 'fa-file-pdf text-red-500',
+          'image/jpeg': 'fa-file-image text-blue-500',
+          'image/png': 'fa-file-image text-blue-500',
+          'application/vnd.ms-excel': 'fa-file-excel text-green-500',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'fa-file-excel text-green-500',
+          'application/msword': 'fa-file-word text-blue-700',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'fa-file-word text-blue-700'
+        };
+        
+        const icon = iconMap[file.file_type] || 'fa-file text-gray-500';
+        const sizeMB = (file.size_bytes / (1024 * 1024)).toFixed(2);
+        
+        return `
+          <div class="flex items-center justify-between p-2 bg-white rounded border hover:border-gold transition-colors">
+            <div class="flex items-center space-x-3 flex-1 min-w-0">
+              <i class="fas ${icon} text-xl"></i>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-navy truncate">${escapeHtml(file.filename)}</p>
+                <p class="text-xs text-gray-500">${sizeMB}MB • ${formatDate(file.created_at)}</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="downloadFile('${file.id}')" class="text-gold hover:text-gold-dark text-sm">
+                <i class="fas fa-download"></i>
+              </button>
+              ${state.user?.role === 'ADMIN' || state.currentDeal.seller_id === state.user?.id ? `
+                <button onclick="deleteFile('${file.id}')" class="text-red-500 hover:text-red-700 text-sm">
+                  <i class="fas fa-trash"></i>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ファイルアップロード処理
+async function handleFileUpload(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+  
+  for (const file of files) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      await axios.post(`/files/deals/${state.currentDeal.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    } catch (error) {
+      alert(`${file.name}のアップロードに失敗しました: ${error.response?.data?.error || error.message}`);
+    }
+  }
+  
+  // ファイル一覧を再読み込み
+  loadFiles(state.currentDeal.id);
+  event.target.value = ''; // input をリセット
+}
+
+// ファイルダウンロード
+async function downloadFile(fileId) {
+  try {
+    window.open(`/api/files/${fileId}`, '_blank');
+  } catch (error) {
+    alert('ファイルのダウンロードに失敗しました');
+  }
+}
+
+// ファイル削除
+async function deleteFile(fileId) {
+  if (!confirm('このファイルを削除しますか?')) return;
+  
+  try {
+    await axios.delete(`/files/${fileId}`);
+    loadFiles(state.currentDeal.id);
+  } catch (error) {
+    alert('ファイルの削除に失敗しました');
   }
 }
 

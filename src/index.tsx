@@ -2317,11 +2317,12 @@ app.get('/', (c) => {
 });
 
 // 静的ファイルの配信
-app.use('/static/*', serveStatic({ root: './public' }));
-app.use('/assets/*', serveStatic({ root: './dist' }));
+// 本番環境（Cloudflare Pages）ではpublicディレクトリの内容が自動的にルートで配信される
+// 開発環境では画像ファイルは手動でdistにコピーされているため、そのまま配信される
+// Note: Cloudflare Pages自動配信により、/gallery/* と /logo-3d.png は追加設定不要
 
-// ロゴファイルを直接配信（ルート直下）
-app.get('/logo-3d.png', async (c) => {
+// SVGロゴも配信（後方互換性のため）
+app.get('/logo-3d.svg', async (c) => {
   const logoSvg = `<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">

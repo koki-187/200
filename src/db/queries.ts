@@ -37,6 +37,13 @@ export class Database {
       .run();
   }
 
+  async getAllUsers(): Promise<Omit<User, 'password_hash'>[]> {
+    const result = await this.db
+      .prepare('SELECT id, email, name, role, company_name, created_at, updated_at, last_login_at FROM users ORDER BY created_at DESC')
+      .all();
+    return result.results || [];
+  }
+
   // Deals
   async getDeals(userId: string, role: 'ADMIN' | 'AGENT'): Promise<Deal[]> {
     let query = 'SELECT * FROM deals';

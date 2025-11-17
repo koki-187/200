@@ -84,6 +84,19 @@ auth.post('/logout', (c) => {
   return c.json({ message: 'Logged out successfully' });
 });
 
+// ユーザー一覧取得（認証済みユーザー用）
+auth.get('/users', authMiddleware, async (c) => {
+  try {
+    const db = new Database(c.env.DB);
+    const users = await db.getAllUsers();
+
+    return c.json({ users });
+  } catch (error) {
+    console.error('Get users error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
 // 新規ユーザー登録（管理者専用）
 auth.post('/register', authMiddleware, async (c) => {
   try {

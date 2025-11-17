@@ -226,7 +226,7 @@ export class Database {
     title: string,
     message: string
   ): Promise<string> {
-    const id = crypto.randomUUID();
+    const id = globalThis.crypto.randomUUID();
     await this.db
       .prepare(`
         INSERT INTO notifications (id, user_id, deal_id, type, title, message, is_read)
@@ -253,7 +253,7 @@ export class Database {
   }
 
   async createNewUser(email: string, passwordHash: string, name: string, role: string): Promise<string> {
-    const id = crypto.randomUUID();
+    const id = globalThis.crypto.randomUUID();
     await this.db
       .prepare(`
         INSERT INTO users (id, email, password_hash, name, role)
@@ -262,5 +262,22 @@ export class Database {
       .bind(id, email, passwordHash, name, role)
       .run();
     return id;
+  }
+
+  async updateUserPassword(userId: string, passwordHash: string): Promise<void> {
+    await this.db
+      .prepare('UPDATE users SET password_hash = ?, updated_at = datetime("now") WHERE id = ?')
+      .bind(passwordHash, userId)
+      .run();
+  }
+
+  // Cron用：期限が近い案件を取得
+  async getDealsNearDeadline(hours: number): Promise<any[]> {
+    const deadline = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+    const result = await this.db
+      .prepare('SELECT * FROM deals WHERE response_deadline <= ? AND status != ? ORDER BY response_deadline ASC')
+      .bind(deadline, 'CLOSED')
+      .all();
+    return result.results || [];
   }
 }

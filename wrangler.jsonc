@@ -12,5 +12,9 @@
       "database_id": "placeholder-will-be-created",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+
+  "triggers": {
+    "crons": ["0 9,18 * * *"]
+  }
 }

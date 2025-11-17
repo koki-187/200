@@ -653,4 +653,66 @@ app.get('*', (c) => {
   `);
 });
 
-export default app;
+// Cloudflare Workers export with Cron support
+export default {
+  async fetch(request: Request, env: Bindings, ctx: ExecutionContext) {
+    return app.fetch(request, env, ctx);
+  },
+
+  async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    // Cronトリガーで定期実行される処理
+    console.log('Cron triggered at:', new Date(event.scheduledTime).toISOString());
+
+    try {
+      // メール通知が有効な場合のみ実行
+      if (!env.RESEND_API_KEY) {
+        console.log('RESEND_API_KEY not configured, skipping email notifications');
+        return;
+      }
+
+      const { Database } = await import('./db/queries');
+      const { createEmailService } = await import('./utils/email');
+
+      const db = new Database(env.DB);
+      const emailService = createEmailService(env.RESEND_API_KEY);
+
+      // 24時間以内に期限が来る案件を取得
+      const deals = await db.getDealsNearDeadline(24);
+      console.log(`Found ${deals.length} deals near deadline`);
+
+      let sentCount = 0;
+      for (const deal of deals) {
+        try {
+          const seller = await db.getUserById(deal.seller_id);
+          if (seller?.email) {
+            const deadline = new Date(deal.response_deadline);
+            const now = new Date();
+            const hoursRemaining = Math.floor((deadline.getTime() - now.getTime()) / (1000 * 60 * 60));
+
+            if (hoursRemaining > 0 && hoursRemaining <= 24) {
+              const result = await emailService.sendDeadlineNotification(
+                seller.email,
+                deal.title,
+                deal.response_deadline,
+                hoursRemaining
+              );
+
+              if (result.success) {
+                console.log(`Deadline notification sent to ${seller.email} for deal: ${deal.title}`);
+                sentCount++;
+              } else {
+                console.error(`Failed to send notification to ${seller.email}:`, result.error);
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing deal ${deal.id}:`, error);
+        }
+      }
+
+      console.log(`Cron job completed. Sent ${sentCount} notifications.`);
+    } catch (error) {
+      console.error('Cron job error:', error);
+    }
+  }
+};

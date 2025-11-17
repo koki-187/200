@@ -1,30 +1,24 @@
 /**
- * Cloudflare Workers互換の暗号化ユーティリティ
- * Web Crypto APIを使用
- */
-
-/**
- * パスワードをハッシュ化（簡易版 - 本番環境では更に堅牢な実装が必要）
+ * SHA-256パスワードハッシュ化
  */
 export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
- * パスワードを検証
+ * SHA-256パスワード検証
  */
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  const hash = await hashPassword(password);
-  return hash === hashedPassword;
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  const passwordHash = await hashPassword(password);
+  return passwordHash === hash;
 }
 
 /**
- * JWTトークン生成（簡易版）
+ * JWTトークン生成（簡易版 - SHA-256ベース）
  */
 export function generateSimpleToken(userId: string, role: string, secret: string): string {
   const header = { alg: 'HS256', typ: 'JWT' };

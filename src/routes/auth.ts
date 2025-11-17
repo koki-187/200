@@ -22,7 +22,7 @@ auth.post('/login', async (c) => {
       return c.json({ error: 'Invalid credentials' }, 401);
     }
 
-    // 簡易パスワード検証（SHA-256ハッシュ）
+    // パスワード検証（SHA-256）
     const isValid = await verifyPassword(password, user.password_hash);
     if (!isValid) {
       return c.json({ error: 'Invalid credentials' }, 401);

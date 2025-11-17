@@ -3,25 +3,5 @@
   "name": "webapp",
   "compatibility_date": "2024-01-01",
   "pages_build_output_dir": "./dist",
-  "compatibility_flags": ["nodejs_compat"],
-  
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "webapp-production",
-      "database_id": "placeholder-will-be-created",
-      "migrations_dir": "migrations"
-    }
-  ],
-
-  "r2_buckets": [
-    {
-      "binding": "R2_FILES",
-      "bucket_name": "webapp-files"
-    }
-  ],
-
-  "triggers": {
-    "crons": ["0 9,18 * * *"]
-  }
+  "compatibility_flags": ["nodejs_compat"]
 }

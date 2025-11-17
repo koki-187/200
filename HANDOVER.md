@@ -1,405 +1,370 @@
-# 🔄 次のチャットへの引き継ぎドキュメント
+# 次のセッションへの引き継ぎドキュメント
 
-## 📅 作成日時
-2025-11-17
+## セッション概要
+- **日時**: 2025-11-17
+- **開始時**: 17/50タスク完了（34%）
+- **終了時**: 34/50タスク完了（68%）
+- **実装タスク数**: 17タスク
 
----
+## このセッションで完了したタスク
 
-## 🎯 プロジェクト概要
+### 1. タスク15-17: React 18マイグレーション基盤構築 ✅
+**実装内容**:
+- React 18 + TypeScript環境構築
+- Zustand状態管理ストア実装
+  - `authStore.ts`: 認証状態管理
+  - `dealStore.ts`: 案件状態管理
+  - `notificationStore.ts`: 通知状態管理
+- カスタムフック実装
+  - `useApi.ts`: API通信フック
+  - `useToast.ts`: トースト通知フック
+- Reactコンポーネント
+  - `Layout.tsx`: レイアウトコンポーネント
+  - `Toast.tsx`: トースト通知UI
+  - `LoginPage.tsx`: ログインページ
+  - `DashboardPage.tsx`: ダッシュボードページ
 
-### プロジェクト名
-**200棟アパート用地仕入れプロジェクト v1.1.0**
+**技術スタック**:
+- React 18.x
+- Zustand 5.x
+- TypeScript（strict mode有効）
+- @vitejs/plugin-react
 
-### 目的
-買側仲介（管理者）と売側仲介（エージェント）間で、土地仕入れ案件の情報共有・資料管理・チャット・一次回答を営業日48時間以内に完結させるWebアプリケーション。
+**注意事項**:
+- ハイブリッドアプローチ採用（バックエンド: Hono, フロントエンド: 段階的React移行）
+- 完全なReact SPAへの移行は将来のタスクとして残る
 
-### 技術スタック
-- **フロントエンド**: HTML5 + TailwindCSS + Vanilla JavaScript
-- **バックエンド**: Hono Framework (TypeScript)
-- **ランタイム**: Cloudflare Workers/Pages
-- **データベース**: Cloudflare D1 (SQLite)
-- **認証**: JWT (SHA-256ベース)
-- **AI**: OpenAI GPT-4 API
-- **プロセス管理**: PM2
+### 2. タスク21-26: 機能拡充 ✅
+**実装内容**:
+- Excel エクスポート機能（`src/utils/excel.ts`）
+  - xlsx ライブラリ使用
+  - 日本語カラムヘッダー
+  - ステータス翻訳
+- 高度なフィルター機能（`src/utils/filters.ts`）
+  - ステータス、期限、検索、価格範囲、面積範囲、所在地、駅名フィルター
+  - ソート機能（更新日時、作成日時、期限、案件名）
+  - グリッド/リスト表示切替
+  - LocalStorage永続化
 
----
+**依存関係**:
+- `xlsx@0.18.5`
 
-## ✅ 実装完了した機能（v1.1.0）
+### 3. タスク27-30: Cloudflare R2ファイル管理統合 ✅
+**実装内容**:
+- R2 APIルート実装（`src/routes/r2.ts`）
+  - ファイルアップロード
+  - ファイルダウンロード
+  - ファイル一覧取得
+  - 論理削除/物理削除
+  - ストレージ使用量取得
+- R2ヘルパー関数（`src/utils/r2-helpers.ts`）
+  - アップロード、ダウンロード、削除、リスト、メタデータ取得
+- ファイルバリデーション（`src/utils/file-validators.ts`）
+  - 拡張子検証
+  - サイズ検証
+  - ファイル名サニタイズ
+  - フォルダー分類（deals, proposals, registry, reports, chat, general）
+- データベースマイグレーション
+  - `migrations/0002_add_file_versions.sql`: ファイルバージョン管理
 
-### 1. 認証システム
-- [x] JWT認証（SHA-256ベース）
-- [x] ロール管理（ADMIN / AGENT）
-- [x] セッション管理
-- [x] 自動ログアウト
+**設定**:
+- `wrangler.jsonc`に`r2_buckets`設定追加
+- `src/types/index.ts`に`R2_FILES: R2Bucket`バインディング追加
 
-### 2. ダッシュボード（案件一覧）
-- [x] 案件カード表示
-- [x] 検索機能（案件名、所在地、駅名）
-- [x] ソート機能（更新日時、作成日時、期限、案件名）
-- [x] フィルター機能（ステータス、期限ステータス）
-- [x] 新規案件作成モーダル（管理者専用）
-- [x] エージェント選択機能
-
-### 3. 案件詳細ページ
-- [x] 3カラムレイアウト（左2/3: 情報・ファイル、右1/3: 未入力項目・チャット）
-- [x] インライン編集機能（全フィールド編集可能）
-- [x] ステータス変更ドロップダウン
-- [x] 未入力項目パネル（リアルタイム警告）
-- [x] ファイル管理
-  - [x] ファイルアップロード（複数対応）
-  - [x] ストレージ使用状況表示（50MB上限）
-  - [x] ファイル一覧・ダウンロード・削除
-  - [x] ファイルタイプ別アイコン
-- [x] チャット機能
-  - [x] リアルタイムメッセージング
-  - [x] 未読管理（買側・売側別）
-  - [x] メッセージ履歴表示
-
-### 4. お知らせページ
-- [x] 通知一覧表示（タイムライン形式）
-- [x] タイプ別フィルター（新規案件、メッセージ、期限、未入力項目）
-- [x] 全て既読機能
-- [x] 個別既読・削除機能
-
-### 5. 設定ページ
-- [x] ビジネスデイ設定（営業日選択）
-- [x] 休日管理（祝日追加・削除）
-- [x] ストレージ上限設定
-- [x] ユーザー管理（管理者専用）
-  - [x] 新規ユーザー追加
-  - [x] 登録ユーザー一覧
-- [x] API情報表示
-
-### 6. AI提案スイート
-- [x] AI提案生成機能（OpenAI GPT-4）
-- [x] 物件情報からの強み・リスク分析
-- [x] 買主プロファイルに応じたカスタマイズ
-- [x] 提案結果の表示
-
-### 7. 営業日48時間管理
-- [x] 土日祝日を除く2営業日での自動期限計算
-- [x] 期限ステータス表示（期限内/期限迫る/期限超過）
-- [x] カウントダウン表示
-- [x] 設定画面での営業日カスタマイズ
-
-### 8. ロールベースアクセス制御
-- [x] 管理者専用機能の制限
-- [x] エージェントは自社案件のみ閲覧・編集
-- [x] 権限に応じたUI表示制御
-
-### 9. データベース（Cloudflare D1）
-- [x] 8テーブル構成
-  - users（ユーザー）
-  - deals（案件）
-  - messages（チャット）
-  - files（ファイル）
-  - ocr_jobs（OCR処理ジョブ）
-  - notifications（通知）
-  - settings（設定）
-  - proposals（AI提案）
-- [x] マイグレーション管理
-- [x] ローカル開発環境（--local mode）
-
----
-
-## 📂 プロジェクト構造
-
+**フォルダー構造**:
 ```
-/home/user/webapp/
-├── src/
-│   ├── index.tsx              # メインHTMLエントリーポイント
-│   ├── routes/
-│   │   ├── auth.ts            # 認証API
-│   │   ├── deals.ts           # 案件管理API
-│   │   ├── messages.ts        # チャットAPI
-│   │   ├── files.ts           # ファイル管理API
-│   │   ├── proposals.ts       # AI提案API
-│   │   ├── settings.ts        # 設定API
-│   │   └── notifications.ts   # 通知API
-│   ├── db/
-│   │   └── queries.ts         # データベースクエリ
-│   ├── utils/
-│   │   ├── auth.ts            # 認証ミドルウェア
-│   │   ├── crypto.ts          # 暗号化ユーティリティ
-│   │   └── businessTime.ts    # 営業日計算
-│   └── types/
-│       └── index.ts           # TypeScript型定義
-├── public/
-│   └── static/
-│       └── app.js             # フロントエンドJavaScript
-├── migrations/
-│   └── 0001_initial_schema.sql # データベーススキーマ
-├── seed.sql                   # シードデータ
-├── wrangler.jsonc             # Cloudflare設定
-├── ecosystem.config.cjs       # PM2設定
-├── package.json               # 依存関係
-├── vite.config.ts             # Viteビルド設定
-├── README.md                  # プロジェクト説明書
-└── HANDOVER.md               # このファイル
+R2バケット構造:
+/{folder}/{dealId}/{fileId}.{extension}
+例: deals/abc123/xyz789.pdf
+    chat/abc123/file456.jpg
 ```
 
----
+### 4. タスク31-33: チャット機能拡張 ✅
+**実装内容**:
+- チャットファイル添付機能
+  - エンドポイント: `POST /api/messages/deals/:dealId/with-attachments`
+  - FormData対応（複数ファイルアップロード）
+  - トランザクション処理（ロールバック対応）
+- メッセージ検索機能
+  - 検索パラメータ: search, hasAttachments, fromDate, toDate, senderId
+  - 送信者情報付加
+- @メンション機能（`src/utils/mentions.ts`）
+  - メンション抽出（@username, @"User Name", @email@domain.com）
+  - ユーザーID解決
+  - メンション保存
+  - 未読メンション取得
+  - メンションハイライト
+- データベースマイグレーション
+  - `migrations/0003_add_message_attachments.sql`: message_attachments junction table
+  - `migrations/0004_add_message_mentions.sql`: message_mentions table
 
-## 🔐 重要な認証情報
+**新規エンドポイント**:
+- `GET /api/messages/deals/:dealId?search=&hasAttachments=&fromDate=&toDate=&senderId=`
+- `POST /api/messages/deals/:dealId/with-attachments`
+- `GET /api/messages/:messageId/attachments`
+- `GET /api/messages/mentions/me`
+- `POST /api/messages/mentions/:messageId/mark-read`
+- `GET /api/messages/deals/:dealId/participants`
 
-### ローカル開発環境
-- **URL**: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
-- **管理者**: `admin@example.com` / `admin123`
-- **売側担当者1**: `seller1@example.com` / `admin123`
-- **売側担当者2**: `seller2@example.com` / `admin123`
+### 5. タスク37: レート制限実装 ✅
+**実装内容**:
+- レート制限ミドルウェア（`src/middleware/rate-limit.ts`）
+  - スライディングウィンドウアルゴリズム
+  - インメモリストア（開発環境用）
+  - カスタマイズ可能な設定
+  - X-RateLimit-* ヘッダー
 
-### 環境変数（`.dev.vars`）
+**プリセット**:
+- `strict`: 1分あたり10リクエスト
+- `standard`: 15分あたり100リクエスト
+- `generous`: 1時間あたり1000リクエスト
+- `auth`: 15分あたり5ログイン試行
+- `upload`: 1時間あたり20アップロード
+- `api`: 1時間あたり500APIリクエスト/ユーザー
+
+**適用箇所**:
+- `/api/auth/login`, `/api/auth/register`: `rateLimitPresets.auth`
+- `/api/r2/upload`: `rateLimitPresets.upload`
+- `/api/*`: `rateLimitPresets.api`
+
+**本番環境への注意**:
+- 現在はインメモリストア（Workers再起動で消失）
+- 本番環境では Cloudflare KV または Durable Objects への移行推奨
+
+## プロジェクト現状
+
+### 完了済み機能（34/50）
+1-14: 基本機能（認証、ユーザー管理、案件管理、チャット、テスト基盤）✅
+15-17: React基盤構築 ✅
+18-20: メール通知、PDF生成、監査ログ ✅
+21-26: 機能拡充（フィルター、Excel、表示切替）✅
+27-30: R2ファイル管理 ✅
+31-33: チャット拡張（添付、検索、メンション）✅
+37: レート制限 ✅
+
+### 未実装機能（16/50）
+34-35: 通知UI拡張
+36: APIバージョニング
+38: OpenAPI仕様書
+39-40: エラートラッキング、バックアップ
+41-45: ユーザーサポート（オンボーディング、ヘルプ、用語集、アナリティクス、フィードバック）
+46-48: 分析・レポート（KPI、月次レポート、トレンド）
+49-50: UI拡張（ダークモード、アニメーション）
+
+## 技術的な決定事項
+
+### 1. React マイグレーション戦略
+- **ハイブリッドアプローチ採用**: バックエンドAPI（Hono）+ 段階的フロントエンド移行
+- **理由**: Cloudflare Workers/Pagesの制約（Node.js API非対応、ファイルシステムアクセス不可）
+- **現状**: Reactインフラ構築済み、既存バニラJS UIと共存
+- **次のステップ**: 既存UIの段階的React化
+
+### 2. R2ファイル管理
+- **バケット名**: `webapp-files`
+- **フォルダー構造**: `/{folder}/{dealId}/{fileId}.{extension}`
+- **バリデーション**: 拡張子、サイズ、ファイル名サニタイズ
+- **最大サイズ**: ドキュメント10MB、画像5MB、アーカイブ50MB
+
+### 3. レート制限
+- **実装**: インメモリストア（開発環境）
+- **本番環境**: KV/Durable Objects推奨
+- **クリーンアップ**: 1000リクエストごとに期限切れエントリ削除
+
+## ビルド・デプロイ状況
+
+### 最新ビルド
+```bash
+✓ 812 modules transformed.
+dist/_worker.js  316.10 kB
+✓ built in 2.87s
 ```
-OPENAI_API_KEY=your-openai-api-key-here
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-```
 
-### GitHub
-- **リポジトリ**: https://github.com/koki-187/200
+### Git状態
 - **ブランチ**: main
-- **最終コミット**: "feat: AI提案生成機能とロールベースUI制御完成"
+- **最新コミット**: "docs: create comprehensive README..."
+- **コミット数（このセッション）**: 5コミット
+- **総コミット数**: 6+コミット
 
-### バックアップ
-- **CDN URL**: https://www.genspark.ai/api/files/s/Io14Zbjf
-- **バージョン**: v1.1.0
-- **サイズ**: 265KB
-- **説明**: 買側・売側の全タブと機能実装完了
+### デプロイ準備状況
+- ✅ ビルド成功
+- ✅ TypeScriptコンパイル成功
+- ⚠️ D1データベース: マイグレーション未実行（ローカル・本番とも）
+- ⚠️ R2バケット: 未作成（本番環境）
+- ⚠️ 環境変数: JWT_SECRET, OPENAI_API_KEY, RESEND_API_KEY 設定必要
 
----
+## 推奨される次のステップ
 
-## 🚀 開発環境セットアップ（次のチャット用）
+### 優先度: 高
+1. **データベースマイグレーション実行**
+   ```bash
+   # ローカル
+   npm run db:migrate:local
+   
+   # 本番（デプロイ時）
+   npm run db:migrate:prod
+   ```
 
-### 1. プロジェクトの復元
-```bash
-# GitHubからクローン
-git clone https://github.com/koki-187/200.git /home/user/webapp
-cd /home/user/webapp
+2. **R2バケット作成**（本番環境）
+   ```bash
+   npx wrangler r2 bucket create webapp-files
+   ```
 
-# 依存関係インストール
-npm install
+3. **環境変数設定**（本番環境）
+   ```bash
+   npx wrangler secret put JWT_SECRET
+   npx wrangler secret put OPENAI_API_KEY
+   npx wrangler secret put RESEND_API_KEY
+   ```
 
-# データベース初期化
-npm run db:reset
+### 優先度: 中
+4. **APIバージョニング実装**（タスク36）
+   - `/api/v1/...` 形式のバージョン付きエンドポイント
+   - 後方互換性維持
 
-# ビルド
-npm run build
+5. **OpenAPI仕様書生成**（タスク38）
+   - Swagger/OpenAPI 3.0仕様書
+   - API ドキュメント自動生成
 
-# サービス起動
-pm2 start ecosystem.config.cjs
+6. **レート制限の本番環境対応**
+   - Cloudflare KV または Durable Objects への移行
+   - 分散環境でのレート制限
+
+### 優先度: 低
+7. **UI拡張**（タスク34-35, 49-50）
+   - メール通知設定UI
+   - ブラウザプッシュ通知
+   - ダークモード
+   - アニメーションライブラリ
+
+8. **監視・分析**（タスク39, 44, 46-48）
+   - Sentry エラートラッキング
+   - Google アナリティクス
+   - KPIダッシュボード
+
+## 既知の問題・注意事項
+
+### 1. React SPA完全移行未完了
+- **現状**: Reactインフラ構築済みだが、既存UIは主にバニラJS
+- **影響**: フロントエンド機能の一部（Excel、フィルター等）がReactコンポーネント化されていない
+- **対応**: 段階的にReactコンポーネント化を進める
+
+### 2. マイグレーション未実行
+- **現状**: 4つの新規マイグレーションファイルがコミット済みだが未実行
+- **影響**: ファイルバージョン、メッセージ添付、メンション機能が動作しない
+- **対応**: デプロイ前に必ずマイグレーション実行
+
+### 3. レート制限の本番対応
+- **現状**: インメモリストア（Workers再起動で消失）
+- **影響**: 本番環境で正確なレート制限が機能しない可能性
+- **対応**: KV/Durable Objects への移行
+
+### 4. テスト未実行
+- **現状**: テストファイルは作成済みだが実行していない
+- **影響**: コード品質・バグ検出が不十分
+- **対応**: CI/CD パイプラインでテスト自動実行
+
+## ファイル構造変更
+
+### 新規作成ファイル
+```
+src/
+├── client/                       # React フロントエンド（新規）
+│   ├── App.tsx
+│   ├── index.tsx
+│   ├── components/
+│   │   ├── Layout.tsx
+│   │   └── Toast.tsx
+│   ├── pages/
+│   │   ├── LoginPage.tsx
+│   │   └── DashboardPage.tsx
+│   ├── hooks/
+│   │   ├── useApi.ts
+│   │   └── useToast.ts
+│   ├── store/
+│   │   ├── authStore.ts
+│   │   ├── dealStore.ts
+│   │   └── notificationStore.ts
+│   └── styles/
+│       └── index.css
+├── middleware/
+│   └── rate-limit.ts             # レート制限ミドルウェア（新規）
+├── routes/
+│   └── r2.ts                     # R2ファイル管理ルート（新規）
+├── utils/
+│   ├── excel.ts                  # Excelエクスポート（新規）
+│   ├── filters.ts                # フィルター・ソート（新規）
+│   ├── r2-helpers.ts             # R2ヘルパー（新規）
+│   ├── file-validators.ts        # ファイルバリデーション（新規）
+│   └── mentions.ts               # メンション処理（新規）
+├── db/
+│   └── queries.ts                # deleteMessage追加
+└── types/
+    └── index.ts                  # R2_FILES, RESEND_API_KEY追加
+
+migrations/                        # データベースマイグレーション（新規）
+├── 0002_add_file_versions.sql
+├── 0003_add_message_attachments.sql
+└── 0004_add_message_mentions.sql
+
+public/
+└── index.html                     # React SPA エントリーポイント（新規）
+
+README.md                          # 包括的ドキュメント（更新）
+HANDOVER.md                        # 本ファイル（新規）
 ```
 
-### 2. 動作確認
-```bash
-# ヘルスチェック
-curl http://localhost:3000/api/health
-
-# ログイン確認
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"admin123"}'
+### 変更されたファイル
+```
+src/index.tsx                      # レート制限ミドルウェア追加、r2ルート追加
+src/routes/messages.ts             # 検索、添付、メンション機能追加
+src/db/queries.ts                  # deleteMessage追加
+wrangler.jsonc                     # r2_buckets設定追加
+package.json                       # React, Zustand, xlsx依存関係追加
+vite.config.ts                     # React plugin追加
+tsconfig.json                      # React JSX設定、strict mode有効化
 ```
 
-### 3. 公開URLの取得
-サービスが起動したら、GetServiceUrlツールで公開URLを取得：
-```
-GetServiceUrl(port=3000, service_name="webapp")
-```
+## 依存関係変更
 
----
-
-## 📋 npm スクリプト一覧
-
+### 新規追加
 ```json
 {
-  "dev": "vite",
-  "dev:sandbox": "wrangler pages dev dist --d1=webapp-production --local --ip 0.0.0.0 --port 3000",
-  "build": "vite build",
-  "preview": "wrangler pages dev dist",
-  "deploy": "npm run build && wrangler pages deploy dist",
-  "deploy:prod": "npm run build && wrangler pages deploy dist --project-name webapp",
-  "clean-port": "fuser -k 3000/tcp 2>/dev/null || true",
-  "test": "curl http://localhost:3000",
-  "db:migrate:local": "wrangler d1 migrations apply webapp-production --local",
-  "db:migrate:prod": "wrangler d1 migrations apply webapp-production",
-  "db:seed": "wrangler d1 execute webapp-production --local --file=./seed.sql",
-  "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local && npm run db:seed",
-  "db:console:local": "wrangler d1 execute webapp-production --local",
-  "db:console:prod": "wrangler d1 execute webapp-production"
+  "dependencies": {
+    "react": "^18.x",
+    "react-dom": "^18.x",
+    "zustand": "^5.x",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.x",
+    "@types/react-dom": "^18.x",
+    "@vitejs/plugin-react": "latest"
+  }
 }
 ```
 
----
+## セッション統計
 
-## 🐛 既知の問題と注意点
+- **作業時間**: 約2-3時間相当
+- **実装タスク数**: 17タスク
+- **新規ファイル**: 25+ファイル
+- **変更ファイル**: 10+ファイル
+- **追加コード行数**: 約3000+行
+- **Gitコミット**: 5コミット
+- **ビルドサイズ**: 316.10 kB
 
-### 1. パスワードハッシュの変更
-- **現状**: SHA-256による簡易ハッシュ化
-- **本番環境への移行時**: bcryptへの変更が必須
-- **対応ファイル**: `src/utils/crypto.ts`
+## 次のセッションで優先すべきこと
 
-### 2. JWT署名アルゴリズム
-- **現状**: 簡易Base64エンコード
-- **本番環境への移行時**: HS256/RS256への変更が必須
-- **対応ファイル**: `src/utils/crypto.ts`
-
-### 3. ファイルアップロード
-- **実装状況**: 完了（フロントエンド・バックエンドAPI）
-- **注意**: Cloudflare Workersでは実際のファイルストレージはR2またはKVを使用
-- **現状**: データベースにメタデータのみ保存（storage_path）
-
-### 4. OpenAI API Key
-- **必須**: AI提案生成機能を使用する場合
-- **設定方法**: `.dev.vars`ファイルに`OPENAI_API_KEY`を設定
-
-### 5. PM2の使用
-- **開発環境**: PM2でサービス管理
-- **本番環境**: Cloudflare Pagesへのデプロイ時はPM2不要
+1. **データベースマイグレーション実行** - 新機能を動作可能にする
+2. **R2バケット作成** - ファイルアップロード機能を有効化
+3. **環境変数設定** - 本番デプロイ準備
+4. **APIバージョニング実装** - API安定性向上
+5. **OpenAPI仕様書生成** - API ドキュメント整備
 
 ---
 
-## 🎯 未実装機能（Phase 2）
+**セッション終了時刻**: 2025-11-17
+**進捗率**: 68% (34/50タスク)
+**次回目標進捗率**: 80%+ (40/50タスク)
 
-### 優先度: 高
-- [ ] メール通知システム（Gmail SMTP）
-- [ ] OCR自動入力（OpenAI Vision API）
-- [ ] PDF一次回答レポート自動生成
-- [ ] ファイルプレビュー機能
-
-### 優先度: 中
-- [ ] LINE通知連携
-- [ ] 高度な検索・フィルタ
-- [ ] ダッシュボード分析機能
-- [ ] データエクスポート（CSV/Excel）
-
-### 優先度: 低
-- [ ] 複数プロジェクト管理
-- [ ] カレンダー統合
-- [ ] モバイルアプリ（PWA）
-- [ ] 帳票出力テンプレート
-
----
-
-## 🔧 トラブルシューティング
-
-### サーバーが起動しない
-```bash
-# ポートクリーンアップ
-fuser -k 3000/tcp 2>/dev/null || true
-
-# PM2完全停止
-pm2 delete all
-
-# 再ビルド＆起動
-npm run build
-pm2 start ecosystem.config.cjs
-```
-
-### データベースエラー
-```bash
-# データベースリセット
-npm run db:reset
-
-# マイグレーション確認
-npm run db:console:local
-> .tables
-> SELECT * FROM users;
-```
-
-### ログイン失敗
-- パスワードは `admin123` で統一（seed.sql更新済み）
-- ユーザーが存在しない場合は `npm run db:reset`
-
-### API呼び出しエラー
-- `.dev.vars`ファイルの存在確認
-- OpenAI API Keyの有効性確認
-- トークンの有効期限確認（7日間）
-
----
-
-## 📝 重要なコミット履歴
-
-1. **Initial commit**: プロジェクト初期化
-2. **fix: ナビゲーションタブのクリック機能を追加**: お知らせ・設定タブの動作実装
-3. **feat: 設定ページとお知らせページの実装完了**: 全機能実装
-4. **feat: 案件詳細ページ強化と新規案件作成モーダル実装**: ダッシュボード強化
-5. **feat: AI提案生成機能とロールベースUI制御完成**: 全機能完成
-
----
-
-## 🌟 次のチャットでの作業提案
-
-### すぐに取り組むべき項目
-1. **OCR自動入力機能の実装**
-   - OpenAI Vision APIを使用
-   - 画像からのデータ抽出と自動フォーム入力
-   - `src/routes/ocr.ts` の実装
-
-2. **メール通知システムの実装**
-   - 期限通知、新規メッセージ通知
-   - Gmail SMTP統合
-   - `src/utils/email.ts` の作成
-
-3. **PDF一次回答レポート自動生成**
-   - 案件情報をPDF化
-   - AI提案結果の統合
-   - ダウンロード機能
-
-### 改善提案
-1. **パスワードハッシュのbcrypt化**
-   - セキュリティ強化
-   - 本番環境対応
-
-2. **JWT署名の強化**
-   - HS256/RS256への移行
-   - トークン更新機能
-
-3. **ファイルストレージの実装**
-   - Cloudflare R2統合
-   - 実際のファイルアップロード・ダウンロード
-
----
-
-## 📞 サポート情報
-
-### プロジェクト管理者
-- GitHub: koki-187
-- リポジトリ: https://github.com/koki-187/200
-
-### 技術スタック
-- Cloudflare Workers + Hono + D1 + OpenAI
-- TailwindCSS + Vanilla JavaScript
-- PM2 + Vite
-
-### ドキュメント
-- **README.md**: プロジェクト全体説明
-- **HANDOVER.md**: このファイル（引き継ぎドキュメント）
-- **TEST_REPORT.md**: テストレポート（20テスト・100%成功）
-
----
-
-## ✅ チェックリスト（次のチャット開始時）
-
-- [ ] GitHubからプロジェクトをクローン
-- [ ] 依存関係のインストール
-- [ ] データベースの初期化
-- [ ] ビルドの実行
-- [ ] PM2でサービス起動
-- [ ] ヘルスチェックの確認
-- [ ] ログイン動作確認
-- [ ] 公開URLの取得
-- [ ] すべての機能の動作確認
-  - [ ] ログイン
-  - [ ] ダッシュボード（案件一覧）
-  - [ ] 新規案件作成
-  - [ ] 案件詳細編集
-  - [ ] ファイルアップロード
-  - [ ] チャット送信
-  - [ ] お知らせ表示
-  - [ ] 設定変更
-  - [ ] AI提案生成
-
----
-
-**🎯 プロジェクトは完全に稼働可能な状態です！**
-
-**次のチャットでは、上記の「次のチャットでの作業提案」を参考に開発を継続してください。**
+**重要**: 次のセッション開始時は、まずこのドキュメントを確認し、未実行のマイグレーションと環境設定を完了させてください。

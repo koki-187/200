@@ -28,8 +28,18 @@ document.getElementById('login-form')?.addEventListener('submit', async (e) => {
   const email = document.getElementById('login-email').value;
   const password = document.getElementById('login-password').value;
   
+  console.log('Login attempt:', { email, password: '***' });
+  
+  // ローディング表示
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ログイン中...';
+  submitBtn.disabled = true;
+  
   try {
     const response = await axios.post('/auth/login', { email, password });
+    
+    console.log('Login success:', response.data);
     
     state.token = response.data.token;
     state.user = response.data.user;
@@ -39,7 +49,12 @@ document.getElementById('login-form')?.addEventListener('submit', async (e) => {
     
     showDashboard();
   } catch (error) {
-    alert('ログインに失敗しました: ' + (error.response?.data?.error || error.message));
+    console.error('Login error:', error);
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+    
+    const errorMsg = error.response?.data?.error || error.message || '不明なエラーが発生しました';
+    alert('ログインに失敗しました:\n\n' + errorMsg + '\n\n入力内容を確認してください。');
   }
 });
 
@@ -351,7 +366,15 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// 初期化
-if (state.token) {
-  showDashboard();
-}
+// 初期化 - ページ読み込み時の処理
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Page loaded, checking authentication...');
+  console.log('Stored token:', state.token ? 'exists' : 'none');
+  
+  if (state.token) {
+    console.log('Token found, attempting to load dashboard...');
+    showDashboard();
+  } else {
+    console.log('No token found, showing login page');
+  }
+});

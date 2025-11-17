@@ -1,0 +1,186 @@
+/* ダークモードスタイル */
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --card-bg: #ffffff;
+  --input-bg: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1f2937;
+  --bg-secondary: #111827;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --border-color: #374151;
+  --card-bg: #374151;
+  --input-bg: #1f2937;
+  --shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* 基本スタイル */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* カード */
+.card,
+.bg-white {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* テキスト */
+.text-gray-900 {
+  color: var(--text-primary) !important;
+}
+
+.text-gray-700 {
+  color: var(--text-primary) !important;
+}
+
+.text-gray-600,
+.text-gray-500 {
+  color: var(--text-secondary) !important;
+}
+
+/* ボーダー */
+.border-gray-300,
+.border-gray-200 {
+  border-color: var(--border-color) !important;
+}
+
+/* 入力フィールド */
+input,
+textarea,
+select {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary) !important;
+}
+
+/* ホバー効果 */
+.hover\:bg-gray-50:hover {
+  background-color: var(--bg-secondary) !important;
+}
+
+.hover\:bg-gray-100:hover {
+  background-color: var(--bg-secondary) !important;
+}
+
+/* シャドウ */
+.shadow,
+.shadow-sm,
+.shadow-md,
+.shadow-lg {
+  box-shadow: 0 1px 3px 0 var(--shadow), 0 1px 2px 0 var(--shadow) !important;
+}
+
+/* ナビゲーション */
+[data-theme="dark"] header {
+  background-color: #0f172a !important;
+}
+
+/* ボタン */
+[data-theme="dark"] .bg-indigo-600 {
+  background-color: #4f46e5 !important;
+}
+
+[data-theme="dark"] .bg-indigo-600:hover {
+  background-color: #4338ca !important;
+}
+
+/* テーブル */
+[data-theme="dark"] table {
+  background-color: var(--card-bg) !important;
+}
+
+[data-theme="dark"] th {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] td {
+  border-color: var(--border-color) !important;
+}
+
+/* モーダル */
+[data-theme="dark"] .modal {
+  background-color: var(--card-bg) !important;
+}
+
+/* スクロールバー */
+[data-theme="dark"]::-webkit-scrollbar {
+  background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"]::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+}
+
+[data-theme="dark"]::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-secondary);
+}
+
+/* トランジション */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-in-out;
+}
+
+/* ダークモード切替ボタン */
+.theme-toggle {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background-color: var(--card-bg);
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px var(--shadow);
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 8px var(--shadow);
+}
+
+.theme-toggle svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--text-primary);
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+[data-theme="dark"] {
+  animation: fadeIn 0.3s ease-in;
+}

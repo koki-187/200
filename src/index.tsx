@@ -17,6 +17,39 @@ import pdf from './routes/pdf';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+// セキュリティヘッダー設定（全リクエストに適用）
+app.use('*', async (c, next) => {
+  await next();
+  
+  // Content Security Policy
+  c.header('Content-Security-Policy', 
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.tailwindcss.com cdn.jsdelivr.net; " +
+    "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; " +
+    "font-src 'self' cdn.jsdelivr.net fonts.gstatic.com; " +
+    "img-src 'self' data: https:; " +
+    "connect-src 'self';"
+  );
+  
+  // クリックジャッキング対策
+  c.header('X-Frame-Options', 'DENY');
+  
+  // MIMEタイプスニッフィング対策
+  c.header('X-Content-Type-Options', 'nosniff');
+  
+  // HTTPS強制（本番環境）
+  c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  
+  // リファラーポリシー
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // XSS対策
+  c.header('X-XSS-Protection', '1; mode=block');
+  
+  // 権限ポリシー
+  c.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+});
+
 // CORS設定
 app.use('/api/*', cors({
   origin: '*',

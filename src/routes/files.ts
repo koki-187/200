@@ -81,8 +81,67 @@ files.post('/deals/:dealId', async (c) => {
       return c.json({ error: 'No file provided' }, 400);
     }
 
+    // ファイル検証
     const fileSize = file.size;
+    const fileName = file.name;
+    const fileType = file.type;
 
+    // ファイルサイズ検証（10MB上限）
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (fileSize > MAX_FILE_SIZE) {
+      return c.json({ error: 'File size exceeds 10MB limit' }, 400);
+    }
+
+    // ファイル名検証（危険な文字を排除）
+    const dangerousChars = /[<>:"/\\|?*\x00-\x1f]/g;
+    if (dangerousChars.test(fileName)) {
+      return c.json({ error: 'Invalid file name' }, 400);
+    }
+
+    // MIMEタイプ検証（許可リスト）
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/zip',
+      'text/plain'
+    ];
+
+    if (!allowedTypes.includes(fileType)) {
+      return c.json({ 
+        error: 'File type not allowed',
+        allowed: 'PDF, JPEG, PNG, GIF, Excel, Word, ZIP, TXT'
+      }, 400);
+    }
+
+    // 拡張子検証（MIMEタイプと一致するか）
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    const mimeExtensionMap: Record<string, string[]> = {
+      'application/pdf': ['pdf'],
+      'image/jpeg': ['jpg', 'jpeg'],
+      'image/jpg': ['jpg', 'jpeg'],
+      'image/png': ['png'],
+      'image/gif': ['gif'],
+      'application/vnd.ms-excel': ['xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['xlsx'],
+      'application/msword': ['doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['docx'],
+      'application/zip': ['zip'],
+      'text/plain': ['txt']
+    };
+
+    const expectedExtensions = mimeExtensionMap[fileType] || [];
+    if (!extension || !expectedExtensions.includes(extension)) {
+      return c.json({ error: 'File extension does not match file type' }, 400);
+    }
+
+    // 容量チェック
     if (totalSize + fileSize > maxSize) {
       return c.json({
         error: 'Storage limit exceeded',

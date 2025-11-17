@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { Database } from '../db/queries';
 import { authMiddleware } from '../utils/auth';
-import { verifyPassword, generateSimpleToken } from '../utils/crypto';
+import { verifyPassword, generateToken } from '../utils/crypto';
 
 const auth = new Hono<{ Bindings: Bindings }>();
 
@@ -31,8 +31,8 @@ auth.post('/login', async (c) => {
     // 最終ログイン時刻を更新
     await db.updateLastLogin(user.id);
 
-    // JWTトークン生成
-    const token = generateSimpleToken(user.id, user.role, c.env.JWT_SECRET);
+    // JWTトークン生成（HMAC-SHA256署名）
+    const token = await generateToken(user.id, user.role, c.env.JWT_SECRET);
 
     return c.json({
       token,

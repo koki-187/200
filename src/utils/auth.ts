@@ -1,9 +1,9 @@
 import { Context } from 'hono';
 import { Bindings } from '../types';
-import { verifySimpleToken } from './crypto';
+import { verifyToken } from './crypto';
 
 /**
- * JWT検証ミドルウェア
+ * JWT検証ミドルウェア（HMAC-SHA256署名検証）
  */
 export async function authMiddleware(c: Context<{ Bindings: Bindings }>, next: () => Promise<void>) {
   const authHeader = c.req.header('Authorization');
@@ -15,7 +15,7 @@ export async function authMiddleware(c: Context<{ Bindings: Bindings }>, next: (
 
   try {
     const secret = c.env.JWT_SECRET;
-    const payload = verifySimpleToken(token, secret);
+    const payload = await verifyToken(token, secret);
     
     if (!payload) {
       return c.json({ error: 'Invalid token' }, 401);

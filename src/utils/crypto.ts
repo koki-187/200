@@ -1,31 +1,67 @@
+import bcrypt from 'bcryptjs';
+import { sign, verify } from '@tsndr/cloudflare-worker-jwt';
+
 /**
- * SHA-256パスワードハッシュ化
+ * bcryptパスワードハッシュ化（本番対応）
+ * ソルト付き、10ラウンド
  */
 export async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const salt = await bcrypt.genSalt(10);
+  return await bcrypt.hash(password, salt);
 }
 
 /**
- * SHA-256パスワード検証
+ * bcryptパスワード検証
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const passwordHash = await hashPassword(password);
-  return passwordHash === hash;
+  return await bcrypt.compare(password, hash);
 }
 
 /**
- * JWTトークン生成（簡易版 - SHA-256ベース）
+ * JWTトークン生成（HMAC-SHA256署名）
+ */
+export async function generateToken(userId: string, role: string, secret: string): Promise<string> {
+  return await sign({
+    userId,
+    role,
+    exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7日間
+  }, secret);
+}
+
+/**
+ * JWTトークン検証（HMAC-SHA256署名検証）
+ */
+export async function verifyToken(token: string, secret: string): Promise<{ userId: string; role: string } | null> {
+  try {
+    const isValid = await verify(token, secret);
+    if (!isValid) return null;
+
+    const decoded = JSON.parse(atob(token.split('.')[1]));
+    
+    // 有効期限チェック
+    if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+
+    return {
+      userId: decoded.userId,
+      role: decoded.role
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * 旧関数（後方互換性のため残す - 非推奨）
+ * @deprecated generateToken()を使用してください
  */
 export function generateSimpleToken(userId: string, role: string, secret: string): string {
   const header = { alg: 'HS256', typ: 'JWT' };
   const payload = {
     userId,
     role,
-    exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7日間
+    exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60)
   };
 
   const encodedHeader = btoa(JSON.stringify(header));
@@ -36,7 +72,8 @@ export function generateSimpleToken(userId: string, role: string, secret: string
 }
 
 /**
- * JWTトークン検証（簡易版）
+ * 旧関数（後方互換性のため残す - 非推奨）
+ * @deprecated verifyToken()を使用してください
  */
 export function verifySimpleToken(token: string, secret: string): { userId: string; role: string } | null {
   try {
@@ -50,7 +87,6 @@ export function verifySimpleToken(token: string, secret: string): { userId: stri
 
     const payload = JSON.parse(atob(encodedPayload));
     
-    // 有効期限チェック
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
       return null;
     }

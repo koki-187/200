@@ -899,25 +899,64 @@ app.get('/', (c) => {
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 20% 50%, rgba(30, 58, 138, 0.3) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(30, 64, 175, 0.2) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .login-card {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.95);
+    }
+    .logo-3d {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 40px rgba(30, 64, 175, 0.4),
+                  0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      transform-style: preserve-3d;
+      transition: transform 0.3s ease;
+    }
+    .logo-3d:hover {
+      transform: translateY(-5px) rotateX(5deg);
+    }
+    .logo-icon {
+      font-size: 2.5rem;
+      color: white;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
   </style>
 </head>
 <body>
   <div class="max-w-md w-full mx-4">
     <!-- ログインカード -->
-    <div class="bg-white rounded-2xl shadow-2xl p-8">
+    <div class="login-card rounded-2xl shadow-2xl p-8 border border-gray-200">
       <!-- ヘッダー -->
       <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full mb-4">
-          <i class="fas fa-building text-white text-2xl"></i>
+        <div class="logo-3d mx-auto mb-6">
+          <i class="logo-icon fas fa-building"></i>
         </div>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">200戸土地仕入れ管理</h1>
-        <p class="text-gray-500">不動産仲介案件管理システム v2.0</p>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">200戸土地仕入れ管理</h1>
+        <p class="text-gray-600 font-medium">不動産仲介案件管理システム</p>
+        <p class="text-xs text-gray-400 mt-1">Professional Real Estate Management Platform</p>
       </div>
 
       <!-- エラーメッセージ -->
@@ -940,7 +979,7 @@ app.get('/', (c) => {
             id="email" 
             name="email"
             required
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-gray-50 focus:bg-white"
             placeholder="admin@200units.com"
           >
         </div>
@@ -955,7 +994,7 @@ app.get('/', (c) => {
             id="password" 
             name="password"
             required
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-gray-50 focus:bg-white"
             placeholder="••••••••••"
           >
         </div>
@@ -967,7 +1006,7 @@ app.get('/', (c) => {
             id="remember-me" 
             name="remember-me"
             checked
-            class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           >
           <label for="remember-me" class="ml-2 block text-sm text-gray-700">
             ログイン情報を保存（30日間）
@@ -978,7 +1017,7 @@ app.get('/', (c) => {
         <button 
           type="submit"
           id="login-button"
-          class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-3 rounded-lg hover:from-purple-600 hover:to-indigo-700 transition duration-200 transform hover:scale-105 shadow-lg"
+          class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition duration-200 shadow-lg hover:shadow-xl"
         >
           <i class="fas fa-sign-in-alt mr-2"></i>
           ログイン
@@ -988,18 +1027,18 @@ app.get('/', (c) => {
       <!-- システム情報 -->
       <div class="mt-8 pt-6 border-t border-gray-200">
         <div class="text-center">
-          <p class="text-xs text-gray-400">
-            <i class="fas fa-shield-alt mr-1"></i>
-            セキュア接続 | v2.0.0
+          <p class="text-xs text-gray-500 font-medium">
+            <i class="fas fa-shield-alt mr-1 text-blue-600"></i>
+            セキュア接続 | v2.1.0
           </p>
         </div>
       </div>
     </div>
 
     <!-- フッター -->
-    <div class="text-center mt-6 text-white text-sm">
-      <p class="opacity-80">© 2025 200戸土地仕入れ管理システム</p>
-      <p class="opacity-60 mt-1">Powered by Cloudflare Workers + Hono</p>
+    <div class="text-center mt-6 text-gray-300 text-sm">
+      <p class="font-medium">© 2025 200戸土地仕入れ管理システム</p>
+      <p class="text-gray-400 mt-1 text-xs">Powered by Cloudflare Workers + Hono</p>
     </div>
   </div>
 

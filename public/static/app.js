@@ -719,6 +719,44 @@ async function deleteFile(fileId) {
   }
 }
 
+// AI提案生成
+async function generateProposal() {
+  if (!state.currentDeal) return;
+  
+  if (!confirm('この案件のAI提案を生成しますか?\n\n生成には数秒かかる場合があります。')) {
+    return;
+  }
+  
+  const btn = event?.target;
+  const originalText = btn?.innerHTML;
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>生成中...';
+    btn.disabled = true;
+  }
+  
+  try {
+    const response = await axios.post(`/proposals/deals/${state.currentDeal.id}`, {
+      buyer_profile: '200棟アパート開発プロジェクト',
+      investment_criteria: '利回り重視、駅近物件優先'
+    });
+    
+    const proposal = response.data.proposal;
+    
+    // 提案結果を表示
+    alert(`AI提案を生成しました！\n\n【総合評価】\n${proposal.summary}\n\n提案の詳細は案件メモに保存されました。`);
+    
+    // 案件詳細を再読み込み
+    await showDealDetail(state.currentDeal.id);
+  } catch (error) {
+    alert('AI提案の生成に失敗しました: ' + (error.response?.data?.error || error.message));
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+}
+
 // 新規案件作成モーダル
 document.getElementById('btn-new-deal')?.addEventListener('click', async () => {
   // 管理者権限チェック

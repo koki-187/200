@@ -185,11 +185,17 @@ app.get('/dashboard', (c) => {
       <div class="flex justify-between items-center py-4">
         <div class="flex items-center space-x-3">
           <div class="header-logo">
-            <img src="/logo-3d.svg" alt="Logo" class="w-6 h-6" />
+            <img src="/logo-3d.png" alt="Logo" class="w-6 h-6" />
           </div>
           <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
         </div>
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-6">
+          <a href="/gallery" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-images mr-2"></i>ギャラリー
+          </a>
+          <a href="/deals" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-folder mr-2"></i>案件一覧
+          </a>
           <span id="user-name" class="text-gray-200"></span>
           <span id="user-role" class="text-xs px-3 py-1 rounded-full bg-blue-600 text-white font-medium"></span>
           <button onclick="logout()" class="text-gray-300 hover:text-white transition">
@@ -407,6 +413,417 @@ app.get('/dashboard', (c) => {
   `);
 });
 
+// ギャラリーページ
+app.get('/gallery', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>事業ギャラリー - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+    .gallery-card {
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+    .gallery-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+    .gallery-image {
+      transition: transform 0.5s ease;
+    }
+    .gallery-card:hover .gallery-image {
+      transform: scale(1.1);
+    }
+    .map-container {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-4">
+        <div class="flex items-center space-x-3">
+          <a href="/dashboard" class="flex items-center space-x-3 hover:opacity-80 transition">
+            <div class="header-logo">
+              <img src="/logo-3d.png" alt="Logo" class="w-6 h-6" />
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
+          </a>
+        </div>
+        <div class="flex items-center space-x-6">
+          <a href="/dashboard" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-home mr-2"></i>ダッシュボード
+          </a>
+          <a href="/deals" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-folder mr-2"></i>案件一覧
+          </a>
+          <span id="user-name" class="text-gray-200"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- ページタイトル -->
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">事業ギャラリー</h2>
+      <p class="text-gray-600">当社の販売エリアと実績物件をご紹介します</p>
+    </div>
+
+    <!-- 事業概要 -->
+    <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+      <div class="flex items-start space-x-4 mb-6">
+        <div class="bg-blue-600 text-white p-3 rounded-lg">
+          <i class="fas fa-building text-2xl"></i>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-2xl font-bold text-gray-900 mb-3">関東エリア進出プロジェクト</h3>
+          <p class="text-gray-700 leading-relaxed mb-4">
+            当社は愛知県全域、長野県松本市、埼玉県東部・中央部・西部の一部を中心に、
+            <span class="font-semibold text-blue-600">200戸規模のマンション用地仕入れ事業</span>を展開しております。
+          </p>
+          <p class="text-gray-700 leading-relaxed mb-4">
+            このたび、<span class="font-semibold text-blue-600">関東エリアへの本格進出</span>を決定し、
+            埼玉県を中心とした首都圏での用地仕入れを強化してまいります。
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div class="text-blue-600 font-semibold mb-1">対象エリア</div>
+              <div class="text-gray-900">愛知県全域・長野県・埼玉県</div>
+            </div>
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div class="text-blue-600 font-semibold mb-1">事業規模</div>
+              <div class="text-gray-900">200戸規模マンション用地</div>
+            </div>
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div class="text-blue-600 font-semibold mb-1">土地条件</div>
+              <div class="text-gray-900">40坪〜70坪程度</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 販売エリアマップ -->
+    <div class="mb-8">
+      <h3 class="text-2xl font-bold text-gray-900 mb-4">
+        <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i>販売エリア
+      </h3>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 愛知県マップ -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+          <div class="map-container">
+            <img src="/gallery/aichi-map.jpg" alt="愛知県販売エリア" class="w-full h-auto gallery-image">
+          </div>
+          <div class="p-6">
+            <h4 class="text-xl font-bold text-gray-900 mb-2">愛知県全域</h4>
+            <p class="text-gray-600">県内全域をカバー。名古屋市を中心に豊富な実績があります。</p>
+          </div>
+        </div>
+
+        <!-- 長野・埼玉マップ -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+          <div class="map-container">
+            <img src="/gallery/nagano-saitama-map.jpg" alt="長野県・埼玉県販売エリア" class="w-full h-auto gallery-image">
+          </div>
+          <div class="p-6">
+            <h4 class="text-xl font-bold text-gray-900 mb-2">長野県・埼玉県</h4>
+            <p class="text-gray-600">長野県松本市、埼玉県東部・中央部・西部の一部に展開中。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 実績物件 -->
+    <div class="mb-8">
+      <h3 class="text-2xl font-bold text-gray-900 mb-4">
+        <i class="fas fa-image text-blue-600 mr-2"></i>実績物件
+      </h3>
+      
+      <!-- 外観 -->
+      <div class="mb-8">
+        <h4 class="text-xl font-semibold text-gray-800 mb-4">外観デザイン</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+            <div class="map-container">
+              <img src="/gallery/building-1.jpg" alt="物件外観1" class="w-full h-auto gallery-image">
+            </div>
+            <div class="p-6">
+              <h5 class="text-lg font-bold text-gray-900 mb-2">モダン外観タイプA</h5>
+              <p class="text-gray-600">シンプルで洗練されたグレータイル仕上げ。高級感のあるデザイン。</p>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+            <div class="map-container">
+              <img src="/gallery/buildings-collection.jpg" alt="物件外観コレクション" class="w-full h-auto gallery-image">
+            </div>
+            <div class="p-6">
+              <h5 class="text-lg font-bold text-gray-900 mb-2">外観バリエーション</h5>
+              <p class="text-gray-600">グレー系、ホワイト系、ブラック系の3タイプをご用意しております。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 内装 -->
+      <div class="mb-8">
+        <h4 class="text-xl font-semibold text-gray-800 mb-4">内装デザイン</h4>
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+          <div class="map-container">
+            <img src="/gallery/interior-collection.jpg" alt="内装コレクション" class="w-full h-auto gallery-image">
+          </div>
+          <div class="p-6">
+            <h5 class="text-lg font-bold text-gray-900 mb-4">標準仕様</h5>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div class="text-sm">
+                <i class="fas fa-check text-green-600 mr-2"></i>
+                <span class="text-gray-700">システムキッチン</span>
+              </div>
+              <div class="text-sm">
+                <i class="fas fa-check text-green-600 mr-2"></i>
+                <span class="text-gray-700">独立洗面台</span>
+              </div>
+              <div class="text-sm">
+                <i class="fas fa-check text-green-600 mr-2"></i>
+                <span class="text-gray-700">浴室乾燥機付</span>
+              </div>
+              <div class="text-sm">
+                <i class="fas fa-check text-green-600 mr-2"></i>
+                <span class="text-gray-700">TVモニターインターホン</span>
+              </div>
+              <div class="text-sm">
+                <i class="fas fa-check text-green-600 mr-2"></i>
+                <span class="text-gray-700">宅配ボックス</span>
+              </div>
+              <div class="text-sm">
+                <i class="fas fa-check text-green-600 mr-2"></i>
+                <span class="text-gray-700">オートロック</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9戸プラン -->
+      <div class="mb-8">
+        <h4 class="text-xl font-semibold text-gray-800 mb-4">9戸プラン 過去事例</h4>
+        
+        <!-- 外観 -->
+        <div class="mb-6">
+          <h5 class="text-lg font-medium text-gray-700 mb-3">外観</h5>
+          <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+            <div class="map-container">
+              <img src="/gallery/9units-exterior.jpg" alt="9戸プラン外観" class="w-full h-auto gallery-image">
+            </div>
+            <div class="p-6">
+              <p class="text-gray-600">昼夜の表情が異なる洗練されたデザイン。白系とダーク系のツートンカラーで高級感を演出。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 内観 -->
+        <div class="mb-6">
+          <h5 class="text-lg font-medium text-gray-700 mb-3">内観</h5>
+          <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+            <div class="map-container">
+              <img src="/gallery/9units-interior-living.jpg" alt="9戸プラン内観リビング" class="w-full h-auto gallery-image">
+            </div>
+            <div class="p-6">
+              <p class="text-gray-600">明るく開放的なリビング空間。北欧スタイルの家具との相性も抜群です。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 内観・設備 -->
+        <div class="mb-6">
+          <h5 class="text-lg font-medium text-gray-700 mb-3">内観・設備</h5>
+          <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+            <div class="map-container">
+              <img src="/gallery/9units-interior-facilities.jpg" alt="9戸プラン内観設備" class="w-full h-auto gallery-image">
+            </div>
+            <div class="p-6">
+              <p class="text-gray-600">浴室乾燥機、独立洗面台、ウォシュレット、TVモニターインターホン、エアコン完備。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 間取り図 -->
+        <div class="mb-6">
+          <h5 class="text-lg font-medium text-gray-700 mb-3">間取り図</h5>
+          <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+            <div class="map-container">
+              <img src="/gallery/9units-floorplan.jpg" alt="9戸プラン間取り図" class="w-full h-auto gallery-image">
+            </div>
+            <div class="p-6">
+              <h6 class="font-semibold text-gray-900 mb-3">建物概要</h6>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                <div>
+                  <span class="text-gray-600">構造:</span>
+                  <span class="text-gray-900 ml-2">木造3階建</span>
+                </div>
+                <div>
+                  <span class="text-gray-600">総戸数:</span>
+                  <span class="text-gray-900 ml-2">9戸</span>
+                </div>
+                <div>
+                  <span class="text-gray-600">専有面積:</span>
+                  <span class="text-gray-900 ml-2">約30〜35㎡</span>
+                </div>
+                <div>
+                  <span class="text-gray-600">間取り:</span>
+                  <span class="text-gray-900 ml-2">1LDK</span>
+                </div>
+                <div>
+                  <span class="text-gray-600">駐輪場:</span>
+                  <span class="text-gray-900 ml-2">9台</span>
+                </div>
+                <div>
+                  <span class="text-gray-600">宅配BOX:</span>
+                  <span class="text-gray-900 ml-2">完備</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 商品化条件 -->
+    <div class="bg-white rounded-xl shadow-lg p-8">
+      <h3 class="text-2xl font-bold text-gray-900 mb-6">
+        <i class="fas fa-clipboard-check text-blue-600 mr-2"></i>商品化条件
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- OK条件 -->
+        <div>
+          <h4 class="text-lg font-semibold text-green-700 mb-4 flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>商品化OK条件
+          </h4>
+          <div class="space-y-3">
+            <div class="flex items-start">
+              <i class="fas fa-chevron-right text-green-600 mt-1 mr-3"></i>
+              <div>
+                <span class="font-medium text-gray-900">大きさ:</span>
+                <span class="text-gray-700 ml-2">40坪から70坪程度</span>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <i class="fas fa-chevron-right text-green-600 mt-1 mr-3"></i>
+              <div>
+                <span class="font-medium text-gray-900">間口:</span>
+                <span class="text-gray-700 ml-2">7.5m以上</span>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <i class="fas fa-chevron-right text-green-600 mt-1 mr-3"></i>
+              <div>
+                <span class="font-medium text-gray-900">公道:</span>
+                <span class="text-gray-700 ml-2">2m以上</span>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <i class="fas fa-chevron-right text-green-600 mt-1 mr-3"></i>
+              <div>
+                <span class="font-medium text-gray-900">駅から:</span>
+                <span class="text-gray-700 ml-2">徒歩15分以内</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NG条件 -->
+        <div>
+          <h4 class="text-lg font-semibold text-red-700 mb-4 flex items-center">
+            <i class="fas fa-times-circle mr-2"></i>商品化NG条件
+          </h4>
+          <div class="space-y-3">
+            <div class="flex items-start">
+              <i class="fas fa-chevron-right text-red-600 mt-1 mr-3"></i>
+              <div>
+                <span class="text-gray-700">崖火地域</span>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <i class="fas fa-chevron-right text-red-600 mt-1 mr-3"></i>
+              <div>
+                <span class="text-gray-700">10m以上の浸水</span>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <i class="fas fa-chevron-right text-red-600 mt-1 mr-3"></i>
+              <div>
+                <span class="text-gray-700">ハザードマップ</span>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <i class="fas fa-chevron-right text-red-600 mt-1 mr-3"></i>
+              <div>
+                <span class="text-gray-700">河川隣接</span>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <i class="fas fa-chevron-right text-red-600 mt-1 mr-3"></i>
+              <div>
+                <span class="text-gray-700">家屋倒壊エリア</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    const token = localStorage.getItem('auth_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!token) {
+      window.location.href = '/';
+    }
+
+    if (user.name) {
+      document.getElementById('user-name').textContent = user.name;
+    }
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>
+  `);
+});
+
 // 案件一覧ページ
 app.get('/deals', (c) => {
   return c.html(`
@@ -441,7 +858,7 @@ app.get('/deals', (c) => {
       <div class="flex justify-between items-center py-4">
         <a href="/dashboard" class="flex items-center space-x-3 hover:opacity-80 transition">
           <div class="header-logo">
-            <img src="/logo-3d.svg" alt="Logo" class="w-6 h-6" />
+            <img src="/logo-3d.png" alt="Logo" class="w-6 h-6" />
           </div>
           <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
         </a>
@@ -458,9 +875,14 @@ app.get('/deals', (c) => {
   <!-- メインコンテンツ -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- ページヘッダー -->
-    <div class="mb-6">
-      <h2 class="text-2xl font-bold text-gray-900">案件一覧</h2>
-      <p class="text-gray-600 mt-1">全ての土地仕入れ案件を管理します</p>
+    <div class="mb-6 flex justify-between items-end">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900">案件一覧</h2>
+        <p class="text-gray-600 mt-1">全ての土地仕入れ案件を管理します</p>
+      </div>
+      <a href="/deals/new" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition shadow-lg">
+        <i class="fas fa-plus mr-2"></i>新規案件作成
+      </a>
     </div>
 
     <!-- フィルター・検索 -->
@@ -663,6 +1085,421 @@ app.get('/deals', (c) => {
   `);
 });
 
+// 案件作成ページ
+app.get('/deals/new', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>案件作成 - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+    .ocr-drop-zone {
+      border: 2px dashed #cbd5e1;
+      transition: all 0.3s ease;
+    }
+    .ocr-drop-zone.dragover {
+      border-color: #3b82f6;
+      background-color: #eff6ff;
+    }
+    .ocr-preview {
+      max-width: 400px;
+      max-height: 400px;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-4">
+        <div class="flex items-center">
+          <a href="/deals" class="text-gray-300 hover:text-white mr-4 transition">
+            <i class="fas fa-arrow-left text-lg"></i>
+          </a>
+          <a href="/dashboard" class="flex items-center space-x-3 hover:opacity-80 transition">
+            <div class="header-logo">
+              <img src="/logo-3d.png" alt="Logo" class="w-6 h-6" />
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
+          </a>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span id="user-name" class="text-gray-200"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-6">
+      <h2 class="text-3xl font-bold text-gray-900">新規案件作成</h2>
+      <p class="text-gray-600 mt-2">登記簿謄本などの画像からOCRで自動入力できます</p>
+    </div>
+
+    <!-- OCRセクション -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <i class="fas fa-camera text-blue-600 mr-2"></i>
+        OCR自動入力（オプション）
+      </h3>
+      
+      <!-- ドロップゾーン -->
+      <div id="ocr-drop-zone" class="ocr-drop-zone rounded-lg p-8 text-center mb-4">
+        <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-3"></i>
+        <p class="text-gray-600 mb-2">登記簿謄本や物件資料の画像をドラッグ＆ドロップ</p>
+        <p class="text-sm text-gray-500 mb-4">または</p>
+        <label for="ocr-file-input" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 cursor-pointer inline-block transition">
+          <i class="fas fa-folder-open mr-2"></i>ファイルを選択
+        </label>
+        <input type="file" id="ocr-file-input" accept="image/*" class="hidden">
+      </div>
+
+      <!-- プレビューとステータス -->
+      <div id="ocr-preview-container" class="hidden">
+        <div class="flex items-start space-x-4">
+          <img id="ocr-preview-image" class="ocr-preview rounded-lg shadow" />
+          <div class="flex-1">
+            <div id="ocr-status" class="mb-4">
+              <div class="flex items-center text-blue-600">
+                <i class="fas fa-spinner fa-spin mr-2"></i>
+                <span>OCR処理中...</span>
+              </div>
+            </div>
+            <div id="ocr-result" class="hidden">
+              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-center text-green-700 mb-2">
+                  <i class="fas fa-check-circle mr-2"></i>
+                  <span class="font-semibold">OCR完了</span>
+                </div>
+                <p class="text-sm text-gray-600">フォームに情報を自動入力しました。内容を確認してください。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 案件フォーム -->
+    <form id="deal-form" class="bg-white rounded-xl shadow-lg p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- 物件タイトル -->
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            物件タイトル <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="title" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        </div>
+
+        <!-- 所在地 -->
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            所在地 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="location" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 川崎市幸区塚越四丁目">
+        </div>
+
+        <!-- 最寄り駅 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">最寄り駅</label>
+          <input type="text" id="station"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 矢向">
+        </div>
+
+        <!-- 徒歩分数 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">徒歩分数</label>
+          <input type="number" id="walk_minutes" min="0"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 4">
+        </div>
+
+        <!-- 土地面積 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">土地面積</label>
+          <input type="text" id="land_area"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 218.14㎡（実測）">
+        </div>
+
+        <!-- 用途地域 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">用途地域</label>
+          <input type="text" id="zoning"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 第一種住居地域">
+        </div>
+
+        <!-- 建ぺい率 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">建ぺい率</label>
+          <input type="text" id="building_coverage"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 60%">
+        </div>
+
+        <!-- 容積率 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">容積率</label>
+          <input type="text" id="floor_area_ratio"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 200%">
+        </div>
+
+        <!-- 高度地区 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">高度地区</label>
+          <input type="text" id="height_district"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        </div>
+
+        <!-- 防火地域 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">防火地域</label>
+          <input type="text" id="fire_zone"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        </div>
+
+        <!-- 道路情報 -->
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">道路情報</label>
+          <input type="text" id="road_info"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 北側私道 幅員2.0m 接道2.0m">
+        </div>
+
+        <!-- 現況 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">現況</label>
+          <input type="text" id="current_status"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 古家あり">
+        </div>
+
+        <!-- 希望価格 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">希望価格</label>
+          <input type="text" id="desired_price"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 8,000万円">
+        </div>
+
+        <!-- 売主選択 -->
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            売主 <span class="text-red-500">*</span>
+          </label>
+          <select id="seller_id" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="">選択してください</option>
+          </select>
+        </div>
+
+        <!-- 備考 -->
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
+          <textarea id="remarks" rows="4"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+        </div>
+      </div>
+
+      <!-- ボタン -->
+      <div class="flex justify-end space-x-4 mt-6">
+        <a href="/deals" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+          キャンセル
+        </a>
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+          <i class="fas fa-save mr-2"></i>案件を作成
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    const token = localStorage.getItem('auth_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!token) {
+      window.location.href = '/';
+    }
+
+    if (user.name) {
+      document.getElementById('user-name').textContent = user.name;
+    }
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+
+    // 売主リスト取得
+    async function loadSellers() {
+      try {
+        const response = await axios.get('/api/auth/users', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const sellers = response.data.users.filter(u => u.role === 'AGENT');
+        const select = document.getElementById('seller_id');
+        sellers.forEach(seller => {
+          const option = document.createElement('option');
+          option.value = seller.id;
+          option.textContent = seller.name + (seller.company_name ? ' (' + seller.company_name + ')' : '');
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Failed to load sellers:', error);
+      }
+    }
+
+    // OCR機能
+    const dropZone = document.getElementById('ocr-drop-zone');
+    const fileInput = document.getElementById('ocr-file-input');
+    const previewContainer = document.getElementById('ocr-preview-container');
+    const previewImage = document.getElementById('ocr-preview-image');
+    const ocrStatus = document.getElementById('ocr-status');
+    const ocrResult = document.getElementById('ocr-result');
+
+    // ドラッグ&ドロップ
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        processOCR(file);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        processOCR(file);
+      }
+    });
+
+    async function processOCR(file) {
+      // プレビュー表示
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImage.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      previewContainer.classList.remove('hidden');
+      ocrStatus.innerHTML = '<div class="flex items-center text-blue-600"><i class="fas fa-spinner fa-spin mr-2"></i><span>OCR処理中...</span></div>';
+      ocrResult.classList.add('hidden');
+
+      // OCR実行
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await axios.post('/api/ocr/extract', formData, {
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        const data = response.data;
+
+        // フォームに自動入力
+        if (data.property_name) document.getElementById('title').value = data.property_name;
+        if (data.location) document.getElementById('location').value = data.location;
+        if (data.land_area) document.getElementById('land_area').value = data.land_area;
+        if (data.zoning) document.getElementById('zoning').value = data.zoning;
+        if (data.building_coverage) document.getElementById('building_coverage').value = data.building_coverage;
+        if (data.floor_area_ratio) document.getElementById('floor_area_ratio').value = data.floor_area_ratio;
+        if (data.road_info) document.getElementById('road_info').value = data.road_info;
+        if (data.price) document.getElementById('desired_price').value = data.price;
+
+        // 成功表示
+        ocrStatus.classList.add('hidden');
+        ocrResult.classList.remove('hidden');
+      } catch (error) {
+        console.error('OCR error:', error);
+        ocrStatus.innerHTML = '<div class="flex items-center text-red-600"><i class="fas fa-exclamation-circle mr-2"></i><span>OCR処理に失敗しました</span></div>';
+      }
+    }
+
+    // フォーム送信
+    document.getElementById('deal-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const dealData = {
+        title: document.getElementById('title').value,
+        location: document.getElementById('location').value,
+        station: document.getElementById('station').value || null,
+        walk_minutes: parseInt(document.getElementById('walk_minutes').value) || null,
+        land_area: document.getElementById('land_area').value || null,
+        zoning: document.getElementById('zoning').value || null,
+        building_coverage: document.getElementById('building_coverage').value || null,
+        floor_area_ratio: document.getElementById('floor_area_ratio').value || null,
+        height_district: document.getElementById('height_district').value || null,
+        fire_zone: document.getElementById('fire_zone').value || null,
+        road_info: document.getElementById('road_info').value || null,
+        current_status: document.getElementById('current_status').value || null,
+        desired_price: document.getElementById('desired_price').value || null,
+        seller_id: document.getElementById('seller_id').value,
+        remarks: document.getElementById('remarks').value || null
+      };
+
+      try {
+        const response = await axios.post('/api/deals', dealData, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        alert('案件を作成しました');
+        window.location.href = '/deals/' + response.data.deal.id;
+      } catch (error) {
+        console.error('Create deal error:', error);
+        alert('案件作成に失敗しました: ' + (error.response?.data?.error || error.message));
+      }
+    });
+
+    // 初期化
+    loadSellers();
+  </script>
+</body>
+</html>
+  `);
+});
+
 // 案件詳細ページ
 app.get('/deals/:id', (c) => {
   const dealId = c.req.param('id');
@@ -702,7 +1539,7 @@ app.get('/deals/:id', (c) => {
           </a>
           <a href="/dashboard" class="flex items-center space-x-3 hover:opacity-80 transition">
             <div class="header-logo">
-              <img src="/logo-3d.svg" alt="Logo" class="w-6 h-6" />
+              <img src="/logo-3d.png" alt="Logo" class="w-6 h-6" />
             </div>
             <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
           </a>
@@ -895,17 +1732,95 @@ app.get('/deals/:id', (c) => {
 
           <!-- ファイルタブ -->
           <div id="content-files" class="tab-content hidden">
+            <!-- ファイルアップロード -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">ファイルアップロード</h3>
+              <form id="file-upload-form" class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">ファイル選択</label>
+                  <input type="file" id="file-input" required
+                    class="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100 cursor-pointer">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">フォルダー分類</label>
+                  <select id="file-folder" required
+                    class="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="deals">案件資料</option>
+                    <option value="registry">登記簿謄本</option>
+                    <option value="proposals">提案書</option>
+                    <option value="reports">報告書</option>
+                    <option value="chat">その他</option>
+                  </select>
+                </div>
+                <button type="submit" 
+                  class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition">
+                  <i class="fas fa-upload mr-2"></i>アップロード
+                </button>
+              </form>
+            </div>
+
+            <!-- ストレージ使用状況 -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">ストレージ使用状況</h3>
+              <div id="storage-info">
+                <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                  <div id="storage-bar" class="bg-blue-600 h-4 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="storage-text" class="text-sm text-gray-600">読み込み中...</p>
+              </div>
+            </div>
+
+            <!-- ファイル一覧 -->
             <div class="bg-white rounded-lg shadow p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">ファイル一覧</h3>
-              <p class="text-gray-600">ファイル管理機能は開発中です。</p>
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">アップロード済みファイル</h3>
+              <div id="files-list">
+                <div class="text-center py-8 text-gray-500">
+                  <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                  <p>読み込み中...</p>
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- メッセージタブ -->
           <div id="content-messages" class="tab-content hidden">
+            <!-- メッセージ送信フォーム -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">メッセージ送信</h3>
+              <form id="message-form" class="space-y-4">
+                <div>
+                  <textarea id="message-content" rows="4" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="メッセージを入力してください"></textarea>
+                </div>
+                <div class="flex items-center space-x-4">
+                  <button type="submit" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition">
+                    <i class="fas fa-paper-plane mr-2"></i>送信
+                  </button>
+                  <label for="message-attachment" class="cursor-pointer text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-paperclip mr-1"></i>ファイル添付
+                    <input type="file" id="message-attachment" class="hidden">
+                  </label>
+                  <span id="attachment-name" class="text-sm text-gray-500"></span>
+                </div>
+              </form>
+            </div>
+
+            <!-- メッセージ一覧 -->
             <div class="bg-white rounded-lg shadow p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">メッセージ</h3>
-              <p class="text-gray-600">メッセージ機能は開発中です。</p>
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">メッセージ履歴</h3>
+              <div id="messages-list">
+                <div class="text-center py-8 text-gray-500">
+                  <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                  <p>読み込み中...</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -926,7 +1841,210 @@ app.get('/deals/:id', (c) => {
         content.classList.add('hidden');
       });
       document.getElementById('content-' + tab).classList.remove('hidden');
+
+      // タブ切り替え時にデータをロード
+      if (tab === 'files') {
+        loadFiles();
+      } else if (tab === 'messages') {
+        loadMessages();
+      }
     }
+
+    // ファイル管理機能
+    async function loadFiles() {
+      try {
+        const response = await axios.get('/api/files/deals/' + dealId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        const files = response.data.files || [];
+        const storage = response.data.storage;
+
+        // ストレージ使用状況を更新
+        const percentage = storage.percentage || 0;
+        document.getElementById('storage-bar').style.width = percentage + '%';
+        document.getElementById('storage-text').textContent = 
+          \`\${(storage.used / 1024 / 1024).toFixed(2)} MB / \${(storage.max / 1024 / 1024).toFixed(2)} MB 使用中 (\${percentage}%)\`;
+
+        // ファイルリスト表示
+        const filesList = document.getElementById('files-list');
+        if (files.length === 0) {
+          filesList.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-folder-open text-4xl mb-2"></i><p>アップロード済みファイルはありません</p></div>';
+          return;
+        }
+
+        filesList.innerHTML = '<div class="divide-y">' + files.map(file => \`
+          <div class="p-4 hover:bg-gray-50 transition">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <i class="fas fa-file text-gray-400 text-2xl"></i>
+                <div>
+                  <div class="font-medium text-gray-900">\${file.filename}</div>
+                  <div class="text-sm text-gray-500">
+                    <span class="px-2 py-1 bg-gray-100 rounded text-xs">\${file.folder}</span>
+                    <span class="ml-2">\${(file.size_bytes / 1024).toFixed(2)} KB</span>
+                    <span class="ml-2">\${new Date(file.created_at).toLocaleString('ja-JP')}</span>
+                  </div>
+                </div>
+              </div>
+              <button onclick="downloadFile('\${file.id}', '\${file.filename}')" 
+                class="text-blue-600 hover:text-blue-800 transition">
+                <i class="fas fa-download"></i>
+              </button>
+            </div>
+          </div>
+        \`).join('') + '</div>';
+      } catch (error) {
+        console.error('Failed to load files:', error);
+        document.getElementById('files-list').innerHTML = 
+          '<div class="text-center py-8 text-red-600"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><p>ファイル読み込みに失敗しました</p></div>';
+      }
+    }
+
+    // ファイルアップロード
+    document.getElementById('file-upload-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const fileInput = document.getElementById('file-input');
+      const folder = document.getElementById('file-folder').value;
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('ファイルを選択してください');
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', folder);
+        formData.append('deal_id', dealId);
+
+        const response = await axios.post('/api/r2/upload', formData, {
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        alert('ファイルをアップロードしました');
+        fileInput.value = '';
+        loadFiles();
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('アップロードに失敗しました: ' + (error.response?.data?.error || error.message));
+      }
+    });
+
+    async function downloadFile(fileId, filename) {
+      try {
+        const response = await axios.get('/api/r2/download/' + fileId, {
+          headers: { 'Authorization': 'Bearer ' + token },
+          responseType: 'blob'
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } catch (error) {
+        console.error('Download error:', error);
+        alert('ダウンロードに失敗しました');
+      }
+    }
+
+    // メッセージ機能
+    let messageAttachment = null;
+    
+    document.getElementById('message-attachment').addEventListener('change', (e) => {
+      messageAttachment = e.target.files[0];
+      document.getElementById('attachment-name').textContent = messageAttachment ? messageAttachment.name : '';
+    });
+
+    async function loadMessages() {
+      try {
+        const response = await axios.get('/api/messages/deals/' + dealId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        const messages = response.data.messages || [];
+        const messagesList = document.getElementById('messages-list');
+
+        if (messages.length === 0) {
+          messagesList.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-comments text-4xl mb-2"></i><p>メッセージはまだありません</p></div>';
+          return;
+        }
+
+        messagesList.innerHTML = '<div class="space-y-4">' + messages.map(msg => \`
+          <div class="border-l-4 \${msg.sender_id === user.id ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} p-4 rounded-r-lg">
+            <div class="flex items-center justify-between mb-2">
+              <div class="font-medium text-gray-900">\${msg.sender_name || 'Unknown'}</div>
+              <div class="text-xs text-gray-500">\${new Date(msg.created_at).toLocaleString('ja-JP')}</div>
+            </div>
+            <div class="text-gray-700 whitespace-pre-wrap">\${msg.content}</div>
+            \${msg.has_attachments ? '<div class="mt-2 text-sm text-blue-600"><i class="fas fa-paperclip mr-1"></i>添付ファイルあり</div>' : ''}
+          </div>
+        \`).join('') + '</div>';
+
+        // スクロールを最下部へ
+        messagesList.scrollTop = messagesList.scrollHeight;
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+        document.getElementById('messages-list').innerHTML = 
+          '<div class="text-center py-8 text-red-600"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><p>メッセージ読み込みに失敗しました</p></div>';
+      }
+    }
+
+    // メッセージ送信
+    document.getElementById('message-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const content = document.getElementById('message-content').value.trim();
+      if (!content) {
+        alert('メッセージを入力してください');
+        return;
+      }
+
+      try {
+        let response;
+
+        if (messageAttachment) {
+          // ファイル添付あり
+          const formData = new FormData();
+          formData.append('content', content);
+          formData.append('file', messageAttachment);
+
+          response = await axios.post('/api/messages/deals/' + dealId + '/with-attachments', formData, {
+            headers: {
+              'Authorization': 'Bearer ' + token,
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+        } else {
+          // テキストのみ
+          response = await axios.post('/api/messages/deals/' + dealId, {
+            content: content
+          }, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+        }
+
+        // フォームをリセット
+        document.getElementById('message-content').value = '';
+        document.getElementById('message-attachment').value = '';
+        messageAttachment = null;
+        document.getElementById('attachment-name').textContent = '';
+
+        // メッセージを再読み込み
+        loadMessages();
+      } catch (error) {
+        console.error('Send message error:', error);
+        alert('メッセージ送信に失敗しました: ' + (error.response?.data?.error || error.message));
+      }
+    });
 
     loadDeal();
   </script>
@@ -1001,7 +2119,7 @@ app.get('/', (c) => {
       <!-- ヘッダー -->
       <div class="text-center mb-8">
         <div class="logo-3d mx-auto mb-6">
-          <img src="/logo-3d.svg" alt="Logo" class="w-full h-full" />
+          <img src="/logo-3d.png" alt="Logo" class="w-full h-full" />
         </div>
         <h1 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">200棟土地仕入れ管理</h1>
         <p class="text-gray-600 font-medium">不動産仲介案件管理システム</p>
@@ -1203,7 +2321,7 @@ app.use('/static/*', serveStatic({ root: './public' }));
 app.use('/assets/*', serveStatic({ root: './dist' }));
 
 // ロゴファイルを直接配信（ルート直下）
-app.get('/logo-3d.svg', async (c) => {
+app.get('/logo-3d.png', async (c) => {
   const logoSvg = `<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">

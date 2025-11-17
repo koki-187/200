@@ -109,15 +109,15 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production
 
 **管理者（買側）**
 - Email: `admin@example.com`
-- Password: `Admin!2025`
+- Password: `admin123`
 
 **売側担当者1**
 - Email: `seller1@example.com`
-- Password: `Admin!2025`
+- Password: `admin123`
 
 **売側担当者2**
 - Email: `seller2@example.com`
-- Password: `Admin!2025`
+- Password: `admin123`
 
 ---
 

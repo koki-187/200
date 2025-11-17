@@ -719,6 +719,77 @@ async function deleteFile(fileId) {
   }
 }
 
+// 新規案件作成モーダル
+document.getElementById('btn-new-deal')?.addEventListener('click', async () => {
+  // 管理者権限チェック
+  if (state.user?.role !== 'ADMIN') {
+    alert('案件作成は管理者のみ可能です');
+    return;
+  }
+  
+  // エージェント一覧を取得
+  try {
+    const response = await axios.get('/settings/users');
+    const users = response.data.users || [];
+    const agents = users.filter(u => u.role === 'AGENT');
+    
+    const sellerSelect = document.getElementById('new-deal-seller');
+    sellerSelect.innerHTML = '<option value="">選択してください</option>' + 
+      agents.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${escapeHtml(a.email)})</option>`).join('');
+    
+    // モーダルを表示
+    document.getElementById('new-deal-modal').classList.remove('hidden');
+  } catch (error) {
+    alert('エージェント情報の取得に失敗しました');
+  }
+});
+
+// モーダルを閉じる
+document.getElementById('btn-close-modal')?.addEventListener('click', () => {
+  document.getElementById('new-deal-modal').classList.add('hidden');
+});
+
+document.getElementById('btn-cancel-modal')?.addEventListener('click', () => {
+  document.getElementById('new-deal-modal').classList.add('hidden');
+});
+
+// 新規案件作成フォーム送信
+document.getElementById('new-deal-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const newDeal = {
+    title: document.getElementById('new-deal-title').value,
+    seller_id: document.getElementById('new-deal-seller').value,
+    status: document.getElementById('new-deal-status').value,
+    location: document.getElementById('new-deal-location').value || null,
+    station: document.getElementById('new-deal-station').value || null,
+    walk_minutes: parseInt(document.getElementById('new-deal-walk').value) || null,
+    land_area: document.getElementById('new-deal-area').value || null,
+    desired_price: document.getElementById('new-deal-price').value || null
+  };
+  
+  if (!newDeal.title || !newDeal.seller_id) {
+    alert('案件名とエージェントは必須です');
+    return;
+  }
+  
+  try {
+    await axios.post('/deals', newDeal);
+    document.getElementById('new-deal-modal').classList.add('hidden');
+    document.getElementById('new-deal-form').reset();
+    alert('案件を作成しました');
+    await loadDeals();
+  } catch (error) {
+    alert('案件の作成に失敗しました: ' + (error.response?.data?.error || error.message));
+  }
+});
+
+// フィルターとソートのイベントリスナー
+document.getElementById('filter-status')?.addEventListener('change', renderDeals);
+document.getElementById('filter-deadline')?.addEventListener('change', renderDeals);
+document.getElementById('search-deals')?.addEventListener('input', renderDeals);
+document.getElementById('sort-deals')?.addEventListener('change', renderDeals);
+
 // 一覧に戻る
 document.getElementById('btn-back-to-list')?.addEventListener('click', () => {
   showDashboard();

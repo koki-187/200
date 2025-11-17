@@ -11,6 +11,9 @@ import files from './routes/files';
 import proposals from './routes/proposals';
 import settings from './routes/settings';
 import notifications from './routes/notifications';
+import ocr from './routes/ocr';
+import email from './routes/email';
+import pdf from './routes/pdf';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -30,6 +33,9 @@ app.route('/api/files', files);
 app.route('/api/proposals', proposals);
 app.route('/api/settings', settings);
 app.route('/api/notifications', notifications);
+app.route('/api/ocr', ocr);
+app.route('/api/email', email);
+app.route('/api/pdf', pdf);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {
@@ -258,9 +264,12 @@ app.get('*', (c) => {
 
       <!-- 案件詳細画面 -->
       <div id="deal-detail-page" class="hidden">
-        <div class="mb-6">
+        <div class="mb-6 flex items-center justify-between">
           <button id="btn-back-to-list" class="text-navy hover:text-gold transition-colors">
             <i class="fas fa-arrow-left mr-2"></i>案件一覧に戻る
+          </button>
+          <button id="btn-download-pdf" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded transition-colors">
+            <i class="fas fa-file-pdf mr-2"></i>PDFレポート生成
           </button>
         </div>
         
@@ -605,6 +614,23 @@ app.get('*', (c) => {
               </div>
             </div>
 
+            <div class="border-t pt-4 mt-4">
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center">
+                    <i class="fas fa-magic text-blue-600 mr-2"></i>
+                    <span class="font-medium text-blue-900">OCR自動入力</span>
+                  </div>
+                  <span class="text-xs text-blue-600">画像・PDFから自動読み取り</span>
+                </div>
+                <input type="file" id="ocr-file-input" accept="image/*,.pdf" class="hidden">
+                <button type="button" id="btn-ocr-upload" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors">
+                  <i class="fas fa-upload mr-2"></i>資料をアップロードして自動入力
+                </button>
+                <div id="ocr-status" class="mt-2 text-sm text-center hidden"></div>
+              </div>
+            </div>
+
             <div class="flex items-center space-x-3 pt-4">
               <button type="submit" class="btn-primary flex-1">
                 <i class="fas fa-check mr-2"></i>案件を作成
@@ -620,6 +646,7 @@ app.get('*', (c) => {
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/static/app.js?v=${Date.now()}"></script>
 </body>
 </html>

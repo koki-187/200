@@ -1299,6 +1299,323 @@ async function createNewDeal() {
   }
 }
 
+// OCR機能
+document.getElementById('btn-ocr-upload')?.addEventListener('click', () => {
+  document.getElementById('ocr-file-input').click();
+});
+
+document.getElementById('ocr-file-input')?.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const statusDiv = document.getElementById('ocr-status');
+  statusDiv.classList.remove('hidden');
+  statusDiv.className = 'mt-2 text-sm text-center text-blue-600';
+  statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>画像を解析中...';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await axios.post('/ocr/extract', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    if (response.data.success && response.data.extracted) {
+      const data = response.data.extracted;
+      
+      // フォームに自動入力
+      if (data.property_name && !document.getElementById('new-deal-title').value) {
+        document.getElementById('new-deal-title').value = data.property_name;
+      }
+      if (data.location) {
+        document.getElementById('new-deal-location').value = data.location;
+      }
+      if (data.access) {
+        // "最寄駅名 徒歩X分" のような形式を解析
+        const stationMatch = data.access.match(/(.+?)(?:駅)?(?:\s*徒歩\s*(\d+)\s*分)?/);
+        if (stationMatch) {
+          if (stationMatch[1]) {
+            document.getElementById('new-deal-station').value = stationMatch[1].trim();
+          }
+          if (stationMatch[2]) {
+            document.getElementById('new-deal-walk').value = stationMatch[2];
+          }
+        }
+      }
+      if (data.land_area) {
+        document.getElementById('new-deal-area').value = data.land_area;
+      }
+      if (data.price) {
+        document.getElementById('new-deal-price').value = data.price;
+      }
+
+      statusDiv.className = 'mt-2 text-sm text-center text-green-600';
+      statusDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>情報を自動入力しました！';
+      
+      setTimeout(() => {
+        statusDiv.classList.add('hidden');
+      }, 3000);
+    } else {
+      throw new Error('OCR結果が取得できませんでした');
+    }
+  } catch (error) {
+    console.error('OCR error:', error);
+    statusDiv.className = 'mt-2 text-sm text-center text-red-600';
+    statusDiv.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>エラー: ' + (error.response?.data?.error || error.message);
+  }
+  
+  // ファイル入力をリセット
+  e.target.value = '';
+});
+
+// PDF生成機能
+document.getElementById('btn-download-pdf')?.addEventListener('click', async () => {
+  if (!state.currentDeal) {
+    alert('案件情報が読み込まれていません');
+    return;
+  }
+
+  const dealId = state.currentDeal.id;
+  
+  // ローディング表示
+  const btn = document.getElementById('btn-download-pdf');
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>PDF生成中...';
+  btn.disabled = true;
+
+  try {
+    // PDFデータ取得
+    const response = await axios.get(`/pdf/deal/${dealId}/data`);
+    const { data } = response.data;
+
+    // jsPDF初期化
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    let y = 20;
+    const lineHeight = 7;
+    const pageHeight = 280;
+
+    // タイトル
+    doc.setFontSize(18);
+    doc.text('案件レポート', 105, y, { align: 'center' });
+    y += 15;
+
+    // 案件情報
+    doc.setFontSize(14);
+    doc.text('【案件情報】', 20, y);
+    y += 10;
+
+    doc.setFontSize(10);
+    doc.text(`案件名: ${data.deal.title}`, 20, y);
+    y += lineHeight;
+    
+    doc.text(`ステータス: ${getStatusLabel(data.deal.status)}`, 20, y);
+    y += lineHeight;
+
+    if (data.deal.location) {
+      doc.text(`所在地: ${data.deal.location}`, 20, y);
+      y += lineHeight;
+    }
+
+    if (data.deal.station) {
+      doc.text(`最寄駅: ${data.deal.station}`, 20, y);
+      y += lineHeight;
+    }
+
+    if (data.deal.land_area) {
+      doc.text(`土地面積: ${data.deal.land_area}`, 20, y);
+      y += lineHeight;
+    }
+
+    if (data.deal.desired_price) {
+      doc.text(`希望価格: ${data.deal.desired_price}`, 20, y);
+      y += lineHeight;
+    }
+
+    if (data.deal.response_deadline) {
+      doc.text(`回答期限: ${new Date(data.deal.response_deadline).toLocaleString('ja-JP')}`, 20, y);
+      y += lineHeight;
+    }
+
+    y += 5;
+
+    // 担当者情報
+    if (data.buyer || data.seller) {
+      doc.setFontSize(14);
+      doc.text('【担当者情報】', 20, y);
+      y += 10;
+
+      doc.setFontSize(10);
+      if (data.buyer) {
+        doc.text(`買側: ${data.buyer.name} (${data.buyer.email})`, 20, y);
+        y += lineHeight;
+      }
+      if (data.seller) {
+        doc.text(`売側: ${data.seller.name} (${data.seller.email})`, 20, y);
+        y += lineHeight;
+      }
+      y += 5;
+    }
+
+    // AI提案
+    if (data.proposal) {
+      if (y > pageHeight - 50) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text('【AI提案】', 20, y);
+      y += 10;
+
+      doc.setFontSize(10);
+      const summaryLines = doc.splitTextToSize(data.proposal.summary, 170);
+      summaryLines.forEach(line => {
+        if (y > pageHeight - 10) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.text(line, 20, y);
+        y += lineHeight;
+      });
+
+      y += 5;
+
+      if (data.proposal.strengths && data.proposal.strengths.length > 0) {
+        doc.text('強み:', 20, y);
+        y += lineHeight;
+        data.proposal.strengths.forEach(strength => {
+          const lines = doc.splitTextToSize(`• ${strength}`, 165);
+          lines.forEach(line => {
+            if (y > pageHeight - 10) {
+              doc.addPage();
+              y = 20;
+            }
+            doc.text(line, 25, y);
+            y += lineHeight;
+          });
+        });
+        y += 3;
+      }
+
+      if (data.proposal.concerns && data.proposal.concerns.length > 0) {
+        doc.text('懸念点:', 20, y);
+        y += lineHeight;
+        data.proposal.concerns.forEach(concern => {
+          const lines = doc.splitTextToSize(`• ${concern}`, 165);
+          lines.forEach(line => {
+            if (y > pageHeight - 10) {
+              doc.addPage();
+              y = 20;
+            }
+            doc.text(line, 25, y);
+            y += lineHeight;
+          });
+        });
+        y += 3;
+      }
+    }
+
+    // メッセージ履歴
+    if (data.messages && data.messages.length > 0) {
+      if (y > pageHeight - 50) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text('【メッセージ履歴】', 20, y);
+      y += 10;
+
+      doc.setFontSize(9);
+      data.messages.slice(0, 10).forEach(msg => {
+        if (y > pageHeight - 30) {
+          doc.addPage();
+          y = 20;
+        }
+
+        const dateStr = new Date(msg.created_at).toLocaleString('ja-JP');
+        doc.text(`${dateStr} - ${msg.sender_name}:`, 20, y);
+        y += lineHeight;
+
+        const contentLines = doc.splitTextToSize(msg.content, 165);
+        contentLines.slice(0, 3).forEach(line => {
+          if (y > pageHeight - 10) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(line, 25, y);
+          y += lineHeight - 1;
+        });
+        y += 5;
+      });
+    }
+
+    // ファイル一覧
+    if (data.files && data.files.length > 0) {
+      if (y > pageHeight - 30) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text('【添付ファイル】', 20, y);
+      y += 10;
+
+      doc.setFontSize(9);
+      data.files.forEach(file => {
+        if (y > pageHeight - 10) {
+          doc.addPage();
+          y = 20;
+        }
+        const sizeKB = Math.round(file.file_size / 1024);
+        doc.text(`• ${file.filename} (${sizeKB} KB)`, 20, y);
+        y += lineHeight;
+      });
+    }
+
+    // フッター
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(`Generated: ${new Date().toLocaleString('ja-JP')} - Page ${i}/${pageCount}`, 105, 290, { align: 'center' });
+    }
+
+    // PDF保存
+    const filename = `案件レポート_${data.deal.title.replace(/[^\w\s]/gi, '')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(filename);
+
+    alert('PDFレポートを生成しました');
+
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    alert('PDF生成に失敗しました: ' + (error.response?.data?.error || error.message));
+  } finally {
+    btn.innerHTML = originalHtml;
+    btn.disabled = false;
+  }
+});
+
+// ステータスラベル取得（PDF用）
+function getStatusLabel(status) {
+  const labels = {
+    'NEW': '新規',
+    'IN_REVIEW': '調査中',
+    'REPLIED': '一次回答済',
+    'CLOSED': 'クロージング'
+  };
+  return labels[status] || status;
+}
+
 // 初期化 - ページ読み込み時の処理
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Page loaded, checking authentication...');

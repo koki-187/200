@@ -1707,6 +1707,7 @@ app.get('/deals/:id', (c) => {
         });
 
         const deal = response.data.deal;
+        currentDealData = deal; // AI提案用にグローバル保存
         displayDeal(deal);
       } catch (error) {
         console.error('Failed to load deal:', error);
@@ -1768,6 +1769,9 @@ app.get('/deals/:id', (c) => {
             <nav class="flex space-x-8 px-6" aria-label="Tabs">
               <button onclick="showTab('info')" id="tab-info" class="tab-button border-b-2 border-purple-600 py-4 px-1 text-sm font-medium text-purple-600">
                 <i class="fas fa-info-circle mr-2"></i>基本情報
+              </button>
+              <button onclick="showTab('ai-proposal')" id="tab-ai-proposal" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <i class="fas fa-robot mr-2"></i>AI提案
               </button>
               <button onclick="showTab('files')" id="tab-files" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
                 <i class="fas fa-file mr-2"></i>ファイル
@@ -1842,6 +1846,54 @@ app.get('/deals/:id', (c) => {
               <div class="mt-6 pt-6 border-t text-sm text-gray-600">
                 <p><strong>作成日時:</strong> \${new Date(deal.created_at).toLocaleString('ja-JP')}</p>
                 <p><strong>更新日時:</strong> \${new Date(deal.updated_at).toLocaleString('ja-JP')}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI提案セクション -->
+          <div id="content-ai-proposal" class="tab-content hidden">
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow-lg p-8 mb-6">
+              <div class="flex items-center mb-6">
+                <div class="bg-purple-600 p-3 rounded-lg mr-4">
+                  <i class="fas fa-robot text-white text-2xl"></i>
+                </div>
+                <div>
+                  <h3 class="text-2xl font-bold text-gray-900">AI投資分析</h3>
+                  <p class="text-gray-600">GPT-4oが物件の投資ポテンシャルを分析します</p>
+                </div>
+              </div>
+
+              <!-- 買主要望入力 -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  買主の要望・条件（オプション）
+                </label>
+                <textarea id="buyer-requirements" rows="3" 
+                  placeholder="例: 利回り10%以上希望、アパート建設を検討、資金調達方法についてアドバイスが欲しい"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+              </div>
+
+              <button onclick="generateAIProposal()" id="ai-proposal-btn"
+                class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition font-semibold shadow-lg">
+                <i class="fas fa-magic mr-2"></i>AI提案を生成
+              </button>
+
+              <!-- ローディング表示 -->
+              <div id="ai-loading" class="hidden mt-6 text-center">
+                <div class="flex items-center justify-center">
+                  <i class="fas fa-spinner fa-spin text-4xl text-purple-600"></i>
+                </div>
+                <p class="mt-3 text-gray-600">AI分析中... (5-10秒ほどお待ちください)</p>
+              </div>
+
+              <!-- 結果表示 -->
+              <div id="ai-proposal-result" class="hidden mt-6">
+                <div class="bg-white rounded-lg shadow-xl p-6 space-y-6">
+                  <h4 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-chart-line text-purple-600 mr-2"></i>分析結果
+                  </h4>
+                  <div id="ai-proposal-content"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -2162,6 +2214,113 @@ app.get('/deals/:id', (c) => {
       }
     });
 
+    // AI提案用のグローバル変数
+    let currentDealData = null;
+    
+    async function generateAIProposal() {
+      const buyerRequirements = document.getElementById('buyer-requirements').value;
+      const loadingDiv = document.getElementById('ai-loading');
+      const resultDiv = document.getElementById('ai-proposal-result');
+      const contentDiv = document.getElementById('ai-proposal-content');
+      const btn = document.getElementById('ai-proposal-btn');
+
+      // ローディング表示
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>生成中...';
+      loadingDiv.classList.remove('hidden');
+      resultDiv.classList.add('hidden');
+
+      try {
+        const response = await axios.post('/api/ai-proposals/generate', {
+          dealData: currentDealData,
+          buyerRequirements: buyerRequirements
+        }, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        const proposal = response.data.proposal;
+
+        // 結果表示
+        contentDiv.innerHTML = \`
+          <div class="space-y-6">
+            <div class="border-l-4 border-green-500 bg-green-50 p-4 rounded-r-lg">
+              <h5 class="font-semibold text-green-900 mb-2">
+                <i class="fas fa-chart-line mr-2"></i>投資ポテンシャル
+              </h5>
+              <p class="text-green-800">\$\{proposal.investment_potential\}</p>
+            </div>
+
+            <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded-r-lg">
+              <h5 class="font-semibold text-blue-900 mb-2">
+                <i class="fas fa-thumbs-up mr-2"></i>物件の強み
+              </h5>
+              <ul class="list-disc list-inside text-blue-800 space-y-1">
+                \$\{proposal.strengths.map(s => '<li>' + s + '</li>').join('')\}
+              </ul>
+            </div>
+
+            <div class="border-l-4 border-red-500 bg-red-50 p-4 rounded-r-lg">
+              <h5 class="font-semibold text-red-900 mb-2">
+                <i class="fas fa-exclamation-triangle mr-2"></i>リスク要因
+              </h5>
+              <ul class="list-disc list-inside text-red-800 space-y-1">
+                \$\{proposal.risks.map(r => '<li>' + r + '</li>').join('')\}
+              </ul>
+            </div>
+
+            <div class="border-l-4 border-purple-500 bg-purple-50 p-4 rounded-r-lg">
+              <h5 class="font-semibold text-purple-900 mb-2">
+                <i class="fas fa-home mr-2"></i>推奨活用方法
+              </h5>
+              <p class="text-purple-800">\$\{proposal.recommended_use\}</p>
+            </div>
+
+            <div class="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded-r-lg">
+              <h5 class="font-semibold text-yellow-900 mb-2">
+                <i class="fas fa-percentage mr-2"></i>期待利回り
+              </h5>
+              <p class="text-yellow-800">\$\{proposal.expected_roi\}</p>
+            </div>
+
+            <div class="border-l-4 border-indigo-500 bg-indigo-50 p-4 rounded-r-lg">
+              <h5 class="font-semibold text-indigo-900 mb-2">
+                <i class="fas fa-lightbulb mr-2"></i>開発プラン
+              </h5>
+              <p class="text-indigo-800">\$\{proposal.development_plan\}</p>
+            </div>
+
+            <div class="border-l-4 border-pink-500 bg-pink-50 p-4 rounded-r-lg">
+              <h5 class="font-semibold text-pink-900 mb-2">
+                <i class="fas fa-money-bill-wave mr-2"></i>資金調達アドバイス
+              </h5>
+              <p class="text-pink-800">\$\{proposal.financing_suggestion\}</p>
+            </div>
+
+            <div class="border-l-4 border-gray-500 bg-gray-50 p-4 rounded-r-lg">
+              <h5 class="font-semibold text-gray-900 mb-2">
+                <i class="fas fa-tasks mr-2"></i>次のステップ
+              </h5>
+              <ol class="list-decimal list-inside text-gray-800 space-y-1">
+                \$\{proposal.next_steps.map(step => '<li>' + step + '</li>').join('')\}
+              </ol>
+            </div>
+          </div>
+        \`;
+
+        loadingDiv.classList.add('hidden');
+        resultDiv.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic mr-2"></i>AI提案を再生成';
+
+      } catch (error) {
+        console.error('AI proposal error:', error);
+        loadingDiv.classList.add('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic mr-2"></i>AI提案を生成';
+        alert('AI提案の生成に失敗しました: ' + (error.response?.data?.error || error.message));
+      }
+    }
+
     loadDeal();
   </script>
 </body>
@@ -2337,28 +2496,25 @@ app.get('/', (c) => {
 
     // ページ読み込み時に自動ログインを試行
     window.addEventListener('DOMContentLoaded', () => {
+      // セキュリティ向上のため、古いパスワード保存を削除
+      localStorage.removeItem('saved_password');
+      localStorage.removeItem('auth_expiry');
+
       // 保存された認証情報を確認
       const savedToken = localStorage.getItem('auth_token');
       const savedEmail = localStorage.getItem('saved_email');
-      const savedPassword = localStorage.getItem('saved_password');
-      const expiryDate = localStorage.getItem('auth_expiry');
 
-      // 認証情報が有効期限内であれば自動ログイン
-      if (savedToken && expiryDate) {
-        const now = new Date().getTime();
-        if (now < parseInt(expiryDate)) {
-          // トークンが有効なので自動リダイレクト
-          window.location.href = '/dashboard';
-          return;
-        }
+      // トークンが存在すれば自動リダイレクト（JWTの有効期限はサーバー側で管理）
+      if (savedToken) {
+        // トークンが有効なので自動リダイレクト
+        window.location.href = '/dashboard';
+        return;
       }
 
-      // 保存されたメール・パスワードを入力欄に復元
+      // 保存されたメールアドレスを入力欄に復元し、チェックボックスをオン
       if (savedEmail) {
         emailInput.value = savedEmail;
-      }
-      if (savedPassword) {
-        passwordInput.value = savedPassword;
+        rememberMeCheckbox.checked = true;
       }
     });
 
@@ -2379,7 +2535,8 @@ app.get('/', (c) => {
 
         const response = await axios.post('/api/auth/login', {
           email,
-          password
+          password,
+          rememberMe
         });
 
         if (response.data.token) {
@@ -2387,17 +2544,12 @@ app.get('/', (c) => {
           localStorage.setItem('auth_token', response.data.token);
           localStorage.setItem('user', JSON.stringify(response.data.user));
           
-          // Remember Me が有効な場合、認証情報を30日間保存
+          // Remember Me が有効な場合、メールアドレスのみ保存（セキュリティのためパスワードは保存しない）
           if (rememberMe) {
-            const expiryDate = new Date().getTime() + (30 * 24 * 60 * 60 * 1000); // 30日後
             localStorage.setItem('saved_email', email);
-            localStorage.setItem('saved_password', password);
-            localStorage.setItem('auth_expiry', expiryDate.toString());
           } else {
             // Remember Me が無効な場合、保存された情報を削除
             localStorage.removeItem('saved_email');
-            localStorage.removeItem('saved_password');
-            localStorage.removeItem('auth_expiry');
           }
           
           // ダッシュボードにリダイレクト

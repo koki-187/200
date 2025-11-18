@@ -98,11 +98,12 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 /**
  * JWTトークン生成（HMAC-SHA256署名）
  */
-export async function generateToken(userId: string, role: string, secret: string): Promise<string> {
+export async function generateToken(userId: string, role: string, secret: string, rememberMe: boolean = false): Promise<string> {
+  const expiryDays = rememberMe ? 30 : 7;
   return await sign({
     userId,
     role,
-    exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7日間
+    exp: Math.floor(Date.now() / 1000) + (expiryDays * 24 * 60 * 60)
   }, secret);
 }
 

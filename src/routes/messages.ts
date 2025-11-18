@@ -7,6 +7,7 @@ import { uploadToR2 } from '../utils/r2-helpers';
 import { validateFileUpload, sanitizeFilename } from '../utils/file-validators';
 import { validateData, messageSchema, escapeHtml } from '../utils/validation';
 import { extractMentions, resolveMentionedUsers, storeMentions } from '../utils/mentions';
+import { createEmailService } from '../utils/email';
 
 const messages = new Hono<{ Bindings: Bindings }>();
 
@@ -139,8 +140,56 @@ messages.post('/deals/:dealId', async (c) => {
       const mentionedUserIds = await resolveMentionedUsers(mentions, c.env.DB);
       if (mentionedUserIds.length > 0) {
         await storeMentions(newMessage.id, mentionedUserIds, c.env.DB);
-        // TODO: メンション通知送信
+        
+        // メンション通知メール送信
+        try {
+          const resendApiKey = c.env.RESEND_API_KEY;
+          if (resendApiKey) {
+            const emailService = createEmailService(resendApiKey);
+            const sender = await db.getUserById(userId);
+            
+            for (const mentionedUserId of mentionedUserIds) {
+              const mentionedUser = await db.getUserById(mentionedUserId);
+              if (mentionedUser?.email) {
+                await emailService.sendNewMessageNotification(
+                  mentionedUser.email,
+                  deal.title,
+                  sender?.name || 'Unknown',
+                  sanitizedContent
+                );
+              }
+            }
+            console.log(`Mention notifications sent to ${mentionedUserIds.length} users`);
+          }
+        } catch (emailError) {
+          console.error('Failed to send mention notification emails:', emailError);
+        }
       }
+    }
+
+    // 新着メッセージ通知（受信者へ）
+    try {
+      const resendApiKey = c.env.RESEND_API_KEY;
+      if (resendApiKey) {
+        const emailService = createEmailService(resendApiKey);
+        const sender = await db.getUserById(userId);
+        
+        // 送信者以外の関係者に通知
+        const recipientId = role === 'ADMIN' ? deal.seller_id : deal.buyer_id;
+        const recipient = await db.getUserById(recipientId);
+        
+        if (recipient?.email) {
+          await emailService.sendNewMessageNotification(
+            recipient.email,
+            deal.title,
+            sender?.name || 'Unknown',
+            sanitizedContent
+          );
+          console.log(`New message notification sent to ${recipient.email}`);
+        }
+      }
+    } catch (emailError) {
+      console.error('Failed to send new message notification email:', emailError);
     }
 
     return c.json({ message: newMessage }, 201);
@@ -200,7 +249,30 @@ messages.post('/deals/:dealId/with-attachments', async (c) => {
       const mentionedUserIds = await resolveMentionedUsers(mentions, c.env.DB);
       if (mentionedUserIds.length > 0) {
         await storeMentions(messageId, mentionedUserIds, c.env.DB);
-        // TODO: メンション通知送信
+        
+        // メンション通知メール送信
+        try {
+          const resendApiKey = c.env.RESEND_API_KEY;
+          if (resendApiKey) {
+            const emailService = createEmailService(resendApiKey);
+            const sender = await db.getUserById(userId);
+            
+            for (const mentionedUserId of mentionedUserIds) {
+              const mentionedUser = await db.getUserById(mentionedUserId);
+              if (mentionedUser?.email) {
+                await emailService.sendNewMessageNotification(
+                  mentionedUser.email,
+                  deal.title,
+                  sender?.name || 'Unknown',
+                  sanitizedContent
+                );
+              }
+            }
+            console.log(`Mention notifications sent to ${mentionedUserIds.length} users`);
+          }
+        } catch (emailError) {
+          console.error('Failed to send mention notification emails:', emailError);
+        }
       }
     }
 
@@ -256,6 +328,31 @@ messages.post('/deals/:dealId/with-attachments', async (c) => {
           url: `/api/r2/download/${fileId}`
         });
       }
+    }
+
+    // 新着メッセージ通知（受信者へ - ファイル添付版）
+    try {
+      const resendApiKey = c.env.RESEND_API_KEY;
+      if (resendApiKey) {
+        const emailService = createEmailService(resendApiKey);
+        const sender = await db.getUserById(userId);
+        
+        // 送信者以外の関係者に通知
+        const recipientId = role === 'ADMIN' ? deal.seller_id : deal.buyer_id;
+        const recipient = await db.getUserById(recipientId);
+        
+        if (recipient?.email) {
+          await emailService.sendNewMessageNotification(
+            recipient.email,
+            deal.title,
+            sender?.name || 'Unknown',
+            sanitizedContent
+          );
+          console.log(`New message notification (with attachments) sent to ${recipient.email}`);
+        }
+      }
+    } catch (emailError) {
+      console.error('Failed to send new message notification email:', emailError);
     }
 
     return c.json({

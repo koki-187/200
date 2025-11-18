@@ -11,5 +11,9 @@
       "database_name": "real-estate-200units-db",
       "database_id": "4df8f06f-eca1-48b0-9dcc-a17778913760"
     }
-  ]
+  ],
+
+  "triggers": {
+    "crons": ["0 */6 * * *"]
+  }
 }

@@ -4,6 +4,7 @@ import { Database } from '../db/queries';
 import { authMiddleware, adminOnly } from '../utils/auth';
 import { calculate48HourDeadline } from '../utils/businessTime';
 import { nanoid } from 'nanoid';
+import { createEmailService } from '../utils/email';
 
 const deals = new Hono<{ Bindings: Bindings }>();
 
@@ -95,6 +96,30 @@ deals.post('/', adminOnly, async (c) => {
     };
 
     await db.createDeal(newDeal);
+
+    // 新規案件通知メール送信（エージェントへ）
+    try {
+      const resendApiKey = c.env.RESEND_API_KEY;
+      if (resendApiKey) {
+        const seller = await db.getUserById(body.seller_id);
+        if (seller?.email) {
+          const emailService = createEmailService(resendApiKey);
+          await emailService.sendNewDealNotification(
+            seller.email,
+            newDeal.title,
+            {
+              location: newDeal.location,
+              station: newDeal.station,
+              deadline: newDeal.reply_deadline
+            }
+          );
+          console.log(`New deal notification sent to ${seller.email}`);
+        }
+      }
+    } catch (emailError) {
+      // メール送信失敗してもエラーレスポンスは返さない（ログのみ）
+      console.error('Failed to send new deal notification email:', emailError);
+    }
 
     return c.json({ deal: newDeal }, 201);
   } catch (error) {

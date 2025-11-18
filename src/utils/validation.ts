@@ -7,7 +7,8 @@ import { z } from 'zod';
 // ユーザー認証スキーマ
 export const loginSchema = z.object({
   email: z.string().email('有効なメールアドレスを入力してください'),
-  password: z.string().min(6, 'パスワードは6文字以上で入力してください')
+  password: z.string().min(6, 'パスワードは6文字以上で入力してください'),
+  rememberMe: z.boolean().optional()
 });
 
 export const registerSchema = z.object({

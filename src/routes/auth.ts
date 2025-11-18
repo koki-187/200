@@ -18,7 +18,7 @@ auth.post('/login', async (c) => {
       return c.json({ error: 'Validation failed', details: validation.errors }, 400);
     }
 
-    const { email, password } = validation.data;
+    const { email, password, rememberMe } = validation.data;
 
     const db = new Database(c.env.DB);
     const user = await db.getUserByEmail(email);
@@ -37,7 +37,8 @@ auth.post('/login', async (c) => {
     await db.updateLastLogin(user.id);
 
     // JWTトークン生成（HMAC-SHA256署名）
-    const token = await generateToken(user.id, user.role, c.env.JWT_SECRET);
+    // rememberMe = true なら30日間、false なら7日間
+    const token = await generateToken(user.id, user.role, c.env.JWT_SECRET, rememberMe || false);
 
     return c.json({
       token,

@@ -1,6 +1,7 @@
 import React from 'react'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import GalleryPage from './pages/GalleryPage'
 import Toast from './components/Toast'
 import { useAuthStore } from './store/authStore'
 

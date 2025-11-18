@@ -599,8 +599,8 @@ app.get('/dashboard', (c) => {
           <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
         </div>
         <div class="flex items-center space-x-6">
-          <a href="/gallery" class="text-gray-300 hover:text-white transition">
-            <i class="fas fa-images mr-2"></i>ギャラリー
+          <a href="/showcase" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-images mr-2"></i>ショーケース
           </a>
           <a href="/deals" class="text-gray-300 hover:text-white transition">
             <i class="fas fa-folder mr-2"></i>案件一覧
@@ -822,15 +822,15 @@ app.get('/dashboard', (c) => {
   `);
 });
 
-// ギャラリーページ
-app.get('/gallery', (c) => {
+// 事業ショーケースページ（旧ギャラリー）
+app.get('/showcase', (c) => {
   return c.html(`
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>事業ギャラリー - 200棟土地仕入れ管理システム</title>
+  <title>事業ショーケース - 200棟土地仕入れ管理システム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -882,8 +882,8 @@ app.get('/gallery', (c) => {
           </a>
         </div>
         <div class="flex items-center space-x-6">
-          <a href="/dashboard" class="text-gray-300 hover:text-white transition">
-            <i class="fas fa-home mr-2"></i>ダッシュボード
+          <a href="/showcase" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-images mr-2"></i>ショーケース
           </a>
           <a href="/deals" class="text-gray-300 hover:text-white transition">
             <i class="fas fa-folder mr-2"></i>案件一覧
@@ -901,7 +901,7 @@ app.get('/gallery', (c) => {
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- ページタイトル -->
     <div class="mb-8">
-      <h2 class="text-3xl font-bold text-gray-900 mb-2">事業ギャラリー</h2>
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">事業ショーケース</h2>
       <p class="text-gray-600">当社の販売エリアと実績物件をご紹介します</p>
     </div>
 

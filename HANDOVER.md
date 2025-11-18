@@ -1,9 +1,10 @@
-# 🔄 引き継ぎドキュメント - v2.4.0
+# 🔄 引き継ぎドキュメント - v2.5.0
 
 **作成日時**: 2025-11-18  
 **プロジェクト**: 200棟土地仕入れ管理システム  
-**バージョン**: v2.4.0 (徹底監査版)  
-**最終コミット**: 3c53a41  
+**バージョン**: v2.5.0 (メジャーアップデート版)  
+**最終コミット**: 0c4eac7  
+**リリースノート**: RELEASE_NOTES_v2.5.0.md  
 **監査レポート**: AUDIT_REPORT_2025-11-18.md
 
 ---
@@ -54,11 +55,18 @@
    - ✅ API エンドポイント - 139+実装確認
    - ✅ 静的ファイル配信 - 修正済み
 
-6. **デプロイメント**
+6. **v2.5.0 メジャーアップデート** (最新)
+   - OCR複数ファイルアップロード対応 ⭐ NEW
+   - AI提案機能（買側専用） ⭐ NEW
+   - 買側ユーザー完全ガイド ⭐ NEW
+   - Cloudflare Workers完全対応
+   - 詳細: RELEASE_NOTES_v2.5.0.md参照
+
+7. **デプロイメント**
    - GitHub: https://github.com/koki-187/200
-   - 本番URL: https://f0cd9c3d.real-estate-200units-v2.pages.dev (最新)
-   - 旧URL: https://9ef3a462.real-estate-200units-v2.pages.dev
-   - 最新コミット: 3c53a41 (バグ修正+監査レポート)
+   - 本番URL: https://2bed88f0.real-estate-200units-v2.pages.dev (最新 v2.5.0)
+   - 前バージョン: https://f0cd9c3d.real-estate-200units-v2.pages.dev (v2.4.0)
+   - 最新コミット: 0c4eac7 (OCR複数ファイル + AI提案)
 
 ---
 

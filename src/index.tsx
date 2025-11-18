@@ -822,6 +822,11 @@ app.get('/dashboard', (c) => {
   `);
 });
 
+// 旧/galleryパスからのリダイレクト（後方互換性のため）
+app.get('/gallery', (c) => {
+  return c.redirect('/showcase', 301);
+});
+
 // 事業ショーケースページ（旧ギャラリー）
 app.get('/showcase', (c) => {
   return c.html(`

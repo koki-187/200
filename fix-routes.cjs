@@ -14,12 +14,21 @@ if (fs.existsSync(indexHtmlPath)) {
 if (fs.existsSync(routesPath)) {
   const routes = JSON.parse(fs.readFileSync(routesPath, 'utf-8'));
   
-  // Add gallery images and logo to exclude list (but NOT /gallery route itself)
+  // Ensure include and exclude arrays exist
+  if (!routes.include) {
+    routes.include = ['/*'];
+  }
   if (!routes.exclude) {
     routes.exclude = [];
   }
   
-  // Only exclude /gallery/* (static images), NOT /gallery route
+  // Remove specific routes from include to avoid conflicts with wildcard excludes
+  // /gallery and /showcase routes will be handled by the /* wildcard
+  routes.include = routes.include.filter(path => 
+    path !== '/gallery' && path !== '/showcase'
+  );
+  
+  // Exclude static gallery images (not /gallery route)
   if (!routes.exclude.includes('/gallery/*')) {
     routes.exclude.push('/gallery/*');
   }
@@ -34,7 +43,7 @@ if (fs.existsSync(routesPath)) {
   }
   
   fs.writeFileSync(routesPath, JSON.stringify(routes, null, 2));
-  console.log('✓ Updated _routes.json to exclude static assets (/gallery/*, /static/*, /logo-3d.png)');
+  console.log('✓ Updated _routes.json to exclude static assets and fixed route conflicts');
 } else {
   console.log('⚠ _routes.json not found');
 }

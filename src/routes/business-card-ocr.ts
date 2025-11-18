@@ -13,9 +13,30 @@ businessCardOCR.post('/extract', async (c) => {
       return c.json({ error: 'ファイルが必要です' }, 400);
     }
 
-    // ファイルタイプチェック
-    if (!file.type.startsWith('image/')) {
-      return c.json({ error: '画像ファイルのみ対応しています' }, 400);
+    // ファイルタイプチェック（強化版）
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!file.type || !allowedTypes.includes(file.type.toLowerCase())) {
+      return c.json({ 
+        error: '対応していないファイル形式です',
+        details: 'PNG, JPG, JPEG, WEBP形式の画像ファイルのみ対応しています'
+      }, 400);
+    }
+
+    // ファイルサイズチェック（10MB制限）
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return c.json({ 
+        error: 'ファイルサイズが大きすぎます',
+        details: 'ファイルサイズは10MB以下にしてください'
+      }, 400);
+    }
+
+    // ファイルサイズ最小チェック（1KB以上）
+    if (file.size < 1024) {
+      return c.json({ 
+        error: 'ファイルサイズが小さすぎます',
+        details: 'ファイルが破損している可能性があります'
+      }, 400);
     }
 
     // OpenAI Vision APIで名刺を解析
@@ -84,33 +105,102 @@ businessCardOCR.post('/extract', async (c) => {
     if (!openaiResponse.ok) {
       const errorText = await openaiResponse.text();
       console.error('OpenAI API error:', errorText);
-      return c.json({ error: 'OCR処理に失敗しました' }, 500);
+      
+      // APIエラーの詳細を返す
+      let errorMessage = 'OCR処理に失敗しました';
+      if (openaiResponse.status === 401) {
+        errorMessage = 'OpenAI APIキーが無効です';
+      } else if (openaiResponse.status === 429) {
+        errorMessage = 'APIリクエスト制限に達しました。しばらく待ってから再試行してください';
+      } else if (openaiResponse.status === 400) {
+        errorMessage = '画像の読み取りに失敗しました。別の画像を試してください';
+      }
+      
+      return c.json({ 
+        error: errorMessage,
+        details: errorText.substring(0, 200)
+      }, openaiResponse.status);
     }
 
     const result = await openaiResponse.json();
+    
+    // レスポンスの検証
+    if (!result.choices || result.choices.length === 0) {
+      return c.json({ 
+        error: 'OCR処理結果が空です',
+        details: 'OpenAI APIから有効なレスポンスが返されませんでした'
+      }, 500);
+    }
+    
     const content = result.choices[0].message.content;
 
     // JSON部分を抽出（マークダウンコードブロックがある場合も対応）
     let extractedData;
-    const jsonMatch = content.match(/```json\n([\s\S]+?)\n```/) || content.match(/\{[\s\S]+\}/);
-    
-    if (jsonMatch) {
-      const jsonStr = jsonMatch[1] || jsonMatch[0];
-      extractedData = JSON.parse(jsonStr);
-    } else {
-      extractedData = JSON.parse(content);
-    }
+    try {
+      const jsonMatch = content.match(/```json\n([\s\S]+?)\n```/) || content.match(/\{[\s\S]+\}/);
+      
+      if (jsonMatch) {
+        const jsonStr = jsonMatch[1] || jsonMatch[0];
+        extractedData = JSON.parse(jsonStr);
+      } else {
+        extractedData = JSON.parse(content);
+      }
 
-    return c.json({
-      success: true,
-      data: extractedData
-    });
+      // 抽出データの検証
+      const requiredFields = ['company_name', 'name'];
+      const missingFields = requiredFields.filter(field => !extractedData[field]);
+      
+      if (missingFields.length > 0) {
+        console.warn('Missing required fields:', missingFields);
+        // 警告としてログに残すが、エラーは返さない（部分的な抽出も許可）
+      }
+
+      // 電話番号のフォーマット検証（存在する場合のみ）
+      ['mobile_phone', 'company_phone', 'company_fax'].forEach(field => {
+        if (extractedData[field] && extractedData[field] !== null) {
+          // ハイフンまたはスペースを含む電話番号形式かチェック
+          const phonePattern = /^[\d\-\+\(\)\s]+$/;
+          if (!phonePattern.test(extractedData[field])) {
+            console.warn(`Invalid phone format for ${field}:`, extractedData[field]);
+          }
+        }
+      });
+
+      return c.json({
+        success: true,
+        data: extractedData,
+        message: '名刺情報を正常に抽出しました'
+      });
+
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Content received:', content);
+      return c.json({ 
+        error: '名刺情報の解析に失敗しました',
+        details: 'OCRは成功しましたが、データの構造化に失敗しました。別の画像を試してください。'
+      }, 500);
+    }
 
   } catch (error) {
     console.error('Business card OCR error:', error);
+    
+    // エラータイプに応じた詳細メッセージ
+    let errorMessage = '名刺の読み取りに失敗しました';
+    let errorDetails = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('fetch')) {
+        errorMessage = 'OpenAI APIへの接続に失敗しました';
+        errorDetails = 'ネットワーク接続を確認してください';
+      } else if (error.message.includes('JSON')) {
+        errorMessage = 'レスポンスの解析に失敗しました';
+        errorDetails = 'APIレスポンスの形式が不正です';
+      }
+    }
+    
     return c.json({ 
-      error: '名刺の読み取りに失敗しました',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage,
+      details: errorDetails
     }, 500);
   }
 });

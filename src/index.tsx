@@ -1155,7 +1155,7 @@ app.get('/deals/new', (c) => {
   <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-6">
       <h2 class="text-3xl font-bold text-gray-900">新規案件作成</h2>
-      <p class="text-gray-600 mt-2">登記簿謄本などの画像からOCRで自動入力できます</p>
+      <p class="text-gray-600 mt-2">登記簿謄本などの画像・PDFからOCRで自動入力できます</p>
     </div>
 
     <!-- OCRセクション -->
@@ -1168,12 +1168,12 @@ app.get('/deals/new', (c) => {
       <!-- ドロップゾーン -->
       <div id="ocr-drop-zone" class="ocr-drop-zone rounded-lg p-8 text-center mb-4">
         <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-3"></i>
-        <p class="text-gray-600 mb-2">登記簿謄本や物件資料の画像をドラッグ＆ドロップ</p>
+        <p class="text-gray-600 mb-2">登記簿謄本や物件資料の画像・PDFをドラッグ＆ドロップ</p>
         <p class="text-sm text-gray-500 mb-4">または</p>
         <label for="ocr-file-input" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 cursor-pointer inline-block transition">
           <i class="fas fa-folder-open mr-2"></i>ファイルを選択
         </label>
-        <input type="file" id="ocr-file-input" accept="image/*" class="hidden">
+        <input type="file" id="ocr-file-input" accept="image/*,application/pdf,.pdf" class="hidden">
       </div>
 
       <!-- プレビューとステータス -->
@@ -1400,7 +1400,7 @@ app.get('/deals/new', (c) => {
       e.preventDefault();
       dropZone.classList.remove('dragover');
       const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('image/')) {
+      if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
         processOCR(file);
       }
     });
@@ -1414,13 +1414,31 @@ app.get('/deals/new', (c) => {
 
     async function processOCR(file) {
       // プレビュー表示
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        previewImage.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-
       previewContainer.classList.remove('hidden');
+      
+      if (file.type === 'application/pdf') {
+        // PDFの場合はアイコン表示
+        previewImage.src = '';
+        previewImage.style.display = 'none';
+        const pdfIcon = document.createElement('div');
+        pdfIcon.id = 'pdf-icon-preview';
+        pdfIcon.className = 'flex flex-col items-center justify-center p-8 bg-red-50 rounded-lg';
+        pdfIcon.innerHTML = '<i class="fas fa-file-pdf text-6xl text-red-500 mb-3"></i><p class="text-gray-700 font-medium">' + file.name + '</p><p class="text-sm text-gray-500">' + (file.size / 1024 / 1024).toFixed(2) + ' MB</p>';
+        const existingIcon = document.getElementById('pdf-icon-preview');
+        if (existingIcon) existingIcon.remove();
+        previewImage.parentElement.insertBefore(pdfIcon, previewImage);
+      } else {
+        // 画像の場合は通常のプレビュー
+        const existingIcon = document.getElementById('pdf-icon-preview');
+        if (existingIcon) existingIcon.remove();
+        previewImage.style.display = 'block';
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImage.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
       ocrStatus.innerHTML = '<div class="flex items-center text-blue-600"><i class="fas fa-spinner fa-spin mr-2"></i><span>OCR処理中...</span></div>';
       ocrResult.classList.add('hidden');
 
@@ -1437,16 +1455,17 @@ app.get('/deals/new', (c) => {
         });
 
         const data = response.data;
+        const extracted = data.extracted || data;
 
         // フォームに自動入力
-        if (data.property_name) document.getElementById('title').value = data.property_name;
-        if (data.location) document.getElementById('location').value = data.location;
-        if (data.land_area) document.getElementById('land_area').value = data.land_area;
-        if (data.zoning) document.getElementById('zoning').value = data.zoning;
-        if (data.building_coverage) document.getElementById('building_coverage').value = data.building_coverage;
-        if (data.floor_area_ratio) document.getElementById('floor_area_ratio').value = data.floor_area_ratio;
-        if (data.road_info) document.getElementById('road_info').value = data.road_info;
-        if (data.price) document.getElementById('desired_price').value = data.price;
+        if (extracted.property_name) document.getElementById('title').value = extracted.property_name;
+        if (extracted.location) document.getElementById('location').value = extracted.location;
+        if (extracted.land_area) document.getElementById('land_area').value = extracted.land_area;
+        if (extracted.zoning) document.getElementById('zoning').value = extracted.zoning;
+        if (extracted.building_coverage) document.getElementById('building_coverage').value = extracted.building_coverage;
+        if (extracted.floor_area_ratio) document.getElementById('floor_area_ratio').value = extracted.floor_area_ratio;
+        if (extracted.road_info) document.getElementById('road_info').value = extracted.road_info;
+        if (extracted.price) document.getElementById('desired_price').value = extracted.price;
 
         // 成功表示
         ocrStatus.classList.add('hidden');
@@ -2147,7 +2166,7 @@ app.get('/', (c) => {
             name="email"
             required
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-gray-50 focus:bg-white"
-            placeholder="admin@200units.com"
+            placeholder="example@company.co.jp"
           >
         </div>
 
@@ -2162,7 +2181,7 @@ app.get('/', (c) => {
             name="password"
             required
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-gray-50 focus:bg-white"
-            placeholder="••••••••••"
+            placeholder="8文字以上のパスワード"
           >
         </div>
 

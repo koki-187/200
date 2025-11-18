@@ -12,34 +12,20 @@ ocr.post('/extract', async (c) => {
       return c.json({ error: 'ファイルが指定されていません' }, 400);
     }
 
-    // ファイルをBase64に変換
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString('base64');
-    const mimeType = file.type || 'image/jpeg';
-    const imageBase64 = `data:${mimeType};base64,${base64}`;
-
-    // OpenAI Vision APIで情報抽出
     const openaiApiKey = c.env.OPENAI_API_KEY;
     if (!openaiApiKey) {
       return c.json({ error: 'OpenAI API keyが設定されていません' }, 500);
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `この不動産資料から以下の情報を抽出してJSON形式で返してください。
+    // ファイルをBase64に変換
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString('base64');
+    const mimeType = file.type || 'image/jpeg';
+    const fileName = file.name.toLowerCase();
+
+    // システムプロンプト（共通）
+    const extractionPrompt = `この不動産資料から以下の情報を抽出してJSON形式で返してください。
 存在しない項目は空文字列にしてください。
 
 必要な情報：
@@ -55,20 +41,74 @@ ocr.post('/extract', async (c) => {
 - zoning: 用途地域
 - remarks: その他特記事項
 
-JSON形式で返してください。説明文は不要です。`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: imageBase64
+JSON形式で返してください。説明文は不要です。`;
+
+    let response;
+
+    // PDFファイルの処理
+    if (mimeType === 'application/pdf' || fileName.endsWith('.pdf')) {
+      // PDFの場合はgpt-4oのPDF解析機能を使用
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: extractionPrompt + '\n\nPDFファイルから情報を抽出してください。'
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:application/pdf;base64,${base64}`
+                  }
                 }
-              }
-            ]
-          }
-        ],
-        max_tokens: 1000
-      })
-    });
+              ]
+            }
+          ],
+          max_tokens: 1500
+        })
+      });
+    } else {
+      // 画像ファイルの処理（従来通り）
+      const imageBase64 = `data:${mimeType};base64,${base64}`;
+      
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: extractionPrompt
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: imageBase64
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 1000
+        })
+      });
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

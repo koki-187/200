@@ -3,6 +3,27 @@ import { Bindings } from '../types';
 
 const businessCardOCR = new Hono<{ Bindings: Bindings }>();
 
+/**
+ * ArrayBufferをBase64文字列に変換（大容量ファイル対応）
+ * チャンク処理により、スタックオーバーフローを回避
+ * 
+ * @param buffer - 変換するArrayBuffer
+ * @returns Base64エンコードされた文字列
+ */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 8192; // 8KBチャンク（スタックオーバーフロー回避）
+  
+  // チャンクごとに処理してメモリ使用量を抑制
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  
+  return btoa(binary);
+}
+
 // 名刺OCR（画像から会社情報を抽出）
 businessCardOCR.post('/extract', async (c) => {
   try {
@@ -41,7 +62,8 @@ businessCardOCR.post('/extract', async (c) => {
 
     // OpenAI Vision APIで名刺を解析
     const arrayBuffer = await file.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    // チャンク処理でbase64変換（150KB以上のファイルでもスタックオーバーフローしない）
+    const base64Image = arrayBufferToBase64(arrayBuffer);
     const mimeType = file.type;
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {

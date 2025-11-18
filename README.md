@@ -4,9 +4,10 @@
 
 ### 本番環境URL
 - **Production URL**: https://dbd7570c.real-estate-200units-v2.pages.dev
+- **Latest Deployment**: https://f829c016.real-estate-200units-v2.pages.dev
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Gallery**: https://dbd7570c.real-estate-200units-v2.pages.dev/gallery
-- **Deal Creation**: https://dbd7570c.real-estate-200units-v2.pages.dev/deals/new
+- **Showcase**: https://f829c016.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation**: https://f829c016.real-estate-200units-v2.pages.dev/deals/new
 
 ### デフォルトログイン情報
 
@@ -34,9 +35,9 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v2.5.0
+- **バージョン**: v2.8.0
 - **進捗状況**: 48/50タスク実装完了（96%）、動作確認済み30/50（60%）✅
-- **最新改善**: AI提案UI、メール自動送信、Remember Me（30日間JWT） 🆕
+- **最新改善**: 名刺OCR機能（縦型・横型・英語対応）、ショーケースページ追加 🆕
 
 ## 主要機能
 
@@ -96,6 +97,11 @@
 #### OCR・AI機能
 - ✅ 登記簿謄本OCR（OpenAI GPT-4 Vision）
 - ✅ **PDF対応OCR（画像・PDF両方に対応）** v2.3.4
+- ✅ **名刺OCR機能（縦型・横型・英語対応）** 🆕 v2.7.0
+  - ✅ 縦型名刺の認識（縦書きテキスト対応）
+  - ✅ 横型名刺の認識（横書きテキスト対応）
+  - ✅ 英語名刺の完全サポート（バイリンガル対応）
+  - ✅ 自動フィールドマッピング（氏名、会社名、役職、連絡先など）
 - ✅ 自動データマッピング
 - ✅ **AI投資分析・提案生成（GPT-4o）** 🆕 v2.5.0
   - ✅ 投資ポテンシャル評価
@@ -334,6 +340,12 @@
 - `GET /api/openapi.json` - OpenAPI仕様書
 - `GET /api/docs` - API Documentation UI
 
+### フロントエンドページ
+- `GET /` - ダッシュボード
+- `GET /showcase` - 事業ショーケース（旧ギャラリー） 🆕 v2.8.0
+- `GET /deals/new` - 案件作成ページ（名刺OCR機能付き） 🆕
+- `GET /login` - ログインページ
+
 ## デプロイ
 
 ### ローカル開発
@@ -529,6 +541,42 @@ Private - All Rights Reserved
 GenSpark AI Assistant + User
 
 ## 更新履歴
+
+### v2.8.0 (2025-11-18) 🆕
+**ルーティング修正とショーケースページ実装**
+
+修正内容:
+- ✅ **ギャラリーページパス変更**: `/gallery` → `/showcase` に変更してルーティング競合を解決
+  - Viteビルドシステムとの競合により、`/gallery`が404を返していた問題を解決
+  - Worker routeとして正常に機能するように修正
+- ✅ **ナビゲーション更新**: 全ページのナビゲーションリンクを`/showcase`に更新
+- ✅ **本番DBマイグレーション**: `0009_add_user_company_details.sql`を本番環境に適用
+  - ユーザーテーブルに会社情報フィールド追加（会社住所、役職、携帯電話、会社電話、FAX）
+
+技術的改善:
+- `src/index.tsx`の`/gallery`ルートを`/showcase`に変更
+- `src/client/App.tsx`から未使用のGalleryPageコンポーネント参照を削除
+- ページタイトルとナビゲーションUIを「事業ショーケース」に統一
+
+動作確認:
+- ✅ ローカル環境: `curl http://localhost:3000/showcase` → HTTP 200
+- ✅ 本番環境: `curl https://f829c016.real-estate-200units-v2.pages.dev/showcase` → HTTP 200
+
+### v2.7.0 (2025-11-18) 📇
+**名刺OCR機能拡張（縦型・横型・英語対応）**
+
+新機能:
+- ✅ **名刺OCR機能の完全拡張**:
+  - 縦型名刺の認識サポート（縦書きテキスト対応）
+  - 横型名刺の認識サポート（横書きテキスト対応）
+  - 英語名刺の完全サポート（バイリンガル対応）
+  - 自動フィールドマッピング（氏名、会社名、役職、連絡先など）
+  
+技術的詳細:
+- OpenAI GPT-4 Vision APIを使用
+- 縦書き・横書き両方のテキスト方向に対応
+- 日本語・英語のバイリンガル処理
+- 連絡先情報の自動抽出と分類（電話、FAX、メール、住所など）
 
 ### v2.5.0 (2025-11-18) 🚀
 **AI提案機能・自動メール通知・Remember Me実装**
@@ -760,7 +808,7 @@ UX改善:
 ---
 
 **最終更新**: 2025-11-18
-**バージョン**: v2.5.0
+**バージョン**: v2.8.0
 **進捗率**: 96% (48/50タスク実装完了)、60% (30/50動作確認済み) ✅
 
 ---
@@ -802,9 +850,10 @@ UX改善:
 - ✅ フォーム自動入力
 - ✅ プレビュー表示
 
-#### ギャラリー（新規実装）
+#### 事業ショーケース（旧ギャラリー）
 - ✅ 販売エリアマップ（愛知県、長野県、埼玉県）
 - ✅ 実績物件展示（外観、内装）
 - ✅ 9戸プラン詳細（外観、内観、設備、間取り図）
 - ✅ 事業概要説明
 - ✅ 商品化条件表示
+- ✅ アクセスパス: `/showcase` （v2.8.0で`/gallery`から変更）

@@ -3,10 +3,10 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL**: https://f2189b47.real-estate-200units-v2.pages.dev
+- **Production URL**: https://9ef3a462.real-estate-200units-v2.pages.dev
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Gallery**: https://f2189b47.real-estate-200units-v2.pages.dev/gallery
-- **Deal Creation**: https://f2189b47.real-estate-200units-v2.pages.dev/deals/new
+- **Gallery**: https://9ef3a462.real-estate-200units-v2.pages.dev/gallery
+- **Deal Creation**: https://9ef3a462.real-estate-200units-v2.pages.dev/deals/new
 
 ### デフォルトログイン情報
 
@@ -517,6 +517,28 @@ Private - All Rights Reserved
 GenSpark AI Assistant + User
 
 ## 更新履歴
+
+### v2.3.3 (2025-11-18) 🔧
+**データベース設定統一とリリース前最終調整**
+
+修正内容:
+- **データベース名統一**: `webapp-production` → `real-estate-200units-db` に全設定を統一
+- **package.json**: db:migrate, db:seed, db:console スクリプト更新
+- **ecosystem.config.cjs**: PM2設定のD1データベース名更新
+- **ローカルD1初期化**: マイグレーションとシードデータ投入を実施
+
+検証済み機能:
+- ✅ 認証システム（ログイン・JWT）
+- ✅ ユーザー管理（一覧取得・詳細）
+- ✅ 案件管理（CRUD操作）
+- ✅ 通知機能
+- ✅ APIエンドポイント（health, version, openapi）
+- ✅ 静的ファイル配信（ロゴ、ギャラリー）
+
+デプロイ情報:
+- 本番URL: https://9ef3a462.real-estate-200units-v2.pages.dev
+- バックアップ作成: v2.3.3 final release (4.2MB)
+- GitHub最新コミット: de599c6
 
 ### v2.3.2 (2025-11-17) 🎨
 **ロゴデザイン改善リリース**

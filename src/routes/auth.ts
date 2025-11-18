@@ -100,7 +100,7 @@ auth.get('/users', authMiddleware, async (c) => {
 // 新規ユーザー登録（管理者専用）
 auth.post('/register', authMiddleware, async (c) => {
   try {
-    const userRole = c.get('role') as string;
+    const userRole = c.get('userRole') as string;
     if (userRole !== 'ADMIN') {
       return c.json({ error: 'Admin access required' }, 403);
     }

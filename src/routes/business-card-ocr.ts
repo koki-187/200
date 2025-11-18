@@ -34,12 +34,12 @@ businessCardOCR.post('/extract', async (c) => {
       return c.json({ error: 'ファイルが必要です' }, 400);
     }
 
-    // ファイルタイプチェック（強化版）
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    // ファイルタイプチェック（強化版 - PDF対応）
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
     if (!file.type || !allowedTypes.includes(file.type.toLowerCase())) {
       return c.json({ 
         error: '対応していないファイル形式です',
-        details: 'PNG, JPG, JPEG, WEBP形式の画像ファイルのみ対応しています'
+        details: 'PNG, JPG, JPEG, WEBP, PDF形式のファイルのみ対応しています'
       }, 400);
     }
 

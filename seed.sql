@@ -1,6 +1,7 @@
--- Insert default admin user (password: Admin!2025 - PBKDF2 hash)
-INSERT OR IGNORE INTO users (id, email, password_hash, name, role) VALUES 
-  ('admin-001', 'admin@example.com', 'fHQgNXa/fL3cCB584fulO4XJFqeTTSwXwYo6Kg09Lr8rc/S6sIIaDarScC9lb5ZN', '管理者', 'ADMIN');
+-- Insert default admin user (password: kouki187 - PBKDF2 hash)
+-- Email: navigator-187@docomo.ne.jp
+INSERT OR REPLACE INTO users (id, email, password_hash, name, role) VALUES 
+  ('admin-001', 'navigator-187@docomo.ne.jp', 'I1oUiNcp3Z8b2XA/paxMKjkenOpXrj00CLs/oGuhnlucBRW3URy0aQIqFH/8LKDf', '管理者', 'ADMIN');
 
 -- Insert test seller users (password: agent123 for all - PBKDF2 hash)
 INSERT OR IGNORE INTO users (id, email, password_hash, name, role, company_name) VALUES 

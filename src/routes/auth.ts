@@ -114,7 +114,18 @@ auth.post('/register', authMiddleware, async (c) => {
       return c.json({ error: 'Validation failed', details: validation.errors }, 400);
     }
 
-    const { email, password, name, role, company_name } = validation.data;
+    const { 
+      email, 
+      password, 
+      name, 
+      role, 
+      company_name, 
+      company_address, 
+      position, 
+      mobile_phone, 
+      company_phone, 
+      company_fax 
+    } = validation.data;
 
     const db = new Database(c.env.DB);
     
@@ -138,12 +149,17 @@ auth.post('/register', authMiddleware, async (c) => {
       password_hash: passwordHash,
       name,
       role,
-      company_name: company_name || null
+      company_name: company_name || null,
+      company_address: company_address || null,
+      position: position || null,
+      mobile_phone: mobile_phone || null,
+      company_phone: company_phone || null,
+      company_fax: company_fax || null
     });
 
     return c.json({ 
       message: 'User created successfully',
-      user: { id: userId, email, name, role }
+      user: { id: userId, email, name, role, company_name, position }
     }, 201);
   } catch (error) {
     console.error('Register error:', error);

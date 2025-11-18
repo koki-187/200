@@ -5,6 +5,11 @@ export interface User {
   name: string;
   role: 'ADMIN' | 'AGENT';
   company_name?: string;
+  company_address?: string;
+  position?: string;
+  mobile_phone?: string;
+  company_phone?: string;
+  company_fax?: string;
   created_at: string;
   updated_at: string;
   last_login_at?: string;

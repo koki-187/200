@@ -23,10 +23,22 @@ export class Database {
   async createUser(user: Omit<User, 'created_at' | 'updated_at' | 'last_login_at'>): Promise<void> {
     await this.db
       .prepare(`
-        INSERT INTO users (id, email, password_hash, name, role, company_name)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO users (id, email, password_hash, name, role, company_name, company_address, position, mobile_phone, company_phone, company_fax)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
-      .bind(user.id, user.email, user.password_hash, user.name, user.role, user.company_name || null)
+      .bind(
+        user.id, 
+        user.email, 
+        user.password_hash, 
+        user.name, 
+        user.role, 
+        user.company_name || null,
+        user.company_address || null,
+        user.position || null,
+        user.mobile_phone || null,
+        user.company_phone || null,
+        user.company_fax || null
+      )
       .run();
   }
 

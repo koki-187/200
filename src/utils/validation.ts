@@ -19,7 +19,12 @@ export const registerSchema = z.object({
     .regex(/[0-9]/, 'パスワードには数字を含めてください'),
   name: z.string().min(1, '名前を入力してください').max(100, '名前は100文字以内で入力してください'),
   role: z.enum(['ADMIN', 'AGENT'], { errorMap: () => ({ message: '有効な役割を選択してください' }) }),
-  company_name: z.string().optional()
+  company_name: z.string().max(200, '会社名は200文字以内で入力してください').optional(),
+  company_address: z.string().max(500, '会社住所は500文字以内で入力してください').optional(),
+  position: z.string().max(100, '役職は100文字以内で入力してください').optional(),
+  mobile_phone: z.string().max(20, '携帯電話番号は20文字以内で入力してください').optional(),
+  company_phone: z.string().max(20, '会社電話番号は20文字以内で入力してください').optional(),
+  company_fax: z.string().max(20, 'FAX番号は20文字以内で入力してください').optional()
 });
 
 // 案件関連スキーマ

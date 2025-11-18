@@ -21,6 +21,7 @@ import backup from './routes/backup';
 import feedback from './routes/feedback';
 import analytics from './routes/analytics';
 import aiProposals from './routes/ai-proposals';
+import businessCardOCR from './routes/business-card-ocr';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -118,6 +119,7 @@ app.route('/api/backup', backup);
 app.route('/api/feedback', feedback);
 app.route('/api/analytics', analytics);
 app.route('/api/ai-proposals', aiProposals);
+app.route('/api/business-card-ocr', businessCardOCR);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {

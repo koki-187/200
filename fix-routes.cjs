@@ -7,11 +7,12 @@ const routesPath = path.join(__dirname, 'dist', '_routes.json');
 if (fs.existsSync(routesPath)) {
   const routes = JSON.parse(fs.readFileSync(routesPath, 'utf-8'));
   
-  // Add gallery and logo to exclude list
+  // Add gallery images and logo to exclude list (but NOT /gallery route itself)
   if (!routes.exclude) {
     routes.exclude = [];
   }
   
+  // Only exclude /gallery/* (static images), NOT /gallery route
   if (!routes.exclude.includes('/gallery/*')) {
     routes.exclude.push('/gallery/*');
   }
@@ -21,7 +22,7 @@ if (fs.existsSync(routesPath)) {
   }
   
   fs.writeFileSync(routesPath, JSON.stringify(routes, null, 2));
-  console.log('✓ Updated _routes.json to exclude gallery and logo');
+  console.log('✓ Updated _routes.json to exclude gallery images (/gallery/*) and logo');
 } else {
   console.log('⚠ _routes.json not found');
 }

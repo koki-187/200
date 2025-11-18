@@ -3,10 +3,10 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL**: https://9ef3a462.real-estate-200units-v2.pages.dev
+- **Production URL**: https://dbd7570c.real-estate-200units-v2.pages.dev
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Gallery**: https://9ef3a462.real-estate-200units-v2.pages.dev/gallery
-- **Deal Creation**: https://9ef3a462.real-estate-200units-v2.pages.dev/deals/new
+- **Gallery**: https://dbd7570c.real-estate-200units-v2.pages.dev/gallery
+- **Deal Creation**: https://dbd7570c.real-estate-200units-v2.pages.dev/deals/new
 
 ### デフォルトログイン情報
 
@@ -89,6 +89,7 @@
 
 #### OCR・AI機能
 - 登記簿謄本OCR（OpenAI GPT-4 Vision）
+- **PDF対応OCR（画像・PDF両方に対応）** 🆕
 - 自動データマッピング
 
 #### 通知・アラート
@@ -517,6 +518,23 @@ Private - All Rights Reserved
 GenSpark AI Assistant + User
 
 ## 更新履歴
+
+### v2.3.4 (2025-11-18) ✨
+**UX改善とOCR機能拡張**
+
+新機能:
+- **OCR PDF対応**: 登記簿謄本などのPDFファイルから直接情報抽出が可能に
+- **PDF プレビュー表示**: アップロード時にPDFアイコンとファイル情報を表示
+
+UX改善:
+- **ログインプレースホルダー改善**: 実際の認証情報を表示せず、一般的な入力例に変更
+  - メール: `example@company.co.jp`
+  - パスワード: `8文字以上のパスワード`
+
+技術的改善:
+- OCRエンドポイントでPDFとImage両方のMIMEタイプに対応
+- ファイルアップロードのaccept属性にPDF追加（`image/*,application/pdf,.pdf`）
+- PDFファイルのプレビュー表示UI実装
 
 ### v2.3.3 (2025-11-18) 🔧
 **データベース設定統一とリリース前最終調整**

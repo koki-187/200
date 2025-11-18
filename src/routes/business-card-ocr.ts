@@ -34,27 +34,38 @@ businessCardOCR.post('/extract', async (c) => {
         messages: [
           {
             role: 'system',
-            content: `あなたは日本の名刺情報を正確に抽出する専門家です。以下のJSON形式で情報を返してください：
+            content: `あなたは名刺情報を正確に抽出する専門家です。日本語・英語両方の名刺に対応し、縦型・横型どちらのレイアウトでも読み取ることができます。
+
+以下のJSON形式で情報を返してください：
 
 {
-  "company_name": "会社名",
-  "company_address": "会社住所（都道府県から番地まで）",
-  "position": "役職・肩書き",
-  "name": "氏名（姓名をスペース区切り）",
-  "email": "メールアドレス",
-  "mobile_phone": "携帯電話番号",
-  "company_phone": "会社電話番号",
-  "company_fax": "FAX番号"
+  "company_name": "会社名 / Company Name",
+  "company_address": "会社住所（都道府県から番地まで）/ Full Address",
+  "position": "役職・肩書き / Position/Title",
+  "name": "氏名（姓名をスペース区切り）/ Full Name (space separated)",
+  "email": "メールアドレス / Email Address",
+  "mobile_phone": "携帯電話番号 / Mobile Phone",
+  "company_phone": "会社電話番号 / Company Phone",
+  "company_fax": "FAX番号 / Fax Number"
 }
 
-抽出できない情報は null にしてください。電話番号はハイフン付きで統一してください（例: 03-1234-5678）。`
+重要なルール：
+1. 縦型名刺の場合は、縦書きテキストを正しく認識してください
+2. 横型名刺の場合は、横書きテキストを正しく認識してください
+3. 英語名刺の場合は、すべて英語で返してください
+4. 日本語名刺の場合は、すべて日本語で返してください
+5. 混在している場合は、主要言語で統一してください
+6. 抽出できない情報は null にしてください
+7. 電話番号はハイフン付きで統一してください（例: 03-1234-5678, +81-3-1234-5678）
+8. メールアドレスは小文字に統一してください
+9. 名前は姓と名をスペースで区切ってください（例: "山田 太郎", "John Smith"）`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'この名刺画像から会社情報を抽出してください。'
+                text: 'この名刺画像から会社情報を抽出してください。縦型・横型・英語・日本語すべてに対応してください。画像の向きを自動判定し、適切に情報を読み取ってください。'
               },
               {
                 type: 'image_url',

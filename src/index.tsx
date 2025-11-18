@@ -155,6 +155,411 @@ app.get('/api/docs', (c) => {
   `);
 });
 
+// ユーザー登録ページ
+app.get('/register', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ユーザー登録 - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .drag-drop-area {
+      border: 3px dashed #cbd5e0;
+      transition: all 0.3s ease;
+    }
+    .drag-drop-area.drag-over {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    .preview-image {
+      max-width: 300px;
+      max-height: 300px;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .ocr-loading {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-8">
+    <!-- ヘッダー -->
+    <div class="text-center mb-8">
+      <div class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-xl mb-4">
+        <i class="fas fa-user-plus text-3xl"></i>
+      </div>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">ユーザー登録</h1>
+      <p class="text-gray-600">200棟土地仕入れ管理システム</p>
+    </div>
+
+    <!-- 名刺アップロードエリア -->
+    <div class="mb-8 p-6 bg-blue-50 rounded-xl border-2 border-blue-200">
+      <div class="flex items-start space-x-3 mb-4">
+        <i class="fas fa-lightbulb text-blue-600 text-2xl mt-1"></i>
+        <div>
+          <h3 class="text-lg font-bold text-gray-900 mb-1">名刺をアップロードすると自動で情報が入力されます</h3>
+          <p class="text-gray-600 text-sm">手間を省くため、名刺の写真をご用意ください。縦型・横型・英語の名刺にも対応しています。</p>
+        </div>
+      </div>
+
+      <div id="dropZone" class="drag-drop-area bg-white rounded-xl p-8 text-center cursor-pointer">
+        <input type="file" id="businessCardFile" accept="image/*" class="hidden">
+        <div id="uploadPrompt">
+          <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-4"></i>
+          <p class="text-gray-700 font-medium mb-2">名刺画像をドラッグ＆ドロップ</p>
+          <p class="text-gray-500 text-sm mb-4">または</p>
+          <button type="button" onclick="document.getElementById('businessCardFile').click()" 
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+            ファイルを選択
+          </button>
+          <p class="text-gray-400 text-xs mt-4">PNG, JPG, JPEG形式をサポート</p>
+        </div>
+        
+        <div id="previewArea" class="hidden">
+          <img id="previewImage" class="preview-image mx-auto mb-4" />
+          <p id="fileName" class="text-gray-700 font-medium mb-4"></p>
+          <button type="button" onclick="extractBusinessCard()" id="extractBtn"
+                  class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg transition font-medium">
+            <i class="fas fa-magic mr-2"></i>名刺情報を読み取る
+          </button>
+          <button type="button" onclick="resetUpload()" class="ml-3 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition">
+            キャンセル
+          </button>
+          <div id="ocrLoading" class="hidden mt-4">
+            <i class="fas fa-spinner ocr-loading text-3xl text-blue-600"></i>
+            <p class="text-gray-700 mt-2">名刺を読み取り中...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 登録フォーム -->
+    <form id="registerForm" class="space-y-6">
+      <!-- 基本情報 -->
+      <div class="border-b pb-4">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">
+          <i class="fas fa-user text-blue-600 mr-2"></i>基本情報
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              氏名 <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="name" required
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="山田 太郎">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              メールアドレス <span class="text-red-500">*</span>
+            </label>
+            <input type="email" id="email" required
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="yamada@example.com">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              パスワード <span class="text-red-500">*</span>
+            </label>
+            <input type="password" id="password" required
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="8文字以上、大小英数字を含む">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              役割 <span class="text-red-500">*</span>
+            </label>
+            <select id="role" required
+                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">選択してください</option>
+              <option value="ADMIN">管理者</option>
+              <option value="AGENT">売側ユーザー</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 会社情報 -->
+      <div class="border-b pb-4">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">
+          <i class="fas fa-building text-blue-600 mr-2"></i>会社情報
+        </h3>
+        <div class="grid grid-cols-1 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">会社名</label>
+            <input type="text" id="company_name"
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="株式会社サンプル">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">会社住所</label>
+            <textarea id="company_address" rows="2"
+                      class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="東京都千代田区丸の内1-1-1"></textarea>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">役職</label>
+              <input type="text" id="position"
+                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                     placeholder="営業部長">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 連絡先情報 -->
+      <div class="pb-4">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">
+          <i class="fas fa-phone text-blue-600 mr-2"></i>連絡先情報
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">携帯電話番号</label>
+            <input type="tel" id="mobile_phone"
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="090-1234-5678">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">会社電話番号</label>
+            <input type="tel" id="company_phone"
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="03-1234-5678">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">会社FAX番号</label>
+            <input type="tel" id="company_fax"
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="03-1234-5679">
+          </div>
+        </div>
+      </div>
+
+      <!-- ボタン -->
+      <div class="flex space-x-4">
+        <button type="submit" id="submitBtn"
+                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition">
+          <i class="fas fa-user-check mr-2"></i>登録する
+        </button>
+        <a href="/dashboard" 
+           class="flex-1 text-center bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 rounded-lg transition">
+          キャンセル
+        </a>
+      </div>
+    </form>
+
+    <!-- メッセージ表示エリア -->
+    <div id="messageArea" class="mt-6 hidden"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    let uploadedFile = null;
+
+    // ドラッグ&ドロップ設定
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('businessCardFile');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => {
+        dropZone.classList.add('drag-over');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => {
+        dropZone.classList.remove('drag-over');
+      }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      handleFiles(files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+      if (files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+          uploadedFile = file;
+          displayPreview(file);
+        } else {
+          showMessage('画像ファイルを選択してください', 'error');
+        }
+      }
+    }
+
+    function displayPreview(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('previewImage').src = e.target.result;
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('uploadPrompt').classList.add('hidden');
+        document.getElementById('previewArea').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetUpload() {
+      uploadedFile = null;
+      fileInput.value = '';
+      document.getElementById('uploadPrompt').classList.remove('hidden');
+      document.getElementById('previewArea').classList.add('hidden');
+      document.getElementById('ocrLoading').classList.add('hidden');
+    }
+
+    async function extractBusinessCard() {
+      if (!uploadedFile) {
+        showMessage('名刺画像を選択してください', 'error');
+        return;
+      }
+
+      const extractBtn = document.getElementById('extractBtn');
+      const ocrLoading = document.getElementById('ocrLoading');
+      
+      extractBtn.disabled = true;
+      ocrLoading.classList.remove('hidden');
+
+      try {
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+
+        const response = await axios.post('/api/business-card-ocr/extract', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        if (response.data.success) {
+          const data = response.data.data;
+          
+          // フォームに自動入力
+          if (data.name) document.getElementById('name').value = data.name;
+          if (data.email) document.getElementById('email').value = data.email;
+          if (data.company_name) document.getElementById('company_name').value = data.company_name;
+          if (data.company_address) document.getElementById('company_address').value = data.company_address;
+          if (data.position) document.getElementById('position').value = data.position;
+          if (data.mobile_phone) document.getElementById('mobile_phone').value = data.mobile_phone;
+          if (data.company_phone) document.getElementById('company_phone').value = data.company_phone;
+          if (data.company_fax) document.getElementById('company_fax').value = data.company_fax;
+
+          showMessage('名刺情報を自動入力しました！内容を確認して登録してください。', 'success');
+          
+          // スクロールしてフォームを表示
+          document.getElementById('registerForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          showMessage('名刺の読み取りに失敗しました', 'error');
+        }
+      } catch (error) {
+        console.error('OCR error:', error);
+        showMessage('名刺の読み取り中にエラーが発生しました: ' + (error.response?.data?.error || error.message), 'error');
+      } finally {
+        extractBtn.disabled = false;
+        ocrLoading.classList.add('hidden');
+      }
+    }
+
+    // ユーザー登録処理
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>登録中...';
+
+      try {
+        const data = {
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value,
+          name: document.getElementById('name').value,
+          role: document.getElementById('role').value,
+          company_name: document.getElementById('company_name').value || undefined,
+          company_address: document.getElementById('company_address').value || undefined,
+          position: document.getElementById('position').value || undefined,
+          mobile_phone: document.getElementById('mobile_phone').value || undefined,
+          company_phone: document.getElementById('company_phone').value || undefined,
+          company_fax: document.getElementById('company_fax').value || undefined
+        };
+
+        const response = await axios.post('/api/auth/register', data);
+
+        if (response.data.message) {
+          showMessage('ユーザー登録が完了しました！ダッシュボードに移動します...', 'success');
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Registration error:', error);
+        const errorMsg = error.response?.data?.error || 'ユーザー登録に失敗しました';
+        showMessage(errorMsg, 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-user-check mr-2"></i>登録する';
+      }
+    });
+
+    function showMessage(message, type) {
+      const messageArea = document.getElementById('messageArea');
+      const bgColor = type === 'success' ? 'bg-green-100 border-green-500 text-green-800' : 'bg-red-100 border-red-500 text-red-800';
+      const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+      
+      messageArea.className = \`mt-6 p-4 rounded-lg border-l-4 \${bgColor}\`;
+      messageArea.innerHTML = \`
+        <div class="flex items-center">
+          <i class="fas \${icon} mr-3 text-xl"></i>
+          <span>\${message}</span>
+        </div>
+      \`;
+      messageArea.classList.remove('hidden');
+
+      if (type === 'success') {
+        setTimeout(() => {
+          messageArea.classList.add('hidden');
+        }, 5000);
+      }
+    }
+
+    // 認証チェック（管理者のみアクセス可能）
+    const token = localStorage.getItem('auth_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!token || user.role !== 'ADMIN') {
+      window.location.href = '/dashboard';
+    }
+  </script>
+</body>
+</html>
+  `);
+});
+
 // ダッシュボードページ
 app.get('/dashboard', (c) => {
   return c.html(`

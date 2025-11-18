@@ -3,12 +3,21 @@ import type { Bindings } from '../types';
 
 const ocr = new Hono<{ Bindings: Bindings }>();
 
+// 複数ファイル対応のOCR処理
 ocr.post('/extract', async (c) => {
   try {
     const formData = await c.req.formData();
-    const file = formData.get('file') as File;
+    const files = formData.getAll('files') as File[];
     
-    if (!file) {
+    // 後方互換性: 'file' フィールドもサポート
+    if (files.length === 0) {
+      const singleFile = formData.get('file') as File;
+      if (singleFile) {
+        files.push(singleFile);
+      }
+    }
+    
+    if (files.length === 0) {
       return c.json({ error: 'ファイルが指定されていません' }, 400);
     }
 
@@ -17,12 +26,16 @@ ocr.post('/extract', async (c) => {
       return c.json({ error: 'OpenAI API keyが設定されていません' }, 500);
     }
 
-    // ファイルをBase64に変換
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString('base64');
-    const mimeType = file.type || 'image/jpeg';
-    const fileName = file.name.toLowerCase();
+    const results = [];
+
+    // 各ファイルを処理
+    for (const file of files) {
+      // ファイルをBase64に変換（Cloudflare Workers互換）
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      const base64 = btoa(String.fromCharCode(...bytes));
+      const mimeType = file.type || 'image/jpeg';
+      const fileName = file.name.toLowerCase();
 
     // システムプロンプト（共通）
     const extractionPrompt = `この不動産資料から以下の情報を抽出してJSON形式で返してください。
@@ -130,9 +143,17 @@ JSON形式で返してください。説明文は不要です。`;
       return c.json({ error: 'OCR結果の解析に失敗しました', raw: content }, 500);
     }
 
+      results.push({
+        fileName: file.name,
+        success: true,
+        extracted: extracted
+      });
+    }
+
     return c.json({ 
       success: true,
-      extracted: extracted 
+      results: results,
+      count: results.length
     });
 
   } catch (error) {

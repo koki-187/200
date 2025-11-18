@@ -20,6 +20,7 @@ import r2 from './routes/r2';
 import backup from './routes/backup';
 import feedback from './routes/feedback';
 import analytics from './routes/analytics';
+import aiProposals from './routes/ai-proposals';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -116,6 +117,7 @@ app.route('/api/r2', r2);
 app.route('/api/backup', backup);
 app.route('/api/feedback', feedback);
 app.route('/api/analytics', analytics);
+app.route('/api/ai-proposals', aiProposals);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {
@@ -1173,7 +1175,7 @@ app.get('/deals/new', (c) => {
         <label for="ocr-file-input" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 cursor-pointer inline-block transition">
           <i class="fas fa-folder-open mr-2"></i>ファイルを選択
         </label>
-        <input type="file" id="ocr-file-input" accept="image/*,application/pdf,.pdf" class="hidden">
+        <input type="file" id="ocr-file-input" accept="image/*,application/pdf,.pdf" class="hidden" multiple>
       </div>
 
       <!-- プレビューとステータス -->
@@ -1399,18 +1401,113 @@ app.get('/deals/new', (c) => {
     dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
       dropZone.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
-        processOCR(file);
+      const files = Array.from(e.dataTransfer.files).filter(f => 
+        f.type.startsWith('image/') || f.type === 'application/pdf'
+      );
+      if (files.length > 0) {
+        processMultipleOCR(files);
       }
     });
 
     fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        processOCR(file);
+      const files = Array.from(e.target.files);
+      if (files.length > 0) {
+        processMultipleOCR(files);
       }
     });
+
+    async function processMultipleOCR(files) {
+      // プレビュー表示
+      previewContainer.classList.remove('hidden');
+      
+      // 複数ファイルのプレビュー
+      previewImage.style.display = 'none';
+      const existingIcon = document.getElementById('pdf-icon-preview');
+      if (existingIcon) existingIcon.remove();
+      
+      const multiPreview = document.createElement('div');
+      multiPreview.id = 'multi-file-preview';
+      multiPreview.className = 'grid grid-cols-2 gap-4 p-4';
+      
+      files.forEach(file => {
+        const fileCard = document.createElement('div');
+        fileCard.className = 'flex flex-col items-center p-4 bg-gray-50 rounded-lg border border-gray-200';
+        
+        const icon = document.createElement('i');
+        icon.className = file.type === 'application/pdf' ? 
+          'fas fa-file-pdf text-4xl text-red-500 mb-2' :
+          'fas fa-file-image text-4xl text-blue-500 mb-2';
+        
+        const fileName = document.createElement('p');
+        fileName.className = 'text-sm font-medium text-gray-700 truncate w-full text-center';
+        fileName.textContent = file.name;
+        
+        const fileSize = document.createElement('p');
+        fileSize.className = 'text-xs text-gray-500';
+        fileSize.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+        
+        fileCard.appendChild(icon);
+        fileCard.appendChild(fileName);
+        fileCard.appendChild(fileSize);
+        multiPreview.appendChild(fileCard);
+      });
+      
+      const existing = document.getElementById('multi-file-preview');
+      if (existing) existing.remove();
+      previewImage.parentElement.insertBefore(multiPreview, previewImage);
+
+      ocrStatus.innerHTML = '<div class="flex items-center text-blue-600"><i class="fas fa-spinner fa-spin mr-2"></i><span>複数ファイルをOCR処理中...</span></div>';
+      ocrResult.classList.add('hidden');
+
+      // OCR実行（複数ファイル）
+      try {
+        const formData = new FormData();
+        files.forEach(file => {
+          formData.append('files', file);
+        });
+
+        const response = await axios.post('/api/ocr/extract', formData, {
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        const data = response.data;
+        
+        // 複数結果を統合
+        if (data.results && data.results.length > 0) {
+          const merged = {};
+          data.results.forEach(result => {
+            if (result.success && result.extracted) {
+              Object.assign(merged, result.extracted);
+            }
+          });
+          
+          // フォームに自動入力
+          if (merged.property_name) document.getElementById('title').value = merged.property_name;
+          if (merged.location) document.getElementById('location').value = merged.location;
+          if (merged.land_area) document.getElementById('land_area').value = merged.land_area;
+          if (merged.zoning) document.getElementById('zoning').value = merged.zoning;
+          if (merged.building_coverage) document.getElementById('building_coverage').value = merged.building_coverage;
+          if (merged.floor_area_ratio) document.getElementById('floor_area_ratio').value = merged.floor_area_ratio;
+          if (merged.road_info) document.getElementById('road_info').value = merged.road_info;
+          if (merged.price) document.getElementById('desired_price').value = merged.price;
+
+          // 成功表示
+          ocrStatus.classList.add('hidden');
+          ocrResult.classList.remove('hidden');
+          const successMsg = document.createElement('p');
+          successMsg.className = 'text-green-600 font-medium';
+          successMsg.textContent = data.count + '件のファイルから情報を抽出しました';
+          ocrResult.innerHTML = '';
+          ocrResult.appendChild(successMsg);
+        }
+      } catch (error) {
+        console.error('OCR error:', error);
+        ocrStatus.innerHTML = '<div class="flex items-center text-red-600"><i class="fas fa-exclamation-circle mr-2"></i><span>OCR処理に失敗しました: ' + (error.response?.data?.error || error.message) + '</span></div>';
+      }
+    }
 
     async function processOCR(file) {
       // プレビュー表示

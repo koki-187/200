@@ -27,6 +27,7 @@ import purchaseCriteria from './routes/purchase-criteria';
 import geocoding from './routes/geocoding';
 import ocrHistory from './routes/ocr-history';
 import propertyTemplates from './routes/property-templates';
+import ocrSettings from './routes/ocr-settings';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -130,6 +131,7 @@ app.route('/api/purchase-criteria', purchaseCriteria);
 app.route('/api/geocoding', geocoding);
 app.route('/api/ocr-history', ocrHistory);
 app.route('/api/property-templates', propertyTemplates);
+app.route('/api/ocr-settings', ocrSettings);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {
@@ -2773,8 +2775,14 @@ app.get('/deals/new', (c) => {
           OCR自動入力（複数ファイル対応）
         </h3>
         <div class="flex items-center space-x-2">
+          <button id="ocr-templates-btn" type="button" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition">
+            <i class="fas fa-clipboard-list mr-1"></i>テンプレート
+          </button>
           <button id="ocr-history-btn" type="button" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition">
             <i class="fas fa-history mr-1"></i>履歴
+          </button>
+          <button id="ocr-settings-btn" type="button" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition">
+            <i class="fas fa-cog mr-1"></i>設定
           </button>
           <span class="text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
             画像・PDF混在OK
@@ -2902,6 +2910,159 @@ app.get('/deals/new', (c) => {
               <p>履歴はまだありません</p>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- テンプレート管理モーダル -->
+    <div id="ocr-templates-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 class="text-xl font-semibold text-gray-900">
+            <i class="fas fa-clipboard-list text-purple-600 mr-2"></i>テンプレート管理
+          </h3>
+          <button id="close-templates-modal" type="button" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+          <!-- 新規テンプレート作成ボタン -->
+          <div class="mb-4">
+            <button id="create-template-btn" type="button" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-medium">
+              <i class="fas fa-plus mr-2"></i>新規テンプレート作成
+            </button>
+          </div>
+          
+          <!-- テンプレートリスト -->
+          <div id="templates-list" class="space-y-4">
+            <div class="text-center text-gray-500 py-8">
+              <i class="fas fa-inbox text-5xl mb-3"></i>
+              <p>テンプレートはまだありません</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- テンプレート作成/編集モーダル -->
+    <div id="template-edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 id="template-edit-title" class="text-xl font-semibold text-gray-900">
+            <i class="fas fa-edit text-purple-600 mr-2"></i>テンプレート作成
+          </h3>
+          <button id="close-template-edit-modal" type="button" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+          <form id="template-form">
+            <input type="hidden" id="template-id" value="">
+            
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">テンプレート名 <span class="text-red-500">*</span></label>
+              <input type="text" id="template-name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+            </div>
+            
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">テンプレートタイプ <span class="text-red-500">*</span></label>
+              <select id="template-type" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                <option value="apartment">マンション</option>
+                <option value="house">一戸建て</option>
+                <option value="land">土地</option>
+                <option value="commercial">商業物件</option>
+                <option value="custom">カスタム</option>
+              </select>
+            </div>
+            
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                <input type="checkbox" id="template-shared" class="mr-2">
+                他のユーザーと共有する
+              </label>
+            </div>
+            
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">テンプレートデータ（JSON形式）</label>
+              <textarea id="template-data" rows="10" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-mono text-sm" placeholder='{"property_name": "...", "location": "..."}'></textarea>
+              <p class="text-xs text-gray-500 mt-1">JSON形式でテンプレートデータを入力してください</p>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+              <button type="button" id="cancel-template-btn" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                キャンセル
+              </button>
+              <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-medium">
+                <i class="fas fa-save mr-2"></i>保存
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- OCR設定モーダル -->
+    <div id="ocr-settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 class="text-xl font-semibold text-gray-900">
+            <i class="fas fa-cog text-purple-600 mr-2"></i>OCR設定
+          </h3>
+          <button id="close-settings-modal" type="button" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+          <form id="ocr-settings-form">
+            <div class="mb-6">
+              <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                <div>
+                  <span class="font-medium text-gray-900">履歴を自動保存</span>
+                  <p class="text-sm text-gray-600">OCR結果を自動的に履歴に保存します</p>
+                </div>
+                <input type="checkbox" id="setting-auto-save" class="w-5 h-5 text-purple-600 rounded focus:ring-purple-500">
+              </label>
+            </div>
+            
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">信頼度閾値</label>
+              <input type="range" id="setting-confidence-threshold" min="0" max="100" value="70" class="w-full">
+              <div class="flex justify-between text-xs text-gray-600 mt-1">
+                <span>0%</span>
+                <span id="confidence-threshold-value" class="font-medium text-purple-600">70%</span>
+                <span>100%</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">この値未満の信頼度の項目に警告を表示します</p>
+            </div>
+            
+            <div class="mb-6">
+              <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                <div>
+                  <span class="font-medium text-gray-900">バッチ処理を有効化</span>
+                  <p class="text-sm text-gray-600">複数ファイルの一括処理を許可します</p>
+                </div>
+                <input type="checkbox" id="setting-enable-batch" class="w-5 h-5 text-purple-600 rounded focus:ring-purple-500">
+              </label>
+            </div>
+            
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">最大バッチサイズ</label>
+              <input type="number" id="setting-max-batch-size" min="1" max="50" value="10" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+              <p class="text-xs text-gray-500 mt-1">一度に処理できるファイルの最大数（1-50）</p>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+              <button type="button" id="cancel-settings-btn" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                キャンセル
+              </button>
+              <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-medium">
+                <i class="fas fa-save mr-2"></i>設定を保存
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -3648,6 +3809,291 @@ app.get('/deals/new', (c) => {
         ocrStatus.innerHTML = '<div class="flex items-center text-red-600"><i class="fas fa-exclamation-circle mr-2"></i><span>OCR処理に失敗しました</span></div>';
       }
     }
+
+    // テンプレート管理
+    const templatesModal = document.getElementById('ocr-templates-modal');
+    const templateEditModal = document.getElementById('template-edit-modal');
+    
+    document.getElementById('ocr-templates-btn').addEventListener('click', async () => {
+      templatesModal.classList.remove('hidden');
+      await loadTemplates();
+    });
+
+    document.getElementById('close-templates-modal').addEventListener('click', () => {
+      templatesModal.classList.add('hidden');
+    });
+
+    document.getElementById('create-template-btn').addEventListener('click', () => {
+      document.getElementById('template-edit-title').innerHTML = '<i class="fas fa-plus text-purple-600 mr-2"></i>テンプレート作成';
+      document.getElementById('template-id').value = '';
+      document.getElementById('template-name').value = '';
+      document.getElementById('template-type').value = 'apartment';
+      document.getElementById('template-shared').checked = false;
+      document.getElementById('template-data').value = '';
+      templateEditModal.classList.remove('hidden');
+    });
+
+    document.getElementById('close-template-edit-modal').addEventListener('click', () => {
+      templateEditModal.classList.add('hidden');
+    });
+
+    document.getElementById('cancel-template-btn').addEventListener('click', () => {
+      templateEditModal.classList.add('hidden');
+    });
+
+    templatesModal.addEventListener('click', (e) => {
+      if (e.target === templatesModal) {
+        templatesModal.classList.add('hidden');
+      }
+    });
+
+    templateEditModal.addEventListener('click', (e) => {
+      if (e.target === templateEditModal) {
+        templateEditModal.classList.add('hidden');
+      }
+    });
+
+    // テンプレート一覧読み込み
+    async function loadTemplates() {
+      const templatesList = document.getElementById('templates-list');
+      
+      try {
+        const response = await axios.get('/api/property-templates', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const templates = response.data.templates || [];
+        
+        if (templates.length === 0) {
+          templatesList.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-inbox text-5xl mb-3"></i><p>テンプレートはまだありません</p></div>';
+          return;
+        }
+        
+        templatesList.innerHTML = templates.map(template => {
+          const typeLabels = {
+            apartment: 'マンション',
+            house: '一戸建て',
+            land: '土地',
+            commercial: '商業物件',
+            custom: 'カスタム'
+          };
+          
+          return '<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"><div class="flex items-center justify-between mb-2"><div class="flex items-center space-x-3"><span class="font-medium text-gray-900">' + template.template_name + '</span><span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">' + typeLabels[template.template_type] + '</span>' + (template.is_shared ? '<span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full"><i class="fas fa-users mr-1"></i>共有</span>' : '') + '</div><div class="flex items-center space-x-2"><button class="apply-template-btn text-purple-600 hover:text-purple-700 font-medium text-sm" data-template-id="' + template.id + '"><i class="fas fa-check mr-1"></i>適用</button><button class="edit-template-btn text-blue-600 hover:text-blue-700 text-sm" data-template-id="' + template.id + '"><i class="fas fa-edit"></i></button><button class="delete-template-btn text-red-600 hover:text-red-700 text-sm" data-template-id="' + template.id + '"><i class="fas fa-trash"></i></button></div></div><div class="text-xs text-gray-500"><span>使用回数: ' + template.use_count + '回</span><span class="ml-4">作成日: ' + new Date(template.created_at).toLocaleDateString('ja-JP') + '</span></div></div>';
+        }).join('');
+        
+        // イベントリスナー追加
+        document.querySelectorAll('.apply-template-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            await applyTemplate(btn.getAttribute('data-template-id'));
+          });
+        });
+        
+        document.querySelectorAll('.edit-template-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            await editTemplate(btn.getAttribute('data-template-id'));
+          });
+        });
+        
+        document.querySelectorAll('.delete-template-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (confirm('このテンプレートを削除してもよろしいですか？')) {
+              await deleteTemplate(btn.getAttribute('data-template-id'));
+            }
+          });
+        });
+        
+      } catch (error) {
+        console.error('Failed to load templates:', error);
+        templatesList.innerHTML = '<div class="text-center text-red-500 py-8"><i class="fas fa-exclamation-triangle text-5xl mb-3"></i><p>テンプレートの読み込みに失敗しました</p></div>';
+      }
+    }
+
+    // テンプレート適用
+    async function applyTemplate(templateId) {
+      try {
+        const response = await axios.get('/api/property-templates/' + templateId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const template = response.data;
+        const data = JSON.parse(template.template_data);
+        
+        // OCR結果エディターに表示
+        currentOCRData = data;
+        displayOCRResultEditor(data);
+        
+        // 使用回数更新
+        await axios.post('/api/property-templates/' + templateId + '/use', {}, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        templatesModal.classList.add('hidden');
+        previewContainer.classList.remove('hidden');
+        
+      } catch (error) {
+        console.error('Failed to apply template:', error);
+        alert('テンプレートの適用に失敗しました');
+      }
+    }
+
+    // テンプレート編集
+    async function editTemplate(templateId) {
+      try {
+        const response = await axios.get('/api/property-templates/' + templateId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const template = response.data;
+        
+        document.getElementById('template-edit-title').innerHTML = '<i class="fas fa-edit text-purple-600 mr-2"></i>テンプレート編集';
+        document.getElementById('template-id').value = template.id;
+        document.getElementById('template-name').value = template.template_name;
+        document.getElementById('template-type').value = template.template_type;
+        document.getElementById('template-shared').checked = template.is_shared === 1;
+        document.getElementById('template-data').value = template.template_data;
+        
+        templateEditModal.classList.remove('hidden');
+        
+      } catch (error) {
+        console.error('Failed to load template:', error);
+        alert('テンプレートの読み込みに失敗しました');
+      }
+    }
+
+    // テンプレート削除
+    async function deleteTemplate(templateId) {
+      try {
+        await axios.delete('/api/property-templates/' + templateId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        await loadTemplates();
+        
+      } catch (error) {
+        console.error('Failed to delete template:', error);
+        alert('テンプレートの削除に失敗しました');
+      }
+    }
+
+    // テンプレートフォーム送信
+    document.getElementById('template-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const templateId = document.getElementById('template-id').value;
+      const templateData = {
+        template_name: document.getElementById('template-name').value,
+        template_type: document.getElementById('template-type').value,
+        is_shared: document.getElementById('template-shared').checked,
+        template_data: document.getElementById('template-data').value
+      };
+      
+      // JSON validation
+      try {
+        JSON.parse(templateData.template_data);
+      } catch (e) {
+        alert('テンプレートデータが正しいJSON形式ではありません');
+        return;
+      }
+      
+      try {
+        if (templateId) {
+          // 更新
+          await axios.put('/api/property-templates/' + templateId, templateData, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+        } else {
+          // 新規作成
+          await axios.post('/api/property-templates', templateData, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+        }
+        
+        templateEditModal.classList.add('hidden');
+        await loadTemplates();
+        
+      } catch (error) {
+        console.error('Failed to save template:', error);
+        alert('テンプレートの保存に失敗しました');
+      }
+    });
+
+    // OCR設定
+    const settingsModal = document.getElementById('ocr-settings-modal');
+    
+    document.getElementById('ocr-settings-btn').addEventListener('click', async () => {
+      settingsModal.classList.remove('hidden');
+      await loadOCRSettings();
+    });
+
+    document.getElementById('close-settings-modal').addEventListener('click', () => {
+      settingsModal.classList.add('hidden');
+    });
+
+    document.getElementById('cancel-settings-btn').addEventListener('click', () => {
+      settingsModal.classList.add('hidden');
+    });
+
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.classList.add('hidden');
+      }
+    });
+
+    // 信頼度閾値スライダー
+    document.getElementById('setting-confidence-threshold').addEventListener('input', (e) => {
+      document.getElementById('confidence-threshold-value').textContent = e.target.value + '%';
+    });
+
+    // OCR設定読み込み
+    async function loadOCRSettings() {
+      try {
+        const response = await axios.get('/api/ocr-settings', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const settings = response.data;
+        
+        document.getElementById('setting-auto-save').checked = settings.auto_save_history === 1;
+        document.getElementById('setting-confidence-threshold').value = (settings.default_confidence_threshold * 100).toFixed(0);
+        document.getElementById('confidence-threshold-value').textContent = (settings.default_confidence_threshold * 100).toFixed(0) + '%';
+        document.getElementById('setting-enable-batch').checked = settings.enable_batch_processing === 1;
+        document.getElementById('setting-max-batch-size').value = settings.max_batch_size;
+        
+      } catch (error) {
+        console.error('Failed to load OCR settings:', error);
+        // デフォルト値を設定
+        document.getElementById('setting-auto-save').checked = true;
+        document.getElementById('setting-confidence-threshold').value = 70;
+        document.getElementById('confidence-threshold-value').textContent = '70%';
+        document.getElementById('setting-enable-batch').checked = true;
+        document.getElementById('setting-max-batch-size').value = 10;
+      }
+    }
+
+    // OCR設定フォーム送信
+    document.getElementById('ocr-settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const settings = {
+        auto_save_history: document.getElementById('setting-auto-save').checked ? 1 : 0,
+        default_confidence_threshold: parseInt(document.getElementById('setting-confidence-threshold').value) / 100,
+        enable_batch_processing: document.getElementById('setting-enable-batch').checked ? 1 : 0,
+        max_batch_size: parseInt(document.getElementById('setting-max-batch-size').value)
+      };
+      
+      try {
+        await axios.put('/api/ocr-settings', settings, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        settingsModal.classList.add('hidden');
+        alert('設定を保存しました');
+        
+      } catch (error) {
+        console.error('Failed to save OCR settings:', error);
+        alert('設定の保存に失敗しました');
+      }
+    });
 
     // フォーム送信
     document.getElementById('deal-form').addEventListener('submit', async (e) => {

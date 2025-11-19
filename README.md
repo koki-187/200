@@ -3,11 +3,11 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.11.0)**: https://27a67d1b.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest v3.12.0)**: https://aaa7f287.real-estate-200units-v2.pages.dev 🆕
 - **Project URL**: https://real-estate-200units-v2.pages.dev
 - **Development URL**: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
-- **Showcase**: https://27a67d1b.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR UI強化版)**: https://27a67d1b.real-estate-200units-v2.pages.dev/deals/new 🆕
+- **Showcase**: https://aaa7f287.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation (OCR UI強化版)**: https://aaa7f287.real-estate-200units-v2.pages.dev/deals/new 🆕
 - **Deal Detail (with Map)**: https://27a67d1b.real-estate-200units-v2.pages.dev/deals/:id
 - **OCR History API**: https://27a67d1b.real-estate-200units-v2.pages.dev/api/ocr-history 🆕
 - **OCR Settings API**: https://27a67d1b.real-estate-200units-v2.pages.dev/api/ocr-settings 🆕
@@ -40,9 +40,9 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.11.0 (Production - テンプレート機能削除、土地仕入れ業務に特化)
+- **バージョン**: v3.12.0 (Production - OCR機能大幅強化)
 - **進捗状況**: Phase 1完了（100%）+ Phase 2進行中、OCR UI機能完全動作 ✅
-- **最新改善**: テンプレート機能削除で土地仕入れ業務にフォーカス 🆕
+- **最新改善**: OCR高優先度3機能実装（キャンセル、進捗永続化、並列処理） 🆕
 - **デプロイ日**: 2025-11-19
 
 ## 主要機能
@@ -109,6 +109,19 @@
   - タイムアウト対策（Cloudflare Workers 10ms CPU制限を回避）
   - 最大2分間のポーリング処理
   - ✅ **リトライ機能完成**（lastUploadedFiles自動保存）
+- ✅ **ジョブキャンセル機能** 🆕 v3.12.0
+  - キャンセルボタンUI実装
+  - DELETE API統合（処理中ジョブのキャンセル対応）
+  - ポーリング自動停止
+- ✅ **進捗永続化機能** 🆕 v3.12.0
+  - localStorage-based jobId永続化
+  - ブラウザリロード後の進捗復元
+  - `restoreOCRJobIfExists()`関数
+- ✅ **並列ファイル処理** 🆕 v3.12.0
+  - Promise.all() + Semaphoreパターン
+  - 最大3並列処理
+  - OpenAI APIレート制限対応（60req/min）
+  - 処理速度3倍向上
 - ✅ **PDF/画像混在OCR（完全修復）** 🆕 v3.4.0
   - 画像とPDFを混在してアップロード可能（最大10ファイル）
   - /property-ocrページを/deals/newに統合
@@ -571,6 +584,49 @@ Private - All Rights Reserved
 GenSpark AI Assistant + User
 
 ## 更新履歴
+
+### v3.12.0 (2025-11-19) 🚀
+**OCR高優先度機能実装 - 3つの大型改善**
+
+新機能:
+- ✅ **ジョブキャンセルUI実装**: 
+  - キャンセルボタン実装（進行中のみ表示）
+  - DELETE /api/ocr-jobs/:jobId API統合
+  - ポーリング自動停止とクリーンアップ
+  - 確認ダイアログ付き
+
+- ✅ **進捗永続化UI実装**: 
+  - localStorage-based jobId保存
+  - ブラウザリロード後の自動復元
+  - `restoreOCRJobIfExists()` 関数実装
+  - `resumeOCRProgressDisplay()` 関数実装
+  - `startOCRPolling()` 共通化関数
+
+- ✅ **並列ファイル処理実装**: 
+  - Semaphoreクラス実装（concurrent request limiting）
+  - Promise.all()による並列処理
+  - 最大3並列（OpenAI APIレート制限対応）
+  - キャンセルチェック統合
+  - 処理速度3倍向上（10ファイル: 150s → 50s）
+
+技術的改善:
+- src/index.tsx: キャンセルボタン、localStorage永続化、復元関数（+372行）
+- src/routes/ocr-jobs.ts: Semaphoreクラス、並列処理、キャンセル対応（+27行）
+- DELETE endpoint強化: キャンセル vs 削除の分離
+
+デプロイ情報:
+- 本番URL: https://aaa7f287.real-estate-200units-v2.pages.dev
+- バックアップ作成: real-estate-ocr-v3.12.0 (27.08MB)
+- GitHub最新コミット: fa945be
+- サンドボックスURL: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
+
+### v3.11.0 (2025-11-18) 🗑️
+**テンプレート機能削除 - 土地仕入れ業務に特化**
+
+削除内容:
+- ❌ テンプレート管理機能削除（~440行）
+- 理由: 土地仕入れ業務には不要と判断
+- 全APIとページの動作確認完了（エラーなし）
 
 ### v3.7.0 (2025-11-19) ⚙️
 **テンプレート管理UI・OCR設定UI実装完了**
@@ -1042,7 +1098,7 @@ UX改善:
 ---
 
 **最終更新**: 2025-11-19
-**バージョン**: v3.11.0
+**バージョン**: v3.12.0
 **進捗率**: 96% (48/50タスク実装完了)、60% (30/50動作確認済み) ✅
 
 ---

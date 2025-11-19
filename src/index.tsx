@@ -25,6 +25,8 @@ import businessCardOCR from './routes/business-card-ocr';
 import propertyOCR from './routes/property-ocr';
 import purchaseCriteria from './routes/purchase-criteria';
 import geocoding from './routes/geocoding';
+import ocrHistory from './routes/ocr-history';
+import propertyTemplates from './routes/property-templates';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -126,6 +128,8 @@ app.route('/api/business-card-ocr', businessCardOCR);
 app.route('/api/property-ocr', propertyOCR);
 app.route('/api/purchase-criteria', purchaseCriteria);
 app.route('/api/geocoding', geocoding);
+app.route('/api/ocr-history', ocrHistory);
+app.route('/api/property-templates', propertyTemplates);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {

@@ -24,6 +24,7 @@ import aiProposals from './routes/ai-proposals';
 import businessCardOCR from './routes/business-card-ocr';
 import propertyOCR from './routes/property-ocr';
 import purchaseCriteria from './routes/purchase-criteria';
+import geocoding from './routes/geocoding';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -124,6 +125,7 @@ app.route('/api/ai-proposals', aiProposals);
 app.route('/api/business-card-ocr', businessCardOCR);
 app.route('/api/property-ocr', propertyOCR);
 app.route('/api/purchase-criteria', purchaseCriteria);
+app.route('/api/geocoding', geocoding);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {
@@ -3420,6 +3422,13 @@ app.get('/deals/:id', (c) => {
   <title>案件詳細 - 200棟土地仕入れ管理システム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- Leaflet.js for maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+    crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
   <style>
     body {
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
@@ -3638,6 +3647,52 @@ app.get('/deals/:id', (c) => {
               <div class="mt-6 pt-6 border-t text-sm text-gray-600">
                 <p><strong>作成日時:</strong> \${new Date(deal.created_at).toLocaleString('ja-JP')}</p>
                 <p><strong>更新日時:</strong> \${new Date(deal.updated_at).toLocaleString('ja-JP')}</p>
+              </div>
+            </div>
+
+            <!-- 地図セクション -->
+            <div class="bg-white rounded-lg shadow p-6 mt-6" id="map-section">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                  <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i>
+                  物件位置
+                </h3>
+                <button onclick="loadMapForDeal()" id="load-map-btn" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  <i class="fas fa-sync-alt mr-1"></i>地図を更新
+                </button>
+              </div>
+
+              <!-- 地図コンテナ -->
+              <div id="map-container" class="hidden">
+                <div id="map" style="height: 400px; border-radius: 8px; overflow: hidden;" class="mb-4"></div>
+                <div id="map-info" class="text-sm text-gray-600">
+                  <!-- 地図情報がここに表示されます -->
+                </div>
+              </div>
+
+              <!-- ローディング表示 -->
+              <div id="map-loading" class="hidden text-center py-8">
+                <i class="fas fa-spinner fa-spin text-3xl text-blue-600 mb-3"></i>
+                <p class="text-gray-600">地図を読み込んでいます...</p>
+              </div>
+
+              <!-- 地図未読み込み表示 -->
+              <div id="map-placeholder" class="text-center py-8 bg-gray-50 rounded-lg">
+                <i class="fas fa-map text-5xl text-gray-300 mb-3"></i>
+                <p class="text-gray-600 mb-4">物件の位置を地図で確認できます</p>
+                <button onclick="loadMapForDeal()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                  <i class="fas fa-map-marker-alt mr-2"></i>地図を表示
+                </button>
+              </div>
+
+              <!-- エラー表示 -->
+              <div id="map-error" class="hidden text-center py-8 bg-red-50 rounded-lg">
+                <i class="fas fa-exclamation-circle text-4xl text-red-500 mb-3"></i>
+                <p class="text-red-700 font-medium mb-2">位置情報の取得に失敗しました</p>
+                <p class="text-sm text-gray-600 mb-4" id="map-error-message"></p>
+                <button onclick="loadMapForDeal()" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  <i class="fas fa-redo mr-1"></i>再試行
+                </button>
               </div>
             </div>
           </div>
@@ -4110,6 +4165,110 @@ app.get('/deals/:id', (c) => {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-magic mr-2"></i>AI提案を生成';
         alert('AI提案の生成に失敗しました: ' + (error.response?.data?.error || error.message));
+      }
+    }
+
+    // 地図表示機能
+    let map = null;
+    let marker = null;
+
+    async function loadMapForDeal() {
+      const mapLoading = document.getElementById('map-loading');
+      const mapContainer = document.getElementById('map-container');
+      const mapPlaceholder = document.getElementById('map-placeholder');
+      const mapError = document.getElementById('map-error');
+      const mapErrorMessage = document.getElementById('map-error-message');
+
+      // 既存の表示をクリア
+      mapPlaceholder.classList.add('hidden');
+      mapError.classList.add('hidden');
+      mapContainer.classList.add('hidden');
+      mapLoading.classList.remove('hidden');
+
+      if (!currentDealData || !currentDealData.location) {
+        mapLoading.classList.add('hidden');
+        mapError.classList.remove('hidden');
+        mapErrorMessage.textContent = '所在地情報が登録されていません';
+        return;
+      }
+
+      try {
+        // Geocoding APIで緯度経度を取得
+        const geocodingResponse = await axios.get('/api/geocoding/search', {
+          params: { address: currentDealData.location },
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!geocodingResponse.data.success) {
+          throw new Error(geocodingResponse.data.message || '位置情報が見つかりませんでした');
+        }
+
+        const { latitude, longitude, display_name, address } = geocodingResponse.data.data;
+
+        // 地図を初期化（初回のみ）
+        if (!map) {
+          map = L.map('map').setView([latitude, longitude], 16);
+          
+          // OpenStreetMapタイルレイヤーを追加
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+          }).addTo(map);
+        } else {
+          // 既存の地図の中心を更新
+          map.setView([latitude, longitude], 16);
+        }
+
+        // 既存のマーカーを削除
+        if (marker) {
+          map.removeLayer(marker);
+        }
+
+        // 新しいマーカーを追加
+        marker = L.marker([latitude, longitude]).addTo(map);
+        
+        // ポップアップを追加
+        const popupContent = \`
+          <div style="font-family: sans-serif;">
+            <strong style="font-size: 14px; color: #1f2937;">\${currentDealData.title}</strong><br>
+            <span style="font-size: 12px; color: #6b7280;">\${currentDealData.location}</span>
+            \${currentDealData.station ? '<br><i class="fas fa-train" style="color: #3b82f6;"></i> ' + currentDealData.station + (currentDealData.walk_minutes ? ' 徒歩' + currentDealData.walk_minutes + '分' : '') : ''}
+            \${currentDealData.land_area ? '<br><i class="fas fa-ruler-combined" style="color: #10b981;"></i> ' + currentDealData.land_area : ''}
+          </div>
+        \`;
+        marker.bindPopup(popupContent).openPopup();
+
+        // 地図情報を表示
+        document.getElementById('map-info').innerHTML = \`
+          <div class="flex items-start space-x-2 p-4 bg-blue-50 rounded-lg">
+            <i class="fas fa-info-circle text-blue-600 mt-1"></i>
+            <div class="flex-1">
+              <p class="font-medium text-gray-900 mb-1">取得した位置情報</p>
+              <p class="text-sm text-gray-600 mb-1">
+                <strong>表示名:</strong> \${display_name}
+              </p>
+              <p class="text-sm text-gray-600 mb-1">
+                <strong>座標:</strong> 緯度 \${latitude.toFixed(6)}, 経度 \${longitude.toFixed(6)}
+              </p>
+              \${address && address.prefecture ? '<p class="text-sm text-gray-600"><strong>都道府県:</strong> ' + address.prefecture + '</p>' : ''}
+              \${address && address.city ? '<p class="text-sm text-gray-600"><strong>市区町村:</strong> ' + address.city + '</p>' : ''}
+            </div>
+          </div>
+        \`;
+
+        mapLoading.classList.add('hidden');
+        mapContainer.classList.remove('hidden');
+
+        // 地図のサイズを再計算（表示後に必要）
+        setTimeout(() => {
+          map.invalidateSize();
+        }, 100);
+
+      } catch (error) {
+        console.error('Map loading error:', error);
+        mapLoading.classList.add('hidden');
+        mapError.classList.remove('hidden');
+        mapErrorMessage.textContent = error.response?.data?.error || error.message || '地図の読み込みに失敗しました';
       }
     }
 

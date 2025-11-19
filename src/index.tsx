@@ -2813,7 +2813,12 @@ app.get('/deals/new', (c) => {
                 <i class="fas fa-spinner fa-spin mr-2"></i>
                 <span class="font-semibold">OCR処理中</span>
               </div>
-              <span id="ocr-progress-text" class="text-sm text-blue-600 font-medium">0/0 完了</span>
+              <div class="flex items-center space-x-3">
+                <span id="ocr-progress-text" class="text-sm text-blue-600 font-medium">0/0 完了</span>
+                <button id="ocr-cancel-btn" type="button" class="text-sm bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700 transition font-medium" style="display: none;">
+                  <i class="fas fa-times-circle mr-1"></i>キャンセル
+                </button>
+              </div>
             </div>
             
             <!-- 全体プログレスバー -->
@@ -3184,6 +3189,209 @@ app.get('/deals/new', (c) => {
       window.location.href = '/';
     }
 
+    // ページロード時にOCRジョブを復元
+    async function restoreOCRJobIfExists() {
+      const savedJobId = localStorage.getItem('currentOCRJobId');
+      if (!savedJobId) return;
+      
+      try {
+        // ジョブのステータスを確認
+        const response = await axios.get('/api/ocr-jobs/' + savedJobId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const job = response.data.job;
+        
+        // 進行中のジョブのみ復元
+        if (job.status === 'processing' || job.status === 'pending') {
+          console.log('Restoring OCR job:', savedJobId);
+          resumeOCRProgressDisplay(savedJobId, job);
+        } else {
+          // 完了/失敗/キャンセル済みの場合はlocalStorageをクリア
+          localStorage.removeItem('currentOCRJobId');
+        }
+      } catch (error) {
+        console.error('Failed to restore OCR job:', error);
+        // エラーの場合もlocalStorageをクリア
+        localStorage.removeItem('currentOCRJobId');
+      }
+    }
+
+    // OCR進捗表示を復元
+    function resumeOCRProgressDisplay(jobId, initialJob) {
+      const progressSection = document.getElementById('ocr-progress-section');
+      const progressBar = document.getElementById('ocr-progress-bar');
+      const progressText = document.getElementById('ocr-progress-text');
+      const fileStatusList = document.getElementById('ocr-file-status-list');
+      const etaSection = document.getElementById('ocr-eta-section');
+      const cancelBtn = document.getElementById('ocr-cancel-btn');
+      
+      // 進捗セクションを表示
+      progressSection.classList.remove('hidden');
+      cancelBtn.style.display = 'block';
+      
+      // 初期進捗を表示
+      const processedFiles = initialJob.processed_files || 0;
+      const totalFiles = initialJob.total_files || 0;
+      const progress = totalFiles > 0 ? Math.round((processedFiles / totalFiles) * 100) : 0;
+      
+      progressBar.style.width = progress + '%';
+      progressText.textContent = processedFiles + '/' + totalFiles + ' 完了';
+      
+      // ファイルステータスを初期化（ファイル名がない場合は番号で表示）
+      fileStatusList.innerHTML = '';
+      for (let i = 0; i < totalFiles; i++) {
+        const statusItem = document.createElement('div');
+        statusItem.className = 'flex items-center justify-between text-sm p-2 bg-white rounded border border-gray-200';
+        
+        if (i < processedFiles) {
+          statusItem.innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="text-gray-700">ファイル ' + (i + 1) + '</span></div><span class="text-green-600 text-xs font-medium">完了</span>';
+        } else if (i === processedFiles) {
+          statusItem.innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-spinner fa-spin text-blue-500 mr-2"></i><span class="text-gray-700">ファイル ' + (i + 1) + '</span></div><span class="text-blue-600 text-xs font-medium">処理中</span>';
+        } else {
+          statusItem.innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-clock text-gray-400 mr-2"></i><span class="text-gray-700">ファイル ' + (i + 1) + '</span></div><span class="text-gray-500 text-xs">待機中</span>';
+        }
+        
+        fileStatusList.appendChild(statusItem);
+      }
+      
+      // ポーリングを開始
+      startOCRPolling(jobId, Date.now() - (processedFiles * 10000)); // 概算の開始時間
+    }
+
+    // OCRポーリング処理（共通化）
+    function startOCRPolling(jobId, startTime) {
+      const progressSection = document.getElementById('ocr-progress-section');
+      const progressBar = document.getElementById('ocr-progress-bar');
+      const progressText = document.getElementById('ocr-progress-text');
+      const fileStatusList = document.getElementById('ocr-file-status-list');
+      const etaSection = document.getElementById('ocr-eta-section');
+      const etaText = document.getElementById('ocr-eta-text');
+      const cancelBtn = document.getElementById('ocr-cancel-btn');
+      
+      let pollingAttempts = 0;
+      const maxAttempts = 180; // 最大3分（1秒間隔）
+      
+      const pollInterval = setInterval(async () => {
+        try {
+          pollingAttempts++;
+          
+          if (pollingAttempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            cancelBtn.style.display = 'none';
+            localStorage.removeItem('currentOCRJobId');
+            throw new Error('OCR処理がタイムアウトしました。');
+          }
+          
+          const statusResponse = await axios.get('/api/ocr-jobs/' + jobId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          
+          const job = statusResponse.data.job;
+          const processedFiles = job.processed_files || 0;
+          const totalFiles = job.total_files || 0;
+          const status = job.status;
+          
+          // 進捗バーを更新
+          const progress = totalFiles > 0 ? Math.round((processedFiles / totalFiles) * 100) : 0;
+          progressBar.style.width = progress + '%';
+          progressText.textContent = processedFiles + '/' + totalFiles + ' 完了';
+          
+          // 推定時間計算
+          const elapsedTime = (Date.now() - startTime) / 1000;
+          if (processedFiles > 0 && processedFiles < totalFiles) {
+            const estimatedTotalTime = (elapsedTime / processedFiles) * totalFiles;
+            const remainingTime = Math.max(0, estimatedTotalTime - elapsedTime);
+            etaSection.classList.remove('hidden');
+            etaText.textContent = '約' + Math.ceil(remainingTime) + '秒';
+          }
+          
+          // ファイルステータス更新
+          const statusItems = fileStatusList.children;
+          for (let i = 0; i < statusItems.length; i++) {
+            if (i < processedFiles) {
+              statusItems[i].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="text-gray-700">ファイル ' + (i + 1) + '</span></div><span class="text-green-600 text-xs font-medium">完了</span>';
+            } else if (i === processedFiles) {
+              statusItems[i].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-spinner fa-spin text-blue-500 mr-2"></i><span class="text-gray-700">ファイル ' + (i + 1) + '</span></div><span class="text-blue-600 text-xs font-medium">処理中</span>';
+            }
+          }
+          
+          // ステータスに応じた処理
+          if (status === 'completed') {
+            clearInterval(pollInterval);
+            cancelBtn.style.display = 'none';
+            localStorage.removeItem('currentOCRJobId');
+            
+            progressBar.style.width = '100%';
+            progressText.textContent = totalFiles + '/' + totalFiles + ' 完了';
+            etaSection.classList.add('hidden');
+            
+            for (let i = 0; i < statusItems.length; i++) {
+              statusItems[i].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="text-gray-700">ファイル ' + (i + 1) + '</span></div><span class="text-green-600 text-xs font-medium">完了</span>';
+            }
+            
+            setTimeout(() => {
+              progressSection.classList.add('hidden');
+            }, 1500);
+            
+            if (job.extracted_data) {
+              displayOCRResultEditor(job.extracted_data);
+            } else {
+              showMessage('OCR処理は完了しましたが、データの取得に失敗しました。', 'error');
+            }
+            
+          } else if (status === 'failed') {
+            clearInterval(pollInterval);
+            cancelBtn.style.display = 'none';
+            localStorage.removeItem('currentOCRJobId');
+            progressSection.classList.add('hidden');
+            showMessage('OCR処理に失敗しました: ' + (job.error_message || '不明なエラー'), 'error');
+            
+          } else if (status === 'cancelled') {
+            clearInterval(pollInterval);
+            cancelBtn.style.display = 'none';
+            localStorage.removeItem('currentOCRJobId');
+            progressSection.classList.add('hidden');
+            showMessage('OCR処理はキャンセルされました。', 'info');
+          }
+          
+        } catch (error) {
+          clearInterval(pollInterval);
+          cancelBtn.style.display = 'none';
+          localStorage.removeItem('currentOCRJobId');
+          progressSection.classList.add('hidden');
+          showMessage('OCR処理の監視中にエラーが発生しました: ' + error.message, 'error');
+        }
+      }, 1000);
+      
+      // キャンセルボタンのイベントハンドラ
+      const cancelHandler = async () => {
+        if (!confirm('OCR処理をキャンセルしますか？\n処理中のファイルは保存されません。')) {
+          return;
+        }
+        
+        try {
+          await axios.delete('/api/ocr-jobs/' + jobId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          
+          clearInterval(pollInterval);
+          cancelBtn.style.display = 'none';
+          localStorage.removeItem('currentOCRJobId');
+          progressSection.classList.add('hidden');
+          showMessage('OCR処理をキャンセルしました。', 'info');
+          
+        } catch (error) {
+          console.error('Cancel error:', error);
+          showMessage('キャンセルに失敗しました: ' + (error.response?.data?.error || error.message), 'error');
+        }
+      };
+      
+      cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+      const newCancelBtn = document.getElementById('ocr-cancel-btn');
+      newCancelBtn.addEventListener('click', cancelHandler);
+    }
+
     // 売主リスト取得
     async function loadSellers() {
       try {
@@ -3310,6 +3518,10 @@ app.get('/deals/new', (c) => {
 
       // OCR実行（非同期ジョブとして送信）
       const startTime = Date.now();
+      let currentJobId = null;
+      let currentPollInterval = null;
+      const cancelBtn = document.getElementById('ocr-cancel-btn');
+      
       try {
         const formData = new FormData();
         files.forEach(file => {
@@ -3324,25 +3536,34 @@ app.get('/deals/new', (c) => {
           }
         });
         
-        const jobId = createResponse.data.job_id;
-        console.log('OCR job created:', jobId);
+        currentJobId = createResponse.data.job_id;
+        console.log('OCR job created:', currentJobId);
+        
+        // localStorageにjobIdを保存（永続化）
+        localStorage.setItem('currentOCRJobId', currentJobId);
+        
+        // キャンセルボタンを表示
+        cancelBtn.style.display = 'block';
 
-        // ステップ2: ポーリングで進捗を監視
+        // ステップ2: 共通ポーリング関数を使用
+        // 既存の詳細なポーリングロジックを保持
         let pollingAttempts = 0;
         const maxAttempts = 120; // 最大2分（1秒間隔）
         
-        const pollInterval = setInterval(async () => {
+        currentPollInterval = setInterval(async () => {
           try {
             pollingAttempts++;
             
             // タイムアウトチェック
             if (pollingAttempts >= maxAttempts) {
-              clearInterval(pollInterval);
+              clearInterval(currentPollInterval);
+              cancelBtn.style.display = 'none';
+              localStorage.removeItem('currentOCRJobId');
               throw new Error('OCR処理がタイムアウトしました。処理に時間がかかっています。');
             }
             
             // ジョブのステータスを取得
-            const statusResponse = await axios.get('/api/ocr-jobs/' + jobId, {
+            const statusResponse = await axios.get('/api/ocr-jobs/' + currentJobId, {
               headers: { 'Authorization': 'Bearer ' + token }
             });
             
@@ -3376,7 +3597,9 @@ app.get('/deals/new', (c) => {
             
             // ステータスに応じた処理
             if (status === 'completed') {
-              clearInterval(pollInterval);
+              clearInterval(currentPollInterval);
+              cancelBtn.style.display = 'none';
+              localStorage.removeItem('currentOCRJobId');
               
               // 完了処理
               progressBar.style.width = '100%';
@@ -3400,20 +3623,72 @@ app.get('/deals/new', (c) => {
               }
               
             } else if (status === 'failed') {
-              clearInterval(pollInterval);
+              clearInterval(currentPollInterval);
+              cancelBtn.style.display = 'none';
+              localStorage.removeItem('currentOCRJobId');
               throw new Error(job.error_message || 'OCR処理に失敗しました');
+            } else if (status === 'cancelled') {
+              clearInterval(currentPollInterval);
+              cancelBtn.style.display = 'none';
+              localStorage.removeItem('currentOCRJobId');
+              progressSection.classList.add('hidden');
+              showMessage('OCR処理をキャンセルしました。', 'info');
+              return;
             }
             
           } catch (pollError) {
-            clearInterval(pollInterval);
+            clearInterval(currentPollInterval);
+            cancelBtn.style.display = 'none';
+            localStorage.removeItem('currentOCRJobId');
             progressSection.classList.add('hidden');
             displayOCRError(pollError);
           }
         }, 1000); // 1秒ごとにポーリング
+        
+        // キャンセルボタンのイベントハンドラ
+        const cancelHandler = async () => {
+          if (!confirm('OCR処理をキャンセルしますか？\n処理中のファイルは保存されません。')) {
+            return;
+          }
+          
+          try {
+            // APIでジョブをキャンセル
+            await axios.delete('/api/ocr-jobs/' + currentJobId, {
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            
+            // ポーリングを停止
+            if (currentPollInterval) {
+              clearInterval(currentPollInterval);
+            }
+            
+            // UIを更新
+            cancelBtn.style.display = 'none';
+            localStorage.removeItem('currentOCRJobId');
+            progressSection.classList.add('hidden');
+            showMessage('OCR処理をキャンセルしました。', 'info');
+            
+          } catch (error) {
+            console.error('Cancel error:', error);
+            showMessage('キャンセルに失敗しました: ' + (error.response?.data?.error || error.message), 'error');
+          }
+        };
+        
+        // 既存のハンドラを削除してから新しいハンドラを追加
+        cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+        const newCancelBtn = document.getElementById('ocr-cancel-btn');
+        newCancelBtn.addEventListener('click', cancelHandler);
 
 
       } catch (error) {
         console.error('OCR error:', error);
+        if (cancelBtn) {
+          cancelBtn.style.display = 'none';
+        }
+        if (currentPollInterval) {
+          clearInterval(currentPollInterval);
+        }
+        localStorage.removeItem('currentOCRJobId');
         progressSection.classList.add('hidden');
         
         // エラー表示
@@ -4426,6 +4701,9 @@ app.get('/deals/new', (c) => {
     // 初期化
     loadSellers();
     loadOCRExtractedData();
+    
+    // ページロード時にOCRジョブを復元（ブラウザリロード対応）
+    restoreOCRJobIfExists();
   </script>
 </body>
 </html>

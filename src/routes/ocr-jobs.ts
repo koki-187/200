@@ -5,6 +5,42 @@ import { Bindings } from '../types';
 const ocrJobs = new Hono<{ Bindings: Bindings }>();
 
 /**
+ * セマフォクラス - 並列実行数を制限
+ * OpenAI APIのレート制限対策として使用
+ */
+class Semaphore {
+  private permits: number;
+  private waitQueue: Array<() => void> = [];
+
+  constructor(permits: number) {
+    this.permits = permits;
+  }
+
+  async acquire(): Promise<void> {
+    if (this.permits > 0) {
+      this.permits--;
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve) => {
+      this.waitQueue.push(resolve);
+    });
+  }
+
+  release(): void {
+    this.permits++;
+    
+    if (this.waitQueue.length > 0) {
+      const resolve = this.waitQueue.shift();
+      if (resolve) {
+        this.permits--;
+        resolve();
+      }
+    }
+  }
+}
+
+/**
  * 新しいOCRジョブを作成（非同期処理開始）
  * POST /api/ocr-jobs
  */
@@ -194,7 +230,7 @@ ocrJobs.get('/', async (c) => {
 });
 
 /**
- * OCRジョブを削除
+ * OCRジョブをキャンセル
  * DELETE /api/ocr-jobs/:jobId
  */
 ocrJobs.delete('/:jobId', async (c) => {
@@ -211,15 +247,30 @@ ocrJobs.delete('/:jobId', async (c) => {
       return c.json({ error: 'ジョブが見つかりません' }, 404);
     }
     
-    // 削除実行
-    await DB.prepare(`
-      DELETE FROM ocr_jobs WHERE id = ?
-    `).bind(jobId).run();
-    
-    return c.json({
-      success: true,
-      message: 'ジョブを削除しました'
-    });
+    // 進行中のジョブの場合はキャンセル、完了済みの場合は削除
+    if (job.status === 'processing' || job.status === 'pending') {
+      // キャンセル（ステータスを更新）
+      await DB.prepare(`
+        UPDATE ocr_jobs 
+        SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP 
+        WHERE id = ?
+      `).bind(jobId).run();
+      
+      return c.json({
+        success: true,
+        message: 'ジョブをキャンセルしました'
+      });
+    } else {
+      // 完了済み/失敗/キャンセル済みの場合は削除
+      await DB.prepare(`
+        DELETE FROM ocr_jobs WHERE id = ?
+      `).bind(jobId).run();
+      
+      return c.json({
+        success: true,
+        message: 'ジョブを削除しました'
+      });
+    }
     
   } catch (error) {
     console.error('Delete OCR job error:', error);
@@ -251,20 +302,33 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
       throw new Error('OpenAI API Keyが設定されていません');
     }
     
-    // 各ファイルをOCR処理
+    // 各ファイルをOCR処理（並列処理 + セマフォ）
     const extractionResults: any[] = [];
     const processedFiles: string[] = [];
     
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    // セマフォ実装: 同時実行数を制限（OpenAI APIレート制限対策）
+    // 無料プラン: 60リクエスト/分 = 1リクエスト/秒
+    // 安全のため、最大3並列に制限
+    const maxConcurrent = 3;
+    const semaphore = new Semaphore(maxConcurrent);
+    
+    // 進捗カウンター
+    let processedCount = 0;
+    
+    // 各ファイル処理用のプロミス関数
+    const processFile = async (file: File, index: number) => {
+      await semaphore.acquire();
       
       try {
-        // 進捗を更新
-        await DB.prepare(`
-          UPDATE ocr_jobs 
-          SET processed_files = ?, updated_at = CURRENT_TIMESTAMP 
-          WHERE id = ?
-        `).bind(i, jobId).run();
+        // キャンセルチェック
+        const currentJob = await DB.prepare(`
+          SELECT status FROM ocr_jobs WHERE id = ?
+        `).bind(jobId).first();
+        
+        if (currentJob && currentJob.status === 'cancelled') {
+          console.log(`Job ${jobId} was cancelled, stopping file processing`);
+          return { index, success: false, cancelled: true };
+        }
         
         // ファイルをBase64に変換
         const arrayBuffer = await file.arrayBuffer();
@@ -309,7 +373,7 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
         if (!openaiResponse.ok) {
           const errorText = await openaiResponse.text();
           console.error(`OpenAI API error for ${file.name}:`, errorText);
-          continue;
+          return { index, success: false };
         }
         
         const result = await openaiResponse.json();
@@ -324,16 +388,41 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
             if (jsonMatch) {
               const jsonStr = jsonMatch[1] || jsonMatch[0];
               const extractedData = JSON.parse(jsonStr);
-              extractionResults.push(extractedData);
-              processedFiles.push(file.name);
+              return { index, success: true, data: extractedData, fileName: file.name };
             }
           } catch (parseError) {
             console.error(`JSON parse error for ${file.name}:`, parseError);
           }
         }
         
+        return { index, success: false };
+        
       } catch (fileError) {
         console.error(`Error processing ${file.name}:`, fileError);
+        return { index, success: false };
+      } finally {
+        semaphore.release();
+        
+        // 進捗を更新
+        processedCount++;
+        await DB.prepare(`
+          UPDATE ocr_jobs 
+          SET processed_files = ?, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = ?
+        `).bind(processedCount, jobId).run();
+      }
+    };
+    
+    // 全ファイルを並列処理（セマフォで同時実行数制限）
+    const results = await Promise.all(
+      files.map((file, index) => processFile(file, index))
+    );
+    
+    // 成功した結果のみ収集
+    for (const result of results) {
+      if (result.success && result.data) {
+        extractionResults.push(result.data);
+        processedFiles.push(result.fileName!);
       }
     }
     

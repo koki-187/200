@@ -3,13 +3,15 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.4.0)**: https://315330cd.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest v3.5.0)**: https://44455ac1.real-estate-200units-v2.pages.dev 🆕
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Showcase**: https://315330cd.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR統合)**: https://315330cd.real-estate-200units-v2.pages.dev/deals/new 🆕
-- **Deal Detail (with Map)**: https://315330cd.real-estate-200units-v2.pages.dev/deals/:id
-- **Purchase Criteria API**: https://315330cd.real-estate-200units-v2.pages.dev/api/purchase-criteria
-- **Geocoding API**: https://315330cd.real-estate-200units-v2.pages.dev/api/geocoding
+- **Showcase**: https://44455ac1.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation (OCR強化版)**: https://44455ac1.real-estate-200units-v2.pages.dev/deals/new 🆕
+- **Deal Detail (with Map)**: https://44455ac1.real-estate-200units-v2.pages.dev/deals/:id
+- **OCR History API**: https://44455ac1.real-estate-200units-v2.pages.dev/api/ocr-history 🆕
+- **Property Templates API**: https://44455ac1.real-estate-200units-v2.pages.dev/api/property-templates 🆕
+- **Purchase Criteria API**: https://44455ac1.real-estate-200units-v2.pages.dev/api/purchase-criteria
+- **Geocoding API**: https://44455ac1.real-estate-200units-v2.pages.dev/api/geocoding
 
 ### デフォルトログイン情報
 
@@ -37,9 +39,9 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.4.0 (Production Deployed)
+- **バージョン**: v3.5.0 (Production Deployed)
 - **進捗状況**: Phase 1完了（100%）+ Phase 2進行中、本番環境デプロイ完了 ✅
-- **最新改善**: OCR機能の完全修復とUI統合（PDF/画像混在対応） 🆕
+- **最新改善**: OCR機能の大幅強化（精度向上、履歴保存、テンプレート、バッチ処理） 🆕
 - **デプロイ日**: 2025-11-19
 
 ## 主要機能
@@ -554,6 +556,62 @@ GenSpark AI Assistant + User
 
 ## 更新履歴
 
+### v3.5.0 (2025-11-19) 🚀
+**OCR機能の大幅強化 - エンタープライズ機能追加**
+
+新機能:
+- ✅ **OCR精度向上**: 
+  - 20年以上の経験を持つ専門家レベルの改良版プロンプト
+  - フィールド別詳細抽出ガイド（所在地、面積、用途地域など）
+  - 信頼度スコア（confidence）: 抽出精度を0.0-1.0で自己評価
+  - 文字認識の優先順位ルール（印字 > 手書き > 推測禁止）
+
+- ✅ **OCR履歴保存機能**: 
+  - D1データベースに全OCR結果を自動保存
+  - ファイル名、抽出データ、信頼度、処理時間を記録
+  - API: `/api/ocr-history` - 履歴CRUD操作
+  - 過去の抽出結果を再利用可能
+
+- ✅ **テンプレート機能**: 
+  - 物件タイプ別テンプレート（apartment, house, land, commercial, custom）
+  - テンプレートの保存・管理・共有
+  - 使用回数トラッキング
+  - API: `/api/property-templates` - テンプレートCRUD操作
+
+- ✅ **バッチ処理対応**: 
+  - 最大20ファイルの大量OCR処理
+  - ユーザー設定で最大バッチサイズをカスタマイズ可能
+  - ocr_settings テーブルで個別設定管理
+
+データベース変更:
+- 新テーブル: `ocr_history` - OCR履歴保存
+- 新テーブル: `property_templates` - テンプレート管理
+- 新テーブル: `ocr_settings` - ユーザーOCR設定
+- マイグレーション: `0010_add_ocr_history_and_templates.sql`
+
+API追加:
+- `POST /api/ocr-history` - OCR履歴保存
+- `GET /api/ocr-history` - OCR履歴一覧取得
+- `GET /api/ocr-history/:id` - OCR履歴詳細取得
+- `DELETE /api/ocr-history/:id` - OCR履歴削除
+- `POST /api/property-templates` - テンプレート作成
+- `GET /api/property-templates` - テンプレート一覧取得
+- `GET /api/property-templates/:id` - テンプレート詳細取得
+- `POST /api/property-templates/:id/use` - 使用回数更新
+- `PUT /api/property-templates/:id` - テンプレート更新
+- `DELETE /api/property-templates/:id` - テンプレート削除
+
+技術的改善:
+- OCRプロンプトの完全リライト（精度向上）
+- confidence フィールド追加（抽出品質の可視化）
+- フィールド別抽出ルールの明確化
+- エラーハンドリング強化
+
+デプロイ情報:
+- 本番URL: https://44455ac1.real-estate-200units-v2.pages.dev
+- バックアップ作成: v3.5.0 OCR強化版 (25.0MB)
+- GitHub最新コミット: aa67989
+
 ### v3.4.0 (2025-11-19) 🔧
 **OCR機能の完全修復とUI統合**
 
@@ -859,7 +917,7 @@ UX改善:
 ---
 
 **最終更新**: 2025-11-19
-**バージョン**: v3.4.0
+**バージョン**: v3.5.0
 **進捗率**: 96% (48/50タスク実装完了)、60% (30/50動作確認済み) ✅
 
 ---

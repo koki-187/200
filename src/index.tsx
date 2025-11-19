@@ -2772,9 +2772,14 @@ app.get('/deals/new', (c) => {
           <i class="fas fa-magic text-purple-600 mr-2"></i>
           OCR自動入力（複数ファイル対応）
         </h3>
-        <span class="text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
-          画像・PDF混在OK
-        </span>
+        <div class="flex items-center space-x-2">
+          <button id="ocr-history-btn" type="button" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition">
+            <i class="fas fa-history mr-1"></i>履歴
+          </button>
+          <span class="text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
+            画像・PDF混在OK
+          </span>
+        </div>
       </div>
       
       <!-- ドロップゾーン -->
@@ -2789,25 +2794,112 @@ app.get('/deals/new', (c) => {
         <input type="file" id="ocr-file-input" accept="image/*,application/pdf,.pdf" class="hidden" multiple>
       </div>
 
-      <!-- プレビューとステータス -->
+      <!-- プレビューとプログレスバー -->
       <div id="ocr-preview-container" class="hidden">
-        <div class="flex items-start space-x-4">
-          <img id="ocr-preview-image" class="ocr-preview rounded-lg shadow" />
-          <div class="flex-1">
-            <div id="ocr-status" class="mb-4">
-              <div class="flex items-center text-blue-600">
+        <!-- ファイルプレビュー -->
+        <div id="multi-file-preview" class="mb-4"></div>
+        <img id="ocr-preview-image" class="ocr-preview rounded-lg shadow mb-4" style="display: none;" />
+
+        <!-- プログレスバー -->
+        <div id="ocr-progress-section" class="mb-4 hidden">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center text-blue-700">
                 <i class="fas fa-spinner fa-spin mr-2"></i>
-                <span>OCR処理中...</span>
+                <span class="font-semibold">OCR処理中</span>
+              </div>
+              <span id="ocr-progress-text" class="text-sm text-blue-600 font-medium">0/0 完了</span>
+            </div>
+            
+            <!-- 全体プログレスバー -->
+            <div class="w-full bg-blue-100 rounded-full h-3 mb-3 overflow-hidden">
+              <div id="ocr-progress-bar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            
+            <!-- 推定残り時間 -->
+            <div id="ocr-eta-section" class="text-sm text-blue-600 mb-3 hidden">
+              <i class="fas fa-clock mr-1"></i>
+              <span>推定残り時間: <span id="ocr-eta-text">計算中...</span></span>
+            </div>
+            
+            <!-- ファイル毎の処理状態 -->
+            <div id="ocr-file-status-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <!-- エラー表示 -->
+        <div id="ocr-error-section" class="mb-4 hidden">
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-start">
+              <i class="fas fa-exclamation-triangle text-red-500 mt-1 mr-3"></i>
+              <div class="flex-1">
+                <h4 class="font-semibold text-red-800 mb-2">OCR処理エラー</h4>
+                <p id="ocr-error-message" class="text-sm text-red-700 mb-2"></p>
+                <div id="ocr-error-solution" class="text-sm text-red-600 bg-red-100 rounded p-2"></div>
               </div>
             </div>
-            <div id="ocr-result" class="hidden">
-              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div class="flex items-center text-green-700 mb-2">
-                  <i class="fas fa-check-circle mr-2"></i>
-                  <span class="font-semibold">OCR完了</span>
-                </div>
-                <p class="text-sm text-gray-600">フォームに情報を自動入力しました。内容を確認してください。</p>
+          </div>
+        </div>
+
+        <!-- OCR結果編集UI -->
+        <div id="ocr-result-edit-section" class="hidden">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center text-green-700">
+                <i class="fas fa-check-circle mr-2"></i>
+                <span class="font-semibold">OCR抽出完了</span>
               </div>
+              <div class="flex items-center space-x-2">
+                <span id="ocr-confidence-badge" class="text-sm px-3 py-1 rounded-full font-medium"></span>
+                <button id="ocr-apply-btn" type="button" class="bg-green-600 text-white px-4 py-1 rounded-lg hover:bg-green-700 transition text-sm font-medium">
+                  <i class="fas fa-check mr-1"></i>フォームに適用
+                </button>
+              </div>
+            </div>
+            
+            <!-- 信頼度警告 -->
+            <div id="ocr-confidence-warning" class="hidden mb-3 bg-yellow-50 border border-yellow-200 rounded p-3">
+              <div class="flex items-start">
+                <i class="fas fa-exclamation-circle text-yellow-600 mt-0.5 mr-2"></i>
+                <div class="text-sm text-yellow-800">
+                  <p class="font-medium mb-1">信頼度が低い項目があります</p>
+                  <p class="text-yellow-700">赤色の項目は特に確認が必要です。必要に応じて手動で修正してください。</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 抽出結果フォーム -->
+            <div id="ocr-extracted-data" class="grid grid-cols-2 gap-3 mb-3"></div>
+            
+            <div class="flex items-center justify-between text-sm text-gray-600 pt-2 border-t border-green-200">
+              <span><i class="fas fa-info-circle mr-1"></i>内容を確認・修正してから適用してください</span>
+              <button id="ocr-reextract-btn" type="button" class="text-purple-600 hover:text-purple-700 font-medium">
+                <i class="fas fa-redo mr-1"></i>再抽出
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OCR履歴モーダル -->
+    <div id="ocr-history-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 class="text-xl font-semibold text-gray-900">
+            <i class="fas fa-history text-purple-600 mr-2"></i>OCR履歴
+          </h3>
+          <button id="close-history-modal" type="button" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+          <div id="ocr-history-list" class="space-y-4">
+            <!-- 履歴アイテムが動的に追加される -->
+            <div class="text-center text-gray-500 py-8">
+              <i class="fas fa-inbox text-5xl mb-3"></i>
+              <p>履歴はまだありません</p>
             </div>
           </div>
         </div>
@@ -3046,18 +3138,21 @@ app.get('/deals/new', (c) => {
       }
     });
 
+    // OCR結果を一時保存する変数
+    let currentOCRData = null;
+
     async function processMultipleOCR(files) {
-      // プレビュー表示
+      // リセット
       previewContainer.classList.remove('hidden');
+      document.getElementById('ocr-progress-section').classList.add('hidden');
+      document.getElementById('ocr-error-section').classList.add('hidden');
+      document.getElementById('ocr-result-edit-section').classList.add('hidden');
       
       // 複数ファイルのプレビュー
       previewImage.style.display = 'none';
-      const existingIcon = document.getElementById('pdf-icon-preview');
-      if (existingIcon) existingIcon.remove();
-      
-      const multiPreview = document.createElement('div');
-      multiPreview.id = 'multi-file-preview';
-      multiPreview.className = 'grid grid-cols-2 gap-4 p-4';
+      const multiPreview = document.getElementById('multi-file-preview');
+      multiPreview.innerHTML = '';
+      multiPreview.className = 'grid grid-cols-2 gap-4 mb-4';
       
       files.forEach(file => {
         const fileCard = document.createElement('div');
@@ -3081,20 +3176,69 @@ app.get('/deals/new', (c) => {
         fileCard.appendChild(fileSize);
         multiPreview.appendChild(fileCard);
       });
-      
-      const existing = document.getElementById('multi-file-preview');
-      if (existing) existing.remove();
-      previewImage.parentElement.insertBefore(multiPreview, previewImage);
 
-      ocrStatus.innerHTML = '<div class="flex items-center text-blue-600"><i class="fas fa-spinner fa-spin mr-2"></i><span>複数ファイルをOCR処理中...</span></div>';
-      ocrResult.classList.add('hidden');
+      // プログレスバー初期化
+      const progressSection = document.getElementById('ocr-progress-section');
+      const progressBar = document.getElementById('ocr-progress-bar');
+      const progressText = document.getElementById('ocr-progress-text');
+      const fileStatusList = document.getElementById('ocr-file-status-list');
+      const etaSection = document.getElementById('ocr-eta-section');
+      const etaText = document.getElementById('ocr-eta-text');
+      
+      progressSection.classList.remove('hidden');
+      progressBar.style.width = '0%';
+      progressText.textContent = '0/' + files.length + ' 完了';
+      fileStatusList.innerHTML = '';
+      etaSection.classList.add('hidden');
+      
+      // ファイル毎のステータス作成
+      const fileStatusItems = {};
+      files.forEach((file, index) => {
+        const statusItem = document.createElement('div');
+        statusItem.className = 'flex items-center justify-between text-sm p-2 bg-white rounded border border-gray-200';
+        statusItem.innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-clock text-gray-400 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-gray-500 text-xs">待機中</span>';
+        fileStatusList.appendChild(statusItem);
+        fileStatusItems[index] = statusItem;
+      });
 
       // OCR実行（複数ファイル）
+      const startTime = Date.now();
       try {
         const formData = new FormData();
         files.forEach(file => {
           formData.append('files', file);
         });
+
+        // 進捗シミュレーション（実際のAPIは一括処理のためシミュレーション）
+        let simulatedProgress = 0;
+        const progressInterval = setInterval(() => {
+          if (simulatedProgress < 90) {
+            simulatedProgress += 10;
+            progressBar.style.width = simulatedProgress + '%';
+            
+            const completedFiles = Math.floor((simulatedProgress / 100) * files.length);
+            progressText.textContent = completedFiles + '/' + files.length + ' 完了';
+            
+            // 推定時間計算
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            const estimatedTotalTime = (elapsedTime / simulatedProgress) * 100;
+            const remainingTime = Math.max(0, estimatedTotalTime - elapsedTime);
+            
+            if (simulatedProgress > 10) {
+              etaSection.classList.remove('hidden');
+              etaText.textContent = '約' + Math.ceil(remainingTime) + '秒';
+            }
+            
+            // ファイルステータス更新
+            files.forEach((file, index) => {
+              if (index < completedFiles) {
+                fileStatusItems[index].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-green-600 text-xs font-medium">完了</span>';
+              } else if (index === completedFiles) {
+                fileStatusItems[index].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-spinner fa-spin text-blue-500 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-blue-600 text-xs font-medium">処理中</span>';
+              }
+            });
+          }
+        }, 800);
 
         const response = await axios.post('/api/ocr/extract', formData, {
           headers: {
@@ -3103,39 +3247,314 @@ app.get('/deals/new', (c) => {
           }
         });
 
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        progressText.textContent = files.length + '/' + files.length + ' 完了';
+        etaSection.classList.add('hidden');
+        
+        // 全ファイル完了表示
+        files.forEach((file, index) => {
+          fileStatusItems[index].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-green-600 text-xs font-medium">完了</span>';
+        });
+
+        setTimeout(() => {
+          progressSection.classList.add('hidden');
+        }, 1500);
+
         const data = response.data;
         
         // 複数結果を統合
         if (data.results && data.results.length > 0) {
           const merged = {};
+          let totalConfidence = 0;
+          let confidenceCount = 0;
+          
           data.results.forEach(result => {
             if (result.success && result.extracted) {
               Object.assign(merged, result.extracted);
+              if (result.extracted.confidence) {
+                totalConfidence += result.extracted.confidence;
+                confidenceCount++;
+              }
             }
           });
           
-          // フォームに自動入力
-          if (merged.property_name) document.getElementById('title').value = merged.property_name;
-          if (merged.location) document.getElementById('location').value = merged.location;
-          if (merged.land_area) document.getElementById('land_area').value = merged.land_area;
-          if (merged.zoning) document.getElementById('zoning').value = merged.zoning;
-          if (merged.building_coverage) document.getElementById('building_coverage').value = merged.building_coverage;
-          if (merged.floor_area_ratio) document.getElementById('floor_area_ratio').value = merged.floor_area_ratio;
-          if (merged.road_info) document.getElementById('road_info').value = merged.road_info;
-          if (merged.price) document.getElementById('desired_price').value = merged.price;
-
-          // 成功表示
-          ocrStatus.classList.add('hidden');
-          ocrResult.classList.remove('hidden');
-          const successMsg = document.createElement('p');
-          successMsg.className = 'text-green-600 font-medium';
-          successMsg.textContent = data.count + '件のファイルから情報を抽出しました';
-          ocrResult.innerHTML = '';
-          ocrResult.appendChild(successMsg);
+          // 平均信頼度計算
+          const avgConfidence = confidenceCount > 0 ? totalConfidence / confidenceCount : 0.5;
+          merged.confidence = avgConfidence;
+          
+          // OCR結果を保存
+          currentOCRData = merged;
+          
+          // 結果編集UIを表示
+          displayOCRResultEditor(merged);
         }
       } catch (error) {
         console.error('OCR error:', error);
-        ocrStatus.innerHTML = '<div class="flex items-center text-red-600"><i class="fas fa-exclamation-circle mr-2"></i><span>OCR処理に失敗しました: ' + (error.response?.data?.error || error.message) + '</span></div>';
+        clearInterval(progressInterval);
+        progressSection.classList.add('hidden');
+        
+        // エラー表示
+        displayOCRError(error);
+      }
+    }
+
+    // OCR結果編集UIの表示
+    function displayOCRResultEditor(extractedData) {
+      const resultSection = document.getElementById('ocr-result-edit-section');
+      const confidenceBadge = document.getElementById('ocr-confidence-badge');
+      const confidenceWarning = document.getElementById('ocr-confidence-warning');
+      const extractedDataContainer = document.getElementById('ocr-extracted-data');
+      
+      resultSection.classList.remove('hidden');
+      
+      // 信頼度バッジ
+      const confidence = extractedData.confidence || 0.5;
+      if (confidence >= 0.9) {
+        confidenceBadge.className = 'text-sm px-3 py-1 rounded-full font-medium bg-green-100 text-green-800';
+        confidenceBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>信頼度: 高 (' + (confidence * 100).toFixed(0) + '%)';
+        confidenceWarning.classList.add('hidden');
+      } else if (confidence >= 0.7) {
+        confidenceBadge.className = 'text-sm px-3 py-1 rounded-full font-medium bg-yellow-100 text-yellow-800';
+        confidenceBadge.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i>信頼度: 中 (' + (confidence * 100).toFixed(0) + '%)';
+        confidenceWarning.classList.remove('hidden');
+      } else {
+        confidenceBadge.className = 'text-sm px-3 py-1 rounded-full font-medium bg-red-100 text-red-800';
+        confidenceBadge.innerHTML = '<i class="fas fa-exclamation-circle mr-1"></i>信頼度: 低 (' + (confidence * 100).toFixed(0) + '%)';
+        confidenceWarning.classList.remove('hidden');
+      }
+      
+      // フィールドマッピング
+      const fieldMapping = {
+        property_name: '物件名称',
+        location: '所在地',
+        station: '最寄り駅',
+        walk_minutes: '徒歩分数',
+        land_area: '土地面積',
+        building_area: '建物面積',
+        zoning: '用途地域',
+        building_coverage: '建蔽率',
+        floor_area_ratio: '容積率',
+        price: '価格',
+        structure: '構造',
+        built_year: '築年月',
+        road_info: '道路情報',
+        current_status: '現況',
+        yield: '表面利回り',
+        occupancy: '賃貸状況'
+      };
+      
+      // 編集可能フィールド生成
+      extractedDataContainer.innerHTML = '';
+      Object.entries(fieldMapping).forEach(([key, label]) => {
+        if (key === 'confidence') return;
+        
+        const value = extractedData[key] || '';
+        const fieldConfidence = confidence; // 実際は各フィールド毎の信頼度が望ましい
+        
+        let fieldClass = 'border-gray-300';
+        if (fieldConfidence < 0.7 && value) {
+          fieldClass = 'border-red-300 bg-red-50';
+        } else if (fieldConfidence < 0.9 && value) {
+          fieldClass = 'border-yellow-300 bg-yellow-50';
+        }
+        
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'flex flex-col';
+        fieldDiv.innerHTML = '<label class="text-xs font-medium text-gray-600 mb-1">' + label + '</label><input type="text" data-field="' + key + '" value="' + value + '" placeholder="未抽出" class="px-2 py-1 border ' + fieldClass + ' rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
+        extractedDataContainer.appendChild(fieldDiv);
+      });
+      
+      // 履歴に自動保存
+      saveOCRHistory(extractedData);
+    }
+
+    // OCR履歴保存
+    async function saveOCRHistory(extractedData) {
+      try {
+        await axios.post('/api/ocr-history', {
+          file_names: 'OCR抽出結果',
+          extracted_data: extractedData,
+          confidence_score: extractedData.confidence || 0.5,
+          processing_time_ms: 0
+        }, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+      } catch (error) {
+        console.error('Failed to save OCR history:', error);
+      }
+    }
+
+    // エラー表示
+    function displayOCRError(error) {
+      const errorSection = document.getElementById('ocr-error-section');
+      const errorMessage = document.getElementById('ocr-error-message');
+      const errorSolution = document.getElementById('ocr-error-solution');
+      
+      errorSection.classList.remove('hidden');
+      
+      let message = 'OCR処理中に問題が発生しました。';
+      let solution = '';
+      
+      if (error.response) {
+        const errorData = error.response.data;
+        
+        if (error.response.status === 400) {
+          message = 'アップロードされたファイルに問題があります。';
+          solution = '✓ ファイル形式を確認してください（PNG、JPG、PDF対応）\\n✓ ファイルサイズが大きすぎないか確認してください（1ファイル10MB以下推奨）';
+        } else if (error.response.status === 401) {
+          message = '認証エラーが発生しました。';
+          solution = '✓ ページを再読み込みしてログインし直してください';
+        } else if (error.response.status === 500) {
+          message = errorData.error || 'サーバーエラーが発生しました。';
+          solution = '✓ ファイルが破損していないか確認してください\\n✓ 画像の品質が十分か確認してください（解像度300dpi以上推奨）\\n✓ しばらく待ってから再試行してください';
+        } else {
+          message = errorData.error || 'エラーが発生しました。';
+          solution = '✓ 問題が続く場合は管理者にお問い合わせください';
+        }
+      } else if (error.request) {
+        message = 'サーバーに接続できませんでした。';
+        solution = '✓ インターネット接続を確認してください\\n✓ しばらく待ってから再試行してください';
+      } else {
+        message = error.message || '不明なエラーが発生しました。';
+        solution = '✓ ページを再読み込みして再試行してください';
+      }
+      
+      errorMessage.textContent = message;
+      errorSolution.innerHTML = solution.split('\\n').map(function(line) { return '<div>' + line + '</div>'; }).join('');
+    }
+
+    // フォームへの適用
+    document.getElementById('ocr-apply-btn').addEventListener('click', () => {
+      if (!currentOCRData) return;
+      
+      // 編集内容を取得
+      const inputs = document.querySelectorAll('#ocr-extracted-data input[data-field]');
+      const updatedData = {};
+      inputs.forEach(input => {
+        const field = input.getAttribute('data-field');
+        updatedData[field] = input.value;
+      });
+      
+      // フォームに自動入力
+      if (updatedData.property_name) document.getElementById('title').value = updatedData.property_name;
+      if (updatedData.location) document.getElementById('location').value = updatedData.location;
+      if (updatedData.land_area) document.getElementById('land_area').value = updatedData.land_area;
+      if (updatedData.zoning) document.getElementById('zoning').value = updatedData.zoning;
+      if (updatedData.building_coverage) document.getElementById('building_coverage').value = updatedData.building_coverage;
+      if (updatedData.floor_area_ratio) document.getElementById('floor_area_ratio').value = updatedData.floor_area_ratio;
+      if (updatedData.road_info) document.getElementById('road_info').value = updatedData.road_info;
+      if (updatedData.price) document.getElementById('desired_price').value = updatedData.price;
+      
+      // 成功メッセージ
+      alert('✓ フォームに情報を反映しました。内容を確認して保存してください。');
+      
+      // OCRセクションを閉じる
+      document.getElementById('ocr-result-edit-section').classList.add('hidden');
+      previewContainer.classList.add('hidden');
+    });
+
+    // 再抽出
+    document.getElementById('ocr-reextract-btn').addEventListener('click', () => {
+      const fileInput = document.getElementById('ocr-file-input');
+      fileInput.click();
+    });
+
+    // 履歴モーダル
+    const historyModal = document.getElementById('ocr-history-modal');
+    document.getElementById('ocr-history-btn').addEventListener('click', async () => {
+      historyModal.classList.remove('hidden');
+      await loadOCRHistory();
+    });
+
+    document.getElementById('close-history-modal').addEventListener('click', () => {
+      historyModal.classList.add('hidden');
+    });
+
+    historyModal.addEventListener('click', (e) => {
+      if (e.target === historyModal) {
+        historyModal.classList.add('hidden');
+      }
+    });
+
+    // 履歴読み込み
+    async function loadOCRHistory() {
+      const historyList = document.getElementById('ocr-history-list');
+      
+      try {
+        const response = await axios.get('/api/ocr-history?limit=20', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const history = response.data.history;
+        
+        if (history.length === 0) {
+          historyList.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-inbox text-5xl mb-3"></i><p>履歴はまだありません</p></div>';
+          return;
+        }
+        
+        historyList.innerHTML = history.map(item => {
+          const data = JSON.parse(item.extracted_data);
+          const confidence = data.confidence || 0.5;
+          let confidenceBadge = '';
+          
+          if (confidence >= 0.9) {
+            confidenceBadge = '<span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">信頼度: 高</span>';
+          } else if (confidence >= 0.7) {
+            confidenceBadge = '<span class="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">信頼度: 中</span>';
+          } else {
+            confidenceBadge = '<span class="text-xs px-2 py-1 bg-red-100 text-red-800 rounded-full">信頼度: 低</span>';
+          }
+          
+          const date = new Date(item.created_at);
+          const dateStr = date.toLocaleString('ja-JP', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          return '<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer" data-history-id="' + item.id + '"><div class="flex items-center justify-between mb-2"><div class="flex items-center space-x-2"><i class="fas fa-file-alt text-gray-400"></i><span class="font-medium text-gray-900">' + (data.property_name || '物件名未設定') + '</span></div>' + confidenceBadge + '</div><div class="text-sm text-gray-600 mb-2"><div class="flex items-center space-x-4"><span><i class="fas fa-map-marker-alt mr-1"></i>' + (data.location || '所在地未設定') + '</span>' + (data.price ? '<span><i class="fas fa-yen-sign mr-1"></i>' + data.price + '</span>' : '') + '</div></div><div class="flex items-center justify-between text-xs text-gray-500"><span><i class="fas fa-clock mr-1"></i>' + dateStr + '</span><span><i class="fas fa-images mr-1"></i>' + item.file_names + '</span></div></div>';
+        }).join('');
+        
+        // 履歴アイテムクリックイベント
+        document.querySelectorAll('[data-history-id]').forEach(item => {
+          item.addEventListener('click', async () => {
+            const historyId = item.getAttribute('data-history-id');
+            await loadHistoryDetail(historyId);
+          });
+        });
+        
+      } catch (error) {
+        console.error('Failed to load OCR history:', error);
+        historyList.innerHTML = '<div class="text-center text-red-500 py-8"><i class="fas fa-exclamation-triangle text-5xl mb-3"></i><p>履歴の読み込みに失敗しました</p></div>';
+      }
+    }
+
+    // 履歴詳細読み込み
+    async function loadHistoryDetail(historyId) {
+      try {
+        const response = await axios.get('/api/ocr-history/' + historyId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const historyData = response.data;
+        const extractedData = JSON.parse(historyData.extracted_data);
+        
+        // OCR結果を復元
+        currentOCRData = extractedData;
+        displayOCRResultEditor(extractedData);
+        
+        // モーダルを閉じる
+        historyModal.classList.add('hidden');
+        
+        // プレビューエリアを表示
+        previewContainer.classList.remove('hidden');
+        
+      } catch (error) {
+        console.error('Failed to load history detail:', error);
+        alert('履歴の読み込みに失敗しました');
       }
     }
 

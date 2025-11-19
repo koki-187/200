@@ -28,6 +28,7 @@ import geocoding from './routes/geocoding';
 import ocrHistory from './routes/ocr-history';
 import propertyTemplates from './routes/property-templates';
 import ocrSettings from './routes/ocr-settings';
+import ocrJobs from './routes/ocr-jobs';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -132,6 +133,7 @@ app.route('/api/geocoding', geocoding);
 app.route('/api/ocr-history', ocrHistory);
 app.route('/api/property-templates', propertyTemplates);
 app.route('/api/ocr-settings', ocrSettings);
+app.route('/api/ocr-jobs', ocrJobs);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {
@@ -3333,8 +3335,14 @@ app.get('/deals/new', (c) => {
 
     // OCR結果を一時保存する変数
     let currentOCRData = null;
+    
+    // リトライ用のファイル保存
+    let lastUploadedFiles = [];
 
     async function processMultipleOCR(files) {
+      // ファイルを保存（リトライ用）
+      lastUploadedFiles = Array.from(files);
+      
       // リセット
       previewContainer.classList.remove('hidden');
       document.getElementById('ocr-progress-section').classList.add('hidden');
@@ -3394,7 +3402,7 @@ app.get('/deals/new', (c) => {
         fileStatusItems[index] = statusItem;
       });
 
-      // OCR実行（複数ファイル）
+      // OCR実行（非同期ジョブとして送信）
       const startTime = Date.now();
       try {
         const formData = new FormData();
@@ -3402,116 +3410,104 @@ app.get('/deals/new', (c) => {
           formData.append('files', file);
         });
 
-        // 進捗シミュレーション（実際のAPIは一括処理のためシミュレーション）
-        let simulatedProgress = 0;
-        const progressInterval = setInterval(() => {
-          if (simulatedProgress < 90) {
-            simulatedProgress += 10;
-            progressBar.style.width = simulatedProgress + '%';
-            
-            const completedFiles = Math.floor((simulatedProgress / 100) * files.length);
-            progressText.textContent = completedFiles + '/' + files.length + ' 完了';
-            
-            // 推定時間計算
-            const elapsedTime = (Date.now() - startTime) / 1000;
-            const estimatedTotalTime = (elapsedTime / simulatedProgress) * 100;
-            const remainingTime = Math.max(0, estimatedTotalTime - elapsedTime);
-            
-            if (simulatedProgress > 10) {
-              etaSection.classList.remove('hidden');
-              etaText.textContent = '約' + Math.ceil(remainingTime) + '秒';
-            }
-            
-            // ファイルステータス更新
-            files.forEach((file, index) => {
-              if (index < completedFiles) {
-                fileStatusItems[index].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-green-600 text-xs font-medium">完了</span>';
-              } else if (index === completedFiles) {
-                fileStatusItems[index].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-spinner fa-spin text-blue-500 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-blue-600 text-xs font-medium">処理中</span>';
-              }
-            });
-          }
-        }, 800);
-
-        const response = await axios.post('/api/ocr/extract', formData, {
+        // ステップ1: ジョブを作成
+        const createResponse = await axios.post('/api/ocr-jobs', formData, {
           headers: {
             'Authorization': 'Bearer ' + token,
             'Content-Type': 'multipart/form-data'
           }
         });
-
-        clearInterval(progressInterval);
-        progressBar.style.width = '100%';
-        progressText.textContent = files.length + '/' + files.length + ' 完了';
-        etaSection.classList.add('hidden');
         
-        // 全ファイル完了表示
-        files.forEach((file, index) => {
-          fileStatusItems[index].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-green-600 text-xs font-medium">完了</span>';
-        });
+        const jobId = createResponse.data.job_id;
+        console.log('OCR job created:', jobId);
 
-        setTimeout(() => {
-          progressSection.classList.add('hidden');
-        }, 1500);
-
-        const data = response.data;
+        // ステップ2: ポーリングで進捗を監視
+        let pollingAttempts = 0;
+        const maxAttempts = 120; // 最大2分（1秒間隔）
         
-        // 複数結果を統合
-        if (data.results && data.results.length > 0) {
-          const merged = {};
-          let totalConfidence = 0;
-          let confidenceCount = 0;
-          let successCount = 0;
-          
-          data.results.forEach(result => {
-            if (result.success && result.extracted) {
-              successCount++;
-              Object.assign(merged, result.extracted);
-              if (result.extracted.confidence) {
-                totalConfidence += result.extracted.confidence;
-                confidenceCount++;
-              }
+        const pollInterval = setInterval(async () => {
+          try {
+            pollingAttempts++;
+            
+            // タイムアウトチェック
+            if (pollingAttempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              throw new Error('OCR処理がタイムアウトしました。処理に時間がかかっています。');
             }
-          });
-          
-          // 全てのファイルが失敗した場合
-          if (successCount === 0) {
-            const errorObj = {
-              response: {
-                status: 500,
-                data: {
-                  error: '物件情報を抽出できませんでした'
-                }
+            
+            // ジョブのステータスを取得
+            const statusResponse = await axios.get('/api/ocr-jobs/' + jobId, {
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            
+            const job = statusResponse.data.job;
+            const processedFiles = job.processed_files || 0;
+            const totalFiles = job.total_files || files.length;
+            const status = job.status;
+            
+            // 進捗バーを更新（実際の進捗に基づく）
+            const progress = Math.round((processedFiles / totalFiles) * 100);
+            progressBar.style.width = progress + '%';
+            progressText.textContent = processedFiles + '/' + totalFiles + ' 完了';
+            
+            // 推定時間計算
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            if (processedFiles > 0) {
+              const estimatedTotalTime = (elapsedTime / processedFiles) * totalFiles;
+              const remainingTime = Math.max(0, estimatedTotalTime - elapsedTime);
+              etaSection.classList.remove('hidden');
+              etaText.textContent = '約' + Math.ceil(remainingTime) + '秒';
+            }
+            
+            // ファイルステータス更新（実際の進捗に基づく）
+            files.forEach((file, index) => {
+              if (index < processedFiles) {
+                fileStatusItems[index].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-green-600 text-xs font-medium">完了</span>';
+              } else if (index === processedFiles) {
+                fileStatusItems[index].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-spinner fa-spin text-blue-500 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-blue-600 text-xs font-medium">処理中</span>';
               }
-            };
-            displayOCRError(errorObj);
-            return;
+            });
+            
+            // ステータスに応じた処理
+            if (status === 'completed') {
+              clearInterval(pollInterval);
+              
+              // 完了処理
+              progressBar.style.width = '100%';
+              progressText.textContent = totalFiles + '/' + totalFiles + ' 完了';
+              etaSection.classList.add('hidden');
+              
+              files.forEach((file, index) => {
+                fileStatusItems[index].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-green-600 text-xs font-medium">完了</span>';
+              });
+              
+              setTimeout(() => {
+                progressSection.classList.add('hidden');
+              }, 1500);
+              
+              // 抽出データを表示
+              if (job.extracted_data) {
+                currentOCRData = job.extracted_data;
+                displayOCRResultEditor(job.extracted_data);
+              } else {
+                throw new Error('抽出データが見つかりません');
+              }
+              
+            } else if (status === 'failed') {
+              clearInterval(pollInterval);
+              throw new Error(job.error_message || 'OCR処理に失敗しました');
+            }
+            
+          } catch (pollError) {
+            clearInterval(pollInterval);
+            progressSection.classList.add('hidden');
+            displayOCRError(pollError);
           }
-          
-          // 平均信頼度計算
-          const avgConfidence = confidenceCount > 0 ? totalConfidence / confidenceCount : 0.5;
-          merged.confidence = avgConfidence;
-          
-          // OCR結果を保存
-          currentOCRData = merged;
-          
-          // 結果編集UIを表示
-          displayOCRResultEditor(merged);
-        } else {
-          // resultsが空の場合
-          const errorObj = {
-            response: {
-              status: 500,
-              data: {
-                error: '物件情報を抽出できませんでした'
-              }
-            }
-          };
-          displayOCRError(errorObj);
-        }
+        }, 1000); // 1秒ごとにポーリング
+
+
       } catch (error) {
         console.error('OCR error:', error);
-        clearInterval(progressInterval);
         progressSection.classList.add('hidden');
         
         // エラー表示

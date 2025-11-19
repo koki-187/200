@@ -3734,6 +3734,87 @@ app.get('/deals/new', (c) => {
       fileInput.click();
     });
 
+    // テンプレートボタン
+    document.getElementById('ocr-templates-btn').addEventListener('click', async () => {
+      try {
+        const response = await axios.get('/api/property-templates', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const templates = response.data.templates || [];
+        
+        if (templates.length === 0) {
+          alert('保存されたテンプレートはありません。\n\nOCR結果を適用後、フォーム下部の「テンプレートとして保存」ボタンからテンプレートを作成できます。');
+          return;
+        }
+        
+        // テンプレート選択ダイアログ
+        const templateNames = templates.map(t => t.name).join('\n');
+        const selectedName = prompt('テンプレートを選択してください（名前を入力）:\n\n' + templateNames);
+        
+        if (!selectedName) return;
+        
+        const template = templates.find(t => t.name === selectedName);
+        if (!template) {
+          alert('テンプレートが見つかりません');
+          return;
+        }
+        
+        // テンプレートデータをフォームに適用
+        const data = template.template_data;
+        if (data.property_name) document.getElementById('title').value = data.property_name;
+        if (data.location) document.getElementById('location').value = data.location;
+        if (data.land_area) document.getElementById('land_area').value = data.land_area;
+        if (data.zoning) document.getElementById('zoning').value = data.zoning;
+        if (data.building_coverage) document.getElementById('building_coverage').value = data.building_coverage;
+        if (data.floor_area_ratio) document.getElementById('floor_area_ratio').value = data.floor_area_ratio;
+        if (data.road_info) document.getElementById('road_info').value = data.road_info;
+        if (data.price) document.getElementById('desired_price').value = data.price;
+        
+        alert('✓ テンプレート「' + template.name + '」を適用しました');
+        
+      } catch (error) {
+        console.error('Failed to load templates:', error);
+        alert('テンプレートの読み込みに失敗しました');
+      }
+    });
+    
+    // 設定ボタン
+    document.getElementById('ocr-settings-btn').addEventListener('click', async () => {
+      try {
+        const response = await axios.get('/api/ocr-settings', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const settings = response.data.settings || {};
+        
+        // 設定ダイアログ（簡易版）
+        const newSettings = {
+          auto_save: confirm('OCR結果を自動保存しますか？\n\n現在: ' + (settings.auto_save ? '有効' : '無効')),
+          confidence_threshold: parseFloat(prompt('信頼度の閾値を設定してください（0.0〜1.0）:\n\n現在: ' + (settings.confidence_threshold || 0.7), settings.confidence_threshold || 0.7))
+        };
+        
+        if (isNaN(newSettings.confidence_threshold) || newSettings.confidence_threshold < 0 || newSettings.confidence_threshold > 1) {
+          alert('無効な値です。0.0〜1.0の範囲で入力してください。');
+          return;
+        }
+        
+        // 設定を保存
+        await axios.post('/api/ocr-settings', newSettings, {
+          headers: { 
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        alert('✓ 設定を保存しました');
+        
+      } catch (error) {
+        console.error('Failed to update settings:', error);
+        alert('設定の更新に失敗しました');
+      }
+    });
+
     // 履歴モーダル
     const historyModal = document.getElementById('ocr-history-modal');
     document.getElementById('ocr-history-btn').addEventListener('click', async () => {

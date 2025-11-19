@@ -3,16 +3,16 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.12.0)**: https://aaa7f287.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest v3.13.0)**: https://833b1613.real-estate-200units-v2.pages.dev 🆕
 - **Project URL**: https://real-estate-200units-v2.pages.dev
 - **Development URL**: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
-- **Showcase**: https://aaa7f287.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR UI強化版)**: https://aaa7f287.real-estate-200units-v2.pages.dev/deals/new 🆕
-- **Deal Detail (with Map)**: https://27a67d1b.real-estate-200units-v2.pages.dev/deals/:id
-- **OCR History API**: https://27a67d1b.real-estate-200units-v2.pages.dev/api/ocr-history 🆕
-- **OCR Settings API**: https://27a67d1b.real-estate-200units-v2.pages.dev/api/ocr-settings 🆕
-- **Purchase Criteria API**: https://27a67d1b.real-estate-200units-v2.pages.dev/api/purchase-criteria
-- **Geocoding API**: https://27a67d1b.real-estate-200units-v2.pages.dev/api/geocoding
+- **Showcase**: https://833b1613.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation (OCR UI強化版)**: https://833b1613.real-estate-200units-v2.pages.dev/deals/new 🆕
+- **Deal Detail (with Map)**: https://833b1613.real-estate-200units-v2.pages.dev/deals/:id
+- **OCR History API**: https://833b1613.real-estate-200units-v2.pages.dev/api/ocr-history 🆕
+- **OCR Settings API**: https://833b1613.real-estate-200units-v2.pages.dev/api/ocr-settings 🆕
+- **Purchase Criteria API**: https://833b1613.real-estate-200units-v2.pages.dev/api/purchase-criteria
+- **Geocoding API**: https://833b1613.real-estate-200units-v2.pages.dev/api/geocoding
 
 ### デフォルトログイン情報
 
@@ -40,9 +40,9 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.12.0 (Production - OCR機能大幅強化)
+- **バージョン**: v3.13.0 (Production - OCR履歴管理・エラー回復強化)
 - **進捗状況**: Phase 1完了（100%）+ Phase 2進行中、OCR UI機能完全動作 ✅
-- **最新改善**: OCR高優先度3機能実装（キャンセル、進捗永続化、並列処理） 🆕
+- **最新改善**: OCR履歴モーダル改善、バッチ設定UI、リトライロジック強化 🆕
 - **デプロイ日**: 2025-11-19
 
 ## 主要機能
@@ -585,6 +585,41 @@ GenSpark AI Assistant + User
 
 ## 更新履歴
 
+### v3.13.0 (2025-11-19) 📊
+**OCR履歴管理・エラー回復機能強化**
+
+新機能:
+- ✅ **OCR履歴モーダル改善**: 
+  - ソート機能（日付順・信頼度順）実装
+  - ページネーション実装（20件/ページ）
+  - 個別削除機能（ゴミ箱アイコンボタン）
+  - 日付範囲フィルター（開始日〜終了日）
+  - 総件数表示とページ番号ナビゲーション
+
+- ✅ **バッチOCR設定UI強化**: 
+  - v3.12.0並列処理機能の可視化（青色情報パネル）
+  - 進捗永続化機能の説明追加（緑色情報パネル）
+  - 処理速度3倍向上の具体例表示
+  - OpenAI APIレート制限対応の説明
+
+- ✅ **エラー回復・リトライロジック強化**: 
+  - v3.12.0非同期ジョブAPIを使った再試行機能
+  - 最大3回までの再試行追跡
+  - 完全なプログレスバー表示（ETA、キャンセル対応）
+  - エラー種類別の具体的な解決策表示
+  - localStorage統合による復元対応
+
+技術的改善:
+- src/index.tsx: 履歴モーダル改善、リトライロジック強化（+427行）
+- src/routes/ocr-history.ts: ソート、ページネーション、日付フィルター（+21行）
+- API response: total countフィールド追加
+
+デプロイ情報:
+- 本番URL: https://833b1613.real-estate-200units-v2.pages.dev
+- バックアップ作成: real-estate-ocr-v3.13.0 (27.19MB)
+- GitHub最新コミット: 09ee84f
+- サンドボックスURL: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
+
 ### v3.12.0 (2025-11-19) 🚀
 **OCR高優先度機能実装 - 3つの大型改善**
 
@@ -1098,7 +1133,7 @@ UX改善:
 ---
 
 **最終更新**: 2025-11-19
-**バージョン**: v3.12.0
+**バージョン**: v3.13.0
 **進捗率**: 96% (48/50タスク実装完了)、60% (30/50動作確認済み) ✅
 
 ---

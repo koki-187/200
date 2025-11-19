@@ -130,6 +130,64 @@ app.get('/api/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Test page for debugging
+app.get('/test-deals-page', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Deals Page Loading</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body>
+  <h1>Testing Deals Page Load</h1>
+  <div id="status">Loading...</div>
+  <div id="result"></div>
+
+  <script>
+    async function test() {
+      try {
+        // Step 1: Login
+        const loginResponse = await axios.post('/api/auth/login', {
+          email: 'navigator-187@docomo.ne.jp',
+          password: 'kouki187'
+        });
+        
+        const token = loginResponse.data.token;
+        document.getElementById('status').innerHTML = 'Login successful, token: ' + token.substring(0, 20) + '...';
+        
+        // Step 2: Store in localStorage (simulating real app behavior)
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
+        
+        // Step 3: Load deals
+        document.getElementById('status').innerHTML += '<br>Loading deals...';
+        const dealsResponse = await axios.get('/api/deals', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const deals = dealsResponse.data.deals || [];
+        document.getElementById('status').innerHTML += '<br>Deals loaded: ' + deals.length + ' items';
+        document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(deals, null, 2) + '</pre>';
+        
+        // Step 4: Redirect to deals page
+        document.getElementById('status').innerHTML += '<br><a href="/deals">Go to Deals Page</a>';
+      } catch (error) {
+        document.getElementById('status').innerHTML = 'Error: ' + error.message;
+        document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(error.response?.data || error, null, 2) + '</pre>';
+        console.error('Test error:', error);
+      }
+    }
+    
+    test();
+  </script>
+</body>
+</html>
+  `);
+});
+
 // APIバージョン情報
 app.get('/api/version', (c) => {
   return c.json(getApiVersionInfo());
@@ -1375,20 +1433,37 @@ app.get('/deals', (c) => {
 
     async function loadDeals() {
       try {
+        console.log('Loading deals...');
         const response = await axios.get('/api/deals', {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         
+        console.log('Deals loaded:', response.data);
         allDeals = response.data.deals || [];
         filteredDeals = [...allDeals];
         displayDeals();
       } catch (error) {
         console.error('Failed to load deals:', error);
-        if (error.response && error.response.status === 401) {
-          logout();
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
         }
-        document.getElementById('deals-container').innerHTML = 
-          '<div class="p-8 text-center text-red-600"><p>案件の読み込みに失敗しました</p></div>';
+        
+        if (error.response && error.response.status === 401) {
+          document.getElementById('deals-container').innerHTML = 
+            '<div class="p-8 text-center text-red-600"><p>認証エラー: ログインし直してください</p></div>';
+          setTimeout(() => logout(), 2000);
+        } else {
+          const errorMsg = error.response?.data?.error || error.message || '不明なエラー';
+          document.getElementById('deals-container').innerHTML = 
+            \`<div class="p-8 text-center text-red-600">
+              <p>案件の読み込みに失敗しました</p>
+              <p class="text-sm mt-2">エラー: \${errorMsg}</p>
+              <button onclick="loadDeals()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                再試行
+              </button>
+            </div>\`;
+        }
       }
     }
 
@@ -1496,7 +1571,20 @@ app.get('/deals', (c) => {
       window.location.href = '/deals/' + dealId;
     }
 
-    loadDeals();
+    // Wait for axios to load before calling loadDeals
+    if (typeof axios !== 'undefined') {
+      loadDeals();
+    } else {
+      window.addEventListener('load', () => {
+        if (typeof axios !== 'undefined') {
+          loadDeals();
+        } else {
+          console.error('axios not loaded');
+          document.getElementById('deals-container').innerHTML = 
+            '<div class="p-8 text-center text-red-600"><p>ライブラリの読み込みに失敗しました。ページを再読み込みしてください。</p></div>';
+        }
+      });
+    }
   </script>
 </body>
 </html>
@@ -3153,6 +3241,9 @@ self.addEventListener('pushsubscriptionchange', (event) => {
     },
   });
 });
+
+// 静的ファイルの配信（最後に配置してAPIルートより優先度を下げる）
+app.use('/*', serveStatic({ root: './' }));
 
 // Cloudflare Workers export with Cron support
 export default {

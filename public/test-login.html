@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Login</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body>
+  <h1>Auto Login Test</h1>
+  <div id="status">Logging in...</div>
+
+  <script>
+    async function autoLogin() {
+      try {
+        const response = await axios.post('/api/auth/login', {
+          email: 'navigator-187@docomo.ne.jp',
+          password: 'kouki187'
+        });
+        
+        localStorage.setItem('auth_token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        document.getElementById('status').innerHTML = 
+          'Logged in! <a href="/deals">Go to Deals Page</a>';
+      } catch (error) {
+        document.getElementById('status').innerHTML = 'Login failed: ' + error.message;
+        console.error(error);
+      }
+    }
+    
+    autoLogin();
+  </script>
+</body>
+</html>

@@ -3,17 +3,17 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.7.0)**: https://2ba44074.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest v3.9.1)**: https://5972d019.real-estate-200units-v2.pages.dev 🆕
 - **Project URL**: https://real-estate-200units-v2.pages.dev
 - **Development URL**: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
-- **Showcase**: https://2ba44074.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR UI強化版)**: https://2ba44074.real-estate-200units-v2.pages.dev/deals/new 🆕
-- **Deal Detail (with Map)**: https://2ba44074.real-estate-200units-v2.pages.dev/deals/:id
-- **OCR History API**: https://2ba44074.real-estate-200units-v2.pages.dev/api/ocr-history 🆕
-- **Property Templates API**: https://2ba44074.real-estate-200units-v2.pages.dev/api/property-templates 🆕
-- **OCR Settings API**: https://2ba44074.real-estate-200units-v2.pages.dev/api/ocr-settings 🆕
-- **Purchase Criteria API**: https://2ba44074.real-estate-200units-v2.pages.dev/api/purchase-criteria
-- **Geocoding API**: https://2ba44074.real-estate-200units-v2.pages.dev/api/geocoding
+- **Showcase**: https://5972d019.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation (OCR UI強化版)**: https://5972d019.real-estate-200units-v2.pages.dev/deals/new 🆕
+- **Deal Detail (with Map)**: https://5972d019.real-estate-200units-v2.pages.dev/deals/:id
+- **OCR History API**: https://5972d019.real-estate-200units-v2.pages.dev/api/ocr-history 🆕
+- **Property Templates API**: https://5972d019.real-estate-200units-v2.pages.dev/api/property-templates 🆕
+- **OCR Settings API**: https://5972d019.real-estate-200units-v2.pages.dev/api/ocr-settings 🆕
+- **Purchase Criteria API**: https://5972d019.real-estate-200units-v2.pages.dev/api/purchase-criteria
+- **Geocoding API**: https://5972d019.real-estate-200units-v2.pages.dev/api/geocoding
 
 ### デフォルトログイン情報
 
@@ -41,9 +41,9 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.9.0 (Development - OCR非同期化実装完了)
-- **進捗状況**: Phase 1完了（100%）+ Phase 2進行中、OCR完全非同期化実装 ✅
-- **最新改善**: OCR完全非同期化（ポーリングベース、リアルタイム進捗表示）🆕
+- **バージョン**: v3.9.1 (Production - OCR UI機能ボタン修正完了)
+- **進捗状況**: Phase 1完了（100%）+ Phase 2進行中、OCR UI機能完全動作 ✅
+- **最新改善**: テンプレート・設定・履歴ボタンのイベントハンドラー実装完了 🆕
 - **デプロイ日**: 2025-11-19
 
 ## 主要機能

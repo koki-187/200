@@ -3,17 +3,16 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.9.1)**: https://5972d019.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest v3.11.0)**: https://27a67d1b.real-estate-200units-v2.pages.dev 🆕
 - **Project URL**: https://real-estate-200units-v2.pages.dev
 - **Development URL**: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
-- **Showcase**: https://5972d019.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR UI強化版)**: https://5972d019.real-estate-200units-v2.pages.dev/deals/new 🆕
-- **Deal Detail (with Map)**: https://5972d019.real-estate-200units-v2.pages.dev/deals/:id
-- **OCR History API**: https://5972d019.real-estate-200units-v2.pages.dev/api/ocr-history 🆕
-- **Property Templates API**: https://5972d019.real-estate-200units-v2.pages.dev/api/property-templates 🆕
-- **OCR Settings API**: https://5972d019.real-estate-200units-v2.pages.dev/api/ocr-settings 🆕
-- **Purchase Criteria API**: https://5972d019.real-estate-200units-v2.pages.dev/api/purchase-criteria
-- **Geocoding API**: https://5972d019.real-estate-200units-v2.pages.dev/api/geocoding
+- **Showcase**: https://27a67d1b.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation (OCR UI強化版)**: https://27a67d1b.real-estate-200units-v2.pages.dev/deals/new 🆕
+- **Deal Detail (with Map)**: https://27a67d1b.real-estate-200units-v2.pages.dev/deals/:id
+- **OCR History API**: https://27a67d1b.real-estate-200units-v2.pages.dev/api/ocr-history 🆕
+- **OCR Settings API**: https://27a67d1b.real-estate-200units-v2.pages.dev/api/ocr-settings 🆕
+- **Purchase Criteria API**: https://27a67d1b.real-estate-200units-v2.pages.dev/api/purchase-criteria
+- **Geocoding API**: https://27a67d1b.real-estate-200units-v2.pages.dev/api/geocoding
 
 ### デフォルトログイン情報
 
@@ -41,9 +40,9 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.9.1 (Production - OCR UI機能ボタン修正完了)
+- **バージョン**: v3.11.0 (Production - テンプレート機能削除、土地仕入れ業務に特化)
 - **進捗状況**: Phase 1完了（100%）+ Phase 2進行中、OCR UI機能完全動作 ✅
-- **最新改善**: テンプレート・設定・履歴ボタンのイベントハンドラー実装完了 🆕
+- **最新改善**: テンプレート機能削除で土地仕入れ業務にフォーカス 🆕
 - **デプロイ日**: 2025-11-19
 
 ## 主要機能
@@ -1043,7 +1042,7 @@ UX改善:
 ---
 
 **最終更新**: 2025-11-19
-**バージョン**: v3.7.0
+**バージョン**: v3.11.0
 **進捗率**: 96% (48/50タスク実装完了)、60% (30/50動作確認済み) ✅
 
 ---

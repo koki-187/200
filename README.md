@@ -3,12 +3,14 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest)**: https://9c97fc25.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest)**: https://70bcdbfb.real-estate-200units-v2.pages.dev 🆕
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Showcase**: https://9c97fc25.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation**: https://9c97fc25.real-estate-200units-v2.pages.dev/deals/new
-- **Property OCR**: https://9c97fc25.real-estate-200units-v2.pages.dev/property-ocr 🆕
-- **Purchase Criteria API**: https://9c97fc25.real-estate-200units-v2.pages.dev/api/purchase-criteria
+- **Showcase**: https://70bcdbfb.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation**: https://70bcdbfb.real-estate-200units-v2.pages.dev/deals/new
+- **Property OCR**: https://70bcdbfb.real-estate-200units-v2.pages.dev/property-ocr
+- **Deal Detail (with Map)**: https://70bcdbfb.real-estate-200units-v2.pages.dev/deals/:id 🆕
+- **Purchase Criteria API**: https://70bcdbfb.real-estate-200units-v2.pages.dev/api/purchase-criteria
+- **Geocoding API**: https://70bcdbfb.real-estate-200units-v2.pages.dev/api/geocoding 🆕
 
 ### デフォルトログイン情報
 
@@ -36,9 +38,9 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.2.0 (Production Deployed)
-- **進捗状況**: 53/53タスク実装完了（100%）、本番環境デプロイ完了 ✅
-- **最新改善**: リアルタイム買取条件チェック機能 & 物件OCR専用UI（本番環境デプロイ完了） 🆕
+- **バージョン**: v3.3.0 (Production Deployed)
+- **進捗状況**: Phase 1完了（100%）+ Phase 2進行中、本番環境デプロイ完了 ✅
+- **最新改善**: 地図表示機能（Geocoding + Leaflet.js）実装完了 🆕
 - **デプロイ日**: 2025-11-19
 
 ## 主要機能

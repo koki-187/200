@@ -23,6 +23,7 @@ import analytics from './routes/analytics';
 import aiProposals from './routes/ai-proposals';
 import businessCardOCR from './routes/business-card-ocr';
 import propertyOCR from './routes/property-ocr';
+import purchaseCriteria from './routes/purchase-criteria';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -122,6 +123,7 @@ app.route('/api/analytics', analytics);
 app.route('/api/ai-proposals', aiProposals);
 app.route('/api/business-card-ocr', businessCardOCR);
 app.route('/api/property-ocr', propertyOCR);
+app.route('/api/purchase-criteria', purchaseCriteria);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {

@@ -25,6 +25,7 @@ export interface Deal {
   station?: string;
   walk_minutes?: number;
   land_area?: string;
+  frontage?: string;
   zoning?: string;
   building_coverage?: string;
   floor_area_ratio?: string;
@@ -36,6 +37,9 @@ export interface Deal {
   remarks?: string;
   missing_fields: string;
   reply_deadline?: string;
+  purchase_check_result?: 'PASS' | 'FAIL' | 'SPECIAL_REVIEW';
+  purchase_check_score?: number;
+  is_special_case?: number;
   created_at: string;
   updated_at: string;
 }

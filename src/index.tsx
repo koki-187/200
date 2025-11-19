@@ -2843,7 +2843,15 @@ app.get('/deals/new', (c) => {
               <div class="flex-1">
                 <h4 class="font-semibold text-red-800 mb-2">OCR処理エラー</h4>
                 <p id="ocr-error-message" class="text-sm text-red-700 mb-2"></p>
-                <div id="ocr-error-solution" class="text-sm text-red-600 bg-red-100 rounded p-2"></div>
+                <div id="ocr-error-solution" class="text-sm text-red-600 bg-red-100 rounded p-2 mb-3"></div>
+                <div class="flex items-center space-x-2">
+                  <button id="ocr-retry-btn" type="button" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm font-medium">
+                    <i class="fas fa-redo mr-2"></i>再試行
+                  </button>
+                  <button id="ocr-error-dismiss-btn" type="button" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
+                    閉じる
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -2903,6 +2911,30 @@ app.get('/deals/new', (c) => {
         </div>
         
         <div class="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+          <!-- 検索とフィルター -->
+          <div class="mb-4 space-y-2">
+            <input 
+              type="text" 
+              id="history-search" 
+              placeholder="物件名・所在地で検索..." 
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            >
+            <div class="flex gap-2">
+              <button id="history-filter-all" class="px-3 py-1 text-sm rounded-full bg-purple-600 text-white">
+                全て
+              </button>
+              <button id="history-filter-high" class="px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300">
+                高信頼度 (90%+)
+              </button>
+              <button id="history-filter-medium" class="px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300">
+                中信頼度 (70-90%)
+              </button>
+              <button id="history-filter-low" class="px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300">
+                低信頼度 (~70%)
+              </button>
+            </div>
+          </div>
+          
           <div id="ocr-history-list" class="space-y-4">
             <!-- 履歴アイテムが動的に追加される -->
             <div class="text-center text-gray-500 py-8">
@@ -3496,8 +3528,8 @@ app.get('/deals/new', (c) => {
       
       resultSection.classList.remove('hidden');
       
-      // 信頼度バッジ
-      const confidence = extractedData.confidence || 0.5;
+      // 信頼度バッジ（overall_confidence or confidence）
+      const confidence = extractedData.overall_confidence || extractedData.confidence || 0.5;
       if (confidence >= 0.9) {
         confidenceBadge.className = 'text-sm px-3 py-1 rounded-full font-medium bg-green-100 text-green-800';
         confidenceBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>信頼度: 高 (' + (confidence * 100).toFixed(0) + '%)';
@@ -3532,24 +3564,37 @@ app.get('/deals/new', (c) => {
         occupancy: '賃貸状況'
       };
       
-      // 編集可能フィールド生成
+      // 編集可能フィールド生成（フィールド毎の信頼度対応）
       extractedDataContainer.innerHTML = '';
       Object.entries(fieldMapping).forEach(([key, label]) => {
-        if (key === 'confidence') return;
+        if (key === 'confidence' || key === 'overall_confidence') return;
         
-        const value = extractedData[key] || '';
-        const fieldConfidence = confidence; // 実際は各フィールド毎の信頼度が望ましい
+        // 新形式: {value: "...", confidence: 0.9} または旧形式: "..." に対応
+        let value, fieldConfidence;
+        if (extractedData[key] && typeof extractedData[key] === 'object') {
+          value = extractedData[key].value || '';
+          fieldConfidence = extractedData[key].confidence || 0.5;
+        } else {
+          value = extractedData[key] || '';
+          fieldConfidence = confidence; // 全体の信頼度を使用
+        }
         
+        // 信頼度に基づくスタイリング
         let fieldClass = 'border-gray-300';
+        let confidenceBadge = '';
         if (fieldConfidence < 0.7 && value) {
           fieldClass = 'border-red-300 bg-red-50';
+          confidenceBadge = '<span class="text-xs text-red-600 ml-1">(' + (fieldConfidence * 100).toFixed(0) + '%)</span>';
         } else if (fieldConfidence < 0.9 && value) {
           fieldClass = 'border-yellow-300 bg-yellow-50';
+          confidenceBadge = '<span class="text-xs text-yellow-600 ml-1">(' + (fieldConfidence * 100).toFixed(0) + '%)</span>';
+        } else if (value) {
+          confidenceBadge = '<span class="text-xs text-green-600 ml-1">(' + (fieldConfidence * 100).toFixed(0) + '%)</span>';
         }
         
         const fieldDiv = document.createElement('div');
         fieldDiv.className = 'flex flex-col';
-        fieldDiv.innerHTML = '<label class="text-xs font-medium text-gray-600 mb-1">' + label + '</label><input type="text" data-field="' + key + '" value="' + value + '" placeholder="未抽出" class="px-2 py-1 border ' + fieldClass + ' rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
+        fieldDiv.innerHTML = '<label class="text-xs font-medium text-gray-600 mb-1">' + label + confidenceBadge + '</label><input type="text" data-field="' + key + '" value="' + value + '" placeholder="未抽出" class="px-2 py-1 border ' + fieldClass + ' rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
         extractedDataContainer.appendChild(fieldDiv);
       });
       
@@ -3611,6 +3656,51 @@ app.get('/deals/new', (c) => {
       errorMessage.textContent = message;
       errorSolution.innerHTML = solution.split('\\n').map(function(line) { return '<div>' + line + '</div>'; }).join('');
     }
+    
+    // エラー閉じるボタン
+    document.getElementById('ocr-error-dismiss-btn').addEventListener('click', () => {
+      document.getElementById('ocr-error-section').classList.add('hidden');
+    });
+    
+    // リトライボタン（最後にアップロードされたファイルを再処理）
+    let lastUploadedFiles = [];
+    document.getElementById('ocr-retry-btn').addEventListener('click', async () => {
+      if (lastUploadedFiles.length === 0) {
+        alert('再試行するファイルがありません');
+        return;
+      }
+      
+      // エラー表示を非表示
+      document.getElementById('ocr-error-section').classList.add('hidden');
+      
+      // 再度OCR処理を実行
+      const formData = new FormData();
+      lastUploadedFiles.forEach((file, index) => {
+        formData.append('file_' + index, file);
+      });
+      
+      try {
+        const response = await axios.post('/api/property-ocr/extract-multiple', formData, {
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'multipart/form-data'
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log('Upload progress:', percentCompleted + '%');
+          }
+        });
+        
+        if (response.data.results && response.data.results.length > 0) {
+          const extractedData = response.data.results[0];
+          currentOCRData = extractedData;
+          displayOCRResultEditor(extractedData);
+        }
+      } catch (error) {
+        console.error('OCR retry failed:', error);
+        displayOCRError(error);
+      }
+    });
 
     // フォームへの適用
     document.getElementById('ocr-apply-btn').addEventListener('click', () => {
@@ -3665,33 +3755,47 @@ app.get('/deals/new', (c) => {
       }
     });
 
-    // 履歴読み込み
-    async function loadOCRHistory() {
+    // 現在のフィルター状態
+    let currentHistoryFilter = { search: '', minConfidence: 0, maxConfidence: 1 };
+    
+    // 履歴読み込み（検索・フィルター対応）
+    async function loadOCRHistory(filters = {}) {
       const historyList = document.getElementById('ocr-history-list');
+      currentHistoryFilter = { ...currentHistoryFilter, ...filters };
       
       try {
-        const response = await axios.get('/api/ocr-history?limit=20', {
+        const params = new URLSearchParams({
+          limit: '50',
+          search: currentHistoryFilter.search || '',
+          minConfidence: String(currentHistoryFilter.minConfidence || 0),
+          maxConfidence: String(currentHistoryFilter.maxConfidence || 1)
+        });
+        
+        const response = await axios.get('/api/ocr-history?' + params.toString(), {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         
-        const history = response.data.history;
+        const histories = response.data.histories || [];
         
-        if (history.length === 0) {
+        if (histories.length === 0) {
           historyList.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-inbox text-5xl mb-3"></i><p>履歴はまだありません</p></div>';
           return;
         }
         
-        historyList.innerHTML = history.map(item => {
-          const data = JSON.parse(item.extracted_data);
-          const confidence = data.confidence || 0.5;
-          let confidenceBadge = '';
+        historyList.innerHTML = histories.map(item => {
+          const data = item.extracted_data;
+          const confidence = data.overall_confidence || data.confidence || 0.5;
+          const propertyName = data.property_name?.value || data.property_name || '物件名未設定';
+          const location = data.location?.value || data.location || '所在地未設定';
+          const price = data.price?.value || data.price || '';
           
+          let confidenceBadge = '';
           if (confidence >= 0.9) {
-            confidenceBadge = '<span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">信頼度: 高</span>';
+            confidenceBadge = '<span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">信頼度: 高 (' + (confidence * 100).toFixed(0) + '%)</span>';
           } else if (confidence >= 0.7) {
-            confidenceBadge = '<span class="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">信頼度: 中</span>';
+            confidenceBadge = '<span class="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">信頼度: 中 (' + (confidence * 100).toFixed(0) + '%)</span>';
           } else {
-            confidenceBadge = '<span class="text-xs px-2 py-1 bg-red-100 text-red-800 rounded-full">信頼度: 低</span>';
+            confidenceBadge = '<span class="text-xs px-2 py-1 bg-red-100 text-red-800 rounded-full">信頼度: 低 (' + (confidence * 100).toFixed(0) + '%)</span>';
           }
           
           const date = new Date(item.created_at);
@@ -3703,7 +3807,9 @@ app.get('/deals/new', (c) => {
             minute: '2-digit'
           });
           
-          return '<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer" data-history-id="' + item.id + '"><div class="flex items-center justify-between mb-2"><div class="flex items-center space-x-2"><i class="fas fa-file-alt text-gray-400"></i><span class="font-medium text-gray-900">' + (data.property_name || '物件名未設定') + '</span></div>' + confidenceBadge + '</div><div class="text-sm text-gray-600 mb-2"><div class="flex items-center space-x-4"><span><i class="fas fa-map-marker-alt mr-1"></i>' + (data.location || '所在地未設定') + '</span>' + (data.price ? '<span><i class="fas fa-yen-sign mr-1"></i>' + data.price + '</span>' : '') + '</div></div><div class="flex items-center justify-between text-xs text-gray-500"><span><i class="fas fa-clock mr-1"></i>' + dateStr + '</span><span><i class="fas fa-images mr-1"></i>' + item.file_names + '</span></div></div>';
+          const fileNames = Array.isArray(item.file_names) ? item.file_names.join(', ') : item.file_names;
+          
+          return '<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer" data-history-id="' + item.id + '"><div class="flex items-center justify-between mb-2"><div class="flex items-center space-x-2"><i class="fas fa-file-alt text-gray-400"></i><span class="font-medium text-gray-900">' + propertyName + '</span></div>' + confidenceBadge + '</div><div class="text-sm text-gray-600 mb-2"><div class="flex items-center space-x-4"><span><i class="fas fa-map-marker-alt mr-1"></i>' + location + '</span>' + (price ? '<span><i class="fas fa-yen-sign mr-1"></i>' + price + '</span>' : '') + '</div></div><div class="flex items-center justify-between text-xs text-gray-500"><span><i class="fas fa-clock mr-1"></i>' + dateStr + '</span><span><i class="fas fa-images mr-1"></i>' + fileNames + '</span></div></div>';
         }).join('');
         
         // 履歴アイテムクリックイベント
@@ -3718,6 +3824,40 @@ app.get('/deals/new', (c) => {
         console.error('Failed to load OCR history:', error);
         historyList.innerHTML = '<div class="text-center text-red-500 py-8"><i class="fas fa-exclamation-triangle text-5xl mb-3"></i><p>履歴の読み込みに失敗しました</p></div>';
       }
+    }
+    
+    // 検索ボックスイベント
+    document.getElementById('history-search').addEventListener('input', (e) => {
+      loadOCRHistory({ search: e.target.value });
+    });
+    
+    // フィルターボタンイベント
+    document.getElementById('history-filter-all').addEventListener('click', () => {
+      loadOCRHistory({ minConfidence: 0, maxConfidence: 1 });
+      updateFilterButtonStyles('all');
+    });
+    document.getElementById('history-filter-high').addEventListener('click', () => {
+      loadOCRHistory({ minConfidence: 0.9, maxConfidence: 1 });
+      updateFilterButtonStyles('high');
+    });
+    document.getElementById('history-filter-medium').addEventListener('click', () => {
+      loadOCRHistory({ minConfidence: 0.7, maxConfidence: 0.9 });
+      updateFilterButtonStyles('medium');
+    });
+    document.getElementById('history-filter-low').addEventListener('click', () => {
+      loadOCRHistory({ minConfidence: 0, maxConfidence: 0.7 });
+      updateFilterButtonStyles('low');
+    });
+    
+    function updateFilterButtonStyles(active) {
+      ['all', 'high', 'medium', 'low'].forEach(filter => {
+        const btn = document.getElementById('history-filter-' + filter);
+        if (filter === active) {
+          btn.className = 'px-3 py-1 text-sm rounded-full bg-purple-600 text-white';
+        } else {
+          btn.className = 'px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300';
+        }
+      });
     }
 
     // 履歴詳細読み込み

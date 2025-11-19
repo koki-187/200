@@ -62,8 +62,8 @@ ocrHistory.post('/', async (c) => {
 });
 
 /**
- * OCR履歴一覧を取得
- * GET /api/ocr-history
+ * OCR履歴一覧を取得（検索・フィルター対応）
+ * GET /api/ocr-history?search=物件名&minConfidence=0.7&maxConfidence=1.0&limit=20&offset=0
  */
 ocrHistory.get('/', async (c) => {
   try {
@@ -74,6 +74,20 @@ ocrHistory.get('/', async (c) => {
 
     const limit = parseInt(c.req.query('limit') || '20');
     const offset = parseInt(c.req.query('offset') || '0');
+    const search = c.req.query('search') || '';
+    const minConfidence = parseFloat(c.req.query('minConfidence') || '0');
+    const maxConfidence = parseFloat(c.req.query('maxConfidence') || '1');
+
+    // 動的なWHERE句を構築
+    let whereConditions = ['user_id = ?'];
+    const params: any[] = [user.id];
+
+    if (minConfidence > 0 || maxConfidence < 1) {
+      whereConditions.push('confidence_score >= ? AND confidence_score <= ?');
+      params.push(minConfidence, maxConfidence);
+    }
+
+    const whereClause = whereConditions.join(' AND ');
 
     const { results } = await c.env.DB.prepare(`
       SELECT 
@@ -85,22 +99,37 @@ ocrHistory.get('/', async (c) => {
         is_edited,
         created_at
       FROM ocr_history
-      WHERE user_id = ?
+      WHERE ${whereClause}
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
-    `).bind(user.id, limit, offset).all();
+    `).bind(...params, limit, offset).all();
 
-    // JSON文字列をパース
-    const histories = results.map((row: any) => ({
+    // JSON文字列をパースし、検索フィルターを適用
+    let histories = results.map((row: any) => ({
       ...row,
       file_names: JSON.parse(row.file_names),
       extracted_data: JSON.parse(row.extracted_data)
     }));
 
+    // 検索フィルター（フロントエンド側で物件名検索）
+    if (search) {
+      histories = histories.filter((h: any) => {
+        const data = h.extracted_data;
+        const propertyName = data.property_name?.value || data.property_name || '';
+        const location = data.location?.value || data.location || '';
+        return propertyName.includes(search) || location.includes(search);
+      });
+    }
+
     return c.json({
       success: true,
       histories,
-      count: histories.length
+      count: histories.length,
+      filters: {
+        search,
+        minConfidence,
+        maxConfidence
+      }
     });
 
   } catch (error) {

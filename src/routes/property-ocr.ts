@@ -80,32 +80,34 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは20年以上の経験を持つ不
 必ず以下のJSON形式で返してください。説明文やコメントは不要です。
 
 {
-  "property_name": "物件名称",
-  "location": "完全な所在地",
-  "station": "最寄り駅名",
-  "walk_minutes": "徒歩分数（数値のみ）",
-  "land_area": "土地面積（単位込み）",
-  "building_area": "建物面積（単位込み）",
-  "zoning": "用途地域（正式名称）",
-  "building_coverage": "建蔽率（%込み）",
-  "floor_area_ratio": "容積率（%込み）",
-  "price": "価格（単位込み）",
-  "structure": "構造（正式名称）",
-  "built_year": "築年月",
-  "road_info": "道路情報（詳細）",
-  "current_status": "現況",
-  "yield": "表面利回り（%込み）",
-  "occupancy": "賃貸状況",
-  "confidence": 0.85
+  "property_name": {"value": "物件名称", "confidence": 0.95},
+  "location": {"value": "完全な所在地", "confidence": 0.90},
+  "station": {"value": "最寄り駅名", "confidence": 0.92},
+  "walk_minutes": {"value": "徒歩分数（数値のみ）", "confidence": 0.88},
+  "land_area": {"value": "土地面積（単位込み）", "confidence": 0.91},
+  "building_area": {"value": "建物面積（単位込み）", "confidence": 0.87},
+  "zoning": {"value": "用途地域（正式名称）", "confidence": 0.93},
+  "building_coverage": {"value": "建蔽率（%込み）", "confidence": 0.90},
+  "floor_area_ratio": {"value": "容積率（%込み）", "confidence": 0.91},
+  "price": {"value": "価格（単位込み）", "confidence": 0.85},
+  "structure": {"value": "構造（正式名称）", "confidence": 0.80},
+  "built_year": {"value": "築年月", "confidence": 0.75},
+  "road_info": {"value": "道路情報（詳細）", "confidence": 0.70},
+  "current_status": {"value": "現況", "confidence": 0.88},
+  "yield": {"value": "表面利回り（%込み）", "confidence": 0.65},
+  "occupancy": {"value": "賃貸状況", "confidence": 0.60},
+  "overall_confidence": 0.85
 }
 
-**confidence フィールド**: 全体の抽出精度を0.0〜1.0で自己評価してください。
-- 0.9以上: ほぼ全ての情報が明瞭に読み取れた
-- 0.7〜0.9: 大部分の情報が読み取れたが、一部不明瞭
-- 0.5〜0.7: 半分程度の情報しか読み取れなかった
-- 0.5未満: 大部分が不明瞭または読み取り困難
+**各フィールドの confidence**: 各項目の抽出精度を0.0〜1.0で自己評価してください。
+- 0.9以上: 情報が明瞭に読み取れた
+- 0.7〜0.9: 情報は読み取れたが、一部不明瞭
+- 0.5〜0.7: 情報の一部しか読み取れなかった
+- 0.5未満: 情報が不明瞭または読み取り困難
 
-抽出できない情報は必ず null にしてください。推測や創作は厳禁です。`;
+**overall_confidence**: 全体の抽出精度（全フィールドの平均）
+
+抽出できない情報は必ず {"value": null, "confidence": 0} にしてください。推測や創作は厳禁です。`;
 
 /**
  * 複数ファイルから物件情報を抽出

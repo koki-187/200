@@ -1674,6 +1674,107 @@ app.get('/showcase', (c) => {
         </div>
       </div>
     </div>
+
+    <!-- プレカット事業部 -->
+    <div class="mt-12 bg-white rounded-xl shadow-lg p-8">
+      <h3 class="text-2xl font-bold text-gray-900 mb-6">
+        <i class="fas fa-tools text-blue-600 mr-2"></i>プレカット事業部
+      </h3>
+      <p class="text-gray-700 mb-6">
+        2×4（ツー・バイ・フォー）工法の住宅に対して、資材調達・CAD入力・材料プレカット・パネル加工・現場搬入・建て方までを一貫した生産体制にて提供しています。
+      </p>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 事業概要 -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+          <div class="map-container">
+            <img src="/gallery/precut-business-overview.jpg" alt="プレカット事業部概要" class="w-full h-auto gallery-image">
+          </div>
+          <div class="p-6">
+            <h5 class="text-lg font-bold text-gray-900 mb-2">事業概要</h5>
+            <ul class="space-y-2 text-sm text-gray-600">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>カナダ・バンクーバーより直輸入</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>日本市場向け良質材「Jグレード」使用</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>自社トラックにて輸送</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>精巧な機械で精密にカット</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- メーカーとしての特長 -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+          <div class="map-container">
+            <img src="/gallery/precut-business-features.jpg" alt="2×4メーカーとしての特長" class="w-full h-auto gallery-image">
+          </div>
+          <div class="p-6">
+            <h5 class="text-lg font-bold text-gray-900 mb-2">2×4メーカーとしての3つの特長</h5>
+            <ul class="space-y-2 text-sm text-gray-600">
+              <li class="flex items-start">
+                <i class="fas fa-star text-yellow-500 mr-2 mt-1"></i>
+                <span><strong>フルパネル対応可能</strong> - 壁・床・天井・屋根を供給</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-star text-yellow-500 mr-2 mt-1"></i>
+                <span><strong>構造設計対応可能</strong> - プレカットと構造設計を合わせて担当</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-star text-yellow-500 mr-2 mt-1"></i>
+                <span><strong>フレーマー対応可能</strong> - フレーミング（建て方工事）も弊社にて対応</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- ZEH基準・建物デザイン -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+          <div class="map-container">
+            <img src="/gallery/precut-business-quality.jpg" alt="ZEH基準と建物品質" class="w-full h-auto gallery-image">
+          </div>
+          <div class="p-6">
+            <h5 class="text-lg font-bold text-gray-900 mb-2">高品質・高性能</h5>
+            <ul class="space-y-2 text-sm text-gray-600">
+              <li class="flex items-start">
+                <i class="fas fa-award text-blue-600 mr-2 mt-1"></i>
+                <span><strong>ZEH基準を満たした新築アパート</strong> - 住宅版BELS★4、断熱等性能等級5、劣化対策等級3</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-home text-green-600 mr-2 mt-1"></i>
+                <span><strong>入居率を高める建物デザイン</strong> - 長期的な入居率を左右する建物デザインにこだわり</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-shield-alt text-purple-600 mr-2 mt-1"></i>
+                <span><strong>劣化等級3級の耐久性</strong> - 3世代の耐久性（おおむね75〜90年）</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex items-start">
+          <i class="fas fa-map-marked-alt text-blue-600 text-2xl mr-3 mt-1"></i>
+          <div>
+            <h6 class="font-semibold text-gray-900 mb-2">対応エリア</h6>
+            <p class="text-sm text-gray-700">
+              <strong>愛知県と静岡県に工場を持ち</strong><br>
+              関東・関西エリアに対応
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>

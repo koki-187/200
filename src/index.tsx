@@ -622,6 +622,400 @@ app.get('/register', (c) => {
   `);
 });
 
+// 買取条件サマリーページ
+app.get('/purchase-criteria', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>買取条件一覧 - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+    .criteria-card {
+      transition: all 0.3s ease;
+    }
+    .criteria-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-4">
+        <a href="/dashboard" class="flex items-center space-x-3 hover:opacity-80 transition">
+          <div class="header-logo">
+            <img src="/logo-3d.png" alt="Logo" class="w-6 h-6" />
+          </div>
+          <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
+        </a>
+        <div class="flex items-center space-x-4">
+          <a href="/purchase-criteria" class="text-white border-b-2 border-blue-400 pb-1 transition">
+            買取条件
+          </a>
+          <a href="/deals" class="text-gray-300 hover:text-white transition">
+            案件一覧
+          </a>
+          <span id="user-name" class="text-gray-200"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- ページヘッダー -->
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">
+        <i class="fas fa-clipboard-check text-blue-600 mr-3"></i>
+        買取条件一覧
+      </h2>
+      <p class="text-gray-600">200棟マンション用地の買取条件を確認できます。案件登録時にこれらの条件で自動チェックされます。</p>
+    </div>
+
+    <!-- 対象エリア -->
+    <div class="mb-6">
+      <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-600">
+        <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+          <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i>
+          対象エリア
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div class="criteria-card bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold text-gray-900">埼玉県</span>
+              <i class="fas fa-check-circle text-green-600"></i>
+            </div>
+            <p class="text-sm text-gray-600">全域対象</p>
+          </div>
+          <div class="criteria-card bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold text-gray-900">東京都</span>
+              <i class="fas fa-check-circle text-green-600"></i>
+            </div>
+            <p class="text-sm text-gray-600">23区および多摩地区</p>
+          </div>
+          <div class="criteria-card bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold text-gray-900">千葉県西部</span>
+              <i class="fas fa-check-circle text-green-600"></i>
+            </div>
+            <p class="text-sm text-gray-600">市川市、船橋市など</p>
+          </div>
+          <div class="criteria-card bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold text-gray-900">神奈川県</span>
+              <i class="fas fa-check-circle text-green-600"></i>
+            </div>
+            <p class="text-sm text-gray-600">全域対象</p>
+          </div>
+          <div class="criteria-card bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold text-gray-900">愛知県</span>
+              <i class="fas fa-check-circle text-green-600"></i>
+            </div>
+            <p class="text-sm text-gray-600">名古屋市および近郊</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 買取条件詳細 -->
+    <div class="mb-6">
+      <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-600">
+        <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+          <i class="fas fa-tasks text-green-600 mr-2"></i>
+          買取条件
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- 駅徒歩時間 -->
+          <div class="criteria-card bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border border-green-200">
+            <div class="flex items-center mb-3">
+              <div class="bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center mr-3">
+                <i class="fas fa-walking"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-gray-900">駅徒歩時間</h4>
+                <p class="text-xs text-gray-600">最寄駅からの距離</p>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-green-700">
+              ≤ 15分
+            </div>
+            <p class="text-sm text-gray-600 mt-2">最寄駅から徒歩15分以内</p>
+          </div>
+
+          <!-- 土地面積 -->
+          <div class="criteria-card bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border border-green-200">
+            <div class="flex items-center mb-3">
+              <div class="bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center mr-3">
+                <i class="fas fa-ruler-combined"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900">土地面積</h4>
+                <p class="text-xs text-gray-600">敷地全体の広さ</p>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-green-700">
+              ≥ 45坪
+            </div>
+            <p class="text-sm text-gray-600 mt-2">約148.76㎡以上</p>
+          </div>
+
+          <!-- 間口 -->
+          <div class="criteria-card bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border border-green-200">
+            <div class="flex items-center mb-3">
+              <div class="bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center mr-3">
+                <i class="fas fa-arrows-alt-h"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900">間口</h4>
+                <p class="text-xs text-gray-600">道路に接する幅</p>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-green-700">
+              ≥ 7.5m
+            </div>
+            <p class="text-sm text-gray-600 mt-2">道路に接する幅が7.5m以上</p>
+          </div>
+
+          <!-- 建ぺい率 -->
+          <div class="criteria-card bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border border-green-200">
+            <div class="flex items-center mb-3">
+              <div class="bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center mr-3">
+                <i class="fas fa-expand-arrows-alt"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900">建ぺい率</h4>
+                <p class="text-xs text-gray-600">建物の建築可能面積</p>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-green-700">
+              ≥ 60%
+            </div>
+            <p class="text-sm text-gray-600 mt-2">敷地に対する建物面積の割合</p>
+          </div>
+
+          <!-- 容積率 -->
+          <div class="criteria-card bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border border-green-200">
+            <div class="flex items-center mb-3">
+              <div class="bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center mr-3">
+                <i class="fas fa-building"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900">容積率</h4>
+                <p class="text-xs text-gray-600">延床面積の上限</p>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-green-700">
+              ≥ 150%
+            </div>
+            <p class="text-sm text-gray-600 mt-2">敷地に対する延床面積の割合</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 検討外エリア -->
+    <div class="mb-6">
+      <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-600">
+        <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+          <i class="fas fa-ban text-red-600 mr-2"></i>
+          検討外エリア・条件
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="criteria-card bg-red-50 rounded-lg p-4 border border-red-200">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-times-circle text-red-600 mr-2"></i>
+              <span class="font-semibold text-gray-900">市街化調整区域</span>
+            </div>
+            <p class="text-sm text-gray-600">市街化を抑制すべき区域のため、原則として建築が制限されます</p>
+          </div>
+          <div class="criteria-card bg-red-50 rounded-lg p-4 border border-red-200">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-times-circle text-red-600 mr-2"></i>
+              <span class="font-semibold text-gray-900">防火地域</span>
+            </div>
+            <p class="text-sm text-gray-600">建築コストが高くなるため、対象外としています</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- スコアリング説明 -->
+    <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-6 text-white">
+      <h3 class="text-xl font-bold mb-4 flex items-center">
+        <i class="fas fa-chart-line mr-2"></i>
+        自動判定システム
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white bg-opacity-20 rounded-lg p-4">
+          <div class="text-3xl font-bold mb-2">100点</div>
+          <div class="text-sm">
+            <i class="fas fa-check-double mr-1"></i>
+            <strong>PASS（合格）</strong>
+          </div>
+          <p class="text-xs mt-2 opacity-90">全ての条件を満たしています</p>
+        </div>
+        <div class="bg-white bg-opacity-20 rounded-lg p-4">
+          <div class="text-3xl font-bold mb-2">50-99点</div>
+          <div class="text-sm">
+            <i class="fas fa-clipboard-check mr-1"></i>
+            <strong>SPECIAL_REVIEW（要検討）</strong>
+          </div>
+          <p class="text-xs mt-2 opacity-90">一部条件を満たさないが検討価値あり</p>
+        </div>
+        <div class="bg-white bg-opacity-20 rounded-lg p-4">
+          <div class="text-3xl font-bold mb-2">0点</div>
+          <div class="text-sm">
+            <i class="fas fa-times-circle mr-1"></i>
+            <strong>FAIL（不合格）</strong>
+          </div>
+          <p class="text-xs mt-2 opacity-90">対象外エリアまたは条件不適合</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- APIテストセクション（管理者のみ） -->
+    <div id="api-test-section" class="mt-8 bg-gray-100 rounded-xl p-6 hidden">
+      <h3 class="text-lg font-bold text-gray-900 mb-4">
+        <i class="fas fa-vial text-purple-600 mr-2"></i>
+        買取条件チェックテスト（管理者機能）
+      </h3>
+      <div class="bg-white rounded-lg p-4 mb-4">
+        <form id="test-form" class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <input type="text" id="test-location" placeholder="所在地（例：埼玉県さいたま市）" class="border rounded px-3 py-2 text-sm">
+            <input type="number" id="test-walk" placeholder="駅徒歩（分）" class="border rounded px-3 py-2 text-sm">
+            <input type="number" id="test-area" placeholder="土地面積（坪）" class="border rounded px-3 py-2 text-sm">
+            <input type="number" id="test-frontage" placeholder="間口（m）" class="border rounded px-3 py-2 text-sm">
+            <input type="text" id="test-coverage" placeholder="建ぺい率（例：60%）" class="border rounded px-3 py-2 text-sm">
+            <input type="text" id="test-far" placeholder="容積率（例：200%）" class="border rounded px-3 py-2 text-sm">
+          </div>
+          <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium w-full">
+            <i class="fas fa-check-circle mr-2"></i>買取条件チェック実行
+          </button>
+        </form>
+      </div>
+      <div id="test-result" class="hidden bg-white rounded-lg p-4">
+        <h4 class="font-bold text-gray-900 mb-2">チェック結果</h4>
+        <div id="test-result-content" class="text-sm"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    const token = localStorage.getItem('auth_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!token) {
+      window.location.href = '/';
+    }
+
+    if (user.name) {
+      document.getElementById('user-name').textContent = user.name;
+    }
+
+    // 管理者の場合、APIテストセクションを表示
+    if (user.role === 'ADMIN') {
+      document.getElementById('api-test-section').classList.remove('hidden');
+    }
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+
+    // 買取条件チェックテスト
+    document.getElementById('test-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const testData = {
+        location: document.getElementById('test-location').value,
+        walk_minutes: parseInt(document.getElementById('test-walk').value) || 0,
+        land_area: document.getElementById('test-area').value + '坪',
+        frontage: parseFloat(document.getElementById('test-frontage').value) || 0,
+        building_coverage: document.getElementById('test-coverage').value,
+        floor_area_ratio: document.getElementById('test-far').value,
+      };
+
+      try {
+        const response = await axios.post('/api/purchase-criteria/check', testData, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        const result = response.data;
+        const resultDiv = document.getElementById('test-result');
+        const contentDiv = document.getElementById('test-result-content');
+
+        let statusColor = 'gray';
+        let statusIcon = 'question-circle';
+        if (result.status === 'PASS') {
+          statusColor = 'green';
+          statusIcon = 'check-circle';
+        } else if (result.status === 'SPECIAL_REVIEW') {
+          statusColor = 'yellow';
+          statusIcon = 'clipboard-check';
+        } else if (result.status === 'FAIL') {
+          statusColor = 'red';
+          statusIcon = 'times-circle';
+        }
+
+        contentDiv.innerHTML = \`
+          <div class="mb-3 p-3 bg-\${statusColor}-50 border border-\${statusColor}-200 rounded-lg">
+            <div class="flex items-center justify-between">
+              <div>
+                <i class="fas fa-\${statusIcon} text-\${statusColor}-600 mr-2"></i>
+                <strong class="text-\${statusColor}-900">\${result.status}</strong>
+              </div>
+              <div class="text-2xl font-bold text-\${statusColor}-700">\${result.score}点</div>
+            </div>
+          </div>
+          <div class="space-y-2">
+            \${result.reasons.map(reason => \`
+              <div class="flex items-start space-x-2 text-gray-700">
+                <i class="fas fa-arrow-right text-gray-400 mt-1"></i>
+                <span>\${reason}</span>
+              </div>
+            \`).join('')}
+          </div>
+        \`;
+
+        resultDiv.classList.remove('hidden');
+      } catch (error) {
+        console.error('Check error:', error);
+        alert('チェック実行に失敗しました: ' + (error.response?.data?.error || error.message));
+      }
+    });
+  </script>
+</body>
+</html>
+  `);
+});
+
 // ダッシュボードページ
 app.get('/dashboard', (c) => {
   return c.html(`
@@ -661,6 +1055,9 @@ app.get('/dashboard', (c) => {
           <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
         </div>
         <div class="flex items-center space-x-6">
+          <a href="/purchase-criteria" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-clipboard-check mr-2"></i>買取条件
+          </a>
           <a href="/showcase" class="text-gray-300 hover:text-white transition">
             <i class="fas fa-images mr-2"></i>ショーケース
           </a>
@@ -949,6 +1346,9 @@ app.get('/showcase', (c) => {
           </a>
         </div>
         <div class="flex items-center space-x-6">
+          <a href="/purchase-criteria" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-clipboard-check mr-2"></i>買取条件
+          </a>
           <a href="/showcase" class="text-gray-300 hover:text-white transition">
             <i class="fas fa-images mr-2"></i>ショーケース
           </a>

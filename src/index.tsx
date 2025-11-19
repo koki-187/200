@@ -28,6 +28,7 @@ import geocoding from './routes/geocoding';
 import ocrHistory from './routes/ocr-history';
 import ocrSettings from './routes/ocr-settings';
 import ocrJobs from './routes/ocr-jobs';
+import propertyTemplates from './routes/property-templates';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -132,6 +133,7 @@ app.route('/api/geocoding', geocoding);
 app.route('/api/ocr-history', ocrHistory);
 app.route('/api/ocr-settings', ocrSettings);
 app.route('/api/ocr-jobs', ocrJobs);
+app.route('/api/property-templates', propertyTemplates);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {
@@ -2767,6 +2769,33 @@ app.get('/deals/new', (c) => {
       <p class="text-gray-600 mt-2">登記簿謄本などの画像・PDFからOCRで自動入力できます</p>
     </div>
 
+    <!-- テンプレート選択セクション -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 mb-6 border border-blue-200">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <i class="fas fa-file-alt text-blue-600 mr-2"></i>
+            テンプレートから入力
+          </h3>
+          <p class="text-sm text-gray-600 mt-1">よく使う設定をテンプレートとして保存・利用できます</p>
+        </div>
+        <button id="template-select-btn" type="button" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium shadow-md">
+          <i class="fas fa-layer-group mr-2"></i>テンプレート選択
+        </button>
+      </div>
+      <div id="selected-template-info" class="hidden bg-white rounded-lg p-4 mt-3 border border-blue-300">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+            <span class="font-medium text-gray-900">選択中: <span id="selected-template-name">-</span></span>
+          </div>
+          <button id="clear-template-btn" type="button" class="text-sm text-red-600 hover:text-red-800 transition">
+            <i class="fas fa-times-circle mr-1"></i>クリア
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- OCRセクション -->
     <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -3241,6 +3270,65 @@ app.get('/deals/new', (c) => {
       </div>
     </form>
   </main>
+
+  <!-- テンプレート選択モーダル -->
+  <div id="template-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <!-- モーダルヘッダー -->
+      <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-xl font-bold text-white flex items-center">
+          <i class="fas fa-layer-group mr-2"></i>
+          テンプレート選択
+        </h3>
+        <button onclick="closeTemplateModal()" class="text-white hover:text-gray-200 transition">
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+
+      <!-- モーダルコンテンツ -->
+      <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 140px);">
+        <!-- ローディング -->
+        <div id="template-loading" class="text-center py-12">
+          <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-3"></i>
+          <p class="text-gray-600">テンプレート読み込み中...</p>
+        </div>
+
+        <!-- エラーメッセージ -->
+        <div id="template-error" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center text-red-800">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span id="template-error-message">エラーが発生しました</span>
+          </div>
+        </div>
+
+        <!-- プリセットテンプレート -->
+        <div id="preset-templates-section" class="hidden">
+          <h4 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+            <i class="fas fa-star text-yellow-500 mr-2"></i>
+            プリセットテンプレート
+          </h4>
+          <div id="preset-templates-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
+        </div>
+
+        <!-- カスタムテンプレート -->
+        <div id="custom-templates-section" class="hidden">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-lg font-semibold text-gray-900 flex items-center">
+              <i class="fas fa-user-edit text-blue-600 mr-2"></i>
+              カスタムテンプレート
+            </h4>
+            <button id="create-template-btn" type="button" class="text-sm bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium">
+              <i class="fas fa-plus mr-1"></i>新規作成
+            </button>
+          </div>
+          <div id="custom-templates-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+          <p id="no-custom-templates" class="text-gray-500 text-sm text-center py-8 hidden">
+            まだカスタムテンプレートがありません
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
@@ -5079,6 +5167,223 @@ app.get('/deals/new', (c) => {
     
     // ページロード時にOCRジョブを復元（ブラウザリロード対応）
     restoreOCRJobIfExists();
+
+    // ============================================================
+    // テンプレート機能
+    // ============================================================
+    
+    let currentTemplates = [];
+    let selectedTemplate = null;
+
+    // テンプレート選択ボタン
+    document.getElementById('template-select-btn').addEventListener('click', () => {
+      openTemplateModal();
+    });
+
+    // テンプレートクリアボタン
+    document.getElementById('clear-template-btn').addEventListener('click', () => {
+      selectedTemplate = null;
+      document.getElementById('selected-template-info').classList.add('hidden');
+      showToast('テンプレート選択を解除しました', 'info');
+    });
+
+    // テンプレートモーダルを開く
+    async function openTemplateModal() {
+      const modal = document.getElementById('template-modal');
+      modal.style.display = 'flex';
+      modal.classList.remove('hidden');
+      
+      // テンプレート一覧を読み込み
+      await loadTemplates();
+    }
+
+    // テンプレートモーダルを閉じる
+    function closeTemplateModal() {
+      const modal = document.getElementById('template-modal');
+      modal.style.display = 'none';
+      modal.classList.add('hidden');
+    }
+
+    // テンプレート一覧を読み込み
+    async function loadTemplates() {
+      const loading = document.getElementById('template-loading');
+      const error = document.getElementById('template-error');
+      const presetSection = document.getElementById('preset-templates-section');
+      const customSection = document.getElementById('custom-templates-section');
+
+      loading.style.display = 'block';
+      error.classList.add('hidden');
+      presetSection.classList.add('hidden');
+      customSection.classList.add('hidden');
+
+      try {
+        const response = await axios.get('/api/property-templates', {
+          headers: { Authorization: 'Bearer ' + token }
+        });
+
+        if (response.data.success) {
+          currentTemplates = response.data.templates;
+          
+          // プリセットとカスタムを分離
+          const presets = currentTemplates.filter(t => t.is_preset);
+          const customs = currentTemplates.filter(t => !t.is_preset);
+
+          // プリセットテンプレート表示
+          if (presets.length > 0) {
+            renderPresetTemplates(presets);
+            presetSection.classList.remove('hidden');
+          }
+
+          // カスタムテンプレート表示
+          if (customs.length > 0) {
+            renderCustomTemplates(customs);
+            customSection.classList.remove('hidden');
+            document.getElementById('no-custom-templates').classList.add('hidden');
+          } else {
+            customSection.classList.remove('hidden');
+            document.getElementById('no-custom-templates').classList.remove('hidden');
+          }
+        }
+      } catch (err) {
+        console.error('テンプレート読み込みエラー:', err);
+        error.classList.remove('hidden');
+        document.getElementById('template-error-message').textContent = 
+          err.response?.data?.error || 'テンプレートの読み込みに失敗しました';
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+
+    // プリセットテンプレート表示
+    function renderPresetTemplates(presets) {
+      const container = document.getElementById('preset-templates-list');
+      container.innerHTML = presets.map(template => {
+        const data = typeof template.template_data === 'string' 
+          ? JSON.parse(template.template_data) 
+          : template.template_data;
+        
+        return '<div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer" onclick="selectTemplate(' + "'" + template.id + "'" + ')">' +
+          '<div class="flex items-start justify-between mb-2">' +
+            '<div class="flex items-center">' +
+              '<i class="fas fa-star text-yellow-600 mr-2"></i>' +
+              '<h5 class="font-semibold text-gray-900">' + template.template_name + '</h5>' +
+            '</div>' +
+            '<span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">プリセット</span>' +
+          '</div>' +
+          '<p class="text-sm text-gray-600 mb-3">' + (template.description || '') + '</p>' +
+          '<div class="text-xs text-gray-500 space-y-1">' +
+            '<div><i class="fas fa-map-marker-alt mr-1"></i>用途: ' + (data.zoning || '-') + '</div>' +
+            '<div><i class="fas fa-percentage mr-1"></i>建ぺい率: ' + (data.building_coverage_ratio || '-') + '% / 容積率: ' + (data.floor_area_ratio || '-') + '%</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // カスタムテンプレート表示
+    function renderCustomTemplates(customs) {
+      const container = document.getElementById('custom-templates-list');
+      container.innerHTML = customs.map(template => {
+        const data = typeof template.template_data === 'string' 
+          ? JSON.parse(template.template_data) 
+          : template.template_data;
+        
+        return '<div class="bg-white border-2 border-blue-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="selectTemplate(' + "'" + template.id + "'" + ')">' +
+          '<div class="flex items-start justify-between mb-2">' +
+            '<div class="flex items-center">' +
+              '<i class="fas fa-user-edit text-blue-600 mr-2"></i>' +
+              '<h5 class="font-semibold text-gray-900">' + template.template_name + '</h5>' +
+            '</div>' +
+            '<div class="flex items-center space-x-2">' +
+              (template.is_shared ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">共有</span>' : '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">個人</span>') +
+            '</div>' +
+          '</div>' +
+          '<p class="text-sm text-gray-600 mb-3">' + (template.description || 'カスタムテンプレート') + '</p>' +
+          '<div class="text-xs text-gray-500 space-y-1">' +
+            '<div><i class="fas fa-chart-line mr-1"></i>使用回数: ' + (template.use_count || 0) + '回</div>' +
+            '<div><i class="fas fa-calendar mr-1"></i>作成日: ' + new Date(template.created_at).toLocaleDateString('ja-JP') + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // テンプレート選択
+    async function selectTemplate(templateId) {
+      try {
+        const template = currentTemplates.find(t => t.id === templateId);
+        if (!template) {
+          showToast('テンプレートが見つかりません', 'error');
+          return;
+        }
+
+        // テンプレートデータを取得
+        const data = typeof template.template_data === 'string' 
+          ? JSON.parse(template.template_data) 
+          : template.template_data;
+
+        // フォームに値を設定
+        applyTemplateToForm(data);
+
+        // 選択状態を保存
+        selectedTemplate = template;
+        document.getElementById('selected-template-name').textContent = template.template_name;
+        document.getElementById('selected-template-info').classList.remove('hidden');
+
+        // 使用回数を増やす（プリセット以外）
+        if (!template.is_preset) {
+          try {
+            await axios.post('/api/property-templates/' + templateId + '/use', {}, {
+              headers: { Authorization: 'Bearer ' + token }
+            });
+          } catch (err) {
+            console.error('使用回数更新エラー:', err);
+          }
+        }
+
+        // モーダルを閉じる
+        closeTemplateModal();
+        showToast('テンプレート「' + template.template_name + '」を適用しました', 'success');
+      } catch (err) {
+        console.error('テンプレート適用エラー:', err);
+        showToast('テンプレートの適用に失敗しました', 'error');
+      }
+    }
+
+    // テンプレートデータをフォームに適用
+    function applyTemplateToForm(data) {
+      // 用途地域
+      if (data.zoning && document.getElementById('zoning')) {
+        document.getElementById('zoning').value = data.zoning;
+      }
+      // 建ぺい率
+      if (data.building_coverage_ratio && document.getElementById('building_coverage_ratio')) {
+        document.getElementById('building_coverage_ratio').value = data.building_coverage_ratio;
+      }
+      // 容積率
+      if (data.floor_area_ratio && document.getElementById('floor_area_ratio')) {
+        document.getElementById('floor_area_ratio').value = data.floor_area_ratio;
+      }
+      // 前面道路幅員
+      if (data.front_road_width && document.getElementById('front_road_width')) {
+        document.getElementById('front_road_width').value = data.front_road_width;
+      }
+      // 想定戸数
+      if (data.estimated_units && document.getElementById('estimated_units')) {
+        document.getElementById('estimated_units').value = data.estimated_units;
+      }
+      // 土地形状
+      if (data.land_shape && document.getElementById('land_shape')) {
+        document.getElementById('land_shape').value = data.land_shape;
+      }
+      // 地勢
+      if (data.topography && document.getElementById('topography')) {
+        document.getElementById('topography').value = data.topography;
+      }
+      // ライフライン状況
+      if (data.utility_status && document.getElementById('utility_status')) {
+        document.getElementById('utility_status').value = data.utility_status;
+      }
+    }
+
   </script>
 </body>
 </html>

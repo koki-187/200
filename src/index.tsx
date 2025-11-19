@@ -3330,6 +3330,112 @@ app.get('/deals/new', (c) => {
     </div>
   </div>
 
+  <!-- テンプレート作成・編集モーダル -->
+  <div id="create-template-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <!-- モーダルヘッダー -->
+      <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-xl font-bold text-white flex items-center">
+          <i class="fas fa-plus-circle mr-2"></i>
+          <span id="create-template-title">カスタムテンプレート作成</span>
+        </h3>
+        <button onclick="closeCreateTemplateModal()" class="text-white hover:text-gray-200 transition">
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+
+      <!-- モーダルコンテンツ -->
+      <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 140px);">
+        <!-- 成功メッセージ -->
+        <div id="create-template-success" class="hidden bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center text-green-800">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="create-template-success-message">テンプレートを作成しました</span>
+          </div>
+        </div>
+
+        <!-- エラーメッセージ -->
+        <div id="create-template-error" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center text-red-800">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span id="create-template-error-message">エラーが発生しました</span>
+          </div>
+        </div>
+
+        <!-- フォーム -->
+        <form id="create-template-form" class="space-y-4">
+          <!-- 隠しフィールド（編集時のID） -->
+          <input type="hidden" id="edit-template-id" value="">
+
+          <!-- テンプレート名 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              テンプレート名 <span class="text-red-600">*</span>
+            </label>
+            <input type="text" id="template-name-input" required 
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              placeholder="例: 駅近マンション用地テンプレート">
+          </div>
+
+          <!-- テンプレートタイプ -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              テンプレートタイプ <span class="text-red-600">*</span>
+            </label>
+            <select id="template-type-input" required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+              <option value="custom">カスタム</option>
+              <option value="residential_land">住宅用地</option>
+              <option value="apartment_land">マンション用地</option>
+              <option value="commercial_land">商業用地</option>
+              <option value="investment_land">投資用地</option>
+            </select>
+          </div>
+
+          <!-- 共有設定 -->
+          <div class="flex items-center">
+            <input type="checkbox" id="template-share-input" class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+            <label for="template-share-input" class="ml-2 text-sm text-gray-700">
+              このテンプレートをチームメンバーと共有する
+            </label>
+          </div>
+
+          <!-- 説明 -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start">
+              <i class="fas fa-info-circle text-blue-600 mt-1 mr-2"></i>
+              <div class="text-sm text-blue-800">
+                <p class="font-medium mb-1">現在のフォーム値からテンプレートを作成します</p>
+                <p>保存されるフィールド: 用途地域、建ぺい率、容積率、前面道路幅員、想定戸数、土地形状、地勢、ライフライン状況</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- プレビュー -->
+          <div>
+            <h5 class="text-sm font-medium text-gray-700 mb-2">保存されるデータプレビュー</h5>
+            <div id="template-data-preview" class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 space-y-1">
+              <!-- JavaScriptで動的に生成 -->
+            </div>
+          </div>
+
+          <!-- アクションボタン -->
+          <div class="flex items-center justify-end space-x-3 pt-4 border-t">
+            <button type="button" onclick="closeCreateTemplateModal()" 
+              class="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+              キャンセル
+            </button>
+            <button type="submit" id="save-template-btn"
+              class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+              <i class="fas fa-save mr-2"></i>
+              <span id="save-template-btn-text">保存</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
     const token = localStorage.getItem('auth_token');
@@ -5288,7 +5394,16 @@ app.get('/deals/new', (c) => {
           : template.template_data;
         
         return '<div class="bg-white border-2 border-blue-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="selectTemplate(' + "'" + template.id + "'" + ')">' +
-          '<div class="flex items-start justify-between mb-2">' +
+          '<!-- 編集・削除ボタン -->' +
+          '<div class="absolute top-3 right-3 flex items-center space-x-1">' +
+            '<button onclick="event.stopPropagation(); openEditTemplateModal(\'' + template.id + '\')" class="p-1.5 bg-blue-100 hover:bg-blue-200 rounded-lg transition" title="編集">' +
+              '<i class="fas fa-edit text-blue-600 text-sm"></i>' +
+            '</button>' +
+            '<button onclick="event.stopPropagation(); confirmDeleteTemplate(\'' + template.id + '\')" class="p-1.5 bg-red-100 hover:bg-red-200 rounded-lg transition" title="削除">' +
+              '<i class="fas fa-trash text-red-600 text-sm"></i>' +
+            '</button>' +
+          '</div>' +
+          '<div class="flex items-start justify-between mb-2 pr-20">' +
             '<div class="flex items-center">' +
               '<i class="fas fa-user-edit text-blue-600 mr-2"></i>' +
               '<h5 class="font-semibold text-gray-900">' + template.template_name + '</h5>' +
@@ -5381,6 +5496,227 @@ app.get('/deals/new', (c) => {
       // ライフライン状況
       if (data.utility_status && document.getElementById('utility_status')) {
         document.getElementById('utility_status').value = data.utility_status;
+      }
+    }
+
+    // ============================================================
+    // カスタムテンプレート作成・編集機能
+    // ============================================================
+
+    let editingTemplateId = null;
+
+    // 新規作成ボタン
+    document.getElementById('create-template-btn').addEventListener('click', () => {
+      openCreateTemplateModal();
+    });
+
+    // テンプレート作成モーダルを開く（新規作成）
+    function openCreateTemplateModal() {
+      const modal = document.getElementById('create-template-modal');
+      const title = document.getElementById('create-template-title');
+      const form = document.getElementById('create-template-form');
+      const editIdField = document.getElementById('edit-template-id');
+      const saveBtn = document.getElementById('save-template-btn-text');
+
+      // モードを新規作成に設定
+      editingTemplateId = null;
+      editIdField.value = '';
+      title.textContent = 'カスタムテンプレート作成';
+      saveBtn.textContent = '保存';
+      form.reset();
+
+      // フォーム値からプレビューを更新
+      updateTemplatePreview();
+
+      // モーダルを表示
+      modal.style.display = 'flex';
+      modal.classList.remove('hidden');
+
+      // エラー・成功メッセージをクリア
+      document.getElementById('create-template-error').classList.add('hidden');
+      document.getElementById('create-template-success').classList.add('hidden');
+    }
+
+    // テンプレート編集モーダルを開く
+    function openEditTemplateModal(templateId) {
+      const modal = document.getElementById('create-template-modal');
+      const title = document.getElementById('create-template-title');
+      const form = document.getElementById('create-template-form');
+      const editIdField = document.getElementById('edit-template-id');
+      const saveBtn = document.getElementById('save-template-btn-text');
+
+      // 編集対象のテンプレートを取得
+      const template = currentTemplates.find(t => t.id === templateId);
+      if (!template) {
+        showToast('テンプレートが見つかりません', 'error');
+        return;
+      }
+
+      // モードを編集に設定
+      editingTemplateId = templateId;
+      editIdField.value = templateId;
+      title.textContent = 'カスタムテンプレート編集';
+      saveBtn.textContent = '更新';
+
+      // フォームに既存データを設定
+      document.getElementById('template-name-input').value = template.template_name;
+      document.getElementById('template-type-input').value = template.template_type || 'custom';
+      document.getElementById('template-share-input').checked = template.is_shared == 1;
+
+      // プレビューを更新
+      const data = typeof template.template_data === 'string' 
+        ? JSON.parse(template.template_data) 
+        : template.template_data;
+      updateTemplatePreview(data);
+
+      // モーダルを表示
+      modal.style.display = 'flex';
+      modal.classList.remove('hidden');
+
+      // エラー・成功メッセージをクリア
+      document.getElementById('create-template-error').classList.add('hidden');
+      document.getElementById('create-template-success').classList.add('hidden');
+    }
+
+    // テンプレート作成モーダルを閉じる
+    function closeCreateTemplateModal() {
+      const modal = document.getElementById('create-template-modal');
+      modal.style.display = 'none';
+      modal.classList.add('hidden');
+      editingTemplateId = null;
+    }
+
+    // テンプレートデータプレビューを更新
+    function updateTemplatePreview(data) {
+      const container = document.getElementById('template-data-preview');
+      
+      // データが指定されていない場合、現在のフォーム値から取得
+      if (!data) {
+        data = getCurrentFormData();
+      }
+
+      const fields = [
+        { key: 'zoning', label: '用途地域' },
+        { key: 'building_coverage_ratio', label: '建ぺい率' },
+        { key: 'floor_area_ratio', label: '容積率' },
+        { key: 'front_road_width', label: '前面道路幅員' },
+        { key: 'estimated_units', label: '想定戸数' },
+        { key: 'land_shape', label: '土地形状' },
+        { key: 'topography', label: '地勢' },
+        { key: 'utility_status', label: 'ライフライン状況' }
+      ];
+
+      const html = fields.map(field => {
+        const value = data[field.key] || '-';
+        return '<div><span class="font-medium">' + field.label + ':</span> ' + value + '</div>';
+      }).join('');
+
+      container.innerHTML = html || '<div class="text-gray-500">フォームに値を入力してください</div>';
+    }
+
+    // 現在のフォーム値を取得
+    function getCurrentFormData() {
+      return {
+        zoning: document.getElementById('zoning')?.value || '',
+        building_coverage_ratio: document.getElementById('building_coverage_ratio')?.value || '',
+        floor_area_ratio: document.getElementById('floor_area_ratio')?.value || '',
+        front_road_width: document.getElementById('front_road_width')?.value || '',
+        estimated_units: document.getElementById('estimated_units')?.value || '',
+        land_shape: document.getElementById('land_shape')?.value || '',
+        topography: document.getElementById('topography')?.value || '',
+        utility_status: document.getElementById('utility_status')?.value || ''
+      };
+    }
+
+    // テンプレート保存フォーム送信
+    document.getElementById('create-template-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const errorDiv = document.getElementById('create-template-error');
+      const successDiv = document.getElementById('create-template-success');
+      const saveBtn = document.getElementById('save-template-btn');
+      
+      errorDiv.classList.add('hidden');
+      successDiv.classList.add('hidden');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>保存中...';
+
+      try {
+        const templateName = document.getElementById('template-name-input').value;
+        const templateType = document.getElementById('template-type-input').value;
+        const isShared = document.getElementById('template-share-input').checked;
+        const templateData = getCurrentFormData();
+
+        // バリデーション
+        if (!templateName.trim()) {
+          throw new Error('テンプレート名を入力してください');
+        }
+
+        const requestData = {
+          template_name: templateName,
+          template_type: templateType,
+          template_data: templateData,
+          is_shared: isShared
+        };
+
+        let response;
+        if (editingTemplateId) {
+          // 更新
+          response = await axios.put('/api/property-templates/' + editingTemplateId, requestData, {
+            headers: { Authorization: 'Bearer ' + token }
+          });
+        } else {
+          // 新規作成
+          response = await axios.post('/api/property-templates', requestData, {
+            headers: { Authorization: 'Bearer ' + token }
+          });
+        }
+
+        // 成功メッセージ
+        const successMsg = editingTemplateId ? 'テンプレートを更新しました' : 'テンプレートを作成しました';
+        document.getElementById('create-template-success-message').textContent = successMsg;
+        successDiv.classList.remove('hidden');
+
+        // テンプレート一覧を再読み込み
+        await loadTemplates();
+
+        // 2秒後にモーダルを閉じる
+        setTimeout(() => {
+          closeCreateTemplateModal();
+          showToast(successMsg, 'success');
+        }, 2000);
+
+      } catch (err) {
+        console.error('テンプレート保存エラー:', err);
+        const errorMsg = err.response?.data?.error || err.message || 'テンプレートの保存に失敗しました';
+        document.getElementById('create-template-error-message').textContent = errorMsg;
+        errorDiv.classList.remove('hidden');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i><span id="save-template-btn-text">' + 
+          (editingTemplateId ? '更新' : '保存') + '</span>';
+      }
+    });
+
+    // テンプレート削除確認
+    async function confirmDeleteTemplate(templateId) {
+      if (!confirm('このテンプレートを削除してもよろしいですか？')) {
+        return;
+      }
+
+      try {
+        await axios.delete('/api/property-templates/' + templateId, {
+          headers: { Authorization: 'Bearer ' + token }
+        });
+
+        showToast('テンプレートを削除しました', 'success');
+        
+        // テンプレート一覧を再読み込み
+        await loadTemplates();
+      } catch (err) {
+        console.error('テンプレート削除エラー:', err);
+        const errorMsg = err.response?.data?.error || 'テンプレートの削除に失敗しました';
+        showToast(errorMsg, 'error');
       }
     }
 

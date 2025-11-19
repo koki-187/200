@@ -107,17 +107,12 @@ propertyOCR.post('/extract-multiple', async (c) => {
     
     for (const file of files) {
       try {
-        // PDFファイルの場合は一旦スキップ（将来実装）
-        if (file.type === 'application/pdf') {
-          console.log(`PDF file skipped: ${file.name} - PDF processing not yet implemented`);
-          continue;
-        }
-        
-        // 画像ファイルの処理
+        // ファイルをBase64に変換
         const arrayBuffer = await file.arrayBuffer();
-        const base64Image = arrayBufferToBase64(arrayBuffer);
+        const base64Data = arrayBufferToBase64(arrayBuffer);
         const mimeType = file.type;
         
+        // PDFとイメージの両方に対応
         const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -141,7 +136,7 @@ propertyOCR.post('/extract-multiple', async (c) => {
                   {
                     type: 'image_url',
                     image_url: {
-                      url: `data:${mimeType};base64,${base64Image}`
+                      url: `data:${mimeType};base64,${base64Data}`
                     }
                   }
                 ]
@@ -153,7 +148,8 @@ propertyOCR.post('/extract-multiple', async (c) => {
         });
         
         if (!openaiResponse.ok) {
-          console.error(`OpenAI API error for ${file.name}:`, await openaiResponse.text());
+          const errorText = await openaiResponse.text();
+          console.error(`OpenAI API error for ${file.name}:`, errorText);
           continue;
         }
         

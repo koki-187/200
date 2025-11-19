@@ -1140,9 +1140,6 @@ app.get('/dashboard', (c) => {
           <a href="/deals" class="border-b-2 border-blue-600 py-4 px-1 text-sm font-semibold text-blue-600 hover:text-blue-700 transition">
             <i class="fas fa-list mr-2"></i>案件一覧
           </a>
-          <a href="/property-ocr" class="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 transition">
-            <i class="fas fa-camera mr-2"></i>物件OCR
-          </a>
         </nav>
       </div>
     </div>
@@ -1291,8 +1288,13 @@ app.get('/gallery', (c) => {
   return c.redirect('/showcase', 301);
 });
 
-// 物件OCRアップロード専用ページ
+// 物件OCRアップロード専用ページは/deals/newに統合されました（後方互換性のため残す）
 app.get('/property-ocr', (c) => {
+  return c.redirect('/deals/new', 301);
+});
+
+// 物件OCRアップロード専用ページ（旧実装 - v3.4.0で統合のため使用されない）
+app.get('/property-ocr-legacy', (c) => {
   return c.html(`
 <!DOCTYPE html>
 <html lang="ja">
@@ -2448,11 +2450,8 @@ app.get('/deals', (c) => {
         <p class="text-gray-600 mt-1">全ての土地仕入れ案件を管理します</p>
       </div>
       <div class="flex space-x-3">
-        <a href="/property-ocr" class="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-3 rounded-lg transition shadow-lg">
-          <i class="fas fa-camera mr-2"></i>OCRで作成
-        </a>
         <a href="/deals/new" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition shadow-lg">
-          <i class="fas fa-plus mr-2"></i>新規案件作成
+          <i class="fas fa-plus mr-2"></i>新規案件作成（OCR自動入力対応）
         </a>
       </div>
     </div>
@@ -2713,12 +2712,14 @@ app.get('/deals/new', (c) => {
       box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
     }
     .ocr-drop-zone {
-      border: 2px dashed #cbd5e1;
+      border: 3px dashed #c4b5fd;
+      background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
       transition: all 0.3s ease;
     }
     .ocr-drop-zone.dragover {
-      border-color: #3b82f6;
-      background-color: #eff6ff;
+      border-color: #9333ea;
+      background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+      transform: scale(1.02);
     }
     .ocr-preview {
       max-width: 400px;
@@ -2762,18 +2763,24 @@ app.get('/deals/new', (c) => {
 
     <!-- OCRセクション -->
     <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-        <i class="fas fa-camera text-blue-600 mr-2"></i>
-        OCR自動入力（オプション）
-      </h3>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+          <i class="fas fa-magic text-purple-600 mr-2"></i>
+          OCR自動入力（複数ファイル対応）
+        </h3>
+        <span class="text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
+          画像・PDF混在OK
+        </span>
+      </div>
       
       <!-- ドロップゾーン -->
       <div id="ocr-drop-zone" class="ocr-drop-zone rounded-lg p-8 text-center mb-4">
-        <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-3"></i>
-        <p class="text-gray-600 mb-2">登記簿謄本や物件資料の画像・PDFをドラッグ＆ドロップ</p>
-        <p class="text-sm text-gray-500 mb-4">または</p>
-        <label for="ocr-file-input" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 cursor-pointer inline-block transition">
-          <i class="fas fa-folder-open mr-2"></i>ファイルを選択
+        <i class="fas fa-cloud-upload-alt text-5xl text-purple-400 mb-3"></i>
+        <p class="text-gray-700 font-medium mb-2">登記簿謄本や物件資料を複数まとめてアップロード</p>
+        <p class="text-sm text-gray-500 mb-2">PNG、JPG、WEBP、PDF形式に対応</p>
+        <p class="text-sm text-gray-500 mb-4">画像とPDFを混在してアップロードできます（最大10ファイル）</p>
+        <label for="ocr-file-input" class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 cursor-pointer inline-block transition font-medium shadow-lg">
+          <i class="fas fa-folder-open mr-2"></i>ファイルを選択またはドラッグ＆ドロップ
         </label>
         <input type="file" id="ocr-file-input" accept="image/*,application/pdf,.pdf" class="hidden" multiple>
       </div>

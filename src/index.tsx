@@ -3317,9 +3317,14 @@ app.get('/deals/new', (c) => {
               <i class="fas fa-user-edit text-blue-600 mr-2"></i>
               カスタムテンプレート
             </h4>
-            <button id="create-template-btn" type="button" class="text-sm bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium">
-              <i class="fas fa-plus mr-1"></i>新規作成
-            </button>
+            <div class="flex items-center space-x-2">
+              <button id="import-template-btn" type="button" class="text-sm bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-medium">
+                <i class="fas fa-upload mr-1"></i>インポート
+              </button>
+              <button id="create-template-btn" type="button" class="text-sm bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium">
+                <i class="fas fa-plus mr-1"></i>新規作成
+              </button>
+            </div>
           </div>
           <div id="custom-templates-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
           <p id="no-custom-templates" class="text-gray-500 text-sm text-center py-8 hidden">
@@ -3432,6 +3437,104 @@ app.get('/deals/new', (c) => {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- テンプレートインポートモーダル -->
+  <div id="import-template-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <!-- モーダルヘッダー -->
+      <div class="bg-gradient-to-r from-purple-600 to-violet-600 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-xl font-bold text-white flex items-center">
+          <i class="fas fa-upload mr-2"></i>
+          テンプレートインポート
+        </h3>
+        <button onclick="closeImportTemplateModal()" class="text-white hover:text-gray-200 transition">
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+
+      <!-- モーダルコンテンツ -->
+      <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 140px);">
+        <!-- 成功メッセージ -->
+        <div id="import-template-success" class="hidden bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center text-green-800">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="import-template-success-message">テンプレートをインポートしました</span>
+          </div>
+        </div>
+
+        <!-- エラーメッセージ -->
+        <div id="import-template-error" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center text-red-800">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span id="import-template-error-message">エラーが発生しました</span>
+          </div>
+        </div>
+
+        <!-- ファイルアップロード -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            テンプレートファイルを選択 <span class="text-red-600">*</span>
+          </label>
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition">
+            <input type="file" id="template-file-input" accept=".json" class="hidden">
+            <button type="button" onclick="document.getElementById('template-file-input').click()" 
+              class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium">
+              <i class="fas fa-file-upload mr-2"></i>
+              JSONファイルを選択
+            </button>
+            <p class="text-sm text-gray-500 mt-2">または、ここにファイルをドラッグ&ドロップ</p>
+          </div>
+          <div id="selected-file-info" class="hidden mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <i class="fas fa-file-code text-blue-600 mr-2"></i>
+                <span id="selected-file-name" class="text-sm font-medium text-gray-700"></span>
+              </div>
+              <button type="button" onclick="clearSelectedFile()" class="text-red-600 hover:text-red-700">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- プレビュー -->
+        <div id="import-preview-section" class="hidden">
+          <h5 class="text-sm font-medium text-gray-700 mb-2">インポートプレビュー</h5>
+          <div id="import-template-preview" class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 space-y-1 max-h-48 overflow-y-auto">
+            <!-- JavaScriptで動的に生成 -->
+          </div>
+        </div>
+
+        <!-- 説明 -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+          <div class="flex items-start">
+            <i class="fas fa-info-circle text-blue-600 mt-1 mr-2"></i>
+            <div class="text-sm text-blue-800">
+              <p class="font-medium mb-1">インポート可能なファイル形式</p>
+              <ul class="list-disc list-inside space-y-1">
+                <li>エクスポートされたテンプレートのJSONファイル</li>
+                <li>複数のテンプレートを含むJSON配列</li>
+                <li>必須フィールド: template_name, template_data</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- アクションボタン -->
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t mt-4">
+          <button type="button" onclick="closeImportTemplateModal()" 
+            class="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+            キャンセル
+          </button>
+          <button type="button" id="import-template-btn-submit" onclick="submitImportTemplate()"
+            class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium">
+            <i class="fas fa-upload mr-2"></i>
+            インポート
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -5394,8 +5497,11 @@ app.get('/deals/new', (c) => {
           : template.template_data;
         
         return '<div class="bg-white border-2 border-blue-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="selectTemplate(' + "'" + template.id + "'" + ')">' +
-          '<!-- 編集・削除ボタン -->' +
+          '<!-- 編集・削除・エクスポートボタン -->' +
           '<div class="absolute top-3 right-3 flex items-center space-x-1">' +
+            '<button onclick="event.stopPropagation(); exportTemplate(\'' + template.id + '\')" class="p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition" title="エクスポート">' +
+              '<i class="fas fa-download text-purple-600 text-sm"></i>' +
+            '</button>' +
             '<button onclick="event.stopPropagation(); openEditTemplateModal(\'' + template.id + '\')" class="p-1.5 bg-blue-100 hover:bg-blue-200 rounded-lg transition" title="編集">' +
               '<i class="fas fa-edit text-blue-600 text-sm"></i>' +
             '</button>' +
@@ -5718,6 +5824,278 @@ app.get('/deals/new', (c) => {
         const errorMsg = err.response?.data?.error || 'テンプレートの削除に失敗しました';
         showToast(errorMsg, 'error');
       }
+    }
+
+    // ============================================================
+    // テンプレートインポート/エクスポート機能
+    // ============================================================
+
+    let selectedImportFile = null;
+
+    // インポートボタン
+    document.getElementById('import-template-btn').addEventListener('click', () => {
+      openImportTemplateModal();
+    });
+
+    // テンプレートエクスポート（個別）
+    function exportTemplate(templateId) {
+      const template = currentTemplates.find(t => t.id === templateId);
+      if (!template) {
+        showToast('テンプレートが見つかりません', 'error');
+        return;
+      }
+
+      // テンプレートデータをクリーンアップ（内部フィールドを除外）
+      const exportData = {
+        template_name: template.template_name,
+        template_type: template.template_type || 'custom',
+        template_data: typeof template.template_data === 'string' 
+          ? JSON.parse(template.template_data) 
+          : template.template_data,
+        is_shared: template.is_shared,
+        description: template.description || ''
+      };
+
+      // JSON文字列に変換（見やすくフォーマット）
+      const json = JSON.stringify(exportData, null, 2);
+      
+      // Blobを作成してダウンロード
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'template-' + template.template_name.replace(/[^a-zA-Z0-9]/g, '_') + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast('テンプレートをエクスポートしました', 'success');
+    }
+
+    // インポートモーダルを開く
+    function openImportTemplateModal() {
+      const modal = document.getElementById('import-template-modal');
+      modal.style.display = 'flex';
+      modal.classList.remove('hidden');
+
+      // リセット
+      selectedImportFile = null;
+      document.getElementById('template-file-input').value = '';
+      document.getElementById('selected-file-info').classList.add('hidden');
+      document.getElementById('import-preview-section').classList.add('hidden');
+      document.getElementById('import-template-error').classList.add('hidden');
+      document.getElementById('import-template-success').classList.add('hidden');
+    }
+
+    // インポートモーダルを閉じる
+    function closeImportTemplateModal() {
+      const modal = document.getElementById('import-template-modal');
+      modal.style.display = 'none';
+      modal.classList.add('hidden');
+      selectedImportFile = null;
+    }
+
+    // ファイル選択イベント
+    document.getElementById('template-file-input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (!file.name.endsWith('.json')) {
+        document.getElementById('import-template-error-message').textContent = 'JSONファイルを選択してください';
+        document.getElementById('import-template-error').classList.remove('hidden');
+        return;
+      }
+
+      selectedImportFile = file;
+      document.getElementById('selected-file-name').textContent = file.name;
+      document.getElementById('selected-file-info').classList.remove('hidden');
+      document.getElementById('import-template-error').classList.add('hidden');
+
+      // プレビュー表示
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        displayImportPreview(data);
+      } catch (err) {
+        document.getElementById('import-template-error-message').textContent = 'JSONの解析に失敗しました: ' + err.message;
+        document.getElementById('import-template-error').classList.remove('hidden');
+        document.getElementById('import-preview-section').classList.add('hidden');
+      }
+    });
+
+    // ドラッグ&ドロップ対応
+    const dropZone = document.querySelector('#import-template-modal .border-dashed');
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('border-purple-600', 'bg-purple-50');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('border-purple-600', 'bg-purple-50');
+    });
+
+    dropZone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('border-purple-600', 'bg-purple-50');
+
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.json')) {
+        document.getElementById('template-file-input').files = e.dataTransfer.files;
+        
+        selectedImportFile = file;
+        document.getElementById('selected-file-name').textContent = file.name;
+        document.getElementById('selected-file-info').classList.remove('hidden');
+        document.getElementById('import-template-error').classList.add('hidden');
+
+        // プレビュー表示
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          displayImportPreview(data);
+        } catch (err) {
+          document.getElementById('import-template-error-message').textContent = 'JSONの解析に失敗しました: ' + err.message;
+          document.getElementById('import-template-error').classList.remove('hidden');
+          document.getElementById('import-preview-section').classList.add('hidden');
+        }
+      } else {
+        document.getElementById('import-template-error-message').textContent = 'JSONファイルを選択してください';
+        document.getElementById('import-template-error').classList.remove('hidden');
+      }
+    });
+
+    // 選択ファイルをクリア
+    function clearSelectedFile() {
+      selectedImportFile = null;
+      document.getElementById('template-file-input').value = '';
+      document.getElementById('selected-file-info').classList.add('hidden');
+      document.getElementById('import-preview-section').classList.add('hidden');
+    }
+
+    // インポートプレビュー表示
+    function displayImportPreview(data) {
+      const container = document.getElementById('import-template-preview');
+      const previewSection = document.getElementById('import-preview-section');
+
+      // 配列か単一オブジェクトか判定
+      const templates = Array.isArray(data) ? data : [data];
+      
+      let html = '<div class="space-y-2">';
+      templates.forEach((template, index) => {
+        html += '<div class="border-l-4 border-purple-500 pl-3">';
+        html += '<div class="font-medium text-gray-900">' + (index + 1) + '. ' + (template.template_name || '（名前なし）') + '</div>';
+        html += '<div class="text-xs text-gray-600">タイプ: ' + (template.template_type || 'custom') + '</div>';
+        html += '<div class="text-xs text-gray-600">共有: ' + (template.is_shared ? 'はい' : 'いいえ') + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '<div class="text-sm text-gray-600 mt-2">合計: ' + templates.length + ' 件のテンプレート</div>';
+
+      container.innerHTML = html;
+      previewSection.classList.remove('hidden');
+    }
+
+    // テンプレートインポート実行
+    async function submitImportTemplate() {
+      if (!selectedImportFile) {
+        document.getElementById('import-template-error-message').textContent = 'ファイルを選択してください';
+        document.getElementById('import-template-error').classList.remove('hidden');
+        return;
+      }
+
+      const submitBtn = document.getElementById('import-template-btn-submit');
+      const errorDiv = document.getElementById('import-template-error');
+      const successDiv = document.getElementById('import-template-success');
+      
+      errorDiv.classList.add('hidden');
+      successDiv.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>インポート中...';
+
+      try {
+        const text = await selectedImportFile.text();
+        const data = JSON.parse(text);
+
+        // バリデーション
+        const templates = Array.isArray(data) ? data : [data];
+        const errors = validateTemplates(templates);
+        
+        if (errors.length > 0) {
+          throw new Error('バリデーションエラー: ' + errors.join(', '));
+        }
+
+        // 各テンプレートをインポート
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const template of templates) {
+          try {
+            await axios.post('/api/property-templates', {
+              template_name: template.template_name,
+              template_type: template.template_type || 'custom',
+              template_data: template.template_data,
+              is_shared: template.is_shared || false,
+              description: template.description || ''
+            }, {
+              headers: { Authorization: 'Bearer ' + token }
+            });
+            successCount++;
+          } catch (err) {
+            console.error('テンプレートインポートエラー:', err);
+            errorCount++;
+          }
+        }
+
+        // 成功メッセージ
+        const successMsg = successCount + ' 件のテンプレートをインポートしました' + 
+          (errorCount > 0 ? ' (' + errorCount + ' 件失敗)' : '');
+        document.getElementById('import-template-success-message').textContent = successMsg;
+        successDiv.classList.remove('hidden');
+
+        // テンプレート一覧を再読み込み
+        await loadTemplates();
+
+        // 2秒後にモーダルを閉じる
+        setTimeout(() => {
+          closeImportTemplateModal();
+          showToast(successMsg, 'success');
+        }, 2000);
+
+      } catch (err) {
+        console.error('インポートエラー:', err);
+        const errorMsg = err.message || 'テンプレートのインポートに失敗しました';
+        document.getElementById('import-template-error-message').textContent = errorMsg;
+        errorDiv.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>インポート';
+      }
+    }
+
+    // テンプレートバリデーション
+    function validateTemplates(templates) {
+      const errors = [];
+      
+      templates.forEach((template, index) => {
+        if (!template.template_name || template.template_name.trim() === '') {
+          errors.push('テンプレート' + (index + 1) + ': 名前が必要です');
+        }
+        
+        if (!template.template_data) {
+          errors.push('テンプレート' + (index + 1) + ': template_dataが必要です');
+        }
+        
+        // template_dataの構造をチェック（オブジェクトであること）
+        if (template.template_data && typeof template.template_data !== 'object') {
+          errors.push('テンプレート' + (index + 1) + ': template_dataはオブジェクトである必要があります');
+        }
+      });
+      
+      return errors;
     }
 
   </script>

@@ -3,11 +3,12 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest)**: https://3e0d5876.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest)**: https://9c97fc25.real-estate-200units-v2.pages.dev 🆕
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Showcase**: https://3e0d5876.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation**: https://3e0d5876.real-estate-200units-v2.pages.dev/deals/new
-- **Purchase Criteria API**: https://3e0d5876.real-estate-200units-v2.pages.dev/api/purchase-criteria 🆕
+- **Showcase**: https://9c97fc25.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation**: https://9c97fc25.real-estate-200units-v2.pages.dev/deals/new
+- **Property OCR**: https://9c97fc25.real-estate-200units-v2.pages.dev/property-ocr 🆕
+- **Purchase Criteria API**: https://9c97fc25.real-estate-200units-v2.pages.dev/api/purchase-criteria
 
 ### デフォルトログイン情報
 
@@ -35,9 +36,9 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.1.0 (Production Deployed)
-- **進捗状況**: 51/53タスク実装完了（96.2%）、本番環境デプロイ完了 ✅
-- **最新改善**: 買取条件自動チェック機能（本番環境デプロイ完了） 🆕
+- **バージョン**: v3.2.0 (Production Deployed)
+- **進捗状況**: 53/53タスク実装完了（100%）、本番環境デプロイ完了 ✅
+- **最新改善**: リアルタイム買取条件チェック機能 & 物件OCR専用UI（本番環境デプロイ完了） 🆕
 - **デプロイ日**: 2025-11-19
 
 ## 主要機能

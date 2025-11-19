@@ -1,7 +1,11 @@
 import { Hono } from 'hono';
 import type { Bindings } from '../types';
+import { authMiddleware } from '../utils/auth';
 
 const propertyTemplates = new Hono<{ Bindings: Bindings }>();
+
+// 全てのルートに認証必須
+propertyTemplates.use('*', authMiddleware);
 
 /**
  * テンプレートを作成

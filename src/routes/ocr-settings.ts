@@ -1,7 +1,11 @@
 import { Hono } from 'hono';
 import type { Bindings } from '../types';
+import { authMiddleware } from '../utils/auth';
 
 const ocrSettings = new Hono<{ Bindings: Bindings }>();
+
+// 全てのルートに認証必須
+ocrSettings.use('*', authMiddleware);
 
 /**
  * OCR設定を取得

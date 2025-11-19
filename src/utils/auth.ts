@@ -21,9 +21,21 @@ export async function authMiddleware(c: Context<{ Bindings: Bindings }>, next: (
       return c.json({ error: 'Invalid token' }, 401);
     }
     
-    // コンテキストにユーザー情報を設定
+    // DBからユーザー情報を取得
+    const user = await c.env.DB.prepare(`
+      SELECT id, email, name, role, company_name
+      FROM users
+      WHERE id = ?
+    `).bind(payload.userId).first();
+    
+    if (!user) {
+      return c.json({ error: 'User not found' }, 401);
+    }
+    
+    // コンテキストにユーザー情報を設定（後方互換性のため両方設定）
     c.set('userId', payload.userId);
     c.set('userRole', payload.role);
+    c.set('user', user);
     
     await next();
   } catch (error) {

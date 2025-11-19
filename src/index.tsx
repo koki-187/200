@@ -3272,21 +3272,21 @@ app.get('/deals/new', (c) => {
   </main>
 
   <!-- テンプレート選択モーダル -->
-  <div id="template-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+  <div id="template-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-0 md:p-4" style="display: none;">
+    <div class="bg-white rounded-none md:rounded-2xl shadow-2xl w-full max-w-4xl h-full md:h-auto md:max-h-[90vh] overflow-hidden">
       <!-- モーダルヘッダー -->
-      <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
-        <h3 class="text-xl font-bold text-white flex items-center">
+      <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 md:px-6 py-4 flex items-center justify-between">
+        <h3 class="text-lg md:text-xl font-bold text-white flex items-center">
           <i class="fas fa-layer-group mr-2"></i>
           テンプレート選択
         </h3>
-        <button onclick="closeTemplateModal()" class="text-white hover:text-gray-200 transition">
-          <i class="fas fa-times text-2xl"></i>
+        <button onclick="closeTemplateModal()" class="text-white hover:text-gray-200 transition p-2 -mr-2">
+          <i class="fas fa-times text-xl md:text-2xl"></i>
         </button>
       </div>
 
       <!-- モーダルコンテンツ -->
-      <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 140px);">
+      <div class="p-4 md:p-6 overflow-y-auto h-[calc(100vh-80px)] md:h-auto" style="max-height: calc(90vh - 140px);">
         <!-- ローディング -->
         <div id="template-loading" class="text-center py-12">
           <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-3"></i>
@@ -3317,12 +3317,12 @@ app.get('/deals/new', (c) => {
               <i class="fas fa-user-edit text-blue-600 mr-2"></i>
               カスタムテンプレート
             </h4>
-            <div class="flex items-center space-x-2">
-              <button id="import-template-btn" type="button" class="text-sm bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-medium">
-                <i class="fas fa-upload mr-1"></i>インポート
+            <div class="flex items-center space-x-1 md:space-x-2">
+              <button id="import-template-btn" type="button" class="text-xs md:text-sm bg-purple-600 text-white px-2 md:px-4 py-2 rounded-lg hover:bg-purple-700 transition font-medium min-h-[44px] touch-manipulation">
+                <i class="fas fa-upload mr-1"></i><span class="hidden sm:inline">インポート</span>
               </button>
-              <button id="create-template-btn" type="button" class="text-sm bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium">
-                <i class="fas fa-plus mr-1"></i>新規作成
+              <button id="create-template-btn" type="button" class="text-xs md:text-sm bg-green-600 text-white px-2 md:px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium min-h-[44px] touch-manipulation">
+                <i class="fas fa-plus mr-1"></i><span class="hidden sm:inline">新規作成</span>
               </button>
             </div>
           </div>
@@ -3336,21 +3336,21 @@ app.get('/deals/new', (c) => {
   </div>
 
   <!-- テンプレート作成・編集モーダル -->
-  <div id="create-template-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+  <div id="create-template-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-0 md:p-4" style="display: none;">
+    <div class="bg-white rounded-none md:rounded-2xl shadow-2xl w-full max-w-2xl h-full md:h-auto md:max-h-[90vh] overflow-hidden">
       <!-- モーダルヘッダー -->
-      <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 flex items-center justify-between">
-        <h3 class="text-xl font-bold text-white flex items-center">
+      <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-4 md:px-6 py-4 flex items-center justify-between">
+        <h3 class="text-lg md:text-xl font-bold text-white flex items-center">
           <i class="fas fa-plus-circle mr-2"></i>
           <span id="create-template-title">カスタムテンプレート作成</span>
         </h3>
-        <button onclick="closeCreateTemplateModal()" class="text-white hover:text-gray-200 transition">
-          <i class="fas fa-times text-2xl"></i>
+        <button onclick="closeCreateTemplateModal()" class="text-white hover:text-gray-200 transition p-2 -mr-2">
+          <i class="fas fa-times text-xl md:text-2xl"></i>
         </button>
       </div>
 
       <!-- モーダルコンテンツ -->
-      <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 140px);">
+      <div class="p-4 md:p-6 overflow-y-auto h-[calc(100vh-80px)] md:h-auto" style="max-height: calc(90vh - 140px);">
         <!-- 成功メッセージ -->
         <div id="create-template-success" class="hidden bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
           <div class="flex items-center text-green-800">
@@ -3442,21 +3442,21 @@ app.get('/deals/new', (c) => {
   </div>
 
   <!-- テンプレートインポートモーダル -->
-  <div id="import-template-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+  <div id="import-template-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-0 md:p-4" style="display: none;">
+    <div class="bg-white rounded-none md:rounded-2xl shadow-2xl w-full max-w-2xl h-full md:h-auto md:max-h-[90vh] overflow-hidden">
       <!-- モーダルヘッダー -->
-      <div class="bg-gradient-to-r from-purple-600 to-violet-600 px-6 py-4 flex items-center justify-between">
-        <h3 class="text-xl font-bold text-white flex items-center">
+      <div class="bg-gradient-to-r from-purple-600 to-violet-600 px-4 md:px-6 py-4 flex items-center justify-between">
+        <h3 class="text-lg md:text-xl font-bold text-white flex items-center">
           <i class="fas fa-upload mr-2"></i>
           テンプレートインポート
         </h3>
-        <button onclick="closeImportTemplateModal()" class="text-white hover:text-gray-200 transition">
-          <i class="fas fa-times text-2xl"></i>
+        <button onclick="closeImportTemplateModal()" class="text-white hover:text-gray-200 transition p-2 -mr-2">
+          <i class="fas fa-times text-xl md:text-2xl"></i>
         </button>
       </div>
 
       <!-- モーダルコンテンツ -->
-      <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 140px);">
+      <div class="p-4 md:p-6 overflow-y-auto h-[calc(100vh-80px)] md:h-auto" style="max-height: calc(90vh - 140px);">
         <!-- 成功メッセージ -->
         <div id="import-template-success" class="hidden bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
           <div class="flex items-center text-green-800">
@@ -5498,18 +5498,18 @@ app.get('/deals/new', (c) => {
         
         return '<div class="bg-white border-2 border-blue-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="selectTemplate(' + "'" + template.id + "'" + ')">' +
           '<!-- 編集・削除・エクスポートボタン -->' +
-          '<div class="absolute top-3 right-3 flex items-center space-x-1">' +
-            '<button onclick="event.stopPropagation(); exportTemplate(\'' + template.id + '\')" class="p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition" title="エクスポート">' +
+          '<div class="absolute top-2 right-2 flex items-center space-x-1">' +
+            '<button onclick="event.stopPropagation(); exportTemplate(\'' + template.id + '\')" class="p-2 md:p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="エクスポート">' +
               '<i class="fas fa-download text-purple-600 text-sm"></i>' +
             '</button>' +
-            '<button onclick="event.stopPropagation(); openEditTemplateModal(\'' + template.id + '\')" class="p-1.5 bg-blue-100 hover:bg-blue-200 rounded-lg transition" title="編集">' +
+            '<button onclick="event.stopPropagation(); openEditTemplateModal(\'' + template.id + '\')" class="p-2 md:p-1.5 bg-blue-100 hover:bg-blue-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="編集">' +
               '<i class="fas fa-edit text-blue-600 text-sm"></i>' +
             '</button>' +
-            '<button onclick="event.stopPropagation(); confirmDeleteTemplate(\'' + template.id + '\')" class="p-1.5 bg-red-100 hover:bg-red-200 rounded-lg transition" title="削除">' +
+            '<button onclick="event.stopPropagation(); confirmDeleteTemplate(\'' + template.id + '\')" class="p-2 md:p-1.5 bg-red-100 hover:bg-red-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="削除">' +
               '<i class="fas fa-trash text-red-600 text-sm"></i>' +
             '</button>' +
           '</div>' +
-          '<div class="flex items-start justify-between mb-2 pr-20">' +
+          '<div class="flex items-start justify-between mb-2 pr-[140px] md:pr-24">' +
             '<div class="flex items-center">' +
               '<i class="fas fa-user-edit text-blue-600 mr-2"></i>' +
               '<h5 class="font-semibold text-gray-900">' + template.template_name + '</h5>' +
@@ -7438,6 +7438,18 @@ export default {
               }
             }
           }
+        } catch (error) {
+          console.error(`Error processing deal ${deal.id}:`, error);
+        }
+      }
+
+      console.log(`Cron job completed. Sent ${sentCount} notifications.`);
+    } catch (error) {
+      console.error('Cron job error:', error);
+    }
+  }
+};
+       }
         } catch (error) {
           console.error(`Error processing deal ${deal.id}:`, error);
         }

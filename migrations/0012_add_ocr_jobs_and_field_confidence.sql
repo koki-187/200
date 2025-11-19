@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS ocr_jobs (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- OCRジョブテーブルのインデックス
-CREATE INDEX IF NOT EXISTS idx_ocr_jobs_user_id ON ocr_jobs(user_id);
+-- OCRジョブテーブルのインデックス（テーブル作成後に作成）
+-- Note: インデックス作成はテーブルが存在してから
 CREATE INDEX IF NOT EXISTS idx_ocr_jobs_status ON ocr_jobs(status);
-CREATE INDEX IF NOT EXISTS idx_ocr_jobs_created_at ON ocr_jobs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ocr_jobs_created_at ON ocr_jobs(created_at);

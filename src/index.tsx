@@ -3539,6 +3539,73 @@ app.get('/deals/new', (c) => {
     </div>
   </div>
 
+  <!-- テンプレートプレビューモーダル -->
+  <div id="preview-template-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-0 md:p-4" style="display: none;">
+    <div class="bg-white rounded-none md:rounded-2xl shadow-2xl w-full max-w-3xl h-full md:h-auto md:max-h-[90vh] overflow-hidden">
+      <!-- モーダルヘッダー -->
+      <div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-4 md:px-6 py-4 flex items-center justify-between">
+        <h3 class="text-lg md:text-xl font-bold text-white flex items-center">
+          <i class="fas fa-eye mr-2"></i>
+          テンプレートプレビュー
+        </h3>
+        <button onclick="closePreviewModal()" class="text-white hover:text-gray-200 transition p-2 -mr-2">
+          <i class="fas fa-times text-xl md:text-2xl"></i>
+        </button>
+      </div>
+
+      <!-- モーダルコンテンツ -->
+      <div class="p-4 md:p-6 overflow-y-auto h-[calc(100vh-160px)] md:h-auto" style="max-height: calc(90vh - 220px);">
+        <!-- テンプレート名 -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center">
+            <i class="fas fa-layer-group text-blue-600 text-xl mr-3"></i>
+            <div>
+              <p class="text-sm text-blue-600 font-medium">適用するテンプレート</p>
+              <p id="preview-template-name" class="text-lg font-bold text-gray-900"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 比較テーブル -->
+        <div class="bg-gray-50 rounded-lg p-4">
+          <h4 class="text-md font-semibold text-gray-900 mb-3 flex items-center">
+            <i class="fas fa-exchange-alt text-gray-600 mr-2"></i>
+            変更内容の比較
+          </h4>
+          <div id="preview-comparison-table" class="space-y-2">
+            <!-- JavaScriptで動的に生成 -->
+          </div>
+        </div>
+
+        <!-- 説明 -->
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
+          <div class="flex items-start">
+            <i class="fas fa-info-circle text-amber-600 mt-1 mr-2"></i>
+            <div class="text-sm text-amber-800">
+              <p class="font-medium mb-1">変更されるフィールドについて</p>
+              <p><span class="inline-block w-3 h-3 bg-green-200 rounded mr-1"></span>緑色: 新しい値が設定されます</p>
+              <p><span class="inline-block w-3 h-3 bg-blue-200 rounded mr-1"></span>青色: 値が変更されます</p>
+              <p><span class="inline-block w-3 h-3 bg-gray-200 rounded mr-1"></span>灰色: 変更なし</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- アクションボタン -->
+      <div class="border-t bg-gray-50 px-4 md:px-6 py-4 flex items-center justify-end space-x-3">
+        <button type="button" onclick="closePreviewModal()" 
+          class="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+          キャンセル
+        </button>
+        <button type="button" id="apply-template-from-preview" onclick="applyTemplateFromPreview()"
+          class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
+          <i class="fas fa-check mr-2"></i>
+          このテンプレートを適用
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
     const token = localStorage.getItem('auth_token');
@@ -5471,7 +5538,7 @@ app.get('/deals/new', (c) => {
           ? JSON.parse(template.template_data) 
           : template.template_data;
         
-        return '<div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer" onclick="selectTemplate(' + "'" + template.id + "'" + ')">' +
+        return '<div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="event.stopPropagation(); openPreviewModal(\'' + template.id + '\')">' +
           '<div class="flex items-start justify-between mb-2">' +
             '<div class="flex items-center">' +
               '<i class="fas fa-star text-yellow-600 mr-2"></i>' +
@@ -5483,6 +5550,12 @@ app.get('/deals/new', (c) => {
           '<div class="text-xs text-gray-500 space-y-1">' +
             '<div><i class="fas fa-map-marker-alt mr-1"></i>用途: ' + (data.zoning || '-') + '</div>' +
             '<div><i class="fas fa-percentage mr-1"></i>建ぺい率: ' + (data.building_coverage_ratio || '-') + '% / 容積率: ' + (data.floor_area_ratio || '-') + '%</div>' +
+          '</div>' +
+          '<!-- プレビューバッジ -->' +
+          '<div class="absolute bottom-2 right-2">' +
+            '<span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full flex items-center">' +
+              '<i class="fas fa-eye mr-1"></i>クリックでプレビュー' +
+            '</span>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -5496,8 +5569,8 @@ app.get('/deals/new', (c) => {
           ? JSON.parse(template.template_data) 
           : template.template_data;
         
-        return '<div class="bg-white border-2 border-blue-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="selectTemplate(' + "'" + template.id + "'" + ')">' +
-          '<!-- 編集・削除・エクスポートボタン -->' +
+        return '<div class="bg-white border-2 border-blue-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="event.stopPropagation(); openPreviewModal(\'' + template.id + '\')">' +
+          '<!-- アクションボタン -->' +
           '<div class="absolute top-2 right-2 flex items-center space-x-1">' +
             '<button onclick="event.stopPropagation(); exportTemplate(\'' + template.id + '\')" class="p-2 md:p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="エクスポート">' +
               '<i class="fas fa-download text-purple-600 text-sm"></i>' +
@@ -5508,6 +5581,12 @@ app.get('/deals/new', (c) => {
             '<button onclick="event.stopPropagation(); confirmDeleteTemplate(\'' + template.id + '\')" class="p-2 md:p-1.5 bg-red-100 hover:bg-red-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="削除">' +
               '<i class="fas fa-trash text-red-600 text-sm"></i>' +
             '</button>' +
+          '</div>' +
+          '<!-- プレビューバッジ -->' +
+          '<div class="absolute bottom-2 right-2">' +
+            '<span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full flex items-center">' +
+              '<i class="fas fa-eye mr-1"></i>クリックでプレビュー' +
+            '</span>' +
           '</div>' +
           '<div class="flex items-start justify-between mb-2 pr-[140px] md:pr-24">' +
             '<div class="flex items-center">' +
@@ -5823,6 +5902,158 @@ app.get('/deals/new', (c) => {
         console.error('テンプレート削除エラー:', err);
         const errorMsg = err.response?.data?.error || 'テンプレートの削除に失敗しました';
         showToast(errorMsg, 'error');
+      }
+    }
+
+    // ============================================================
+    // テンプレートプレビュー機能
+    // ============================================================
+
+    let previewingTemplate = null;
+
+    // プレビューモーダルを開く
+    function openPreviewModal(templateId) {
+      const template = currentTemplates.find(t => t.id === templateId);
+      if (!template) {
+        showToast('テンプレートが見つかりません', 'error');
+        return;
+      }
+
+      previewingTemplate = template;
+      
+      // テンプレート名を表示
+      document.getElementById('preview-template-name').textContent = template.template_name;
+
+      // 現在のフォーム値を取得
+      const currentData = getCurrentFormData();
+      
+      // テンプレートデータを取得
+      const templateData = typeof template.template_data === 'string' 
+        ? JSON.parse(template.template_data) 
+        : template.template_data;
+
+      // 比較表示を生成
+      renderComparisonTable(currentData, templateData);
+
+      // モーダルを表示
+      const modal = document.getElementById('preview-template-modal');
+      modal.style.display = 'flex';
+      modal.classList.remove('hidden');
+    }
+
+    // プレビューモーダルを閉じる
+    function closePreviewModal() {
+      const modal = document.getElementById('preview-template-modal');
+      modal.style.display = 'none';
+      modal.classList.add('hidden');
+      previewingTemplate = null;
+    }
+
+    // 比較テーブルを生成
+    function renderComparisonTable(currentData, templateData) {
+      const container = document.getElementById('preview-comparison-table');
+      
+      const fields = [
+        { key: 'zoning', label: '用途地域', icon: 'map-marker-alt' },
+        { key: 'building_coverage_ratio', label: '建ぺい率', icon: 'percentage', suffix: '%' },
+        { key: 'floor_area_ratio', label: '容積率', icon: 'percentage', suffix: '%' },
+        { key: 'front_road_width', label: '前面道路幅員', icon: 'road', suffix: 'm' },
+        { key: 'estimated_units', label: '想定戸数', icon: 'home', suffix: '戸' },
+        { key: 'land_shape', label: '土地形状', icon: 'draw-polygon' },
+        { key: 'topography', label: '地勢', icon: 'mountain' },
+        { key: 'utility_status', label: 'ライフライン状況', icon: 'plug' }
+      ];
+
+      const html = fields.map(field => {
+        const currentValue = currentData[field.key] || '';
+        const templateValue = templateData[field.key] || '';
+        
+        // 変更状態を判定
+        let changeType = 'no-change'; // no-change, new-value, changed-value
+        let bgColor = 'bg-gray-50';
+        let textColor = 'text-gray-600';
+        
+        if (!currentValue && templateValue) {
+          changeType = 'new-value';
+          bgColor = 'bg-green-50';
+          textColor = 'text-green-800';
+        } else if (currentValue && templateValue && currentValue !== templateValue) {
+          changeType = 'changed-value';
+          bgColor = 'bg-blue-50';
+          textColor = 'text-blue-800';
+        }
+
+        const displayCurrent = currentValue ? (currentValue + (field.suffix || '')) : '-';
+        const displayTemplate = templateValue ? (templateValue + (field.suffix || '')) : '-';
+
+        return '<div class="' + bgColor + ' rounded-lg p-3 border border-' + bgColor.replace('50', '200') + '">' +
+          '<div class="flex items-start justify-between">' +
+            '<div class="flex-1">' +
+              '<div class="flex items-center mb-2">' +
+                '<i class="fas fa-' + field.icon + ' text-gray-500 mr-2 text-sm"></i>' +
+                '<span class="font-medium text-gray-900 text-sm">' + field.label + '</span>' +
+              '</div>' +
+              '<div class="grid grid-cols-2 gap-3 text-sm">' +
+                '<div>' +
+                  '<p class="text-xs text-gray-500 mb-1">現在の値</p>' +
+                  '<p class="font-mono ' + (changeType === 'changed-value' ? 'line-through text-gray-400' : 'text-gray-700') + '">' + displayCurrent + '</p>' +
+                '</div>' +
+                '<div>' +
+                  '<p class="text-xs text-gray-500 mb-1">テンプレート値</p>' +
+                  '<p class="font-mono font-semibold ' + textColor + '">' + displayTemplate + '</p>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            (changeType !== 'no-change' ? 
+              '<div class="ml-2"><i class="fas fa-arrow-right ' + textColor + '"></i></div>' : 
+              '<div class="ml-2"><i class="fas fa-equals text-gray-400"></i></div>') +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      container.innerHTML = html;
+    }
+
+    // プレビューからテンプレートを適用
+    async function applyTemplateFromPreview() {
+      if (!previewingTemplate) {
+        showToast('テンプレートが選択されていません', 'error');
+        return;
+      }
+
+      try {
+        // テンプレートデータを取得
+        const data = typeof previewingTemplate.template_data === 'string' 
+          ? JSON.parse(previewingTemplate.template_data) 
+          : previewingTemplate.template_data;
+
+        // フォームに値を設定
+        applyTemplateToForm(data);
+
+        // 選択状態を保存
+        selectedTemplate = previewingTemplate;
+        document.getElementById('selected-template-name').textContent = previewingTemplate.template_name;
+        document.getElementById('selected-template-info').classList.remove('hidden');
+
+        // 使用回数を増やす（プリセット以外）
+        if (!previewingTemplate.is_preset) {
+          try {
+            await axios.post('/api/property-templates/' + previewingTemplate.id + '/use', {}, {
+              headers: { Authorization: 'Bearer ' + token }
+            });
+          } catch (err) {
+            console.error('使用回数更新エラー:', err);
+          }
+        }
+
+        // モーダルを閉じる
+        closePreviewModal();
+        closeTemplateModal();
+
+        showToast('テンプレートを適用しました', 'success');
+      } catch (err) {
+        console.error('テンプレート適用エラー:', err);
+        showToast('テンプレートの適用に失敗しました', 'error');
       }
     }
 

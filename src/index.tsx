@@ -3734,8 +3734,120 @@ app.get('/deals/new', (c) => {
       fileInput.click();
     });
 
-    // テンプレートボタン
+    // テンプレート管理モーダル
+    const templatesModal = document.getElementById('ocr-templates-modal');
+    const templateEditModal = document.getElementById('template-edit-modal');
+    let currentEditingTemplateId = null;
+    
+    // テンプレートボタン - モーダルを開く
     document.getElementById('ocr-templates-btn').addEventListener('click', async () => {
+      templatesModal.classList.remove('hidden');
+      await loadTemplates();
+    });
+    
+    // テンプレートモーダルを閉じる
+    document.getElementById('close-templates-modal').addEventListener('click', () => {
+      templatesModal.classList.add('hidden');
+    });
+    
+    templatesModal.addEventListener('click', (e) => {
+      if (e.target === templatesModal) {
+        templatesModal.classList.add('hidden');
+      }
+    });
+    
+    // テンプレート作成ボタン
+    document.getElementById('create-template-btn').addEventListener('click', () => {
+      currentEditingTemplateId = null;
+      document.getElementById('template-edit-title').innerHTML = '<i class="fas fa-plus text-purple-600 mr-2"></i>新規テンプレート作成';
+      document.getElementById('template-form').reset();
+      document.getElementById('template-id').value = '';
+      document.getElementById('template-data').value = JSON.stringify({
+        property_name: "",
+        location: "",
+        land_area: "",
+        zoning: "",
+        building_coverage: "",
+        floor_area_ratio: "",
+        road_info: "",
+        price: ""
+      }, null, 2);
+      templateEditModal.classList.remove('hidden');
+    });
+    
+    // テンプレート編集モーダルを閉じる
+    document.getElementById('close-template-edit-modal').addEventListener('click', () => {
+      templateEditModal.classList.add('hidden');
+    });
+    
+    document.getElementById('cancel-template-btn').addEventListener('click', () => {
+      templateEditModal.classList.add('hidden');
+    });
+    
+    templateEditModal.addEventListener('click', (e) => {
+      if (e.target === templateEditModal) {
+        templateEditModal.classList.add('hidden');
+      }
+    });
+    
+    // テンプレートフォーム送信
+    document.getElementById('template-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      try {
+        const templateName = document.getElementById('template-name').value;
+        const templateType = document.getElementById('template-type').value;
+        const templateShared = document.getElementById('template-shared').checked;
+        const templateDataStr = document.getElementById('template-data').value;
+        
+        let templateData;
+        try {
+          templateData = JSON.parse(templateDataStr);
+        } catch (parseError) {
+          alert('テンプレートデータのJSON形式が無効です。正しい形式で入力してください。');
+          return;
+        }
+        
+        const payload = {
+          name: templateName,
+          template_type: templateType,
+          template_data: templateData,
+          is_shared: templateShared
+        };
+        
+        if (currentEditingTemplateId) {
+          // 更新
+          await axios.put('/api/property-templates/' + currentEditingTemplateId, payload, {
+            headers: { 
+              'Authorization': 'Bearer ' + token,
+              'Content-Type': 'application/json'
+            }
+          });
+          alert('✓ テンプレートを更新しました');
+        } else {
+          // 新規作成
+          await axios.post('/api/property-templates', payload, {
+            headers: { 
+              'Authorization': 'Bearer ' + token,
+              'Content-Type': 'application/json'
+            }
+          });
+          alert('✓ テンプレートを作成しました');
+        }
+        
+        templateEditModal.classList.add('hidden');
+        await loadTemplates();
+        
+      } catch (error) {
+        console.error('Failed to save template:', error);
+        alert('テンプレートの保存に失敗しました');
+      }
+    });
+    
+    // テンプレート読み込み
+    async function loadTemplates() {
+      const templatesList = document.getElementById('templates-list');
+      
       try {
         const response = await axios.get('/api/property-templates', {
           headers: { 'Authorization': 'Bearer ' + token }
@@ -3744,24 +3856,95 @@ app.get('/deals/new', (c) => {
         const templates = response.data.templates || [];
         
         if (templates.length === 0) {
-          alert('保存されたテンプレートはありません。\n\nOCR結果を適用後、フォーム下部の「テンプレートとして保存」ボタンからテンプレートを作成できます。');
+          templatesList.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-inbox text-5xl mb-3"></i><p>テンプレートはまだありません</p><p class="text-sm mt-2">「新規テンプレート作成」ボタンから作成できます</p></div>';
           return;
         }
         
-        // テンプレート選択ダイアログ
-        const templateNames = templates.map(t => t.name).join('\n');
-        const selectedName = prompt('テンプレートを選択してください（名前を入力）:\n\n' + templateNames);
+        templatesList.innerHTML = templates.map(template => {
+          const typeLabels = {
+            apartment: 'マンション',
+            house: '一戸建て',
+            land: '土地',
+            commercial: '商業物件',
+            custom: 'カスタム'
+          };
+          const typeLabel = typeLabels[template.template_type] || 'カスタム';
+          const createdAt = new Date(template.created_at).toLocaleDateString('ja-JP');
+          
+          return '<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">' +
+            '<div class="flex items-center justify-between mb-2">' +
+            '<div class="flex items-center space-x-2">' +
+            '<i class="fas fa-clipboard-list text-purple-600"></i>' +
+            '<span class="font-medium text-gray-900">' + template.name + '</span>' +
+            '</div>' +
+            '<span class="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full">' + typeLabel + '</span>' +
+            '</div>' +
+            '<div class="text-sm text-gray-600 mb-3">' +
+            '<div><i class="fas fa-calendar mr-1"></i>作成日: ' + createdAt + '</div>' +
+            (template.is_shared ? '<div class="text-green-600 mt-1"><i class="fas fa-share-alt mr-1"></i>共有中</div>' : '') +
+            '</div>' +
+            '<div class="flex items-center space-x-2">' +
+            '<button class="template-apply-btn flex-1 bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition" data-template-id="' + template.id + '">' +
+            '<i class="fas fa-check mr-1"></i>適用' +
+            '</button>' +
+            '<button class="template-preview-btn bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200 transition" data-template-id="' + template.id + '">' +
+            '<i class="fas fa-eye mr-1"></i>プレビュー' +
+            '</button>' +
+            '<button class="template-edit-btn bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm hover:bg-blue-200 transition" data-template-id="' + template.id + '">' +
+            '<i class="fas fa-edit mr-1"></i>編集' +
+            '</button>' +
+            '<button class="template-delete-btn bg-red-100 text-red-700 px-3 py-1 rounded text-sm hover:bg-red-200 transition" data-template-id="' + template.id + '">' +
+            '<i class="fas fa-trash mr-1"></i>削除' +
+            '</button>' +
+            '</div>' +
+            '</div>';
+        }).join('');
         
-        if (!selectedName) return;
+        // イベントリスナーを追加
+        document.querySelectorAll('.template-apply-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const templateId = btn.getAttribute('data-template-id');
+            await applyTemplate(templateId);
+          });
+        });
         
-        const template = templates.find(t => t.name === selectedName);
-        if (!template) {
-          alert('テンプレートが見つかりません');
-          return;
-        }
+        document.querySelectorAll('.template-preview-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const templateId = btn.getAttribute('data-template-id');
+            await previewTemplate(templateId);
+          });
+        });
         
-        // テンプレートデータをフォームに適用
+        document.querySelectorAll('.template-edit-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const templateId = btn.getAttribute('data-template-id');
+            await editTemplate(templateId);
+          });
+        });
+        
+        document.querySelectorAll('.template-delete-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const templateId = btn.getAttribute('data-template-id');
+            await deleteTemplate(templateId);
+          });
+        });
+        
+      } catch (error) {
+        console.error('Failed to load templates:', error);
+        templatesList.innerHTML = '<div class="text-center text-red-500 py-8"><i class="fas fa-exclamation-triangle text-5xl mb-3"></i><p>テンプレートの読み込みに失敗しました</p></div>';
+      }
+    }
+    
+    // テンプレート適用
+    async function applyTemplate(templateId) {
+      try {
+        const response = await axios.get('/api/property-templates/' + templateId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const template = response.data;
         const data = template.template_data;
+        
         if (data.property_name) document.getElementById('title').value = data.property_name;
         if (data.location) document.getElementById('location').value = data.location;
         if (data.land_area) document.getElementById('land_area').value = data.land_area;
@@ -3771,16 +3954,117 @@ app.get('/deals/new', (c) => {
         if (data.road_info) document.getElementById('road_info').value = data.road_info;
         if (data.price) document.getElementById('desired_price').value = data.price;
         
+        templatesModal.classList.add('hidden');
         alert('✓ テンプレート「' + template.name + '」を適用しました');
         
       } catch (error) {
-        console.error('Failed to load templates:', error);
+        console.error('Failed to apply template:', error);
+        alert('テンプレートの適用に失敗しました');
+      }
+    }
+    
+    // テンプレートプレビュー
+    async function previewTemplate(templateId) {
+      try {
+        const response = await axios.get('/api/property-templates/' + templateId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const template = response.data;
+        const data = template.template_data;
+        const previewText = Object.entries(data).map(([key, value]) => {
+          const labels = {
+            property_name: '物件名称',
+            location: '所在地',
+            land_area: '土地面積',
+            zoning: '用途地域',
+            building_coverage: '建蔽率',
+            floor_area_ratio: '容積率',
+            road_info: '道路情報',
+            price: '価格'
+          };
+          return (labels[key] || key) + ': ' + (value || '(未設定)');
+        }).join('\n');
+        
+        alert('テンプレート「' + template.name + '」のプレビュー\n\n' + previewText);
+        
+      } catch (error) {
+        console.error('Failed to preview template:', error);
+        alert('テンプレートのプレビューに失敗しました');
+      }
+    }
+    
+    // テンプレート編集
+    async function editTemplate(templateId) {
+      try {
+        const response = await axios.get('/api/property-templates/' + templateId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const template = response.data;
+        currentEditingTemplateId = templateId;
+        
+        document.getElementById('template-edit-title').innerHTML = '<i class="fas fa-edit text-purple-600 mr-2"></i>テンプレート編集';
+        document.getElementById('template-id').value = templateId;
+        document.getElementById('template-name').value = template.name;
+        document.getElementById('template-type').value = template.template_type || 'custom';
+        document.getElementById('template-shared').checked = template.is_shared || false;
+        document.getElementById('template-data').value = JSON.stringify(template.template_data, null, 2);
+        
+        templateEditModal.classList.remove('hidden');
+        
+      } catch (error) {
+        console.error('Failed to load template for editing:', error);
         alert('テンプレートの読み込みに失敗しました');
+      }
+    }
+    
+    // テンプレート削除
+    async function deleteTemplate(templateId) {
+      if (!confirm('このテンプレートを削除してもよろしいですか？')) {
+        return;
+      }
+      
+      try {
+        await axios.delete('/api/property-templates/' + templateId, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        alert('✓ テンプレートを削除しました');
+        await loadTemplates();
+        
+      } catch (error) {
+        console.error('Failed to delete template:', error);
+        alert('テンプレートの削除に失敗しました');
+      }
+    }
+    
+    // OCR設定モーダル
+    const settingsModal = document.getElementById('ocr-settings-modal');
+    
+    // 設定ボタン - モーダルを開く
+    document.getElementById('ocr-settings-btn').addEventListener('click', async () => {
+      settingsModal.classList.remove('hidden');
+      await loadSettings();
+    });
+    
+    // 設定モーダルを閉じる
+    document.getElementById('close-settings-modal').addEventListener('click', () => {
+      settingsModal.classList.add('hidden');
+    });
+    
+    document.getElementById('cancel-settings-btn').addEventListener('click', () => {
+      settingsModal.classList.add('hidden');
+    });
+    
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.classList.add('hidden');
       }
     });
     
-    // 設定ボタン
-    document.getElementById('ocr-settings-btn').addEventListener('click', async () => {
+    // 設定読み込み
+    async function loadSettings() {
       try {
         const response = await axios.get('/api/ocr-settings', {
           headers: { 'Authorization': 'Bearer ' + token }
@@ -3788,30 +4072,47 @@ app.get('/deals/new', (c) => {
         
         const settings = response.data.settings || {};
         
-        // 設定ダイアログ（簡易版）
-        const newSettings = {
-          auto_save: confirm('OCR結果を自動保存しますか？\n\n現在: ' + (settings.auto_save ? '有効' : '無効')),
-          confidence_threshold: parseFloat(prompt('信頼度の閾値を設定してください（0.0〜1.0）:\n\n現在: ' + (settings.confidence_threshold || 0.7), settings.confidence_threshold || 0.7))
+        document.getElementById('setting-auto-save').checked = settings.auto_save || false;
+        document.getElementById('setting-confidence-threshold').value = Math.round((settings.confidence_threshold || 0.7) * 100);
+        document.getElementById('confidence-threshold-value').textContent = Math.round((settings.confidence_threshold || 0.7) * 100) + '%';
+        document.getElementById('setting-enable-batch').checked = settings.enable_batch !== false;
+        document.getElementById('setting-max-batch-size').value = settings.max_batch_size || 10;
+        
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    }
+    
+    // 信頼度閾値スライダーのリアルタイム更新
+    document.getElementById('setting-confidence-threshold').addEventListener('input', (e) => {
+      document.getElementById('confidence-threshold-value').textContent = e.target.value + '%';
+    });
+    
+    // OCR設定フォーム送信
+    document.getElementById('ocr-settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      try {
+        const settings = {
+          auto_save: document.getElementById('setting-auto-save').checked,
+          confidence_threshold: parseFloat(document.getElementById('setting-confidence-threshold').value) / 100,
+          enable_batch: document.getElementById('setting-enable-batch').checked,
+          max_batch_size: parseInt(document.getElementById('setting-max-batch-size').value)
         };
         
-        if (isNaN(newSettings.confidence_threshold) || newSettings.confidence_threshold < 0 || newSettings.confidence_threshold > 1) {
-          alert('無効な値です。0.0〜1.0の範囲で入力してください。');
-          return;
-        }
-        
-        // 設定を保存
-        await axios.post('/api/ocr-settings', newSettings, {
+        await axios.post('/api/ocr-settings', settings, {
           headers: { 
             'Authorization': 'Bearer ' + token,
             'Content-Type': 'application/json'
           }
         });
         
+        settingsModal.classList.add('hidden');
         alert('✓ 設定を保存しました');
         
       } catch (error) {
-        console.error('Failed to update settings:', error);
-        alert('設定の更新に失敗しました');
+        console.error('Failed to save settings:', error);
+        alert('設定の保存に失敗しました');
       }
     });
 

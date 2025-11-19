@@ -1138,6 +1138,9 @@ app.get('/dashboard', (c) => {
           <a href="/deals" class="border-b-2 border-blue-600 py-4 px-1 text-sm font-semibold text-blue-600 hover:text-blue-700 transition">
             <i class="fas fa-list mr-2"></i>案件一覧
           </a>
+          <a href="/property-ocr" class="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 transition">
+            <i class="fas fa-camera mr-2"></i>物件OCR
+          </a>
         </nav>
       </div>
     </div>
@@ -1284,6 +1287,591 @@ app.get('/dashboard', (c) => {
 // 旧/galleryパスからのリダイレクト（後方互換性のため）
 app.get('/gallery', (c) => {
   return c.redirect('/showcase', 301);
+});
+
+// 物件OCRアップロード専用ページ
+app.get('/property-ocr', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>物件OCRアップロード - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+    .drop-zone {
+      border: 3px dashed #cbd5e1;
+      transition: all 0.3s ease;
+      min-height: 300px;
+    }
+    .drop-zone.dragover {
+      border-color: #3b82f6;
+      background-color: #eff6ff;
+      transform: scale(1.02);
+    }
+    .file-preview {
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .file-preview:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    .file-preview img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+    .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(239, 68, 68, 0.9);
+      color: white;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .remove-btn:hover {
+      background: rgba(220, 38, 38, 1);
+      transform: scale(1.1);
+    }
+    .result-card {
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-4">
+        <div class="flex items-center">
+          <a href="/deals" class="text-gray-300 hover:text-white mr-4 transition">
+            <i class="fas fa-arrow-left text-lg"></i>
+          </a>
+          <a href="/dashboard" class="flex items-center space-x-3 hover:opacity-80 transition">
+            <div class="header-logo">
+              <img src="/logo-3d.png" alt="Logo" class="w-6 h-6" />
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
+          </a>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span id="user-name" class="text-gray-200"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- ページヘッダー -->
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">
+        <i class="fas fa-camera text-blue-600 mr-3"></i>
+        物件OCRアップロード
+      </h2>
+      <p class="text-gray-600">登記簿謄本や物件資料から物件情報を自動抽出します（最大10ファイル）</p>
+    </div>
+
+    <!-- ステップインジケーター -->
+    <div class="mb-8 flex items-center justify-center space-x-4">
+      <div class="flex items-center">
+        <div id="step1-indicator" class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+          1
+        </div>
+        <span class="ml-2 text-gray-700 font-medium">ファイル選択</span>
+      </div>
+      <div class="w-16 h-1 bg-gray-300" id="step1-line"></div>
+      <div class="flex items-center">
+        <div id="step2-indicator" class="w-10 h-10 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center font-bold">
+          2
+        </div>
+        <span class="ml-2 text-gray-500 font-medium">OCR処理</span>
+      </div>
+      <div class="w-16 h-1 bg-gray-300" id="step2-line"></div>
+      <div class="flex items-center">
+        <div id="step3-indicator" class="w-10 h-10 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center font-bold">
+          3
+        </div>
+        <span class="ml-2 text-gray-500 font-medium">結果確認</span>
+      </div>
+    </div>
+
+    <!-- ドロップゾーン -->
+    <div id="upload-section" class="bg-white rounded-xl shadow-lg p-8 mb-6">
+      <div id="drop-zone" class="drop-zone rounded-lg flex flex-col items-center justify-center cursor-pointer">
+        <i class="fas fa-cloud-upload-alt text-6xl text-blue-500 mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-800 mb-2">ファイルをドラッグ＆ドロップ</h3>
+        <p class="text-gray-600 mb-4">または</p>
+        <label for="file-input" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 cursor-pointer transition text-lg font-medium">
+          <i class="fas fa-folder-open mr-2"></i>ファイルを選択
+        </label>
+        <input type="file" id="file-input" accept="image/*,application/pdf,.pdf" class="hidden" multiple>
+        <p class="text-sm text-gray-500 mt-4">PNG, JPG, JPEG, WEBP, PDF形式 / 最大10ファイル / 1ファイル最大10MB</p>
+      </div>
+
+      <!-- ファイルプレビュー -->
+      <div id="file-preview-container" class="hidden mt-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          選択されたファイル（<span id="file-count">0</span>個）
+        </h3>
+        <div id="file-preview-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+          <!-- プレビューがここに表示されます -->
+        </div>
+        <div class="flex justify-end space-x-4">
+          <button id="clear-files-btn" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            <i class="fas fa-times mr-2"></i>クリア
+          </button>
+          <button id="process-btn" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-medium">
+            <i class="fas fa-magic mr-2"></i>OCR処理を開始
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 処理中表示 -->
+    <div id="processing-section" class="hidden bg-white rounded-xl shadow-lg p-8 mb-6">
+      <div class="text-center">
+        <i class="fas fa-spinner fa-spin text-6xl text-blue-600 mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-800 mb-2">OCR処理中...</h3>
+        <p class="text-gray-600">物件情報を抽出しています。しばらくお待ちください。</p>
+      </div>
+    </div>
+
+    <!-- 結果表示 -->
+    <div id="result-section" class="hidden">
+      <div class="bg-white rounded-xl shadow-lg p-8 mb-6 result-card">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-2xl font-bold text-gray-900">
+            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+            抽出完了
+          </h3>
+          <span id="processed-files-count" class="text-sm text-gray-600"></span>
+        </div>
+
+        <!-- 抽出結果フォーム -->
+        <form id="extracted-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- 物件タイトル -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">物件タイトル</label>
+            <input type="text" id="extracted_title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 所在地 -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">所在地</label>
+            <input type="text" id="extracted_location" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 最寄り駅 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">最寄り駅</label>
+            <input type="text" id="extracted_station" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 徒歩分数 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">徒歩分数</label>
+            <input type="text" id="extracted_walk_minutes" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 土地面積 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">土地面積</label>
+            <input type="text" id="extracted_land_area" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 建物面積 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">建物面積</label>
+            <input type="text" id="extracted_building_area" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 用途地域 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">用途地域</label>
+            <input type="text" id="extracted_zoning" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 建ぺい率 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">建ぺい率</label>
+            <input type="text" id="extracted_building_coverage" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 容積率 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">容積率</label>
+            <input type="text" id="extracted_floor_area_ratio" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 価格 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">価格</label>
+            <input type="text" id="extracted_price" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 構造 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">構造</label>
+            <input type="text" id="extracted_structure" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 築年月 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">築年月</label>
+            <input type="text" id="extracted_built_year" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 道路情報 -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">道路情報</label>
+            <input type="text" id="extracted_road_info" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 現況 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">現況</label>
+            <input type="text" id="extracted_current_status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 表面利回り -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">表面利回り</label>
+            <input type="text" id="extracted_yield" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <!-- 賃貸状況 -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">賃貸状況</label>
+            <input type="text" id="extracted_occupancy" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+        </form>
+
+        <!-- アクションボタン -->
+        <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+          <button id="reset-btn" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            <i class="fas fa-redo mr-2"></i>最初からやり直す
+          </button>
+          <button id="create-deal-btn" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-medium">
+            <i class="fas fa-plus-circle mr-2"></i>この情報で案件を作成
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    const token = localStorage.getItem('auth_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!token) {
+      window.location.href = '/';
+    }
+
+    if (user.name) {
+      document.getElementById('user-name').textContent = user.name;
+    }
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+
+    // 状態管理
+    let selectedFiles = [];
+    let extractedData = null;
+
+    // DOM要素
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const filePreviewContainer = document.getElementById('file-preview-container');
+    const filePreviewGrid = document.getElementById('file-preview-grid');
+    const fileCount = document.getElementById('file-count');
+    const clearFilesBtn = document.getElementById('clear-files-btn');
+    const processBtn = document.getElementById('process-btn');
+    const uploadSection = document.getElementById('upload-section');
+    const processingSection = document.getElementById('processing-section');
+    const resultSection = document.getElementById('result-section');
+    const resetBtn = document.getElementById('reset-btn');
+    const createDealBtn = document.getElementById('create-deal-btn');
+
+    // ステップインジケーター更新
+    function updateStep(step) {
+      const steps = [1, 2, 3];
+      steps.forEach(s => {
+        const indicator = document.getElementById(\`step\${s}-indicator\`);
+        const line = document.getElementById(\`step\${s}-line\`);
+        
+        if (s < step) {
+          indicator.classList.remove('bg-gray-300', 'text-gray-500', 'bg-blue-600');
+          indicator.classList.add('bg-green-600', 'text-white');
+          indicator.innerHTML = '<i class="fas fa-check"></i>';
+          if (line) line.classList.add('bg-green-600');
+        } else if (s === step) {
+          indicator.classList.remove('bg-gray-300', 'text-gray-500');
+          indicator.classList.add('bg-blue-600', 'text-white');
+          indicator.textContent = s;
+        } else {
+          indicator.classList.remove('bg-blue-600', 'bg-green-600');
+          indicator.classList.add('bg-gray-300', 'text-gray-500');
+          indicator.textContent = s;
+        }
+      });
+    }
+
+    // ドラッグ&ドロップ
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      
+      const files = Array.from(e.dataTransfer.files);
+      handleFiles(files);
+    });
+
+    dropZone.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      handleFiles(files);
+    });
+
+    // ファイル処理
+    function handleFiles(files) {
+      // ファイル数チェック
+      if (selectedFiles.length + files.length > 10) {
+        alert('最大10ファイルまでアップロードできます');
+        return;
+      }
+
+      files.forEach(file => {
+        // ファイル形式チェック
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+        if (!allowedTypes.includes(file.type.toLowerCase())) {
+          alert(\`"\${file.name}" は対応していないファイル形式です\`);
+          return;
+        }
+
+        // ファイルサイズチェック
+        if (file.size > 10 * 1024 * 1024) {
+          alert(\`"\${file.name}" のサイズが大きすぎます（最大10MB）\`);
+          return;
+        }
+
+        selectedFiles.push(file);
+      });
+
+      updateFilePreview();
+    }
+
+    // プレビュー更新
+    function updateFilePreview() {
+      if (selectedFiles.length === 0) {
+        filePreviewContainer.classList.add('hidden');
+        return;
+      }
+
+      filePreviewContainer.classList.remove('hidden');
+      fileCount.textContent = selectedFiles.length;
+      filePreviewGrid.innerHTML = '';
+
+      selectedFiles.forEach((file, index) => {
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'file-preview bg-white rounded-lg shadow overflow-hidden';
+        
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            previewDiv.innerHTML = \`
+              <img src="\${e.target.result}" alt="\${file.name}">
+              <div class="p-2 text-xs text-gray-600 truncate">\${file.name}</div>
+              <button class="remove-btn" onclick="removeFile(\${index})">
+                <i class="fas fa-times"></i>
+              </button>
+            \`;
+          };
+          reader.readAsDataURL(file);
+        } else {
+          previewDiv.innerHTML = \`
+            <div class="h-[150px] bg-gray-100 flex items-center justify-center">
+              <i class="fas fa-file-pdf text-5xl text-red-500"></i>
+            </div>
+            <div class="p-2 text-xs text-gray-600 truncate">\${file.name}</div>
+            <button class="remove-btn" onclick="removeFile(\${index})">
+              <i class="fas fa-times"></i>
+            </button>
+          \`;
+        }
+
+        filePreviewGrid.appendChild(previewDiv);
+      });
+    }
+
+    // ファイル削除
+    window.removeFile = function(index) {
+      selectedFiles.splice(index, 1);
+      updateFilePreview();
+    };
+
+    // 全ファイルクリア
+    clearFilesBtn.addEventListener('click', () => {
+      selectedFiles = [];
+      fileInput.value = '';
+      updateFilePreview();
+    });
+
+    // OCR処理開始
+    processBtn.addEventListener('click', async () => {
+      if (selectedFiles.length === 0) {
+        alert('ファイルを選択してください');
+        return;
+      }
+
+      uploadSection.classList.add('hidden');
+      processingSection.classList.remove('hidden');
+      updateStep(2);
+
+      try {
+        const formData = new FormData();
+        selectedFiles.forEach((file, index) => {
+          formData.append(\`file\${index}\`, file);
+        });
+
+        const response = await axios.post('/api/property-ocr/extract-multiple', formData, {
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        extractedData = response.data.data;
+        
+        // 結果をフォームに表示
+        displayExtractedData(extractedData);
+        
+        processingSection.classList.add('hidden');
+        resultSection.classList.remove('hidden');
+        updateStep(3);
+
+        // 処理したファイル数表示
+        document.getElementById('processed-files-count').textContent = 
+          \`\${response.data.processed_files.length} / \${response.data.total_files} ファイル処理完了\`;
+
+      } catch (error) {
+        console.error('OCR error:', error);
+        alert('OCR処理に失敗しました: ' + (error.response?.data?.error || error.message));
+        processingSection.classList.add('hidden');
+        uploadSection.classList.remove('hidden');
+        updateStep(1);
+      }
+    });
+
+    // 抽出データ表示
+    function displayExtractedData(data) {
+      document.getElementById('extracted_title').value = data.property_name || '';
+      document.getElementById('extracted_location').value = data.location || '';
+      document.getElementById('extracted_station').value = data.station || '';
+      document.getElementById('extracted_walk_minutes').value = data.walk_minutes || '';
+      document.getElementById('extracted_land_area').value = data.land_area || '';
+      document.getElementById('extracted_building_area').value = data.building_area || '';
+      document.getElementById('extracted_zoning').value = data.zoning || '';
+      document.getElementById('extracted_building_coverage').value = data.building_coverage || '';
+      document.getElementById('extracted_floor_area_ratio').value = data.floor_area_ratio || '';
+      document.getElementById('extracted_price').value = data.price || '';
+      document.getElementById('extracted_structure').value = data.structure || '';
+      document.getElementById('extracted_built_year').value = data.built_year || '';
+      document.getElementById('extracted_road_info').value = data.road_info || '';
+      document.getElementById('extracted_current_status').value = data.current_status || '';
+      document.getElementById('extracted_yield').value = data.yield || '';
+      document.getElementById('extracted_occupancy').value = data.occupancy || '';
+    }
+
+    // リセット
+    resetBtn.addEventListener('click', () => {
+      selectedFiles = [];
+      extractedData = null;
+      fileInput.value = '';
+      resultSection.classList.add('hidden');
+      uploadSection.classList.remove('hidden');
+      updateStep(1);
+      updateFilePreview();
+    });
+
+    // 案件作成
+    createDealBtn.addEventListener('click', () => {
+      // 抽出データをlocalStorageに保存して案件作成ページへ遷移
+      const formData = {
+        title: document.getElementById('extracted_title').value,
+        location: document.getElementById('extracted_location').value,
+        station: document.getElementById('extracted_station').value,
+        walk_minutes: document.getElementById('extracted_walk_minutes').value,
+        land_area: document.getElementById('extracted_land_area').value,
+        zoning: document.getElementById('extracted_zoning').value,
+        building_coverage: document.getElementById('extracted_building_coverage').value,
+        floor_area_ratio: document.getElementById('extracted_floor_area_ratio').value,
+        desired_price: document.getElementById('extracted_price').value,
+        road_info: document.getElementById('extracted_road_info').value,
+        current_status: document.getElementById('extracted_current_status').value
+      };
+
+      localStorage.setItem('ocr_extracted_data', JSON.stringify(formData));
+      window.location.href = '/deals/new';
+    });
+
+    // 初期化
+    updateStep(1);
+  </script>
+</body>
+</html>
+  `);
 });
 
 // 事業ショーケースページ（旧ギャラリー）
@@ -1857,9 +2445,14 @@ app.get('/deals', (c) => {
         <h2 class="text-2xl font-bold text-gray-900">案件一覧</h2>
         <p class="text-gray-600 mt-1">全ての土地仕入れ案件を管理します</p>
       </div>
-      <a href="/deals/new" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition shadow-lg">
-        <i class="fas fa-plus mr-2"></i>新規案件作成
-      </a>
+      <div class="flex space-x-3">
+        <a href="/property-ocr" class="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-3 rounded-lg transition shadow-lg">
+          <i class="fas fa-camera mr-2"></i>OCRで作成
+        </a>
+        <a href="/deals/new" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition shadow-lg">
+          <i class="fas fa-plus mr-2"></i>新規案件作成
+        </a>
+      </div>
     </div>
 
     <!-- フィルター・検索 -->
@@ -2335,6 +2928,25 @@ app.get('/deals/new', (c) => {
         </div>
       </div>
 
+      <!-- 買取条件チェック結果 -->
+      <div id="purchase-check-container" class="mt-6 hidden">
+        <div class="border-t border-gray-200 pt-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-clipboard-check text-blue-600 mr-2"></i>
+            買取条件チェック結果
+          </h3>
+          
+          <div id="purchase-check-result" class="rounded-lg p-6">
+            <!-- 結果がここに動的に表示されます -->
+          </div>
+
+          <div class="mt-4 text-sm text-gray-600">
+            <i class="fas fa-info-circle mr-1"></i>
+            物件情報を入力すると、自動的に買取条件をチェックします
+          </div>
+        </div>
+      </div>
+
       <!-- ボタン -->
       <div class="flex justify-end space-x-4 mt-6">
         <a href="/deals" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
@@ -2613,8 +3225,183 @@ app.get('/deals/new', (c) => {
       }
     });
 
+    // リアルタイム買取条件チェック
+    let checkTimeout = null;
+    
+    // 買取条件チェック実行
+    async function checkPurchaseCriteria() {
+      const location = document.getElementById('location').value;
+      const walkMinutes = document.getElementById('walk_minutes').value;
+      const landArea = document.getElementById('land_area').value;
+      const buildingCoverage = document.getElementById('building_coverage').value;
+      const floorAreaRatio = document.getElementById('floor_area_ratio').value;
+
+      // 最低限必要なデータが入力されているかチェック
+      if (!location || !landArea) {
+        document.getElementById('purchase-check-container').classList.add('hidden');
+        return;
+      }
+
+      // APIリクエストデータ準備
+      const checkData = {
+        location: location,
+        walk_minutes: walkMinutes ? parseInt(walkMinutes) : undefined,
+        land_area: landArea,
+        building_coverage: buildingCoverage,
+        floor_area_ratio: floorAreaRatio,
+        station: document.getElementById('station').value || undefined,
+        zoning: document.getElementById('zoning').value || undefined,
+        road_info: document.getElementById('road_info').value || undefined
+      };
+
+      try {
+        const response = await axios.post('/api/purchase-criteria/check', checkData, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        const result = response.data;
+        displayCheckResult(result);
+        document.getElementById('purchase-check-container').classList.remove('hidden');
+      } catch (error) {
+        console.error('Purchase criteria check error:', error);
+        document.getElementById('purchase-check-container').classList.add('hidden');
+      }
+    }
+
+    // チェック結果表示
+    function displayCheckResult(result) {
+      const container = document.getElementById('purchase-check-result');
+      
+      // ステータスに応じた色とアイコン
+      let statusColor, statusBg, statusIcon, statusText;
+      if (result.status === 'PASS') {
+        statusColor = 'text-green-700';
+        statusBg = 'bg-green-50 border-green-200';
+        statusIcon = 'fa-check-circle';
+        statusText = '合格';
+      } else if (result.status === 'SPECIAL_REVIEW') {
+        statusColor = 'text-yellow-700';
+        statusBg = 'bg-yellow-50 border-yellow-200';
+        statusIcon = 'fa-exclamation-triangle';
+        statusText = '要検討';
+      } else {
+        statusColor = 'text-red-700';
+        statusBg = 'bg-red-50 border-red-200';
+        statusIcon = 'fa-times-circle';
+        statusText = '不合格';
+      }
+
+      // スコアバー
+      const scorePercentage = result.score;
+      let scoreBarColor;
+      if (scorePercentage >= 80) {
+        scoreBarColor = 'bg-green-500';
+      } else if (scorePercentage >= 60) {
+        scoreBarColor = 'bg-yellow-500';
+      } else {
+        scoreBarColor = 'bg-red-500';
+      }
+
+      // 理由リスト
+      const reasonsList = result.reasons && result.reasons.length > 0
+        ? result.reasons.map(r => \`<li class="flex items-start"><i class="fas fa-angle-right mt-1 mr-2 text-gray-400"></i><span>\${r}</span></li>\`).join('')
+        : '<li class="text-gray-500">理由情報なし</li>';
+
+      container.innerHTML = \`
+        <div class="border \${statusBg} rounded-lg p-4">
+          <!-- ステータスヘッダー -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center">
+              <i class="fas \${statusIcon} \${statusColor} text-2xl mr-3"></i>
+              <div>
+                <div class="text-lg font-bold \${statusColor}">\${statusText}</div>
+                <div class="text-sm text-gray-600">買取条件チェック結果</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-3xl font-bold \${statusColor}">\${result.score}</div>
+              <div class="text-sm text-gray-600">点 / 100点</div>
+            </div>
+          </div>
+
+          <!-- スコアバー -->
+          <div class="mb-4">
+            <div class="w-full bg-gray-200 rounded-full h-3">
+              <div class="\${scoreBarColor} h-3 rounded-full transition-all duration-500" style="width: \${scorePercentage}%"></div>
+            </div>
+          </div>
+
+          <!-- 理由リスト -->
+          <div>
+            <div class="font-semibold text-gray-700 mb-2">評価理由:</div>
+            <ul class="space-y-1 text-sm text-gray-700">
+              \${reasonsList}
+            </ul>
+          </div>
+        </div>
+      \`;
+    }
+
+    // デバウンス付きイベントリスナー追加
+    function addDebouncedListener(elementId) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.addEventListener('input', () => {
+          clearTimeout(checkTimeout);
+          checkTimeout = setTimeout(checkPurchaseCriteria, 800);
+        });
+      }
+    }
+
+    // チェック対象フィールドにイベントリスナー追加
+    addDebouncedListener('location');
+    addDebouncedListener('station');
+    addDebouncedListener('walk_minutes');
+    addDebouncedListener('land_area');
+    addDebouncedListener('zoning');
+    addDebouncedListener('building_coverage');
+    addDebouncedListener('floor_area_ratio');
+    addDebouncedListener('road_info');
+
+    // OCR抽出データの自動入力
+    function loadOCRExtractedData() {
+      const ocrData = localStorage.getItem('ocr_extracted_data');
+      if (ocrData) {
+        try {
+          const data = JSON.parse(ocrData);
+          
+          // フォームに自動入力
+          if (data.title) document.getElementById('title').value = data.title;
+          if (data.location) document.getElementById('location').value = data.location;
+          if (data.station) document.getElementById('station').value = data.station;
+          if (data.walk_minutes) document.getElementById('walk_minutes').value = data.walk_minutes;
+          if (data.land_area) document.getElementById('land_area').value = data.land_area;
+          if (data.zoning) document.getElementById('zoning').value = data.zoning;
+          if (data.building_coverage) document.getElementById('building_coverage').value = data.building_coverage;
+          if (data.floor_area_ratio) document.getElementById('floor_area_ratio').value = data.floor_area_ratio;
+          if (data.desired_price) document.getElementById('desired_price').value = data.desired_price;
+          if (data.road_info) document.getElementById('road_info').value = data.road_info;
+          if (data.current_status) document.getElementById('current_status').value = data.current_status;
+          
+          // localStorageからデータを削除（再利用を防ぐ）
+          localStorage.removeItem('ocr_extracted_data');
+          
+          // 買取条件チェックを実行
+          setTimeout(() => {
+            checkPurchaseCriteria();
+          }, 500);
+          
+          // 通知表示
+          alert('OCRで抽出した物件情報を入力しました。内容を確認してください。');
+        } catch (error) {
+          console.error('Failed to load OCR data:', error);
+        }
+      }
+    }
+
     // 初期化
     loadSellers();
+    loadOCRExtractedData();
   </script>
 </body>
 </html>

@@ -7449,15 +7449,3 @@ export default {
     }
   }
 };
-       }
-        } catch (error) {
-          console.error(`Error processing deal ${deal.id}:`, error);
-        }
-      }
-
-      console.log(`Cron job completed. Sent ${sentCount} notifications.`);
-    } catch (error) {
-      console.error('Cron job error:', error);
-    }
-  }
-};

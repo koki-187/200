@@ -3,15 +3,17 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.6.0)**: https://0d5a1e68.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest v3.7.0)**: https://2ba44074.real-estate-200units-v2.pages.dev 🆕
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Showcase**: https://0d5a1e68.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR UI強化版)**: https://0d5a1e68.real-estate-200units-v2.pages.dev/deals/new 🆕
-- **Deal Detail (with Map)**: https://0d5a1e68.real-estate-200units-v2.pages.dev/deals/:id
-- **OCR History API**: https://0d5a1e68.real-estate-200units-v2.pages.dev/api/ocr-history 🆕
-- **Property Templates API**: https://0d5a1e68.real-estate-200units-v2.pages.dev/api/property-templates 🆕
-- **Purchase Criteria API**: https://0d5a1e68.real-estate-200units-v2.pages.dev/api/purchase-criteria
-- **Geocoding API**: https://0d5a1e68.real-estate-200units-v2.pages.dev/api/geocoding
+- **Development URL**: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
+- **Showcase**: https://2ba44074.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation (OCR UI強化版)**: https://2ba44074.real-estate-200units-v2.pages.dev/deals/new 🆕
+- **Deal Detail (with Map)**: https://2ba44074.real-estate-200units-v2.pages.dev/deals/:id
+- **OCR History API**: https://2ba44074.real-estate-200units-v2.pages.dev/api/ocr-history 🆕
+- **Property Templates API**: https://2ba44074.real-estate-200units-v2.pages.dev/api/property-templates 🆕
+- **OCR Settings API**: https://2ba44074.real-estate-200units-v2.pages.dev/api/ocr-settings 🆕
+- **Purchase Criteria API**: https://2ba44074.real-estate-200units-v2.pages.dev/api/purchase-criteria
+- **Geocoding API**: https://2ba44074.real-estate-200units-v2.pages.dev/api/geocoding
 
 ### デフォルトログイン情報
 
@@ -39,9 +41,9 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.6.0 (Production Deployed)
+- **バージョン**: v3.7.0 (Production Deployed)
 - **進捗状況**: Phase 1完了（100%）+ Phase 2進行中、本番環境デプロイ完了 ✅
-- **最新改善**: OCR UI大幅改善（プログレスバー、エラーハンドリング、結果編集、信頼度可視化、履歴モーダル） 🆕
+- **最新改善**: テンプレート管理UI・OCR設定UI実装完了 🆕
 - **デプロイ日**: 2025-11-19
 
 ## 主要機能
@@ -556,6 +558,61 @@ GenSpark AI Assistant + User
 
 ## 更新履歴
 
+### v3.7.0 (2025-11-19) ⚙️
+**テンプレート管理UI・OCR設定UI実装完了**
+
+新機能:
+- ✅ **テンプレート管理UI実装**: 
+  - テンプレート一覧モーダル（作成/編集/削除/適用機能）
+  - テンプレート作成/編集フォーム（JSON形式入力対応）
+  - テンプレートタイプ選択（apartment, house, land, commercial, custom）
+  - 共有設定（他ユーザーと共有可能）
+  - テンプレート適用でOCRエディタに自動入力
+  - 使用回数トラッキング
+
+- ✅ **OCR設定UI実装**: 
+  - 設定モーダル（4つの主要設定項目）
+  - 自動保存ON/OFF切り替え
+  - 信頼度閾値設定（スライダー、0-100%）
+  - バッチ処理ON/OFF切り替え
+  - 最大バッチサイズ設定（1-50ファイル）
+
+- ✅ **OCR設定API実装**: 
+  - GET /api/ocr-settings - 設定取得（デフォルト値対応）
+  - PUT /api/ocr-settings - 設定更新/作成
+  - DELETE /api/ocr-settings - 設定リセット
+  - バリデーション実装（信頼度0-1、バッチサイズ1-50）
+
+- ✅ **認証ミドルウェア強化**: 
+  - DBからuserオブジェクトを取得してコンテキストに設定
+  - 後方互換性のためuserId/userRole/userを全て設定
+  - OCR設定ルートとテンプレートルートに認証適用
+
+UI/UX改善:
+- OCRヘッダーに3つのボタン追加（テンプレート、履歴、設定）
+- 統一されたモーダルデザイン
+- フォームバリデーションとエラー表示
+- JSON形式の視覚的フィードバック
+
+技術的改善:
+- src/routes/ocr-settings.ts 新規作成（176行）
+- src/utils/auth.ts の認証ミドルウェア強化
+- テンプレートとOCR設定ルートに認証ミドルウェア適用
+- 約640行の新規コード追加
+
+テスト結果:
+- ✅ OCR設定GET（デフォルト値取得成功）
+- ✅ OCR設定PUT（値の作成・更新成功）
+- ✅ OCR設定GET（更新値の確認成功）
+- ✅ テンプレートGET（空リスト取得成功）
+- ✅ テンプレートPOST（新規作成成功）
+
+デプロイ情報:
+- 本番URL: https://2ba44074.real-estate-200units-v2.pages.dev
+- バックアップ作成: v3.7.0 テンプレート管理・設定UI (26.5MB)
+- GitHub最新コミット: e136553
+- サンドボックスURL: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
+
 ### v3.6.0 (2025-11-19) 🎨
 **OCR フロントエンドUI大幅改善**
 
@@ -971,7 +1028,7 @@ UX改善:
 ---
 
 **最終更新**: 2025-11-19
-**バージョン**: v3.6.0
+**バージョン**: v3.7.0
 **進捗率**: 96% (48/50タスク実装完了)、60% (30/50動作確認済み) ✅
 
 ---

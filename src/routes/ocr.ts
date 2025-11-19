@@ -127,7 +127,10 @@ ocr.post('/extract', async (c) => {
 
     const openaiApiKey = c.env.OPENAI_API_KEY;
     if (!openaiApiKey) {
-      return c.json({ error: 'OpenAI API keyが設定されていません' }, 500);
+      return c.json({ 
+        error: 'OpenAI API keyが設定されていません',
+        details: '管理者に連絡して、OpenAI API keyを設定してもらってください'
+      }, 500);
     }
 
     const results = [];
@@ -202,22 +205,31 @@ ocr.post('/extract', async (c) => {
         });
       } catch (fileError) {
         console.error(`Error processing ${file.name}:`, fileError);
+        results.push({
+          fileName: file.name,
+          success: false,
+          error: fileError instanceof Error ? fileError.message : 'ファイル処理に失敗しました'
+        });
       }
     }
 
-    if (results.length === 0) {
+    // 成功したファイルが1つもない場合
+    const successfulResults = results.filter(r => r.success);
+    if (successfulResults.length === 0) {
       return c.json({ 
         error: '物件情報を抽出できませんでした',
-        details: '有効な情報が含まれているファイルを確認してください'
+        details: '有効な情報が含まれているファイルを確認してください。以下のファイルで問題が発生しました: ' + results.map(r => r.fileName).join(', ')
       }, 500);
     }
 
     return c.json({ 
       success: true,
       results: results,
-      count: results.length,
+      count: successfulResults.length,
+      totalFiles: files.length,
+      failedCount: results.length - successfulResults.length,
       // 単一ファイルの場合は後方互換性のためextractedフィールドも返す
-      extracted: results.length === 1 ? results[0].extracted : undefined
+      extracted: results.length === 1 && results[0].success ? results[0].extracted : undefined
     });
 
   } catch (error) {

@@ -155,6 +155,15 @@ propertyOCR.post('/extract-multiple', async (c) => {
       }
     }
     
+    // OpenAI API Keyチェック
+    const openaiApiKey = c.env.OPENAI_API_KEY;
+    if (!openaiApiKey) {
+      return c.json({ 
+        error: 'OpenAI API Keyが設定されていません',
+        details: '管理者に連絡して、OpenAI API keyを設定してもらってください。環境変数 OPENAI_API_KEY が必要です'
+      }, 500);
+    }
+    
     // 各ファイルをOCR処理
     const extractionResults: any[] = [];
     const processedFiles: string[] = [];
@@ -171,7 +180,7 @@ propertyOCR.post('/extract-multiple', async (c) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${c.env.OPENAI_API_KEY}`
+            'Authorization': `Bearer ${openaiApiKey}`
           },
           body: JSON.stringify({
             model: 'gpt-4o',
@@ -221,6 +230,8 @@ propertyOCR.post('/extract-multiple', async (c) => {
               const extractedData = JSON.parse(jsonStr);
               extractionResults.push(extractedData);
               processedFiles.push(file.name);
+            } else {
+              console.error(`No JSON found in response for ${file.name}`);
             }
           } catch (parseError) {
             console.error(`JSON parse error for ${file.name}:`, parseError);
@@ -233,9 +244,10 @@ propertyOCR.post('/extract-multiple', async (c) => {
     }
     
     if (extractionResults.length === 0) {
+      const failedFiles = files.map(f => f.name).filter(name => !processedFiles.includes(name));
       return c.json({ 
         error: '物件情報を抽出できませんでした',
-        details: '有効な情報が含まれているファイルを確認してください'
+        details: '有効な情報が含まれているファイルを確認してください。処理に失敗したファイル: ' + (failedFiles.length > 0 ? failedFiles.join(', ') : 'すべてのファイル')
       }, 500);
     }
     

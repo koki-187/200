@@ -3268,9 +3268,11 @@ app.get('/deals/new', (c) => {
           const merged = {};
           let totalConfidence = 0;
           let confidenceCount = 0;
+          let successCount = 0;
           
           data.results.forEach(result => {
             if (result.success && result.extracted) {
+              successCount++;
               Object.assign(merged, result.extracted);
               if (result.extracted.confidence) {
                 totalConfidence += result.extracted.confidence;
@@ -3278,6 +3280,20 @@ app.get('/deals/new', (c) => {
               }
             }
           });
+          
+          // 全てのファイルが失敗した場合
+          if (successCount === 0) {
+            const errorObj = {
+              response: {
+                status: 500,
+                data: {
+                  error: '物件情報を抽出できませんでした'
+                }
+              }
+            };
+            displayOCRError(errorObj);
+            return;
+          }
           
           // 平均信頼度計算
           const avgConfidence = confidenceCount > 0 ? totalConfidence / confidenceCount : 0.5;
@@ -3288,6 +3304,17 @@ app.get('/deals/new', (c) => {
           
           // 結果編集UIを表示
           displayOCRResultEditor(merged);
+        } else {
+          // resultsが空の場合
+          const errorObj = {
+            response: {
+              status: 500,
+              data: {
+                error: '物件情報を抽出できませんでした'
+              }
+            }
+          };
+          displayOCRError(errorObj);
         }
       } catch (error) {
         console.error('OCR error:', error);

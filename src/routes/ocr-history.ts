@@ -62,8 +62,8 @@ ocrHistory.post('/', async (c) => {
 });
 
 /**
- * OCR履歴一覧を取得（検索・フィルター対応）
- * GET /api/ocr-history?search=物件名&minConfidence=0.7&maxConfidence=1.0&limit=20&offset=0
+ * OCR履歴一覧を取得（検索・フィルター・ソート・ページネーション対応）
+ * GET /api/ocr-history?search=物件名&minConfidence=0.7&maxConfidence=1.0&limit=20&offset=0&sortBy=date_desc&dateFrom=2025-01-01&dateTo=2025-12-31
  */
 ocrHistory.get('/', async (c) => {
   try {
@@ -77,6 +77,9 @@ ocrHistory.get('/', async (c) => {
     const search = c.req.query('search') || '';
     const minConfidence = parseFloat(c.req.query('minConfidence') || '0');
     const maxConfidence = parseFloat(c.req.query('maxConfidence') || '1');
+    const sortBy = c.req.query('sortBy') || 'date_desc';
+    const dateFrom = c.req.query('dateFrom') || '';
+    const dateTo = c.req.query('dateTo') || '';
 
     // 動的なWHERE句を構築
     let whereConditions = ['user_id = ?'];
@@ -87,7 +90,43 @@ ocrHistory.get('/', async (c) => {
       params.push(minConfidence, maxConfidence);
     }
 
+    // 日付範囲フィルター
+    if (dateFrom) {
+      whereConditions.push('DATE(created_at) >= ?');
+      params.push(dateFrom);
+    }
+    if (dateTo) {
+      whereConditions.push('DATE(created_at) <= ?');
+      params.push(dateTo);
+    }
+
     const whereClause = whereConditions.join(' AND ');
+
+    // ソート条件を決定
+    let orderBy = 'created_at DESC';
+    switch (sortBy) {
+      case 'date_asc':
+        orderBy = 'created_at ASC';
+        break;
+      case 'date_desc':
+        orderBy = 'created_at DESC';
+        break;
+      case 'confidence_asc':
+        orderBy = 'confidence_score ASC';
+        break;
+      case 'confidence_desc':
+        orderBy = 'confidence_score DESC';
+        break;
+    }
+
+    // 総件数を取得（ページネーション用）
+    const countResult = await c.env.DB.prepare(`
+      SELECT COUNT(*) as total
+      FROM ocr_history
+      WHERE ${whereClause}
+    `).bind(...params).first();
+
+    const totalCount = countResult?.total || 0;
 
     const { results } = await c.env.DB.prepare(`
       SELECT 
@@ -100,7 +139,7 @@ ocrHistory.get('/', async (c) => {
         created_at
       FROM ocr_history
       WHERE ${whereClause}
-      ORDER BY created_at DESC
+      ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
     `).bind(...params, limit, offset).all();
 
@@ -111,9 +150,10 @@ ocrHistory.get('/', async (c) => {
       extracted_data: JSON.parse(row.extracted_data)
     }));
 
-    // 検索フィルター（フロントエンド側で物件名検索）
+    // 検索フィルター（物件名・所在地検索）
+    let filteredHistories = histories;
     if (search) {
-      histories = histories.filter((h: any) => {
+      filteredHistories = histories.filter((h: any) => {
         const data = h.extracted_data;
         const propertyName = data.property_name?.value || data.property_name || '';
         const location = data.location?.value || data.location || '';
@@ -123,12 +163,16 @@ ocrHistory.get('/', async (c) => {
 
     return c.json({
       success: true,
-      histories,
-      count: histories.length,
+      histories: filteredHistories,
+      total: totalCount,
+      count: filteredHistories.length,
       filters: {
         search,
         minConfidence,
-        maxConfidence
+        maxConfidence,
+        sortBy,
+        dateFrom,
+        dateTo
       }
     });
 

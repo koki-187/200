@@ -8,11 +8,6 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// 認証ミドルウェアを適用（presetsエンドポイントは除外）
-app.use('/', authMiddleware);
-app.use('/:id', authMiddleware);
-app.use('/:id/use', authMiddleware);
-
 // プリセットテンプレート定義（土地仕入れ業務特化）
 const PRESET_TEMPLATES = {
   residential_land: {

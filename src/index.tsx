@@ -994,15 +994,19 @@ app.get('/purchase-criteria', (c) => {
         const resultDiv = document.getElementById('test-result');
         const contentDiv = document.getElementById('test-result-content');
 
+        // APIは overall_result と check_score を返す
+        const status = result.overall_result || result.status;
+        const score = result.check_score !== undefined ? result.check_score : result.score;
+
         let statusColor = 'gray';
         let statusIcon = 'question-circle';
-        if (result.status === 'PASS') {
+        if (status === 'PASS') {
           statusColor = 'green';
           statusIcon = 'check-circle';
-        } else if (result.status === 'SPECIAL_REVIEW') {
+        } else if (status === 'SPECIAL_REVIEW') {
           statusColor = 'yellow';
           statusIcon = 'clipboard-check';
-        } else if (result.status === 'FAIL') {
+        } else if (status === 'FAIL') {
           statusColor = 'red';
           statusIcon = 'times-circle';
         }
@@ -1015,9 +1019,9 @@ app.get('/purchase-criteria', (c) => {
             <div class="flex items-center justify-between">
               <div>
                 <i class="fas fa-\${statusIcon} text-\${statusColor}-600 mr-2"></i>
-                <strong class="text-\${statusColor}-900">\${result.status}</strong>
+                <strong class="text-\${statusColor}-900">\${status}</strong>
               </div>
-              <div class="text-2xl font-bold text-\${statusColor}-700">\${result.score}点</div>
+              <div class="text-2xl font-bold text-\${statusColor}-700">\${score}点</div>
             </div>
           </div>
           <div class="space-y-2">
@@ -3918,10 +3922,22 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ページ読み込み後に初期化（window.load で確実に実行）
-    window.addEventListener('load', function() {
+    // ページ読み込み後に初期化（複数のタイミングで試行）
+    function ensureOCRElementsInitialized() {
+      if (document.readyState === 'loading') {
+        return; // まだ早すぎる
+      }
       initOCRElements();
-    });
+    }
+    
+    // 複数のタイミングで初期化を試行
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', ensureOCRElementsInitialized);
+    } else {
+      // すでにDOMContentLoaded後なら即座に実行
+      ensureOCRElementsInitialized();
+    }
+    window.addEventListener('load', ensureOCRElementsInitialized);
 
     // OCR結果を一時保存する変数
     let currentOCRData = null;
@@ -4678,10 +4694,22 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ページ読み込み後に初期化（window.load で確実に実行）
-    window.addEventListener('load', function() {
+    // ページ読み込み後に初期化（複数のタイミングで試行）
+    function ensureOCRButtonsInitialized() {
+      if (document.readyState === 'loading') {
+        return; // まだ早すぎる
+      }
       initOCRButtons();
-    });
+    }
+    
+    // 複数のタイミングで初期化を試行
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', ensureOCRButtonsInitialized);
+    } else {
+      // すでにDOMContentLoaded後なら即座に実行
+      ensureOCRButtonsInitialized();
+    }
+    window.addEventListener('load', ensureOCRButtonsInitialized);
 
     // 現在のフィルター状態
     let currentHistoryFilter = { search: '', minConfidence: 0, maxConfidence: 1 };
@@ -5095,14 +5123,18 @@ app.get('/deals/new', (c) => {
     function displayCheckResult(result) {
       const container = document.getElementById('purchase-check-result');
       
+      // APIは overall_result と check_score を返す
+      const status = result.overall_result || result.status;
+      const score = result.check_score !== undefined ? result.check_score : result.score;
+      
       // ステータスに応じた色とアイコン
       let statusColor, statusBg, statusIcon, statusText;
-      if (result.status === 'PASS') {
+      if (status === 'PASS') {
         statusColor = 'text-green-700';
         statusBg = 'bg-green-50 border-green-200';
         statusIcon = 'fa-check-circle';
         statusText = '合格';
-      } else if (result.status === 'SPECIAL_REVIEW') {
+      } else if (status === 'SPECIAL_REVIEW') {
         statusColor = 'text-yellow-700';
         statusBg = 'bg-yellow-50 border-yellow-200';
         statusIcon = 'fa-exclamation-triangle';
@@ -5115,7 +5147,7 @@ app.get('/deals/new', (c) => {
       }
 
       // スコアバー
-      const scorePercentage = result.score;
+      const scorePercentage = score;
       let scoreBarColor;
       if (scorePercentage >= 80) {
         scoreBarColor = 'bg-green-500';
@@ -5143,7 +5175,7 @@ app.get('/deals/new', (c) => {
               </div>
             </div>
             <div class="text-right">
-              <div class="text-3xl font-bold \${statusColor}">\${result.score}</div>
+              <div class="text-3xl font-bold \${statusColor}">\${score}</div>
               <div class="text-sm text-gray-600">点 / 100点</div>
             </div>
           </div>
@@ -5257,10 +5289,22 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ページ読み込み後に初期化（window.load で確実に実行）
-    window.addEventListener('load', function() {
+    // ページ読み込み後に初期化（複数のタイミングで試行）
+    function ensureTemplateButtonsInitialized() {
+      if (document.readyState === 'loading') {
+        return; // まだ早すぎる
+      }
       initTemplateButtons();
-    });
+    }
+    
+    // 複数のタイミングで初期化を試行
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', ensureTemplateButtonsInitialized);
+    } else {
+      // すでにDOMContentLoaded後なら即座に実行
+      ensureTemplateButtonsInitialized();
+    }
+    window.addEventListener('load', ensureTemplateButtonsInitialized);
 
     // テンプレートモーダルを開く
     async function openTemplateModal() {
@@ -5872,10 +5916,22 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ページ読み込み後に初期化（window.load で確実に実行）
-    window.addEventListener('load', function() {
+    // ページ読み込み後に初期化（複数のタイミングで試行）
+    function ensureImportTemplateButtonInitialized() {
+      if (document.readyState === 'loading') {
+        return; // まだ早すぎる
+      }
       initImportTemplateButton();
-    });
+    }
+    
+    // 複数のタイミングで初期化を試行
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', ensureImportTemplateButtonInitialized);
+    } else {
+      // すでにDOMContentLoaded後なら即座に実行
+      ensureImportTemplateButtonInitialized();
+    }
+    window.addEventListener('load', ensureImportTemplateButtonInitialized);
 
     // テンプレートエクスポート（個別）
     function exportTemplate(templateId) {

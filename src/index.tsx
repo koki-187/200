@@ -5065,6 +5065,7 @@ app.get('/deals/new', (c) => {
 
       // APIリクエストデータ準備
       const checkData = {
+        id: 'preview-deal-' + Date.now(),  // 一時的なプレビューID（DBには保存されない）
         location: location,
         walk_minutes: walkMinutes ? parseInt(walkMinutes) : undefined,
         land_area: landArea,

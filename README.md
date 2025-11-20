@@ -63,13 +63,13 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.31.0 (Production - JavaScript初期化問題完全修正) ✅
-- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、本番環境安定化完了 ✅
+- **バージョン**: v3.32.0 (Production - デバッグログ追加版) 🔍
+- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、本番環境デバッグ中 🔍
 - **デプロイ日**: 2025-11-20
-- **本番URL**: https://ae351d13.real-estate-200units-v2.pages.dev ✅
+- **本番URL**: https://7cc3f4c8.real-estate-200units-v2.pages.dev 🔍
 - **ローカル動作**: ✅ 完全に動作
-- **本番環境**: ✅ 完全に動作（JavaScript初期化問題を修正）
-- **最新の変更**: 複数タイミング初期化パターン実装 + APIフィールド名対応
+- **本番環境**: 🔍 デバッグ中（console.log追加でブラウザコンソール確認可能）
+- **最新の変更**: イベントリスナークローン方式 + 詳細デバッグログ追加
 
 ## 主要機能
 
@@ -635,6 +635,50 @@ Private - All Rights Reserved
 GenSpark AI Assistant + User
 
 ## 更新履歴
+
+### v3.32.0 (2025-11-20) 🔍 **DEBUG VERSION**
+**デバッグログ追加版 - ブラウザコンソールでイベント初期化を確認可能**
+
+#### 追加内容
+1. **詳細なデバッグログ追加**
+   - `[Template]` プレフィックスでテンプレートボタン初期化ログ
+   - `[OCR]` プレフィックスでOCRボタン初期化ログ
+   - `[OCR Elements]` プレフィックスでOCR要素初期化ログ
+   - document.readyStateの状態確認ログ
+   - イベントリスナー登録成功/失敗ログ
+
+2. **イベントリスナークローン方式の実装**
+   - ボタン要素をcloneNode(true)で複製
+   - 既存のイベントリスナーを確実にクリア
+   - 新しいボタンに新しいイベントリスナーを追加
+   - イベント重複登録を防止
+
+3. **クリックイベントの防御的処理**
+   - e.preventDefault() - デフォルト動作を防止
+   - e.stopPropagation() - イベントバブリングを防止
+   - ボタンクリック時のログ出力
+
+#### デバッグ手順
+ユーザー様がブラウザで以下を確認可能:
+1. **デベロッパーコンソールを開く**
+2. **ページ読み込み時のログ確認**:
+   - `[Template] Initial readyState: interactive/complete`
+   - `[OCR] Initial readyState: interactive/complete`
+   - `[OCR Elements] Initial readyState: interactive/complete`
+3. **ボタンクリック時のログ確認**:
+   - `[Template] Template select button clicked`
+   - `[OCR] History button clicked`
+   - `[OCR] Settings button clicked`
+
+#### デプロイ情報
+- **本番URL**: https://7cc3f4c8.real-estate-200units-v2.pages.dev
+- **Worker Size**: 748.08 kB
+- **デプロイ日時**: 2025-11-20
+- **目的**: ボタンクリック問題の根本原因特定
+
+#### 期待される結果
+- ボタンをタップしてもログが出ない → イベントリスナー未登録の証拠
+- ボタンをタップしてログが出る → イベントは発火しているが別の問題
 
 ### v3.31.0 (2025-11-20) 🔧 **CRITICAL FIX**
 **JavaScript初期化問題の完全修正**

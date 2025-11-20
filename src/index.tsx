@@ -3882,6 +3882,7 @@ app.get('/deals/new', (c) => {
     
     // DOM要素を安全に取得する関数
     function initOCRElements() {
+      console.log('[OCR Elements] initOCRElements called');
       if (!dropZone) {
         dropZone = document.getElementById('ocr-drop-zone');
         fileInput = document.getElementById('ocr-file-input');
@@ -3890,9 +3891,13 @@ app.get('/deals/new', (c) => {
         ocrStatus = document.getElementById('ocr-status');
         ocrResult = document.getElementById('ocr-result');
         
+        console.log('[OCR Elements] dropZone:', dropZone);
+        console.log('[OCR Elements] fileInput:', fileInput);
+        
         if (dropZone && fileInput) {
           // ドラッグ&ドロップ
           dropZone.addEventListener('dragover', (e) => {
+            console.log('[OCR Elements] Dragover event');
             e.preventDefault();
             dropZone.classList.add('dragover');
           });
@@ -3902,42 +3907,53 @@ app.get('/deals/new', (c) => {
           });
 
           dropZone.addEventListener('drop', (e) => {
+            console.log('[OCR Elements] Drop event');
             e.preventDefault();
             dropZone.classList.remove('dragover');
             const files = Array.from(e.dataTransfer.files).filter(f => 
               f.type.startsWith('image/') || f.type === 'application/pdf'
             );
+            console.log('[OCR Elements] Files dropped:', files.length);
             if (files.length > 0) {
               processMultipleOCR(files);
             }
           });
 
           fileInput.addEventListener('change', (e) => {
+            console.log('[OCR Elements] File input change event');
             const files = Array.from(e.target.files);
+            console.log('[OCR Elements] Files selected:', files.length);
             if (files.length > 0) {
               processMultipleOCR(files);
             }
           });
+          console.log('[OCR Elements] Event listeners attached successfully');
         }
       }
     }
     
     // ページ読み込み後に初期化（複数のタイミングで試行）
     function ensureOCRElementsInitialized() {
+      console.log('[OCR Elements] ensureOCRElementsInitialized called, readyState:', document.readyState);
       if (document.readyState === 'loading') {
+        console.log('[OCR Elements] Still loading, skipping');
         return; // まだ早すぎる
       }
       initOCRElements();
     }
     
     // 複数のタイミングで初期化を試行
+    console.log('[OCR Elements] Initial readyState:', document.readyState);
     if (document.readyState === 'loading') {
+      console.log('[OCR Elements] Adding DOMContentLoaded listener');
       document.addEventListener('DOMContentLoaded', ensureOCRElementsInitialized);
     } else {
       // すでにDOMContentLoaded後なら即座に実行
+      console.log('[OCR Elements] DOM already loaded, initializing immediately');
       ensureOCRElementsInitialized();
     }
     window.addEventListener('load', ensureOCRElementsInitialized);
+    console.log('[OCR Elements] Initialization setup complete');
 
     // OCR結果を一時保存する変数
     let currentOCRData = null;
@@ -4585,16 +4601,30 @@ app.get('/deals/new', (c) => {
       }
 
       // OCR設定モーダル
+      console.log('[OCR] Initializing OCR settings button');
       const settingsModal = document.getElementById('ocr-settings-modal');
       const settingsBtn = document.getElementById('ocr-settings-btn');
       const closeSettingsBtn = document.getElementById('close-settings-modal');
       
+      console.log('[OCR] settingsBtn:', settingsBtn);
+      console.log('[OCR] settingsModal:', settingsModal);
+      
       // 設定ボタン - モーダルを開く
       if (settingsBtn && settingsModal) {
-        settingsBtn.addEventListener('click', async () => {
+        // 既存のリスナーを削除してから追加
+        const newSettingsBtn = settingsBtn.cloneNode(true);
+        settingsBtn.parentNode.replaceChild(newSettingsBtn, settingsBtn);
+        
+        newSettingsBtn.addEventListener('click', async (e) => {
+          console.log('[OCR] Settings button clicked');
+          e.preventDefault();
+          e.stopPropagation();
           settingsModal.classList.remove('hidden');
           await loadSettings();
         });
+        console.log('[OCR] Event listener attached to settings button');
+      } else {
+        console.error('[OCR] Settings button or modal not found');
       }
       
       // 設定モーダルを閉じる
@@ -4668,15 +4698,29 @@ app.get('/deals/new', (c) => {
     });
 
       // 履歴モーダル
+      console.log('[OCR] Initializing OCR history button');
       const historyModal = document.getElementById('ocr-history-modal');
       const historyBtn = document.getElementById('ocr-history-btn');
       const closeHistoryBtn = document.getElementById('close-history-modal');
       
+      console.log('[OCR] historyBtn:', historyBtn);
+      console.log('[OCR] historyModal:', historyModal);
+      
       if (historyBtn && historyModal) {
-        historyBtn.addEventListener('click', async () => {
+        // 既存のリスナーを削除してから追加
+        const newHistoryBtn = historyBtn.cloneNode(true);
+        historyBtn.parentNode.replaceChild(newHistoryBtn, historyBtn);
+        
+        newHistoryBtn.addEventListener('click', async (e) => {
+          console.log('[OCR] History button clicked');
+          e.preventDefault();
+          e.stopPropagation();
           historyModal.classList.remove('hidden');
           await loadOCRHistory();
         });
+        console.log('[OCR] Event listener attached to history button');
+      } else {
+        console.error('[OCR] History button or modal not found');
       }
 
       if (closeHistoryBtn && historyModal) {
@@ -4696,20 +4740,26 @@ app.get('/deals/new', (c) => {
     
     // ページ読み込み後に初期化（複数のタイミングで試行）
     function ensureOCRButtonsInitialized() {
+      console.log('[OCR] ensureOCRButtonsInitialized called, readyState:', document.readyState);
       if (document.readyState === 'loading') {
+        console.log('[OCR] Still loading, skipping');
         return; // まだ早すぎる
       }
       initOCRButtons();
     }
     
     // 複数のタイミングで初期化を試行
+    console.log('[OCR] Initial readyState:', document.readyState);
     if (document.readyState === 'loading') {
+      console.log('[OCR] Adding DOMContentLoaded listener');
       document.addEventListener('DOMContentLoaded', ensureOCRButtonsInitialized);
     } else {
       // すでにDOMContentLoaded後なら即座に実行
+      console.log('[OCR] DOM already loaded, initializing immediately');
       ensureOCRButtonsInitialized();
     }
     window.addEventListener('load', ensureOCRButtonsInitialized);
+    console.log('[OCR] Initialization setup complete');
 
     // 現在のフィルター状態
     let currentHistoryFilter = { search: '', minConfidence: 0, maxConfidence: 1 };
@@ -5269,42 +5319,70 @@ app.get('/deals/new', (c) => {
     let currentTemplates = [];
     let selectedTemplate = null;
 
-    // テンプレート選択ボタン - 安全に初期化
+    // テンプレート選択ボタン - イベント委譲パターンで安全に初期化
     function initTemplateButtons() {
+      console.log('[Template] initTemplateButtons called');
       const templateSelectBtn = document.getElementById('template-select-btn');
       const clearTemplateBtn = document.getElementById('clear-template-btn');
       
+      console.log('[Template] templateSelectBtn:', templateSelectBtn);
+      console.log('[Template] clearTemplateBtn:', clearTemplateBtn);
+      
       if (templateSelectBtn) {
-        templateSelectBtn.addEventListener('click', () => {
+        // 既存のリスナーを削除してから追加
+        const newBtn = templateSelectBtn.cloneNode(true);
+        templateSelectBtn.parentNode.replaceChild(newBtn, templateSelectBtn);
+        
+        newBtn.addEventListener('click', (e) => {
+          console.log('[Template] Template select button clicked');
+          e.preventDefault();
+          e.stopPropagation();
           openTemplateModal();
         });
+        console.log('[Template] Event listener attached to template-select-btn');
+      } else {
+        console.error('[Template] template-select-btn not found');
       }
       
       if (clearTemplateBtn) {
-        clearTemplateBtn.addEventListener('click', () => {
+        // 既存のリスナーを削除してから追加
+        const newBtn = clearTemplateBtn.cloneNode(true);
+        clearTemplateBtn.parentNode.replaceChild(newBtn, clearTemplateBtn);
+        
+        newBtn.addEventListener('click', (e) => {
+          console.log('[Template] Clear template button clicked');
+          e.preventDefault();
+          e.stopPropagation();
           selectedTemplate = null;
           document.getElementById('selected-template-info').classList.add('hidden');
           showToast('テンプレート選択を解除しました', 'info');
         });
+        console.log('[Template] Event listener attached to clear-template-btn');
       }
     }
     
     // ページ読み込み後に初期化（複数のタイミングで試行）
     function ensureTemplateButtonsInitialized() {
+      console.log('[Template] ensureTemplateButtonsInitialized called, readyState:', document.readyState);
       if (document.readyState === 'loading') {
+        console.log('[Template] Still loading, skipping');
         return; // まだ早すぎる
       }
       initTemplateButtons();
     }
     
     // 複数のタイミングで初期化を試行
+    console.log('[Template] Initial readyState:', document.readyState);
     if (document.readyState === 'loading') {
+      console.log('[Template] Adding DOMContentLoaded listener');
       document.addEventListener('DOMContentLoaded', ensureTemplateButtonsInitialized);
     } else {
       // すでにDOMContentLoaded後なら即座に実行
+      console.log('[Template] DOM already loaded, initializing immediately');
       ensureTemplateButtonsInitialized();
     }
     window.addEventListener('load', ensureTemplateButtonsInitialized);
+    console.log('[Template] Initialization setup complete');
 
     // テンプレートモーダルを開く
     async function openTemplateModal() {

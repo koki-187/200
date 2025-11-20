@@ -1200,12 +1200,6 @@ app.get('/dashboard', (c) => {
       // ここでは全ユーザーがダッシュボードを見れるようにする
     }
 
-    // ユーザー情報表示
-    if (user.name) {
-      document.getElementById('user-name').textContent = user.name;
-      document.getElementById('user-role').textContent = user.role === 'ADMIN' ? '管理者' : 'ユーザー';
-    }
-
     // ログアウト
     function logout() {
       // 認証トークンとユーザー情報のみ削除（Remember Me情報は保持）
@@ -1295,8 +1289,17 @@ app.get('/dashboard', (c) => {
       window.location.href = '/deals/' + dealId;
     }
 
-    // ページ読み込み時
-    loadKPIs();
+    // ページ読み込み後に初期化(window.load で確実に実行)
+    window.addEventListener('load', function() {
+      // ユーザー情報表示
+      if (user.name) {
+        document.getElementById('user-name').textContent = user.name;
+        document.getElementById('user-role').textContent = user.role === 'ADMIN' ? '管理者' : 'ユーザー';
+      }
+
+      // KPIデータ読み込み
+      loadKPIs();
+    });
   </script>
 </body>
 </html>
@@ -1629,10 +1632,6 @@ app.get('/property-ocr-legacy', (c) => {
       window.location.href = '/';
     }
 
-    if (user.name) {
-      document.getElementById('user-name').textContent = user.name;
-    }
-
     function logout() {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
@@ -1643,8 +1642,15 @@ app.get('/property-ocr-legacy', (c) => {
     let selectedFiles = [];
     let extractedData = null;
 
-    // DOM要素
-    const dropZone = document.getElementById('drop-zone');
+    // ページ読み込み後に初期化(window.load で確実に実行)
+    window.addEventListener('load', function() {
+      // ユーザー名表示
+      if (user.name) {
+        document.getElementById('user-name').textContent = user.name;
+      }
+
+      // DOM要素
+      const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const filePreviewContainer = document.getElementById('file-preview-container');
     const filePreviewGrid = document.getElementById('file-preview-grid');
@@ -1890,8 +1896,9 @@ app.get('/property-ocr-legacy', (c) => {
       window.location.href = '/deals/new';
     });
 
-    // 初期化
-    updateStep(1);
+      // 初期化
+      updateStep(1);
+    });
   </script>
 </body>
 </html>
@@ -2398,15 +2405,19 @@ app.get('/showcase', (c) => {
       window.location.href = '/';
     }
 
-    if (user.name) {
-      document.getElementById('user-name').textContent = user.name;
-    }
-
     function logout() {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       window.location.href = '/';
     }
+
+    // ページ読み込み後に初期化(window.load で確実に実行)
+    window.addEventListener('load', function() {
+      // ユーザー名表示
+      if (user.name) {
+        document.getElementById('user-name').textContent = user.name;
+      }
+    });
   </script>
 </body>
 </html>
@@ -2530,10 +2541,6 @@ app.get('/deals', (c) => {
     
     if (!token) {
       window.location.href = '/';
-    }
-
-    if (user.name) {
-      document.getElementById('user-name').textContent = user.name;
     }
 
     let allDeals = [];
@@ -2687,19 +2694,22 @@ app.get('/deals', (c) => {
     }
 
     // Wait for axios to load before calling loadDeals
-    if (typeof axios !== 'undefined') {
-      loadDeals();
-    } else {
-      window.addEventListener('load', () => {
-        if (typeof axios !== 'undefined') {
-          loadDeals();
-        } else {
-          console.error('axios not loaded');
-          document.getElementById('deals-container').innerHTML = 
-            '<div class="p-8 text-center text-red-600"><p>ライブラリの読み込みに失敗しました。ページを再読み込みしてください。</p></div>';
-        }
-      });
-    }
+    // ページ読み込み後に初期化(window.load で確実に実行)
+    window.addEventListener('load', function() {
+      // ユーザー名表示
+      if (user.name) {
+        document.getElementById('user-name').textContent = user.name;
+      }
+
+      // 案件データ読み込み
+      if (typeof axios !== 'undefined') {
+        loadDeals();
+      } else {
+        console.error('axios not loaded');
+        document.getElementById('deals-container').innerHTML = 
+          '<div class="p-8 text-center text-red-600"><p>ライブラリの読み込みに失敗しました。ページを再読み込みしてください。</p></div>';
+      }
+    });
   </script>
 </body>
 </html>
@@ -3904,12 +3914,10 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ページ読み込み後に初期化
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initOCRElements);
-    } else {
+    // ページ読み込み後に初期化（window.load で確実に実行）
+    window.addEventListener('load', function() {
       initOCRElements();
-    }
+    });
 
     // OCR結果を一時保存する変数
     let currentOCRData = null;
@@ -4666,12 +4674,10 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ページ読み込み後に初期化
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initOCRButtons);
-    } else {
+    // ページ読み込み後に初期化（window.load で確実に実行）
+    window.addEventListener('load', function() {
       initOCRButtons();
-    }
+    });
 
     // 現在のフィルター状態
     let currentHistoryFilter = { search: '', minConfidence: 0, maxConfidence: 1 };
@@ -5244,12 +5250,10 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ページ読み込み後に初期化
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initTemplateButtons);
-    } else {
+    // ページ読み込み後に初期化（window.load で確実に実行）
+    window.addEventListener('load', function() {
       initTemplateButtons();
-    }
+    });
 
     // テンプレートモーダルを開く
     async function openTemplateModal() {
@@ -5861,12 +5865,10 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ページ読み込み後に初期化
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initImportTemplateButton);
-    } else {
+    // ページ読み込み後に初期化（window.load で確実に実行）
+    window.addEventListener('load', function() {
       initImportTemplateButton();
-    }
+    });
 
     // テンプレートエクスポート（個別）
     function exportTemplate(templateId) {
@@ -6214,10 +6216,6 @@ app.get('/deals/:id', (c) => {
 
     if (!token) {
       window.location.href = '/';
-    }
-
-    if (user.name) {
-      document.getElementById('user-name').textContent = user.name;
     }
 
     function logout() {
@@ -6698,11 +6696,6 @@ app.get('/deals/:id', (c) => {
 
     // メッセージ機能
     let messageAttachment = null;
-    
-    document.getElementById('message-attachment').addEventListener('change', (e) => {
-      messageAttachment = e.target.files[0];
-      document.getElementById('attachment-name').textContent = messageAttachment ? messageAttachment.name : '';
-    });
 
     async function loadMessages() {
       try {
@@ -6997,7 +6990,25 @@ app.get('/deals/:id', (c) => {
       }
     }
 
-    loadDeal();
+    // ページ読み込み後に初期化(window.load で確実に実行)
+    window.addEventListener('load', function() {
+      // ユーザー名表示
+      if (user.name) {
+        document.getElementById('user-name').textContent = user.name;
+      }
+
+      // メッセージ添付ファイルイベントリスナー
+      const messageAttachmentInput = document.getElementById('message-attachment');
+      if (messageAttachmentInput) {
+        messageAttachmentInput.addEventListener('change', (e) => {
+          messageAttachment = e.target.files[0];
+          document.getElementById('attachment-name').textContent = messageAttachment ? messageAttachment.name : '';
+        });
+      }
+
+      // 案件データ読み込み
+      loadDeal();
+    });
   </script>
 </body>
 </html>
@@ -7170,8 +7181,8 @@ app.get('/', (c) => {
     const passwordInput = document.getElementById('password');
     const rememberMeCheckbox = document.getElementById('remember-me');
 
-    // ページ読み込み時に自動ログインを試行
-    window.addEventListener('DOMContentLoaded', () => {
+    // ページ読み込み時に自動ログインを試行（window.load で確実に実行）
+    window.addEventListener('load', () => {
       // セキュリティ向上のため、古いパスワード保存を削除
       localStorage.removeItem('saved_password');
       localStorage.removeItem('auth_expiry');

@@ -536,6 +536,59 @@ curlコマンドではAPIの動作しか確認できません。実際にユー�
 ---
 
 **作成日**: 2025-11-20  
-**バージョン**: v3.31.0  
+**最終更新**: 2025-11-20 (v3.32.0追加情報)  
+**バージョン**: v3.31.0 → v3.32.0  
 **作成者**: GenSpark AI Assistant  
-**本番URL**: https://ae351d13.real-estate-200units-v2.pages.dev
+**本番URL**: https://7cc3f4c8.real-estate-200units-v2.pages.dev
+
+---
+
+## 🔄 v3.32.0 追加情報（2025-11-20）
+
+### v3.31.0の修正が失敗
+
+ユーザー様からの報告により、v3.31.0の修正でも**全てのボタンが依然として動作していない**ことが判明しました。
+
+### v3.32.0で実施した追加対策
+
+1. **イベントリスナークローン方式の実装**
+   ```javascript
+   // 既存のリスナーを完全に削除してから新規追加
+   const newBtn = templateSelectBtn.cloneNode(true);
+   templateSelectBtn.parentNode.replaceChild(newBtn, templateSelectBtn);
+   newBtn.addEventListener('click', handler);
+   ```
+
+2. **詳細なデバッグログ追加**（47箇所）
+   - `[Template]` プレフィックス: テンプレートボタン初期化
+   - `[OCR]` プレフィックス: OCRボタン初期化
+   - `[OCR Elements]` プレフィックス: OCR要素初期化
+   - 初期化タイミング、要素存在確認、イベント登録成功のログ
+
+3. **イベント防御的処理**
+   - `e.preventDefault()` - デフォルト動作を防止
+   - `e.stopPropagation()` - イベントバブリングを防止
+
+### 現在の状況と課題
+
+**問題**: ユーザー様がMac未所持のため、Safari Webインスペクタでデバッグログを確認できない
+
+**対応策**: 
+- 第三者レビュー依頼ドキュメント作成: `THIRD_PARTY_REVIEW_REQUEST.md`
+- ChatGPT/Codexに解決策を相談予定
+- 代替デバッグ手法の模索
+
+**参照ドキュメント**: `/home/user/webapp/THIRD_PARTY_REVIEW_REQUEST.md`
+
+### 考えられる根本原因
+
+1. Cloudflare Workers/Pages の SSR環境特有の問題
+2. Honoの`c.html()`がCloudflare環境で特殊な処理をしている
+3. Content Security Policy (CSP) によるブロック
+4. イベントリスナーのタイミング問題（v8 Isolate環境）
+
+### 次のステップ
+
+1. 第三者専門家によるコードレビュー
+2. 代替実装パターンの検討（イベント委譲、外部JSファイル化等）
+3. より確実な初期化メカニズムの実装

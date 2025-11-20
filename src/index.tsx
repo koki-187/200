@@ -140,6 +140,17 @@ app.get('/api/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// デバッグ用エンドポイント - 環境変数とバインディング確認
+app.get('/api/debug/env', (c) => {
+  return c.json({
+    has_DB: !!c.env.DB,
+    has_JWT_SECRET: !!c.env.JWT_SECRET,
+    has_OPENAI_API_KEY: !!c.env.OPENAI_API_KEY,
+    env_keys: Object.keys(c.env || {}),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Test page for debugging
 app.get('/test-deals-page', (c) => {
   return c.html(`

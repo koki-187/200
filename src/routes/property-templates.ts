@@ -74,7 +74,7 @@ const PRESET_TEMPLATES = {
 };
 
 // GET /api/property-templates - テンプレート一覧取得
-app.get('/', async (c) => {
+app.get('/', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId');
     if (!userId) {
@@ -164,7 +164,7 @@ app.get('/presets', async (c) => {
 });
 
 // GET /api/property-templates/:id - テンプレート詳細取得
-app.get('/:id', async (c) => {
+app.get('/:id', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId');
     if (!userId) {
@@ -227,7 +227,7 @@ app.get('/:id', async (c) => {
 });
 
 // POST /api/property-templates - カスタムテンプレート作成
-app.post('/', async (c) => {
+app.post('/', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId');
     if (!userId) {
@@ -276,7 +276,7 @@ app.post('/', async (c) => {
 });
 
 // PUT /api/property-templates/:id - カスタムテンプレート更新
-app.put('/:id', async (c) => {
+app.put('/:id', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId');
     if (!userId) {
@@ -343,7 +343,7 @@ app.put('/:id', async (c) => {
 });
 
 // DELETE /api/property-templates/:id - カスタムテンプレート削除
-app.delete('/:id', async (c) => {
+app.delete('/:id', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId');
     if (!userId) {
@@ -395,7 +395,7 @@ app.delete('/:id', async (c) => {
 });
 
 // POST /api/property-templates/:id/use - テンプレート使用回数を増やす
-app.post('/:id/use', async (c) => {
+app.post('/:id/use', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId');
     if (!userId) {

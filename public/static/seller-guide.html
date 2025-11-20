@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>売側ユーザー完全ガイド - 200戸土地仕入れ管理システム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-green-50 to-teal-100 min-h-screen">
+    <div class="max-w-5xl mx-auto py-8 px-4">
+        <!-- ヘッダー -->
+        <div class="bg-white rounded-xl shadow-2xl p-8 mb-8">
+            <div class="flex items-center mb-4">
+                <div class="bg-green-600 p-3 rounded-lg mr-4">
+                    <i class="fas fa-handshake text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">売側ユーザー完全ガイド</h1>
+                    <p class="text-gray-600">物件登録から成約まで、システムを最大限活用しよう</p>
+                </div>
+            </div>
+            
+            <div class="flex space-x-4 mt-6">
+                <a href="/dashboard" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                    <i class="fas fa-home mr-2"></i>ダッシュボードへ
+                </a>
+                <a href="/static/help.html" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition">
+                    <i class="fas fa-question-circle mr-2"></i>ヘルプセンター
+                </a>
+            </div>
+        </div>
+
+        <!-- ステップバイステップガイド -->
+        <div class="space-y-6">
+            <!-- ステップ1: システムログイン -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-600">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-100 rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                        <span class="text-green-600 font-bold">1</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">システムにログイン</h2>
+                </div>
+                <div class="ml-14 space-y-3">
+                    <p class="text-gray-700">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                        管理者から提供されたメールアドレスとパスワードでログイン
+                    </p>
+                    <p class="text-gray-700">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                        初回ログイン後、会社情報とプロフィール設定を完了させる
+                    </p>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700"><strong>💡 ヒント:</strong> 「ログイン状態を保持」をオンにすると、30日間ログインが維持されます</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ2: 案件を登録する -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-600">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                        <span class="text-blue-600 font-bold">2</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">物件案件を登録する</h2>
+                </div>
+                <div class="ml-14 space-y-4">
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">
+                            <i class="fas fa-plus-circle mr-2 text-blue-600"></i>案件登録の流れ
+                        </h3>
+                        <ol class="list-decimal list-inside text-gray-700 space-y-2 ml-4">
+                            <li>ダッシュボードから「新規案件登録」ボタンをクリック</li>
+                            <li>基本情報（タイトル、所在地、価格等）を入力</li>
+                            <li>物件詳細（面積、用途地域、建ぺい率等）を入力</li>
+                            <li>必要に応じて関連ファイル（マイソク、登記簿謄本等）をアップロード</li>
+                            <li>「公開」ボタンで買側ユーザーが閲覧できるようになります</li>
+                        </ol>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700"><strong>📝 ポイント:</strong> 詳細な情報を提供することで、買側からの問い合わせの質が向上します</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ3: OCRで物件情報を自動入力 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-600">
+                <div class="flex items-center mb-4">
+                    <div class="bg-purple-100 rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                        <span class="text-purple-600 font-bold">3</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">OCR機能で入力作業を効率化</h2>
+                </div>
+                <div class="ml-14 space-y-4">
+                    <p class="text-gray-700">
+                        マイソク（物件資料）や登記簿謄本の画像・PDFをアップロードすると、AI が自動で情報を抽出してフォームに入力します。
+                    </p>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">
+                            <i class="fas fa-magic mr-2 text-purple-600"></i>OCRの使い方
+                        </h3>
+                        <ol class="list-decimal list-inside text-gray-700 space-y-2 ml-4">
+                            <li>案件登録画面で「OCR自動入力」セクションを開く</li>
+                            <li><strong>複数のファイル</strong>をドラッグ＆ドロップ（画像・PDF対応）</li>
+                            <li>AIが自動で物件情報を抽出し、フォームに入力</li>
+                            <li>内容を確認して必要に応じて修正・補完</li>
+                            <li>そのまま「保存」で案件登録完了</li>
+                        </ol>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700"><strong>⚡ 時短効果:</strong> 手入力の場合30分かかる作業が、OCRで約5分に短縮！</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ4: 名刺OCRで顧客管理 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-indigo-600">
+                <div class="flex items-center mb-4">
+                    <div class="bg-indigo-100 rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                        <span class="text-indigo-600 font-bold">4</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">名刺OCRで顧客情報を管理</h2>
+                </div>
+                <div class="ml-14 space-y-4">
+                    <p class="text-gray-700">
+                        名刺の写真を撮るだけで、買側企業の担当者情報を自動登録できます。
+                    </p>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">
+                            <i class="fas fa-id-card mr-2 text-indigo-600"></i>名刺OCR機能
+                        </h3>
+                        <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                            <li>スマホで名刺を撮影してアップロード</li>
+                            <li>会社名、担当者名、電話番号、メールアドレスを自動抽出</li>
+                            <li>案件ごとに担当者をタグ付けして管理</li>
+                            <li>過去のやり取り履歴もすぐに参照可能</li>
+                        </ul>
+                    </div>
+                    <div class="bg-indigo-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700"><strong>🎯 活用例:</strong> 商談後すぐに名刺をスキャンして、案件に紐付けておくとフォローアップが楽になります</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ5: 買側とコミュニケーション -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-600">
+                <div class="flex items-center mb-4">
+                    <div class="bg-red-100 rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                        <span class="text-red-600 font-bold">5</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">買側とコミュニケーション</h2>
+                </div>
+                <div class="ml-14 space-y-4">
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">
+                            <i class="fas fa-comments mr-2 text-red-600"></i>チャット機能
+                        </h3>
+                        <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                            <li>案件ごとに買側と直接やり取り</li>
+                            <li>ファイル添付で追加資料をスムーズに共有</li>
+                            <li>@メンション機能で特定のメンバーに通知</li>
+                            <li>プッシュ通知・メール通知で重要なメッセージを見逃さない</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2 mt-4">
+                            <i class="fas fa-bell mr-2 text-red-600"></i>通知設定
+                        </h3>
+                        <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                            <li>新しいメッセージが届いたら即座に通知</li>
+                            <li>案件のステータスが変更されたら通知</li>
+                            <li>ブラウザプッシュ通知・メール通知を設定可能</li>
+                        </ul>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700"><strong>⏰ レスポンス目標:</strong> 買側からの問い合わせには48時間以内の返信を心がけましょう</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ6: 案件管理と進捗追跡 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-600">
+                <div class="flex items-center mb-4">
+                    <div class="bg-yellow-100 rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                        <span class="text-yellow-600 font-bold">6</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">案件の進捗を管理</h2>
+                </div>
+                <div class="ml-14 space-y-4">
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">
+                            <i class="fas fa-tasks mr-2 text-yellow-600"></i>ステータス管理
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-3">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="text-blue-600">調査中 (investigating)</strong>
+                                <p class="text-sm text-gray-600 mt-1">物件情報を収集・整理中</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="text-yellow-600">交渉中 (negotiating)</strong>
+                                <p class="text-sm text-gray-600 mt-1">買側と商談・条件調整中</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="text-green-600">契約済み (contracted)</strong>
+                                <p class="text-sm text-gray-600 mt-1">売買契約が成立</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="text-red-600">中止 (cancelled)</strong>
+                                <p class="text-sm text-gray-600 mt-1">案件が中止・終了</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700"><strong>📊 ダッシュボード:</strong> 案件一覧でステータスごとに整理され、進捗が一目でわかります</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ7: ファイル管理 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-teal-600">
+                <div class="flex items-center mb-4">
+                    <div class="bg-teal-100 rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                        <span class="text-teal-600 font-bold">7</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">書類・ファイルの管理</h2>
+                </div>
+                <div class="ml-14 space-y-4">
+                    <p class="text-gray-700">
+                        案件に関連する全ての書類をシステム上で一元管理できます。
+                    </p>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">
+                            <i class="fas fa-folder mr-2 text-teal-600"></i>ファイル管理機能
+                        </h3>
+                        <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                            <li>登記簿謄本、建築確認済証、図面、マイソク等を保存</li>
+                            <li>フォルダー分類で整理整頓</li>
+                            <li>バージョン管理で更新履歴を追跡</li>
+                            <li>買側とファイルを安全に共有</li>
+                            <li>PDF自動生成で報告書を作成</li>
+                        </ul>
+                    </div>
+                    <div class="bg-teal-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700"><strong>📁 ストレージ:</strong> 案件ごとに50MBの容量が使用できます（追加容量は管理者に相談）</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ8: レポートと分析 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-pink-600">
+                <div class="flex items-center mb-4">
+                    <div class="bg-pink-100 rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                        <span class="text-pink-600 font-bold">8</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">レポートと分析</h2>
+                </div>
+                <div class="ml-14 space-y-4">
+                    <p class="text-gray-700">
+                        案件の成約率や進捗状況を可視化して、営業活動を最適化できます。
+                    </p>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">
+                            <i class="fas fa-chart-bar mr-2 text-pink-600"></i>利用できる分析機能
+                        </h3>
+                        <ul class="grid md:grid-cols-2 gap-2 text-gray-700">
+                            <li><i class="fas fa-chart-line text-pink-500 mr-2"></i>KPIダッシュボード</li>
+                            <li><i class="fas fa-calendar-alt text-pink-500 mr-2"></i>月次レポート</li>
+                            <li><i class="fas fa-chart-area text-pink-500 mr-2"></i>案件推移トレンド</li>
+                            <li><i class="fas fa-percentage text-pink-500 mr-2"></i>成約率分析</li>
+                            <li><i class="fas fa-users text-pink-500 mr-2"></i>ユーザーアクティビティ</li>
+                            <li><i class="fas fa-download text-pink-500 mr-2"></i>CSVエクスポート</li>
+                        </ul>
+                    </div>
+                    <div class="bg-pink-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700"><strong>📈 活用法:</strong> 月次レポートを定期的に確認して、営業戦略の改善に役立てましょう</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 困ったときは -->
+        <div class="bg-gradient-to-r from-green-400 to-teal-500 rounded-xl shadow-2xl p-8 mt-8 text-white">
+            <h2 class="text-2xl font-bold mb-4">
+                <i class="fas fa-life-ring mr-2"></i>困ったときは？
+            </h2>
+            <div class="grid md:grid-cols-3 gap-4">
+                <div class="bg-white bg-opacity-20 p-4 rounded-lg">
+                    <h3 class="font-semibold mb-2">
+                        <i class="fas fa-book mr-2"></i>ヘルプセンター
+                    </h3>
+                    <p class="text-sm mb-3">よくある質問と詳しいガイド</p>
+                    <a href="/static/help.html" class="bg-white text-teal-600 px-4 py-2 rounded-lg inline-block hover:bg-gray-100 transition">
+                        見てみる
+                    </a>
+                </div>
+                <div class="bg-white bg-opacity-20 p-4 rounded-lg">
+                    <h3 class="font-semibold mb-2">
+                        <i class="fas fa-book-open mr-2"></i>用語集
+                    </h3>
+                    <p class="text-sm mb-3">不動産専門用語の解説</p>
+                    <a href="/static/glossary.html" class="bg-white text-teal-600 px-4 py-2 rounded-lg inline-block hover:bg-gray-100 transition">
+                        調べる
+                    </a>
+                </div>
+                <div class="bg-white bg-opacity-20 p-4 rounded-lg">
+                    <h3 class="font-semibold mb-2">
+                        <i class="fas fa-comment-dots mr-2"></i>フィードバック
+                    </h3>
+                    <p class="text-sm mb-3">ご意見・ご要望をお聞かせください</p>
+                    <a href="/feedback" class="bg-white text-teal-600 px-4 py-2 rounded-lg inline-block hover:bg-gray-100 transition">
+                        送信する
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- フッター -->
+        <div class="text-center mt-8 text-gray-600">
+            <p>200棟土地仕入れ管理システム © 2025</p>
+        </div>
+    </div>
+</body>
+</html>

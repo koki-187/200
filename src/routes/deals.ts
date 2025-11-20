@@ -5,6 +5,7 @@ import { authMiddleware, adminOnly } from '../utils/auth';
 import { calculate48HourDeadline } from '../utils/businessTime';
 import { nanoid } from 'nanoid';
 import { createEmailService } from '../utils/email';
+import { validateData, dealSchema, dealUpdateSchema } from '../utils/validation';
 
 const deals = new Hono<{ Bindings: Bindings }>();
 

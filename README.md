@@ -3,7 +3,7 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.30.1)**: https://2a38c59d.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest v3.30.2)**: https://3ec4be6e.real-estate-200units-v2.pages.dev 🆕
 - **Project URL**: https://real-estate-200units-v2.pages.dev
 - **Development URL**: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
 - **Showcase**: https://2a38c59d.real-estate-200units-v2.pages.dev/showcase
@@ -634,6 +634,32 @@ Private - All Rights Reserved
 GenSpark AI Assistant + User
 
 ## 更新履歴
+
+### v3.30.2 (2025-11-20) 🐛
+**購入条件チェックAPI修正と入力例改善**
+
+修正内容:
+- ✅ **購入条件チェックAPIレスポンス処理の修正**: 
+  - フロントエンドが`response.data`を直接参照していた問題を修正
+  - API形式`{success: true, data: checkResult}`に対応し、`response.data.data`を参照
+  - `result.reasons`を`result.recommendations`に変更（API v3.5.0+）
+  
+- ✅ **新規物件登録フォームの入力例を汎用的に変更**: 
+  - 所在地: 川崎市幸区塚越四丁目 → ○○市○○区○○町1丁目2-3
+  - 最寄り駅: 矢向 → ○○駅
+  - 徒歩分数: 4分 → 10分
+  - 土地面積: 218.14㎡（実測） → 150㎡
+  - 道路情報: 北側私道 幅員2.0m 接道2.0m → 南側公道 幅員4.0m 接道6.0m
+  - 現況: 古家あり → 更地
+  - 希望価格: 8,000万円 → 5,000万円
+
+解決した本番環境バグ:
+- ✅ 購入条件チェックで「undefined is not an object (evaluating 'result.reasons.map')」エラーが発生していた問題
+- ✅ 入力例が実際の物件情報になっていた問題
+
+デプロイ情報:
+- 本番URL: https://3ec4be6e.real-estate-200units-v2.pages.dev
+- GitHub最新コミット: 2124493
 
 ### v3.30.1 (2025-11-20) 🔧
 **JavaScript初期化問題の完全修正**

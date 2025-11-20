@@ -989,7 +989,8 @@ app.get('/purchase-criteria', (c) => {
           headers: { 'Authorization': 'Bearer ' + token }
         });
 
-        const result = response.data;
+        // APIレスポンス形式: {success: true, data: checkResult}
+        const result = response.data.data;
         const resultDiv = document.getElementById('test-result');
         const contentDiv = document.getElementById('test-result-content');
 
@@ -1006,6 +1007,9 @@ app.get('/purchase-criteria', (c) => {
           statusIcon = 'times-circle';
         }
 
+        // recommendations配列を使用（reasonsはv3.5.0以降非推奨）
+        const reasons = result.recommendations || [];
+        
         contentDiv.innerHTML = \`
           <div class="mb-3 p-3 bg-\${statusColor}-50 border border-\${statusColor}-200 rounded-lg">
             <div class="flex items-center justify-between">
@@ -1017,7 +1021,7 @@ app.get('/purchase-criteria', (c) => {
             </div>
           </div>
           <div class="space-y-2">
-            \${result.reasons.map(reason => \`
+            \${reasons.map(reason => \`
               <div class="flex items-start space-x-2 text-gray-700">
                 <i class="fas fa-arrow-right text-gray-400 mt-1"></i>
                 <span>\${reason}</span>
@@ -3154,7 +3158,7 @@ app.get('/deals/new', (c) => {
           </label>
           <input type="text" id="location" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="例: 川崎市幸区塚越四丁目">
+            placeholder="例: 〇〇市〇〇区〇〇町1丁目2-3">
         </div>
 
         <!-- 最寄り駅 -->
@@ -3162,7 +3166,7 @@ app.get('/deals/new', (c) => {
           <label class="block text-sm font-medium text-gray-700 mb-2">最寄り駅</label>
           <input type="text" id="station"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="例: 矢向">
+            placeholder="例: 〇〇駅">
         </div>
 
         <!-- 徒歩分数 -->
@@ -3170,7 +3174,7 @@ app.get('/deals/new', (c) => {
           <label class="block text-sm font-medium text-gray-700 mb-2">徒歩分数</label>
           <input type="number" id="walk_minutes" min="0"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="例: 4">
+            placeholder="例: 10">
         </div>
 
         <!-- 土地面積 -->
@@ -3178,7 +3182,7 @@ app.get('/deals/new', (c) => {
           <label class="block text-sm font-medium text-gray-700 mb-2">土地面積</label>
           <input type="text" id="land_area"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="例: 218.14㎡（実測）">
+            placeholder="例: 150㎡">
         </div>
 
         <!-- 用途地域 -->
@@ -3224,7 +3228,7 @@ app.get('/deals/new', (c) => {
           <label class="block text-sm font-medium text-gray-700 mb-2">道路情報</label>
           <input type="text" id="road_info"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="例: 北側私道 幅員2.0m 接道2.0m">
+            placeholder="例: 南側公道 幅員4.0m 接道6.0m">
         </div>
 
         <!-- 現況 -->
@@ -3232,7 +3236,7 @@ app.get('/deals/new', (c) => {
           <label class="block text-sm font-medium text-gray-700 mb-2">現況</label>
           <input type="text" id="current_status"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="例: 古家あり">
+            placeholder="例: 更地">
         </div>
 
         <!-- 希望価格 -->
@@ -3240,7 +3244,7 @@ app.get('/deals/new', (c) => {
           <label class="block text-sm font-medium text-gray-700 mb-2">希望価格</label>
           <input type="text" id="desired_price"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="例: 8,000万円">
+            placeholder="例: 5,000万円">
         </div>
 
         <!-- 売主選択 -->
@@ -5076,7 +5080,8 @@ app.get('/deals/new', (c) => {
           headers: { 'Authorization': 'Bearer ' + token }
         });
 
-        const result = response.data;
+        // APIレスポンス形式: {success: true, data: checkResult}
+        const result = response.data.data;
         displayCheckResult(result);
         document.getElementById('purchase-check-container').classList.remove('hidden');
       } catch (error) {
@@ -5119,9 +5124,10 @@ app.get('/deals/new', (c) => {
         scoreBarColor = 'bg-red-500';
       }
 
-      // 理由リスト
-      const reasonsList = result.reasons && result.reasons.length > 0
-        ? result.reasons.map(r => \`<li class="flex items-start"><i class="fas fa-angle-right mt-1 mr-2 text-gray-400"></i><span>\${r}</span></li>\`).join('')
+      // 理由リスト（recommendations配列を使用）
+      const reasons = result.recommendations || [];
+      const reasonsList = reasons.length > 0
+        ? reasons.map(r => \`<li class="flex items-start"><i class="fas fa-angle-right mt-1 mr-2 text-gray-400"></i><span>\${r}</span></li>\`).join('')
         : '<li class="text-gray-500">理由情報なし</li>';
 
       container.innerHTML = \`

@@ -25,11 +25,11 @@ export interface DealData {
   id: string;
   location: string;
   station?: string;
-  walk_minutes?: string;
-  land_area?: string;
-  frontage?: string;
-  building_coverage?: string;
-  floor_area_ratio?: string;
+  walk_minutes?: string | number;
+  land_area?: string | number;
+  frontage?: string | number;
+  building_coverage?: string | number;
+  floor_area_ratio?: string | number;
   zoning?: string;
 }
 
@@ -102,9 +102,13 @@ function isChibaWestArea(location: string): boolean {
 /**
  * 数値を抽出してパースする関数
  */
-function parseNumericValue(value: string | undefined): number | null {
-  if (!value) return null;
+function parseNumericValue(value: string | number | undefined): number | null {
+  if (!value && value !== 0) return null;
   
+  // 数値型の場合はそのまま返す
+  if (typeof value === 'number') return value;
+  
+  // 文字列型の場合は処理を続行
   const numStr = value.replace(/,/g, '').match(/[\d.]+/);
   if (!numStr) return null;
   

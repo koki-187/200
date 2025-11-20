@@ -964,6 +964,7 @@ app.get('/purchase-criteria', (c) => {
       e.preventDefault();
       
       const testData = {
+        id: 'test-deal-' + Date.now(),  // テスト用の一時的なID
         location: document.getElementById('test-location').value,
         walk_minutes: parseInt(document.getElementById('test-walk').value) || 0,
         land_area: document.getElementById('test-area').value + '坪',
@@ -3847,41 +3848,57 @@ app.get('/deals/new', (c) => {
       }
     }
 
-    // OCR機能
-    const dropZone = document.getElementById('ocr-drop-zone');
-    const fileInput = document.getElementById('ocr-file-input');
-    const previewContainer = document.getElementById('ocr-preview-container');
-    const previewImage = document.getElementById('ocr-preview-image');
-    const ocrStatus = document.getElementById('ocr-status');
-    const ocrResult = document.getElementById('ocr-result');
+    // OCR機能 - DOMContentLoaded後に初期化
+    let dropZone, fileInput, previewContainer, previewImage, ocrStatus, ocrResult;
+    
+    // DOM要素を安全に取得する関数
+    function initOCRElements() {
+      if (!dropZone) {
+        dropZone = document.getElementById('ocr-drop-zone');
+        fileInput = document.getElementById('ocr-file-input');
+        previewContainer = document.getElementById('ocr-preview-container');
+        previewImage = document.getElementById('ocr-preview-image');
+        ocrStatus = document.getElementById('ocr-status');
+        ocrResult = document.getElementById('ocr-result');
+        
+        if (dropZone && fileInput) {
+          // ドラッグ&ドロップ
+          dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+          });
 
-    // ドラッグ&ドロップ
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('dragover');
-    });
+          dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+          });
 
-    dropZone.addEventListener('dragleave', () => {
-      dropZone.classList.remove('dragover');
-    });
+          dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files).filter(f => 
+              f.type.startsWith('image/') || f.type === 'application/pdf'
+            );
+            if (files.length > 0) {
+              processMultipleOCR(files);
+            }
+          });
 
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      const files = Array.from(e.dataTransfer.files).filter(f => 
-        f.type.startsWith('image/') || f.type === 'application/pdf'
-      );
-      if (files.length > 0) {
-        processMultipleOCR(files);
+          fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+              processMultipleOCR(files);
+            }
+          });
+        }
       }
-    });
-
-    fileInput.addEventListener('change', (e) => {
-      const files = Array.from(e.target.files);
-      if (files.length > 0) {
-        processMultipleOCR(files);
-      }
-    });
+    }
+    
+    // ページ読み込み後に初期化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initOCRElements);
+    } else {
+      initOCRElements();
+    }
 
     // OCR結果を一時保存する変数
     let currentOCRData = null;
@@ -4485,8 +4502,11 @@ app.get('/deals/new', (c) => {
       }
     });
 
-    // フォームへの適用
-    document.getElementById('ocr-apply-btn').addEventListener('click', () => {
+    // フォームへの適用 - 安全に初期化
+    function initOCRButtons() {
+      const ocrApplyBtn = document.getElementById('ocr-apply-btn');
+      if (ocrApplyBtn) {
+        ocrApplyBtn.addEventListener('click', () => {
       if (!currentOCRData) return;
       
       // 編集内容を取得
@@ -4513,27 +4533,37 @@ app.get('/deals/new', (c) => {
       // OCRセクションを閉じる
       document.getElementById('ocr-result-edit-section').classList.add('hidden');
       previewContainer.classList.add('hidden');
-    });
+        });
+      }
+      
+      // 再抽出
+      const ocrReextractBtn = document.getElementById('ocr-reextract-btn');
+      if (ocrReextractBtn) {
+        ocrReextractBtn.addEventListener('click', () => {
+          const fileInput = document.getElementById('ocr-file-input');
+          if (fileInput) fileInput.click();
+        });
+      }
 
-    // 再抽出
-    document.getElementById('ocr-reextract-btn').addEventListener('click', () => {
-      const fileInput = document.getElementById('ocr-file-input');
-      fileInput.click();
-    });
-
-    // OCR設定モーダル
-    const settingsModal = document.getElementById('ocr-settings-modal');
-    
-    // 設定ボタン - モーダルを開く
-    document.getElementById('ocr-settings-btn').addEventListener('click', async () => {
-      settingsModal.classList.remove('hidden');
-      await loadSettings();
-    });
-    
-    // 設定モーダルを閉じる
-    document.getElementById('close-settings-modal').addEventListener('click', () => {
-      settingsModal.classList.add('hidden');
-    });
+      // OCR設定モーダル
+      const settingsModal = document.getElementById('ocr-settings-modal');
+      const settingsBtn = document.getElementById('ocr-settings-btn');
+      const closeSettingsBtn = document.getElementById('close-settings-modal');
+      
+      // 設定ボタン - モーダルを開く
+      if (settingsBtn && settingsModal) {
+        settingsBtn.addEventListener('click', async () => {
+          settingsModal.classList.remove('hidden');
+          await loadSettings();
+        });
+      }
+      
+      // 設定モーダルを閉じる
+      if (closeSettingsBtn && settingsModal) {
+        closeSettingsBtn.addEventListener('click', () => {
+          settingsModal.classList.add('hidden');
+        });
+      }
     
     document.getElementById('cancel-settings-btn').addEventListener('click', () => {
       settingsModal.classList.add('hidden');
@@ -4598,22 +4628,39 @@ app.get('/deals/new', (c) => {
       }
     });
 
-    // 履歴モーダル
-    const historyModal = document.getElementById('ocr-history-modal');
-    document.getElementById('ocr-history-btn').addEventListener('click', async () => {
-      historyModal.classList.remove('hidden');
-      await loadOCRHistory();
-    });
-
-    document.getElementById('close-history-modal').addEventListener('click', () => {
-      historyModal.classList.add('hidden');
-    });
-
-    historyModal.addEventListener('click', (e) => {
-      if (e.target === historyModal) {
-        historyModal.classList.add('hidden');
+      // 履歴モーダル
+      const historyModal = document.getElementById('ocr-history-modal');
+      const historyBtn = document.getElementById('ocr-history-btn');
+      const closeHistoryBtn = document.getElementById('close-history-modal');
+      
+      if (historyBtn && historyModal) {
+        historyBtn.addEventListener('click', async () => {
+          historyModal.classList.remove('hidden');
+          await loadOCRHistory();
+        });
       }
-    });
+
+      if (closeHistoryBtn && historyModal) {
+        closeHistoryBtn.addEventListener('click', () => {
+          historyModal.classList.add('hidden');
+        });
+      }
+
+      if (historyModal) {
+        historyModal.addEventListener('click', (e) => {
+          if (e.target === historyModal) {
+            historyModal.classList.add('hidden');
+          }
+        });
+      }
+    }
+    
+    // ページ読み込み後に初期化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initOCRButtons);
+    } else {
+      initOCRButtons();
+    }
 
     // 現在のフィルター状態
     let currentHistoryFilter = { search: '', minConfidence: 0, maxConfidence: 1 };
@@ -5166,17 +5213,32 @@ app.get('/deals/new', (c) => {
     let currentTemplates = [];
     let selectedTemplate = null;
 
-    // テンプレート選択ボタン
-    document.getElementById('template-select-btn').addEventListener('click', () => {
-      openTemplateModal();
-    });
-
-    // テンプレートクリアボタン
-    document.getElementById('clear-template-btn').addEventListener('click', () => {
-      selectedTemplate = null;
-      document.getElementById('selected-template-info').classList.add('hidden');
-      showToast('テンプレート選択を解除しました', 'info');
-    });
+    // テンプレート選択ボタン - 安全に初期化
+    function initTemplateButtons() {
+      const templateSelectBtn = document.getElementById('template-select-btn');
+      const clearTemplateBtn = document.getElementById('clear-template-btn');
+      
+      if (templateSelectBtn) {
+        templateSelectBtn.addEventListener('click', () => {
+          openTemplateModal();
+        });
+      }
+      
+      if (clearTemplateBtn) {
+        clearTemplateBtn.addEventListener('click', () => {
+          selectedTemplate = null;
+          document.getElementById('selected-template-info').classList.add('hidden');
+          showToast('テンプレート選択を解除しました', 'info');
+        });
+      }
+    }
+    
+    // ページ読み込み後に初期化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTemplateButtons);
+    } else {
+      initTemplateButtons();
+    }
 
     // テンプレートモーダルを開く
     async function openTemplateModal() {
@@ -5778,10 +5840,22 @@ app.get('/deals/new', (c) => {
 
     let selectedImportFile = null;
 
-    // インポートボタン
-    document.getElementById('import-template-btn').addEventListener('click', () => {
-      openImportTemplateModal();
-    });
+    // インポートボタン - 安全に初期化
+    function initImportTemplateButton() {
+      const importTemplateBtn = document.getElementById('import-template-btn');
+      if (importTemplateBtn) {
+        importTemplateBtn.addEventListener('click', () => {
+          openImportTemplateModal();
+        });
+      }
+    }
+    
+    // ページ読み込み後に初期化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initImportTemplateButton);
+    } else {
+      initImportTemplateButton();
+    }
 
     // テンプレートエクスポート（個別）
     function exportTemplate(templateId) {

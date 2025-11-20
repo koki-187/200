@@ -326,3 +326,78 @@ else
     echo ""
     exit 1
 fi
+
+# ==========================================
+# 追加テスト: v3.27.0 新機能
+# ==========================================
+
+echo ""
+echo "=========================================="
+echo "追加テスト: ユーザーガイド機能"
+echo "=========================================="
+
+# Test 11: 買側ユーザーガイド
+test_number=$((test_number + 1))
+echo ""
+echo "テスト ${test_number}: 買側ユーザーガイドアクセス"
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${PROD_URL}/static/buyer-guide")
+if [ "$HTTP_STATUS" = "200" ]; then
+    echo "✅ PASS - 買側ガイドアクセス成功 (HTTP 200)"
+    passed=$((passed + 1))
+else
+    echo "❌ FAIL - 買側ガイドアクセス失敗 (HTTP ${HTTP_STATUS})"
+    failed=$((failed + 1))
+fi
+
+# Test 12: 売側ユーザーガイド
+test_number=$((test_number + 1))
+echo ""
+echo "テスト ${test_number}: 売側ユーザーガイドアクセス"
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${PROD_URL}/static/seller-guide")
+if [ "$HTTP_STATUS" = "200" ]; then
+    echo "✅ PASS - 売側ガイドアクセス成功 (HTTP 200)"
+    passed=$((passed + 1))
+else
+    echo "❌ FAIL - 売側ガイドアクセス失敗 (HTTP ${HTTP_STATUS})"
+    failed=$((failed + 1))
+fi
+
+# Test 13: オンボーディングチュートリアル
+test_number=$((test_number + 1))
+echo ""
+echo "テスト ${test_number}: オンボーディングチュートリアルアクセス"
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${PROD_URL}/static/onboarding")
+if [ "$HTTP_STATUS" = "200" ]; then
+    echo "✅ PASS - オンボーディングアクセス成功 (HTTP 200)"
+    passed=$((passed + 1))
+else
+    echo "❌ FAIL - オンボーディングアクセス失敗 (HTTP ${HTTP_STATUS})"
+    failed=$((failed + 1))
+fi
+
+# Test 14: ヘルプセンター
+test_number=$((test_number + 1))
+echo ""
+echo "テスト ${test_number}: ヘルプセンターアクセス"
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${PROD_URL}/static/help")
+if [ "$HTTP_STATUS" = "200" ]; then
+    echo "✅ PASS - ヘルプセンターアクセス成功 (HTTP 200)"
+    passed=$((passed + 1))
+else
+    echo "❌ FAIL - ヘルプセンターアクセス失敗 (HTTP ${HTTP_STATUS})"
+    failed=$((failed + 1))
+fi
+
+# Test 15: 用語集
+test_number=$((test_number + 1))
+echo ""
+echo "テスト ${test_number}: 用語集アクセス"
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${PROD_URL}/static/glossary")
+if [ "$HTTP_STATUS" = "200" ]; then
+    echo "✅ PASS - 用語集アクセス成功 (HTTP 200)"
+    passed=$((passed + 1))
+else
+    echo "❌ FAIL - 用語集アクセス失敗 (HTTP ${HTTP_STATUS})"
+    failed=$((failed + 1))
+fi
+

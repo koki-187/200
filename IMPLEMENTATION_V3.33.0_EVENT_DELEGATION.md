@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 ---
 
-## 📦 デプロイ状況
+## 📦 デプロイ状況（2025-11-21更新）
 
 ### GitHub
 
@@ -138,55 +138,40 @@ document.addEventListener('DOMContentLoaded', function() {
 - **リポジトリ**: https://github.com/koki-187/200
 - **プッシュ**: ✅ 成功
 
-### Cloudflare Pages
+### Cloudflare Pages（最新）
+
+- **デプロイID**: f0432514 🆕
+- **本番URL**: https://f0432514.real-estate-200units-v2.pages.dev 🆕
+- **デプロイ日時**: 2025-11-21 04:40 UTC
+- **ビルド時間**: 7.7秒
+- **静的ファイル配信**: ✅ 成功
+  - https://f0432514.real-estate-200units-v2.pages.dev/static/deals-new-events.js
+
+### Cloudflare Pages（前回）
 
 - **デプロイID**: 25f79710
 - **本番URL**: https://25f79710.real-estate-200units-v2.pages.dev
-- **静的ファイル配信**: ✅ 成功
-  - https://25f79710.real-estate-200units-v2.pages.dev/static/deals-new-events.js
+- **ステータス**: 旧バージョン（HTMLテンプレート未更新）
 
 ### 検証結果
 
 ```bash
 # 静的ファイル配信確認
-curl -s https://25f79710.real-estate-200units-v2.pages.dev/static/deals-new-events.js | head -10
-# 結果: ✅ ファイルが正しく配信されている
-```
+curl -I https://f0432514.real-estate-200units-v2.pages.dev/static/deals-new-events.js
+# 結果: ✅ HTTP 200 - 正常配信
 
----
+# HTMLテンプレート確認
+curl -s https://f0432514.real-estate-200units-v2.pages.dev/deals/new | grep "deals-new-events.js"
+# 結果: ✅ <script defer src="/static/deals-new-events.js"></script> が配信されている
 
-## ⚠️ 残された課題
+# ボタン要素確認
+curl -s https://f0432514.real-estate-200units-v2.pages.dev/deals/new | grep 'id="template-select-btn"'
+# 結果: ✅ 全てのボタン要素が存在
 
-### 🔴 CRITICAL: HTMLテンプレートのビルドが未完了
-
-**問題**:
-- `src/index.tsx`の修正内容が`dist/_worker.js`に反映されていない
-- デプロイした`_worker.js`は古いバージョン（v3.32.0）のまま
-- HTMLに`<script defer src="/static/deals-new-events.js"></script>`が含まれていない
-
-**原因**:
-- `npm run build`がタイムアウト（300秒超過）
-- サンドボックス環境でのビルドプロセスの不安定性
-
-**解決方法**:
-```bash
-# 次回実行する手順
-cd /home/user/webapp
-
-# 1. 既存のビルドプロセスをクリーンアップ
-rm -rf dist .wrangler node_modules/.vite
-
-# 2. フルビルド実行
-npm run build
-
-# 3. 静的ファイルの確認
-ls -lah dist/static/deals-new-events.js
-
-# 4. Cloudflare Pagesへデプロイ
-npx wrangler pages deploy dist --project-name real-estate-200units-v2
-
-# 5. HTMLテンプレートに script タグが含まれているか確認
-curl https://[new-deploy-id].real-estate-200units-v2.pages.dev/deals/new | grep "deals-new-events.js"
+# Playwrightコンソールログ確認
+PlaywrightConsoleCapture https://f0432514.real-estate-200units-v2.pages.dev/deals/new
+# 結果: ✅ [Event Delegation] DOMContentLoaded - Initializing event delegation
+#       ✅ [Event Delegation] Event delegation setup complete
 ```
 
 ---
@@ -362,15 +347,69 @@ Response: JavaScript file
 
 ## ⏳ 未完了の作業
 
-- ❌ `npm run build`の完了（タイムアウト）
-- ❌ HTMLテンプレートの更新確認
-- ❌ 本番環境での動作確認（実機テスト）
+- ❌ 本番環境でのユーザーによる実機テスト（ブラウザでボタンクリック確認）
 
 ---
 
-**次回セッションで`npm run build`を完了させ、本番環境での動作を確認してください！** 🚀
+## ✅ 2025-11-21 更新：ビルド・デプロイ完了！
+
+### Step 1: クリーンビルド実行
+```bash
+cd /home/user/webapp
+rm -rf dist .wrangler node_modules/.vite
+npm run build
+```
+**結果**: ✅ 7.7秒で完了
+
+### Step 2: HTMLテンプレート確認
+```bash
+grep -o "deals-new-events.js" dist/_worker.js
+```
+**結果**: ✅ スクリプトタグが含まれている
+
+### Step 3: Cloudflare Pagesデプロイ
+```bash
+npx wrangler pages deploy dist --project-name real-estate-200units-v2
+```
+**結果**: ✅ デプロイID: f0432514
+
+### Step 4: 本番環境での検証
+```bash
+# HTMLソース確認
+curl https://f0432514.real-estate-200units-v2.pages.dev/deals/new | grep "deals-new-events.js"
+```
+**結果**: ✅ スクリプトタグが正常配信
+
+```bash
+# 静的ファイル配信確認
+curl -I https://f0432514.real-estate-200units-v2.pages.dev/static/deals-new-events.js
+```
+**結果**: ✅ HTTP 200 - 正常配信
+
+### Step 5: Playwrightによるコンソールログ確認
+```bash
+PlaywrightConsoleCapture https://f0432514.real-estate-200units-v2.pages.dev/deals/new
+```
+**結果**: ✅ イベント委譲初期化成功
+- `[Event Delegation] DOMContentLoaded - Initializing event delegation`
+- `[Event Delegation] Event delegation setup complete`
+
+### 検証サマリー
+- ✅ クリーンビルド完了
+- ✅ HTMLテンプレート更新完了
+- ✅ Cloudflare Pagesデプロイ完了
+- ✅ スクリプトタグ配信確認
+- ✅ 静的ファイル配信確認
+- ✅ イベント委譲初期化確認
+- ✅ 全ボタン要素の存在確認
+- ⏳ ユーザーによる実機テスト（次ステップ）
+
+---
+
+**デプロイ完了！ユーザーによるブラウザテストを待つ** 🚀
 
 **作成日**: 2025-11-20  
+**更新日**: 2025-11-21  
 **バージョン**: v3.33.0  
-**ステータス**: 部分完了（ビルド待ち）  
-**本番URL**: https://25f79710.real-estate-200units-v2.pages.dev (旧ビルド)
+**ステータス**: デプロイ完了・ユーザーテスト待ち ✅  
+**本番URL**: https://f0432514.real-estate-200units-v2.pages.dev

@@ -3,16 +3,17 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.31.0)**: https://ae351d13.real-estate-200units-v2.pages.dev 🆕
-- **Previous URL (v3.30.3)**: https://cd2e04e1.real-estate-200units-v2.pages.dev
+- **Production URL (Latest v3.33.0)**: https://f0432514.real-estate-200units-v2.pages.dev 🆕
+- **Previous URL (v3.32.0)**: https://25f79710.real-estate-200units-v2.pages.dev
+- **Previous URL (v3.31.0)**: https://ae351d13.real-estate-200units-v2.pages.dev
 - **Project URL**: https://real-estate-200units-v2.pages.dev
 - **Development URL**: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
-- **Showcase**: https://2a38c59d.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR UI強化版)**: https://2a38c59d.real-estate-200units-v2.pages.dev/deals/new
-- **Deal Detail (with Map)**: https://2a38c59d.real-estate-200units-v2.pages.dev/deals/:id
-- **API Documentation**: https://2a38c59d.real-estate-200units-v2.pages.dev/api/docs 🆕
-- **API Specification (OpenAPI)**: https://2a38c59d.real-estate-200units-v2.pages.dev/api/openapi.json 🆕
-- **Debug Endpoint**: https://2a38c59d.real-estate-200units-v2.pages.dev/api/debug/env 🆕
+- **Showcase**: https://f0432514.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation (OCR UI強化版)**: https://f0432514.real-estate-200units-v2.pages.dev/deals/new
+- **Deal Detail (with Map)**: https://f0432514.real-estate-200units-v2.pages.dev/deals/:id
+- **API Documentation**: https://f0432514.real-estate-200units-v2.pages.dev/api/docs
+- **API Specification (OpenAPI)**: https://f0432514.real-estate-200units-v2.pages.dev/api/openapi.json
+- **Debug Endpoint**: https://f0432514.real-estate-200units-v2.pages.dev/api/debug/env
 
 ### デフォルトログイン情報
 
@@ -63,13 +64,13 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.33.0 (Production - イベント委譲パターン実装) ⚠️
-- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、イベント委譲実装完了（ビルド待ち） ⚠️
-- **デプロイ日**: 2025-11-20
-- **本番URL**: https://25f79710.real-estate-200units-v2.pages.dev ⚠️
+- **バージョン**: v3.33.0 (Production - イベント委譲パターン実装) ✅
+- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、イベント委譲実装・デプロイ完了 ✅
+- **デプロイ日**: 2025-11-21
+- **本番URL**: https://f0432514.real-estate-200units-v2.pages.dev ✅
 - **ローカル動作**: ✅ 完全に動作
-- **本番環境**: ⚠️ イベント委譲実装済み（npm run build完了待ち）
-- **最新の変更**: ChatGPT分析に基づくイベント委譲パターン実装
+- **本番環境**: ✅ イベント委譲パターン実装・デプロイ完了
+- **最新の変更**: ChatGPT分析に基づくイベント委譲パターン実装・デプロイ完了
 
 ## 主要機能
 
@@ -665,17 +666,30 @@ GenSpark AI Assistant + User
    - ✅ 外部JavaScriptファイル利用時の正しい配置・読み込み
 
 #### デプロイ情報
-- **本番URL**: https://25f79710.real-estate-200units-v2.pages.dev
+- **本番URL**: https://f0432514.real-estate-200units-v2.pages.dev ✅
 - **静的ファイル**: ✅ 正常配信（/static/deals-new-events.js）
-- **HTMLテンプレート**: ⚠️ ビルド未完了（npm run build待ち）
-- **デプロイ日時**: 2025-11-20
+- **HTMLテンプレート**: ✅ ビルド完了・デプロイ完了
+- **デプロイ日時**: 2025-11-21 04:40 UTC
+- **ビルド時間**: 7.7秒
+- **デプロイID**: f0432514
 
-#### 次回作業
-⚠️ **CRITICAL**: `npm run build`を実行してHTMLテンプレートを更新
-```bash
-cd /home/user/webapp && npm run build
-npx wrangler pages deploy dist --project-name real-estate-200units-v2
-```
+#### 検証結果
+✅ **イベント委譲の初期化成功**
+- `[Event Delegation] DOMContentLoaded - Initializing event delegation` - 確認済み
+- `[Event Delegation] Event delegation setup complete` - 確認済み
+- 全てのボタン要素（template-select-btn, ocr-history-btn, ocr-settings-btn, ocr-drop-zone）が存在確認
+- スクリプトタグ `<script defer src="/static/deals-new-events.js"></script>` が正常配信
+
+#### 次回作業（ユーザーによるブラウザテスト）
+✅ **デプロイ完了 - ユーザーテスト待ち**
+1. ブラウザで https://f0432514.real-estate-200units-v2.pages.dev/deals/new を開く
+2. ブラウザの開発者コンソールを開く（F12キー）
+3. コンソールに `[Event Delegation]` ログが表示されることを確認
+4. 各ボタンをクリックしてモーダルが開くことを確認:
+   - テンプレート選択ボタン
+   - OCR履歴ボタン  
+   - OCR設定ボタン
+5. ファイルをドラッグ&ドロップして OCR処理が実行されることを確認
 
 #### 参照ドキュメント
 - `IMPLEMENTATION_V3.33.0_EVENT_DELEGATION.md` - 実装詳細

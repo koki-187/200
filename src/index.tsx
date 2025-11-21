@@ -3674,7 +3674,7 @@ app.get('/deals/new', (c) => {
       window.location.href = '/';
     };
     
-    // メッセージ表示関数（グローバル）
+    // メッセージ表示関数（グローバル）- XSS対策済み
     window.showMessage = function showMessage(message, type) {
       const colors = {
         success: 'bg-green-100 border-green-400 text-green-700',
@@ -3683,14 +3683,32 @@ app.get('/deals/new', (c) => {
         info: 'bg-blue-100 border-blue-400 text-blue-700'
       };
       
+      const iconMap = {
+        success: 'check-circle',
+        error: 'exclamation-circle',
+        warning: 'exclamation-triangle',
+        info: 'info-circle'
+      };
+      
+      // 安全なDOM要素作成（XSS対策）
       const messageDiv = document.createElement('div');
       messageDiv.className = 'fixed top-4 right-4 border-l-4 p-4 rounded shadow-lg z-50 ' + (colors[type] || colors.info);
       messageDiv.style.maxWidth = '400px';
-      messageDiv.innerHTML = '<div class="flex items-center"><i class="fas fa-' + 
-        (type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle') + 
-        ' mr-2"></i><span>' + message + '</span></div>';
       
-      document.body.appendChild(messageDiv);
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex items-center';
+      
+      const icon = document.createElement('i');
+      icon.className = 'fas fa-' + (iconMap[type] || iconMap.info) + ' mr-2';
+      
+      const span = document.createElement('span');
+      span.textContent = message; // textContentで安全にテキスト挿入
+      
+      wrapper.appendChild(icon);
+      wrapper.appendChild(span);
+      messageDiv.appendChild(wrapper);
+      
+      document.body.insertAdjacentElement('beforeend', messageDiv);
       
       setTimeout(() => {
         messageDiv.style.transition = 'opacity 0.5s';

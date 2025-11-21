@@ -64,14 +64,14 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.37.0 (Production - Phase 1完了、ユーザーテスト待ち) ✅
-- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、CODEX Phase 1最適化完了 🎉
+- **バージョン**: v3.37.1 (Production - ログイン問題解決完了) ✅
+- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、CODEX Phase 1最適化完了、ログイン修正完了 🎉
 - **デプロイ日**: 2025-11-21
 - **本番URL**: https://ad24adae.real-estate-200units-v2.pages.dev 
 - **DEBUG URL**: https://debug.real-estate-200units-v2.pages.dev 🔧
 - **ローカル動作**: ✅ 完全に動作
-- **本番環境**: ✅ Phase 1最適化デプロイ完了（ユーザー検証待ち）
-- **最新の変更**: CODEX Phase 1実装（スクリプトロード順序修正、DEBUG_MODE追加、XSS脆弱性修正）
+- **本番環境**: ✅ ログイン問題解決、正常稼働中
+- **最新の変更**: ログイン問題修正（本番D1データベースにadminユーザー追加）
 - **次の予定**: ユーザーテスト後、Phase 2（コード分割）の検討
 
 ## 主要機能
@@ -639,6 +639,45 @@ GenSpark AI Assistant + User
 
 ## 更新履歴
 
+### v3.37.1 (2025-11-21) 🔧 **LOGIN FIX**
+**ログイン問題の完全解決 - 本番D1データベースにユーザー追加**
+
+**デプロイURL**: https://ad24adae.real-estate-200units-v2.pages.dev
+
+#### ユーザー報告の問題
+**スクリーンショット**: https://www.genspark.ai/api/files/s/eIdl5543
+
+**現象**:
+- ログインページで「Internal server error」が発生
+- `navigator-187@docomo.ne.jp`でログインできない
+
+#### 根本原因
+本番D1データベースにadminユーザー(`navigator-187@docomo.ne.jp`)が存在しなかった
+
+#### 実施した修正
+
+**1. ローカルD1データベースの構築**
+- 13個のマイグレーションファイルを適用
+- seed.sqlからテストユーザーを投入
+- ローカル環境でログインAPIテスト成功
+
+**2. 本番D1データベースの修正**
+- adminユーザー(`navigator-187@docomo.ne.jp`)を追加
+- パスワード: `kouki187` (PBKDF2ハッシュ化済み)
+- 本番環境でログインAPIテスト成功
+
+#### テスト結果
+- ✅ ローカル環境: ログイン成功
+- ✅ 本番環境: ログイン成功
+- ✅ JWTトークン生成: 正常
+- ✅ ユーザー情報取得: 正常
+
+#### データベース状態
+- **ローカルD1**: 13マイグレーション適用済み、3ユーザー存在
+- **本番D1**: 6ユーザー存在（adminユーザー追加完了）
+
+---
+
 ### v3.37.0 (2025-11-21) 🎉 **CODEX PHASE 1 COMPLETE**
 **CODEX Phase 1最適化完了 - スクリプトロード順序修正、DEBUG_MODE追加、XSS脆弱性修正**
 
@@ -646,10 +685,10 @@ GenSpark AI Assistant + User
 - 本番環境: https://ad24adae.real-estate-200units-v2.pages.dev
 - DEBUG環境: https://debug.real-estate-200units-v2.pages.dev
 
-#### ユーザー報告の問題
-**スクリーンショット**: https://www.genspark.ai/api/files/s/IbcB7zIq
+#### ユーザー報告の問題（追加）
+**ログイン問題スクリーンショット**: https://www.genspark.ai/api/files/s/eIdl5543
 
-**現象**:
+**その他の問題**:
 - ページが「読み込み中...」のスピナー画面で永遠に止まる
 - OCR処理完了後、ページがリロードされ結果が反映されない
 - テンプレート選択ボタンが機能しない

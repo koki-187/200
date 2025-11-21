@@ -3,9 +3,9 @@
  * Cloudflare Pages/Workers環境でも確実に動作するイベント委譲パターン
  */
 
-// グローバルイベント委譲ハンドラー
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('[Event Delegation] DOMContentLoaded - Initializing event delegation');
+// イベント委譲の初期化関数
+function initializeEventDelegation() {
+  console.log('[Event Delegation] Initializing event delegation');
   
   // ボディ全体にイベント委譲を設定
   document.body.addEventListener('click', function(event) {
@@ -260,10 +260,10 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   console.log('[Event Delegation] Event delegation setup complete');
-});
+}
 
-// ドロップゾーンのクリックでファイル選択ダイアログを開く
-document.addEventListener('DOMContentLoaded', function() {
+// ドロップゾーンのクリックハンドラーを初期化
+function initializeDropZone() {
   const dropZone = document.getElementById('ocr-drop-zone');
   const fileInput = document.getElementById('ocr-file-input');
   
@@ -275,5 +275,17 @@ document.addEventListener('DOMContentLoaded', function() {
         fileInput.click();
       }
     });
+    console.log('[Event Delegation] Drop zone initialized');
+  } else {
+    console.warn('[Event Delegation] Drop zone or file input not found');
   }
+}
+
+// ページロード時に初期化を実行
+// window.loadイベントを使用して、すべてのDOM要素とインラインスクリプトが実行済みであることを保証
+window.addEventListener('load', function() {
+  console.log('[Event Delegation] window.load - Starting initialization');
+  initializeEventDelegation();
+  initializeDropZone();
+  console.log('[Event Delegation] Initialization complete');
 });

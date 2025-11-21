@@ -3717,6 +3717,34 @@ app.get('/deals/new', (c) => {
       }, 3000);
     };
     
+    // テンプレートモーダル関数（スタブ - 後で実装を上書き）
+    window.openTemplateModal = function openTemplateModal() {
+      console.log('[Template] openTemplateModal called (stub)');
+      const modal = document.getElementById('template-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+      }
+    };
+    
+    window.closeTemplateModal = function closeTemplateModal() {
+      console.log('[Template] closeTemplateModal called (stub)');
+      const modal = document.getElementById('template-modal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+      }
+    };
+    
+    // OCR履歴・設定関数（スタブ - 後で実装を上書き）
+    window.loadOCRHistory = function loadOCRHistory(filters) {
+      console.log('[OCR] loadOCRHistory called (stub)', filters);
+    };
+    
+    window.loadSettings = function loadSettings() {
+      console.log('[OCR] loadSettings called (stub)');
+    };
+    
     // ========================================
     // 4. ページロード監視とエラーハンドリング
     // ========================================

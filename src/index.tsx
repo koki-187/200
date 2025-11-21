@@ -2735,6 +2735,8 @@ app.get('/deals/new', (c) => {
   <title>案件作成 - 200棟土地仕入れ管理システム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- イベント委譲パターン - Cloudflare Pages/Workers環境で確実に動作 -->
+  <script defer src="/static/deals-new-events.js"></script>
   <style>
     body {
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);

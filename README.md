@@ -3,17 +3,17 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.36.0)**: https://a227c307.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest v3.37.0)**: https://ad24adae.real-estate-200units-v2.pages.dev 🆕
+- **DEBUG URL (v3.37.0 - 詳細ログ有効)**: https://debug.real-estate-200units-v2.pages.dev 🔧
+- **Previous URL (v3.36.0)**: https://a227c307.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.35.0)**: https://9c3e46c0.real-estate-200units-v2.pages.dev
-- **Previous URL (v3.34.0)**: https://45ce99cb.real-estate-200units-v2.pages.dev
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Development URL**: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
-- **Showcase**: https://a227c307.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR UI強化版)**: https://a227c307.real-estate-200units-v2.pages.dev/deals/new
-- **Deal Detail (with Map)**: https://a227c307.real-estate-200units-v2.pages.dev/deals/:id
-- **API Documentation**: https://45ce99cb.real-estate-200units-v2.pages.dev/api/docs
-- **API Specification (OpenAPI)**: https://45ce99cb.real-estate-200units-v2.pages.dev/api/openapi.json
-- **Debug Endpoint**: https://45ce99cb.real-estate-200units-v2.pages.dev/api/debug/env
+- **Showcase**: https://ad24adae.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation (OCR UI強化版)**: https://ad24adae.real-estate-200units-v2.pages.dev/deals/new
+- **Deal Detail (with Map)**: https://ad24adae.real-estate-200units-v2.pages.dev/deals/:id
+- **API Documentation**: https://ad24adae.real-estate-200units-v2.pages.dev/api/docs
+- **API Specification (OpenAPI)**: https://ad24adae.real-estate-200units-v2.pages.dev/api/openapi.json
+- **Debug Endpoint**: https://ad24adae.real-estate-200units-v2.pages.dev/api/debug/env
 
 ### デフォルトログイン情報
 
@@ -64,14 +64,15 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.36.0 (Production - ローディング問題あり 🔴)
-- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、コード最適化が必要 🔧
+- **バージョン**: v3.37.0 (Production - Phase 1完了、ユーザーテスト待ち) ✅
+- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、CODEX Phase 1最適化完了 🎉
 - **デプロイ日**: 2025-11-21
-- **本番URL**: https://a227c307.real-estate-200units-v2.pages.dev 
+- **本番URL**: https://ad24adae.real-estate-200units-v2.pages.dev 
+- **DEBUG URL**: https://debug.real-estate-200units-v2.pages.dev 🔧
 - **ローカル動作**: ✅ 完全に動作
-- **本番環境**: 🔴 ページがローディング画面で止まる問題あり
-- **最新の変更**: ファイル入力イベントとフィルターボタンの修正
-- **次の修正予定**: v3.37.0 - ローディングタイムアウトとコード最適化
+- **本番環境**: ✅ Phase 1最適化デプロイ完了（ユーザー検証待ち）
+- **最新の変更**: CODEX Phase 1実装（スクリプトロード順序修正、DEBUG_MODE追加、XSS脆弱性修正）
+- **次の予定**: ユーザーテスト後、Phase 2（コード分割）の検討
 
 ## 主要機能
 
@@ -638,54 +639,88 @@ GenSpark AI Assistant + User
 
 ## 更新履歴
 
-### v3.37.0 (予定) 🚀 **OPTIMIZATION & LOADING FIX**
-**コード最適化とローディング問題の修正**
+### v3.37.0 (2025-11-21) 🎉 **CODEX PHASE 1 COMPLETE**
+**CODEX Phase 1最適化完了 - スクリプトロード順序修正、DEBUG_MODE追加、XSS脆弱性修正**
 
-#### 新たな問題（ユーザー報告）
+**デプロイURL**: 
+- 本番環境: https://ad24adae.real-estate-200units-v2.pages.dev
+- DEBUG環境: https://debug.real-estate-200units-v2.pages.dev
+
+#### ユーザー報告の問題
 **スクリーンショット**: https://www.genspark.ai/api/files/s/IbcB7zIq
 
 **現象**:
 - ページが「読み込み中...」のスピナー画面で永遠に止まる
-- コンテンツが表示されない
-- ユーザーがページを使用できない
+- OCR処理完了後、ページがリロードされ結果が反映されない
+- テンプレート選択ボタンが機能しない
 
-**ユーザーコメント**:
-> "OCR再起動問題: OCR処理完了後、ページがリロードされ結果が反映されない  
-> テンプレート選択ボタン: まだ機能していない。  
-> 画像の様に読み込み画面には行くが、その後読み込まない。"
+#### 実装した修正（CODEX Phase 1）
 
-#### 計画されている修正
-**詳細**: CODEX_OPTIMIZATION_PLAN.md参照
+**1. スクリプトロード順序の修正**
+- `deals-new-events.js`から`defer`属性を削除
+- スクリプトを`</body>`直前に移動
+- インラインロジックより前に確実に実行されることを保証
 
-**Phase 1: 緊急修正**（最優先）
-1. ローディングタイムアウト処理を追加（10秒）
-2. グローバルエラーハンドラーを追加
-3. スクリプトロード順序を修正
-4. 関数定義順序を整理
+**変更箇所**:
+- Line 2739: `defer`削除
+- Line 6400: スクリプトタグ移動
 
-**Phase 2: コード分離**（1-2日）
-1. deals/newページをHTMLファイルに分離
-2. JavaScriptを外部ファイルに分離
-3. 共通コンポーネントを抽出
-4. index.tsxサイズを61%削減（7,678行 → 3,000行）
+**2. インラインスクリプトの再構成**
+- 4つのセクションに明確に分割
+- 'use strict'モード有効化
+- 関数定義を認証チェックより前に配置
 
-**Phase 3: パフォーマンス最適化**（1週間）
-1. CDNライブラリの最小化（385KB → 100KB）
-2. 遅延ロード実装
-3. 画像最適化
-4. ページロード時間を50%改善（3-5秒 → 1-2秒）
+**新しい構造**:
+```javascript
+// 1. グローバル変数と設定
+const DEBUG_MODE = false;
+const PAGE_LOAD_TIMEOUT = 10000;
 
-**Phase 4: Cloudflare最適化**（2週間）
-1. Workers KVキャッシュ実装
-2. エッジキャッシュ設定
-3. 全ページの最適化
+// 2. 認証チェック
+// 3. グローバル関数定義
+// 4. ページロード監視とエラーハンドリング
+```
+
+**3. DEBUG_MODEとページロード監視**
+- DEBUG_MODEフラグ実装（デフォルト: false）
+- 10秒ページロードタイムアウト
+- グローバルエラーハンドラー
+- Promise拒否ハンドラー
+- エラーオーバーレイ表示
+
+**4. XSS脆弱性の修正**
+- `showMessage`関数でinnerHTMLを削除
+- 安全なDOM操作（createElement + textContent）
+- insertAdjacentElementで挿入
+
+#### ビルド情報
+- **ビルド時間**: 6.64秒
+- **Workerバンドル**: 755.79 kB（+4.67 kB）
+- **変更行数**: +109行、-6行
+
+#### テスト方法
+**DEBUG環境でテスト**: https://debug.real-estate-200units-v2.pages.dev
+1. 開発者ツールのConsoleタブを開く
+2. ページロード時のログを確認
+3. エラーが発生した場合、詳細なログが表示される
 
 #### 期待される効果
-- ✅ ローディング問題の解決
-- ✅ index.tsxサイズ: 7,678行 → 3,000行（61%削減）
-- ✅ Workerバンドル: 751 KB → 400 KB（47%削減）
-- ✅ ページロード: 3-5秒 → 1-2秒（50%改善）
-- ✅ CDNリソース: 385 KB → 100 KB（74%削減）
+- ✅ ローディング問題の診断が可能（10秒タイムアウト）
+- ✅ スクリプトロード順序の安定化
+- ✅ XSS脆弱性の修正
+- ✅ エラー診断の容易化
+
+#### 次のステップ（Phase 2以降）
+**Phase 2: コード分離**（1-2日）
+- deals/newページをHTMLファイルに分離
+- JavaScriptを外部ファイルに分離
+- index.tsxサイズを61%削減（7,678行 → 3,000行）
+
+**Phase 3: パフォーマンス最適化**（1週間）
+- CDNライブラリの最小化（385KB → 100KB）
+- ページロード時間を50%改善（3-5秒 → 1-2秒）
+
+**詳細**: CODEX_OPTIMIZATION_PLAN.md参照
 
 ---
 

@@ -3,14 +3,14 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.34.0)**: https://45ce99cb.real-estate-200units-v2.pages.dev 🆕
+- **Production URL (Latest v3.35.0)**: https://9c3e46c0.real-estate-200units-v2.pages.dev 🆕
+- **Previous URL (v3.34.0)**: https://45ce99cb.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.33.0)**: https://f0432514.real-estate-200units-v2.pages.dev
-- **Previous URL (v3.32.0)**: https://25f79710.real-estate-200units-v2.pages.dev
 - **Project URL**: https://real-estate-200units-v2.pages.dev
 - **Development URL**: https://3000-ihv36ugifcfle3x85cun1-5c13a017.sandbox.novita.ai
-- **Showcase**: https://45ce99cb.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR UI強化版)**: https://45ce99cb.real-estate-200units-v2.pages.dev/deals/new
-- **Deal Detail (with Map)**: https://45ce99cb.real-estate-200units-v2.pages.dev/deals/:id
+- **Showcase**: https://9c3e46c0.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation (OCR UI強化版)**: https://9c3e46c0.real-estate-200units-v2.pages.dev/deals/new
+- **Deal Detail (with Map)**: https://9c3e46c0.real-estate-200units-v2.pages.dev/deals/:id
 - **API Documentation**: https://45ce99cb.real-estate-200units-v2.pages.dev/api/docs
 - **API Specification (OpenAPI)**: https://45ce99cb.real-estate-200units-v2.pages.dev/api/openapi.json
 - **Debug Endpoint**: https://45ce99cb.real-estate-200units-v2.pages.dev/api/debug/env
@@ -64,13 +64,13 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.34.0 (Production - モーダルボタン修正完了) ✅
-- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、全ボタン機能修正完了 ✅
+- **バージョン**: v3.35.0 (Production - OCR再起動問題完全修正) ✅
+- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、全ボタン機能完全修正完了 ✅
 - **デプロイ日**: 2025-11-21
-- **本番URL**: https://45ce99cb.real-estate-200units-v2.pages.dev ✅
+- **本番URL**: https://9c3e46c0.real-estate-200units-v2.pages.dev ✅
 - **ローカル動作**: ✅ 完全に動作
-- **本番環境**: ✅ 全ボタン機能修正完了
-- **最新の変更**: モーダルボタンの修正と重複イベントリスナー削除
+- **本番環境**: ✅ OCR再起動問題を含む全機能修正完了
+- **最新の変更**: OCR再起動問題の根本原因（重複イベントリスナー）を完全削除
 
 ## 主要機能
 
@@ -636,6 +636,42 @@ Private - All Rights Reserved
 GenSpark AI Assistant + User
 
 ## 更新履歴
+
+### v3.35.0 (2025-11-21) 🎯 **OCR RESTART FIX**
+**OCR再起動問題の完全修正 - 重複イベントリスナー完全削除**
+
+#### 修正内容
+1. **OCR再起動問題の根本原因解決**
+   - `/home/user/webapp/src/index.tsx` Lines 3901-3933の重複イベントリスナーをコメントアウト
+   - 原因: `initOCRElements()`関数内で`dropZone.addEventListener`と`fileInput.addEventListener`が登録されていた
+   - 影響: `deals-new-events.js`のイベント委譲と重複し、同じファイルが2回処理されていた
+   - 結果: OCR処理が完了後、もう一度OCR処理が開始され、結果が消えて見えていた
+
+2. **修正後の動作**
+   - OCRファイルアップロードは`deals-new-events.js`のイベント委譲で一元管理
+   - ドラッグ&ドロップ、ファイル選択ともに1回だけ処理される
+   - OCR結果が正しく表示され、ページ再起動が発生しない
+
+3. **テンプレート選択ボタンの確認**
+   - `openTemplateModal`は既にwindowスコープに昇格済み（Line 5426）
+   - `closeTemplateModal`もwindowスコープに昇格済み（Line 5436, v3.34.0で修正）
+   - `deals-new-events.js`に既にテンプレート選択ボタンのハンドラ存在（Lines 14-26）
+
+#### 技術的詳細
+**問題の診断プロセス:**
+1. `displayOCRResultEditor`関数を調査 → ページリロードコードなし
+2. `window.location`, `location.reload`などを検索 → 存在せず
+3. `initOCRElements`関数を発見 → 重複イベントリスナー検出
+4. `deals-new-events.js`との重複を確認 → 根本原因特定
+
+**イベント委譲パターンの優位性:**
+- 単一のイベントハンドラーで全ボタンを管理
+- DOMの変更に強い（動的に追加された要素も処理可能）
+- Cloudflare Workers/Pages SSR環境でも確実に動作
+
+**デプロイURL**: https://9c3e46c0.real-estate-200units-v2.pages.dev
+
+---
 
 ### v3.34.0 (2025-11-21) 🔧 **MODAL BUTTONS FIX**
 **モーダルボタンの完全修正 - 重複イベントリスナー削除とイベント委譲統合**

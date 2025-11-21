@@ -3897,6 +3897,9 @@ app.get('/deals/new', (c) => {
         console.log('[OCR Elements] dropZone:', dropZone);
         console.log('[OCR Elements] fileInput:', fileInput);
         
+        // ⚠️ イベント委譲パターン（deals-new-events.js）で処理するためコメントアウト
+        // 重複イベントリスナーがOCR再起動問題の原因だった
+        /*
         if (dropZone && fileInput) {
           // ドラッグ&ドロップ
           dropZone.addEventListener('dragover', (e) => {
@@ -3932,6 +3935,8 @@ app.get('/deals/new', (c) => {
           });
           console.log('[OCR Elements] Event listeners attached successfully');
         }
+        */
+        console.log('[OCR Elements] OCR file upload event delegation enabled (processed by deals-new-events.js)');
       }
     }
     
@@ -5433,7 +5438,8 @@ app.get('/deals/new', (c) => {
     }
 
     // テンプレートモーダルを閉じる
-    function closeTemplateModal() {
+    // ⚠️ インラインonclick属性から呼び出せるようにwindowスコープに昇格
+    window.closeTemplateModal = function closeTemplateModal() {
       const modal = document.getElementById('template-modal');
       modal.style.display = 'none';
       modal.classList.add('hidden');

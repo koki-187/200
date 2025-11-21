@@ -35,8 +35,8 @@ document.addEventListener('DOMContentLoaded', function() {
         window.selectedTemplate = null;
         const infoEl = document.getElementById('selected-template-info');
         if (infoEl) infoEl.classList.add('hidden');
-        if (typeof showToast === 'function') {
-          showToast('テンプレート選択を解除しました', 'info');
+        if (typeof window.showMessage === 'function') {
+          window.showMessage('テンプレート選択を解除しました', 'info');
         }
       }
       return;
@@ -85,14 +85,72 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    // モーダルを閉じるボタン（汎用）
+    // モーダルを閉じるボタン（汎用 - data-modal-close属性）
     const closeModalBtn = target.closest('[data-modal-close]');
     if (closeModalBtn) {
-      console.log('[Event Delegation] Close modal button clicked');
+      console.log('[Event Delegation] Close modal button clicked (data-modal-close)');
+      event.preventDefault();
+      event.stopPropagation();
       const modalId = closeModalBtn.dataset.modalClose;
       const modal = document.getElementById(modalId);
       if (modal) {
         modal.classList.add('hidden');
+      }
+      return;
+    }
+    
+    // OCR履歴モーダルの個別閉じるボタン（フォールバック）
+    const closeHistoryBtn = target.closest('#close-history-modal');
+    if (closeHistoryBtn) {
+      console.log('[Event Delegation] Close history modal button clicked');
+      event.preventDefault();
+      event.stopPropagation();
+      const modal = document.getElementById('ocr-history-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+      return;
+    }
+    
+    // OCR設定モーダルの個別閉じるボタン（フォールバック）
+    const closeSettingsBtn = target.closest('#close-settings-modal');
+    if (closeSettingsBtn) {
+      console.log('[Event Delegation] Close settings modal button clicked');
+      event.preventDefault();
+      event.stopPropagation();
+      const modal = document.getElementById('ocr-settings-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+      return;
+    }
+    
+    // OCR設定モーダルのキャンセルボタン（フォールバック）
+    const cancelSettingsBtn = target.closest('#cancel-settings-btn');
+    if (cancelSettingsBtn) {
+      console.log('[Event Delegation] Cancel settings button clicked');
+      event.preventDefault();
+      event.stopPropagation();
+      const modal = document.getElementById('ocr-settings-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+      return;
+    }
+    
+    // 履歴の日付クリアボタン
+    const historyClearBtn = target.closest('#history-date-clear');
+    if (historyClearBtn) {
+      console.log('[Event Delegation] History date clear button clicked');
+      event.preventDefault();
+      event.stopPropagation();
+      const dateFromInput = document.getElementById('history-date-from');
+      const dateToInput = document.getElementById('history-date-to');
+      if (dateFromInput) dateFromInput.value = '';
+      if (dateToInput) dateToInput.value = '';
+      // loadOCRHistory関数が存在すれば再読み込み
+      if (typeof loadOCRHistory === 'function') {
+        loadOCRHistory();
       }
       return;
     }
@@ -141,6 +199,29 @@ document.addEventListener('DOMContentLoaded', function() {
       if (files.length > 0 && typeof processMultipleOCR === 'function') {
         processMultipleOCR(files);
       }
+    }
+  });
+  
+  // フォーム送信イベント（OCR設定フォームの送信を制御）
+  document.body.addEventListener('submit', function(event) {
+    const ocrSettingsForm = event.target.closest('#ocr-settings-form');
+    if (ocrSettingsForm) {
+      console.log('[Event Delegation] OCR settings form submitted');
+      event.preventDefault(); // ページ遷移を防ぐ
+      event.stopPropagation();
+      
+      // 設定を保存する処理を実行
+      if (typeof saveSettings === 'function') {
+        saveSettings();
+      } else {
+        console.warn('[Event Delegation] saveSettings function not found - closing modal');
+        // 関数が見つからない場合はモーダルを閉じるだけ
+        const modal = document.getElementById('ocr-settings-modal');
+        if (modal) {
+          modal.classList.add('hidden');
+        }
+      }
+      return false; // フォーム送信を確実に防ぐ
     }
   });
   

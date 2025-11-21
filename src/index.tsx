@@ -609,7 +609,8 @@ app.get('/register', (c) => {
       }
     });
 
-    function showMessage(message, type) {
+    // ⚠️ イベント委譲パターンから呼び出せるようにwindowスコープに昇格
+    window.showMessage = function showMessage(message, type) {
       const messageArea = document.getElementById('messageArea');
       const bgColor = type === 'success' ? 'bg-green-100 border-green-500 text-green-800' : 'bg-red-100 border-red-500 text-red-800';
       const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
@@ -2968,7 +2969,7 @@ app.get('/deals/new', (c) => {
           <h3 class="text-xl font-semibold text-gray-900">
             <i class="fas fa-history text-purple-600 mr-2"></i>OCR履歴
           </h3>
-          <button id="close-history-modal" type="button" class="text-gray-400 hover:text-gray-600">
+          <button id="close-history-modal" type="button" data-modal-close="ocr-history-modal" class="text-gray-400 hover:text-gray-600">
             <i class="fas fa-times text-2xl"></i>
           </button>
         </div>
@@ -3055,7 +3056,7 @@ app.get('/deals/new', (c) => {
           <h3 class="text-xl font-semibold text-gray-900">
             <i class="fas fa-cog text-purple-600 mr-2"></i>OCR設定
           </h3>
-          <button id="close-settings-modal" type="button" class="text-gray-400 hover:text-gray-600">
+          <button id="close-settings-modal" type="button" data-modal-close="ocr-settings-modal" class="text-gray-400 hover:text-gray-600">
             <i class="fas fa-times text-2xl"></i>
           </button>
         </div>
@@ -3133,7 +3134,7 @@ app.get('/deals/new', (c) => {
             </div>
             
             <div class="flex justify-end space-x-3">
-              <button type="button" id="cancel-settings-btn" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+              <button type="button" id="cancel-settings-btn" data-modal-close="ocr-settings-modal" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                 キャンセル
               </button>
               <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-medium">
@@ -4612,6 +4613,8 @@ app.get('/deals/new', (c) => {
       console.log('[OCR] settingsModal:', settingsModal);
       
       // 設定ボタン - モーダルを開く
+      // ⚠️ イベント委譲パターン（deals-new-events.js）で処理するためコメントアウト
+      /*
       if (settingsBtn && settingsModal) {
         // 既存のリスナーを削除してから追加
         const newSettingsBtn = settingsBtn.cloneNode(true);
@@ -4645,9 +4648,16 @@ app.get('/deals/new', (c) => {
         settingsModal.classList.add('hidden');
       }
     });
+    */
+    
+    // ⚠️ イベント委譲で処理するため、loadSettings関数は window スコープに移動
+    console.log('[OCR] Settings button event delegation enabled');
+    console.log('[OCR] settingsBtn:', settingsBtn);
+    console.log('[OCR] settingsModal:', settingsModal);
     
     // 設定読み込み
-    async function loadSettings() {
+    // ⚠️ イベント委譲パターンから呼び出せるようにwindowスコープに昇格
+    window.loadSettings = async function loadSettings() {
       try {
         const response = await axios.get('/api/ocr-settings', {
           headers: { 'Authorization': 'Bearer ' + token }
@@ -4708,6 +4718,8 @@ app.get('/deals/new', (c) => {
       console.log('[OCR] historyBtn:', historyBtn);
       console.log('[OCR] historyModal:', historyModal);
       
+      // ⚠️ イベント委譲パターン（deals-new-events.js）で処理するためコメントアウト
+      /*
       if (historyBtn && historyModal) {
         // 既存のリスナーを削除してから追加
         const newHistoryBtn = historyBtn.cloneNode(true);
@@ -4722,9 +4734,19 @@ app.get('/deals/new', (c) => {
         });
         console.log('[OCR] Event listener attached to history button');
       } else {
+      */
+      
+      // ⚠️ イベント委譲で処理するため、loadOCRHistory関数は window スコープに移動
+      console.log('[OCR] History button event delegation enabled');
+      console.log('[OCR] historyBtn:', historyBtn);
+      console.log('[OCR] historyModal:', historyModal);
+      
+      if (!historyBtn || !historyModal) {
         console.error('[OCR] History button or modal not found');
       }
 
+      // ⚠️ イベント委譲パターン（deals-new-events.js）で処理するためコメントアウト
+      /*
       if (closeHistoryBtn && historyModal) {
         closeHistoryBtn.addEventListener('click', () => {
           historyModal.classList.add('hidden');
@@ -4738,6 +4760,8 @@ app.get('/deals/new', (c) => {
           }
         });
       }
+      */
+      console.log('[OCR] Modal close buttons event delegation enabled');
     }
     
     // ページ読み込み後に初期化（複数のタイミングで試行）
@@ -4772,7 +4796,8 @@ app.get('/deals/new', (c) => {
     const itemsPerPage = 20;
     let totalHistories = 0;
     
-    async function loadOCRHistory(filters = {}) {
+    // ⚠️ イベント委譲パターンから呼び出せるようにwindowスコープに昇格
+    window.loadOCRHistory = async function loadOCRHistory(filters = {}) {
       const historyList = document.getElementById('ocr-history-list');
       currentHistoryFilter = { ...currentHistoryFilter, ...filters };
       
@@ -4950,11 +4975,14 @@ app.get('/deals/new', (c) => {
       loadOCRHistory({ dateTo: e.target.value });
     });
     
+    // ⚠️ イベント委譲パターン（deals-new-events.js）で処理するためコメントアウト
+    /*
     document.getElementById('history-date-clear').addEventListener('click', () => {
       document.getElementById('history-date-from').value = '';
       document.getElementById('history-date-to').value = '';
       loadOCRHistory({ dateFrom: '', dateTo: '' });
     });
+    */
     
     // ページネーションボタンイベント
     document.getElementById('history-page-prev').addEventListener('click', () => {
@@ -5319,7 +5347,8 @@ app.get('/deals/new', (c) => {
     // ============================================================
     
     let currentTemplates = [];
-    let selectedTemplate = null;
+    // ⚠️ イベント委譲パターンから参照できるようにwindowスコープに昇格
+    window.selectedTemplate = null;
 
     // テンプレート選択ボタン - イベント委譲パターンで安全に初期化
     function initTemplateButtons() {
@@ -5330,6 +5359,8 @@ app.get('/deals/new', (c) => {
       console.log('[Template] templateSelectBtn:', templateSelectBtn);
       console.log('[Template] clearTemplateBtn:', clearTemplateBtn);
       
+      // ⚠️ イベント委譲パターン（deals-new-events.js）で処理するためコメントアウト
+      /*
       if (templateSelectBtn) {
         // 既存のリスナーを削除してから追加
         const newBtn = templateSelectBtn.cloneNode(true);
@@ -5361,6 +5392,10 @@ app.get('/deals/new', (c) => {
         });
         console.log('[Template] Event listener attached to clear-template-btn');
       }
+      */
+      console.log('[Template] Template buttons event delegation enabled');
+      console.log('[Template] templateSelectBtn:', templateSelectBtn);
+      console.log('[Template] clearTemplateBtn:', clearTemplateBtn);
     }
     
     // ページ読み込み後に初期化（複数のタイミングで試行）
@@ -5387,7 +5422,8 @@ app.get('/deals/new', (c) => {
     console.log('[Template] Initialization setup complete');
 
     // テンプレートモーダルを開く
-    async function openTemplateModal() {
+    // ⚠️ イベント委譲パターンから呼び出せるようにwindowスコープに昇格
+    window.openTemplateModal = async function openTemplateModal() {
       const modal = document.getElementById('template-modal');
       modal.style.display = 'flex';
       modal.classList.remove('hidden');

@@ -154,6 +154,38 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       return;
     }
+    
+    // OCR履歴の信頼度フィルターボタン
+    const historyFilterBtn = target.closest('[data-filter]');
+    if (historyFilterBtn && historyFilterBtn.id && historyFilterBtn.id.startsWith('history-filter-')) {
+      console.log('[Event Delegation] History filter button clicked:', historyFilterBtn.id);
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const filter = historyFilterBtn.dataset.filter;
+      console.log('[Event Delegation] Filter value:', filter);
+      
+      // 全てのフィルターボタンのスタイルをリセット
+      const allFilterBtns = document.querySelectorAll('[data-filter]');
+      allFilterBtns.forEach(btn => {
+        btn.classList.remove('bg-purple-600', 'text-white');
+        btn.classList.add('bg-gray-200', 'text-gray-700');
+      });
+      
+      // クリックされたボタンをアクティブに
+      historyFilterBtn.classList.remove('bg-gray-200', 'text-gray-700');
+      historyFilterBtn.classList.add('bg-purple-600', 'text-white');
+      
+      // loadOCRHistory関数を信頼度フィルターで呼び出し
+      if (typeof loadOCRHistory === 'function') {
+        const filters = {};
+        if (filter !== 'all') {
+          filters.confidence = filter; // 'high', 'medium', 'low'
+        }
+        loadOCRHistory(filters);
+      }
+      return;
+    }
   });
   
   // ドラッグ&ドロップイベント
@@ -194,6 +226,8 @@ document.addEventListener('DOMContentLoaded', function() {
   document.body.addEventListener('change', function(event) {
     if (event.target.id === 'ocr-file-input') {
       console.log('[Event Delegation] File input changed');
+      event.preventDefault(); // Prevent any default behavior
+      event.stopPropagation();
       const files = Array.from(event.target.files);
       console.log('[Event Delegation] Files selected:', files.length);
       if (files.length > 0 && typeof processMultipleOCR === 'function') {

@@ -2986,16 +2986,16 @@ app.get('/deals/new', (c) => {
             
             <!-- 信頼度フィルター -->
             <div class="flex gap-2 flex-wrap">
-              <button id="history-filter-all" class="px-3 py-1 text-sm rounded-full bg-purple-600 text-white">
+              <button type="button" id="history-filter-all" data-filter="all" class="px-3 py-1 text-sm rounded-full bg-purple-600 text-white">
                 全て
               </button>
-              <button id="history-filter-high" class="px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300">
+              <button type="button" id="history-filter-high" data-filter="high" class="px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300">
                 高信頼度 (90%+)
               </button>
-              <button id="history-filter-medium" class="px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300">
+              <button type="button" id="history-filter-medium" data-filter="medium" class="px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300">
                 中信頼度 (70-90%)
               </button>
-              <button id="history-filter-low" class="px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300">
+              <button type="button" id="history-filter-low" data-filter="low" class="px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300">
                 低信頼度 (~70%)
               </button>
             </div>

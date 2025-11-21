@@ -2736,8 +2736,7 @@ app.get('/deals/new', (c) => {
   <title>案件作成 - 200棟土地仕入れ管理システム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-  <!-- イベント委譲パターン - Cloudflare Pages/Workers環境で確実に動作 -->
-  <script defer src="/static/deals-new-events.js"></script>
+  <!-- イベント委譲パターンスクリプトは</body>直前に移動 -->
   <style>
     body {
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
@@ -3641,21 +3640,102 @@ app.get('/deals/new', (c) => {
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
+    'use strict';
+    
+    // ========================================
+    // 1. グローバル変数と設定
+    // ========================================
+    const DEBUG_MODE = false; // デバッグモード（本番環境ではfalse）
+    const PAGE_LOAD_TIMEOUT = 10000; // ページロードタイムアウト: 10秒
+    
     const token = localStorage.getItem('auth_token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+    // ========================================
+    // 2. 認証チェック
+    // ========================================
     if (!token) {
       window.location.href = '/';
     }
 
+    // ========================================
+    // 3. グローバル関数定義（認証後）
+    // ========================================
+    
+    // ユーザー名表示
     if (user.name) {
       document.getElementById('user-name').textContent = user.name;
     }
 
-    function logout() {
+    // ログアウト関数（グローバル）
+    window.logout = function logout() {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       window.location.href = '/';
+    };
+    
+    // メッセージ表示関数（グローバル）
+    window.showMessage = function showMessage(message, type) {
+      const colors = {
+        success: 'bg-green-100 border-green-400 text-green-700',
+        error: 'bg-red-100 border-red-400 text-red-700',
+        warning: 'bg-yellow-100 border-yellow-400 text-yellow-700',
+        info: 'bg-blue-100 border-blue-400 text-blue-700'
+      };
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'fixed top-4 right-4 border-l-4 p-4 rounded shadow-lg z-50 ' + (colors[type] || colors.info);
+      messageDiv.style.maxWidth = '400px';
+      messageDiv.innerHTML = '<div class="flex items-center"><i class="fas fa-' + 
+        (type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle') + 
+        ' mr-2"></i><span>' + message + '</span></div>';
+      
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.style.transition = 'opacity 0.5s';
+        messageDiv.style.opacity = '0';
+        setTimeout(() => messageDiv.remove(), 500);
+      }, 3000);
+    };
+    
+    // ========================================
+    // 4. ページロード監視とエラーハンドリング
+    // ========================================
+    
+    if (DEBUG_MODE) {
+      // ページロードタイムアウト
+      const pageLoadTimer = setTimeout(() => {
+        console.error('[Page Load] Timeout: Page failed to load within ' + (PAGE_LOAD_TIMEOUT / 1000) + ' seconds');
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:16px;z-index:99999;text-align:center;font-family:system-ui;';
+        overlay.textContent = 'ページの読み込みがタイムアウトしました。ページをリロードしてください。';
+        document.body.insertAdjacentElement('afterbegin', overlay);
+      }, PAGE_LOAD_TIMEOUT);
+
+      // ページロード成功時にタイマークリア
+      window.addEventListener('load', () => {
+        clearTimeout(pageLoadTimer);
+        console.log('[Page Load] Page loaded successfully');
+      });
+
+      // グローバルエラーハンドラー
+      window.addEventListener('error', (event) => {
+        console.error('[Global Error]', event.error);
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:white;padding:10px;z-index:99999;font-family:system-ui;font-size:14px;';
+        overlay.textContent = 'エラーが発生しました: ' + (event.error?.message || 'Unknown error');
+        document.body.insertAdjacentElement('afterbegin', overlay);
+      });
+
+      // Promise拒否エラーハンドラー
+      window.addEventListener('unhandledrejection', (event) => {
+        console.error('[Unhandled Rejection]', event.reason);
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:20px;left:0;right:0;background:#f97316;color:white;padding:10px;z-index:99999;font-family:system-ui;font-size:14px;';
+        overlay.textContent = '非同期エラー: ' + (event.reason?.message || event.reason || 'Unknown error');
+        document.body.insertAdjacentElement('afterbegin', overlay);
+      });
     }
 
     // ページロード時にOCRジョブを復元
@@ -6317,6 +6397,8 @@ app.get('/deals/new', (c) => {
     }
 
   </script>
+  <!-- イベント委譲パターン - インラインロジックより前に実行 -->
+  <script src="/static/deals-new-events.js"></script>
 </body>
 </html>
   `);

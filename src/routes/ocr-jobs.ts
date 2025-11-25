@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { Bindings } from '../types';
+import { verifyToken } from '../utils/crypto';
 
 const ocrJobs = new Hono<{ Bindings: Bindings }>();
 
@@ -95,8 +96,11 @@ ocrJobs.post('/', async (c) => {
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
-        const decoded = await c.env.jwt.verify(token);
-        userId = decoded.user_id || decoded.sub || 'anonymous';
+        const secret = c.env.JWT_SECRET;
+        const payload = await verifyToken(token, secret);
+        if (payload && payload.userId) {
+          userId = payload.userId;
+        }
       } catch (err) {
         // トークン検証失敗でも続行（匿名として処理）
         console.warn('JWT verification failed:', err);
@@ -190,8 +194,11 @@ ocrJobs.get('/', async (c) => {
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
-        const decoded = await c.env.jwt.verify(token);
-        userId = decoded.user_id || decoded.sub || 'anonymous';
+        const secret = c.env.JWT_SECRET;
+        const payload = await verifyToken(token, secret);
+        if (payload && payload.userId) {
+          userId = payload.userId;
+        }
       } catch (err) {
         console.warn('JWT verification failed:', err);
       }

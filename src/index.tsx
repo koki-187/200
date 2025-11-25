@@ -2801,33 +2801,6 @@ app.get('/deals/new', (c) => {
       <p class="text-gray-600 mt-2">登記簿謄本などの画像・PDFからOCRで自動入力できます</p>
     </div>
 
-    <!-- テンプレート選択セクション -->
-    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 mb-6 border border-blue-200">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-            <i class="fas fa-file-alt text-blue-600 mr-2"></i>
-            テンプレートから入力
-          </h3>
-          <p class="text-sm text-gray-600 mt-1">よく使う設定をテンプレートとして保存・利用できます</p>
-        </div>
-        <button id="template-select-btn" type="button" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium shadow-md">
-          <i class="fas fa-layer-group mr-2"></i>テンプレート選択
-        </button>
-      </div>
-      <div id="selected-template-info" class="hidden bg-white rounded-lg p-4 mt-3 border border-blue-300">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <i class="fas fa-check-circle text-green-600 mr-2"></i>
-            <span class="font-medium text-gray-900">選択中: <span id="selected-template-name">-</span></span>
-          </div>
-          <button id="clear-template-btn" type="button" class="text-sm text-red-600 hover:text-red-800 transition">
-            <i class="fas fa-times-circle mr-1"></i>クリア
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- OCRセクション -->
     <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -5275,16 +5248,40 @@ app.get('/deals/new', (c) => {
         remarks: document.getElementById('remarks').value || null
       };
 
+      // ボタン無効化とローディング表示
+      const submitBtn = document.querySelector('#deal-form button[type="submit"]');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>作成中...';
+
       try {
         const response = await axios.post('/api/deals', dealData, {
-          headers: { 'Authorization': 'Bearer ' + token }
+          headers: { 'Authorization': 'Bearer ' + token },
+          timeout: 15000  // 15秒タイムアウト
         });
 
-        alert('案件を作成しました');
-        window.location.href = '/deals/' + response.data.deal.id;
+        // 成功メッセージ表示
+        showMessage('案件を作成しました', 'success');
+        
+        // 少し待ってからリダイレクト
+        setTimeout(() => {
+          window.location.href = '/deals/' + response.data.deal.id;
+        }, 1000);
       } catch (error) {
         console.error('Create deal error:', error);
-        alert('案件作成に失敗しました: ' + (error.response?.data?.error || error.message));
+        
+        // エラーメッセージ表示
+        let errorMsg = '案件作成に失敗しました';
+        if (error.response?.data?.error) {
+          errorMsg += ': ' + error.response.data.error;
+        } else if (error.message) {
+          errorMsg += ': ' + error.message;
+        }
+        showMessage(errorMsg, 'error');
+        
+        // ボタンを再有効化
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
       }
     });
 

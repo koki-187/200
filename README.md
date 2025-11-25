@@ -3,7 +3,8 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.43.0)**: https://64d2e35a.real-estate-200units-v2.pages.dev 🆕 **← 最新デプロイ（JavaScript構文エラー完全修正）**
+- **Production URL (Latest v3.44.0)**: https://73a5e10c.real-estate-200units-v2.pages.dev 🆕 **← 最新デプロイ（OCR API致命的バグ修正）**
+- **Previous URL (v3.43.0)**: https://64d2e35a.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.42.0)**: https://79a2845f.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.41.0)**: https://f521a2bb.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.40.1)**: https://11953975.real-estate-200units-v2.pages.dev
@@ -25,6 +26,12 @@
 - **メールアドレス**: `navigator-187@docomo.ne.jp`
 - **パスワード**: `kouki187`
 - **ロール**: ADMIN（管理者）
+
+#### ✅ v3.44.0 - OCR API致命的バグ修正 🚨 CRITICAL
+- **OCRジョブAPI（500エラー）の完全修正**
+- JWT検証エラー修正（`c.env.jwt.verify()` → `verifyToken()`）
+- OCRファイルアップロード機能が完全復旧
+- ユーザー認証が正常に動作
 
 #### ✅ v3.43.0 - JavaScript構文エラー完全修正 ✨
 - `confirm()`内の改行文字によるエラー修正

@@ -3934,7 +3934,7 @@ app.get('/deals/new', (c) => {
       
       // キャンセルボタンのイベントハンドラ
       const cancelHandler = async () => {
-        if (!confirm('OCR処理をキャンセルしますか？\n処理中のファイルは保存されません。')) {
+        if (!confirm('OCR処理をキャンセルしますか？ 処理中のファイルは保存されません。')) {
           return;
         }
         
@@ -4262,7 +4262,7 @@ app.get('/deals/new', (c) => {
         
         // キャンセルボタンのイベントハンドラ
         const cancelHandler = async () => {
-          if (!confirm('OCR処理をキャンセルしますか？\n処理中のファイルは保存されません。')) {
+          if (!confirm('OCR処理をキャンセルしますか？ 処理中のファイルは保存されません。')) {
             return;
           }
           
@@ -4458,7 +4458,6 @@ app.get('/deals/new', (c) => {
     });
     
     // リトライボタン（最後にアップロードされたファイルを再処理）
-    let lastUploadedFiles = [];
     let retryAttempts = 0;
     const maxRetryAttempts = 3;
     
@@ -4625,7 +4624,7 @@ app.get('/deals/new', (c) => {
         
         // キャンセルボタンのイベントハンドラ
         const cancelHandler = async () => {
-          if (!confirm('OCR処理をキャンセルしますか？\\n処理中のファイルは保存されません。')) {
+          if (!confirm('OCR処理をキャンセルしますか？ 処理中のファイルは保存されません。')) {
             return;
           }
           
@@ -5371,42 +5370,38 @@ app.get('/deals/new', (c) => {
       // 理由リスト（recommendations配列を使用）
       const reasons = result.recommendations || [];
       const reasonsList = reasons.length > 0
-        ? reasons.map(r => \`<li class="flex items-start"><i class="fas fa-angle-right mt-1 mr-2 text-gray-400"></i><span>\${r}</span></li>\`).join('')
+        ? reasons.map(r => '<li class="flex items-start"><i class="fas fa-angle-right mt-1 mr-2 text-gray-400"></i><span>' + r + '</span></li>').join('')
         : '<li class="text-gray-500">理由情報なし</li>';
 
-      container.innerHTML = \`
-        <div class="border \${statusBg} rounded-lg p-4">
-          <!-- ステータスヘッダー -->
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center">
-              <i class="fas \${statusIcon} \${statusColor} text-2xl mr-3"></i>
-              <div>
-                <div class="text-lg font-bold \${statusColor}">\${statusText}</div>
-                <div class="text-sm text-gray-600">買取条件チェック結果</div>
-              </div>
-            </div>
-            <div class="text-right">
-              <div class="text-3xl font-bold \${statusColor}">\${score}</div>
-              <div class="text-sm text-gray-600">点 / 100点</div>
-            </div>
-          </div>
-
-          <!-- スコアバー -->
-          <div class="mb-4">
-            <div class="w-full bg-gray-200 rounded-full h-3">
-              <div class="\${scoreBarColor} h-3 rounded-full transition-all duration-500" style="width: \${scorePercentage}%"></div>
-            </div>
-          </div>
-
-          <!-- 理由リスト -->
-          <div>
-            <div class="font-semibold text-gray-700 mb-2">評価理由:</div>
-            <ul class="space-y-1 text-sm text-gray-700">
-              \${reasonsList}
-            </ul>
-          </div>
-        </div>
-      \`;
+      container.innerHTML = '<div class="border ' + statusBg + ' rounded-lg p-4">' +
+        '<!-- ステータスヘッダー -->' +
+        '<div class="flex items-center justify-between mb-4">' +
+          '<div class="flex items-center">' +
+            '<i class="fas ' + statusIcon + ' ' + statusColor + ' text-2xl mr-3"></i>' +
+            '<div>' +
+              '<div class="text-lg font-bold ' + statusColor + '">' + statusText + '</div>' +
+              '<div class="text-sm text-gray-600">買取条件チェック結果</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="text-right">' +
+            '<div class="text-3xl font-bold ' + statusColor + '">' + score + '</div>' +
+            '<div class="text-sm text-gray-600">点 / 100点</div>' +
+          '</div>' +
+        '</div>' +
+        '<!-- スコアバー -->' +
+        '<div class="mb-4">' +
+          '<div class="w-full bg-gray-200 rounded-full h-3">' +
+            '<div class="' + scoreBarColor + ' h-3 rounded-full transition-all duration-500" style="width: ' + scorePercentage + '%"></div>' +
+          '</div>' +
+        '</div>' +
+        '<!-- 理由リスト -->' +
+        '<div>' +
+          '<div class="font-semibold text-gray-700 mb-2">評価理由:</div>' +
+          '<ul class="space-y-1 text-sm text-gray-700">' +
+            reasonsList +
+          '</ul>' +
+        '</div>' +
+      '</div>';
     }
 
     // デバウンス付きイベントリスナー追加
@@ -5629,7 +5624,7 @@ app.get('/deals/new', (c) => {
           ? JSON.parse(template.template_data) 
           : template.template_data;
         
-        return '<div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="event.stopPropagation(); openPreviewModal(\'' + template.id + '\')">' +
+        return '<div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="event.stopPropagation(); openPreviewModal(&quot;' + template.id + '&quot;)">' +
           '<div class="flex items-start justify-between mb-2">' +
             '<div class="flex items-center">' +
               '<i class="fas fa-star text-yellow-600 mr-2"></i>' +
@@ -5660,16 +5655,16 @@ app.get('/deals/new', (c) => {
           ? JSON.parse(template.template_data) 
           : template.template_data;
         
-        return '<div class="bg-white border-2 border-blue-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="event.stopPropagation(); openPreviewModal(\'' + template.id + '\')">' +
+        return '<div class="bg-white border-2 border-blue-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer relative" onclick="event.stopPropagation(); openPreviewModal(&quot;' + template.id + '&quot;)">' +
           '<!-- アクションボタン -->' +
           '<div class="absolute top-2 right-2 flex items-center space-x-1">' +
-            '<button onclick="event.stopPropagation(); exportTemplate(\'' + template.id + '\')" class="p-2 md:p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="エクスポート">' +
+            '<button onclick="event.stopPropagation(); exportTemplate(&quot;' + template.id + '&quot;)" class="p-2 md:p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="エクスポート">' +
               '<i class="fas fa-download text-purple-600 text-sm"></i>' +
             '</button>' +
-            '<button onclick="event.stopPropagation(); openEditTemplateModal(\'' + template.id + '\')" class="p-2 md:p-1.5 bg-blue-100 hover:bg-blue-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="編集">' +
+            '<button onclick="event.stopPropagation(); openEditTemplateModal(&quot;' + template.id + '&quot;)" class="p-2 md:p-1.5 bg-blue-100 hover:bg-blue-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="編集">' +
               '<i class="fas fa-edit text-blue-600 text-sm"></i>' +
             '</button>' +
-            '<button onclick="event.stopPropagation(); confirmDeleteTemplate(\'' + template.id + '\')" class="p-2 md:p-1.5 bg-red-100 hover:bg-red-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="削除">' +
+            '<button onclick="event.stopPropagation(); confirmDeleteTemplate(&quot;' + template.id + '&quot;)" class="p-2 md:p-1.5 bg-red-100 hover:bg-red-200 rounded-lg transition touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" title="削除">' +
               '<i class="fas fa-trash text-red-600 text-sm"></i>' +
             '</button>' +
           '</div>' +
@@ -6269,23 +6264,23 @@ app.get('/deals/new', (c) => {
     });
 
     // ドラッグ&ドロップ対応
-    const dropZone = document.querySelector('#import-template-modal .border-dashed');
-    dropZone.addEventListener('dragover', (e) => {
+    const templateDropZone = document.querySelector('#import-template-modal .border-dashed');
+    templateDropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.add('border-purple-600', 'bg-purple-50');
+      templateDropZone.classList.add('border-purple-600', 'bg-purple-50');
     });
 
-    dropZone.addEventListener('dragleave', (e) => {
+    templateDropZone.addEventListener('dragleave', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.remove('border-purple-600', 'bg-purple-50');
+      templateDropZone.classList.remove('border-purple-600', 'bg-purple-50');
     });
 
-    dropZone.addEventListener('drop', async (e) => {
+    templateDropZone.addEventListener('drop', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropZone.classList.remove('border-purple-600', 'bg-purple-50');
+      templateDropZone.classList.remove('border-purple-600', 'bg-purple-50');
 
       const file = e.dataTransfer.files[0];
       if (file && file.name.endsWith('.json')) {

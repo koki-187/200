@@ -44,8 +44,8 @@ app.use('*', async (c, next) => {
   // Content Security Policy
   c.header('Content-Security-Policy', 
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.tailwindcss.com cdn.jsdelivr.net; " +
-    "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.tailwindcss.com cdn.jsdelivr.net unpkg.com; " +
+    "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com unpkg.com; " +
     "font-src 'self' cdn.jsdelivr.net fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
     "connect-src 'self';"

@@ -3,7 +3,8 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.42.0)**: https://79a2845f.real-estate-200units-v2.pages.dev 🆕 **← 最新デプロイ**
+- **Production URL (Latest v3.43.0)**: https://64d2e35a.real-estate-200units-v2.pages.dev 🆕 **← 最新デプロイ（JavaScript構文エラー完全修正）**
+- **Previous URL (v3.42.0)**: https://79a2845f.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.41.0)**: https://f521a2bb.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.40.1)**: https://11953975.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.39.0)**: https://6c17d177.real-estate-200units-v2.pages.dev
@@ -24,6 +25,12 @@
 - **メールアドレス**: `navigator-187@docomo.ne.jp`
 - **パスワード**: `kouki187`
 - **ロール**: ADMIN（管理者）
+
+#### ✅ v3.43.0 - JavaScript構文エラー完全修正 ✨
+- `confirm()`内の改行文字によるエラー修正
+- 重複変数宣言の修正（`lastUploadedFiles`, `dropZone`）
+- HTML属性内のエスケープ問題修正（`onclick`）
+- OCR機能が正常にロード、構文エラーなし
 
 #### ✅ v3.30.1 - JavaScript初期化問題を完全修正
 **状態**: 🟢 修正完了（2025-11-20）

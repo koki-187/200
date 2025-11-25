@@ -3,9 +3,9 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.44.0)**: https://73a5e10c.real-estate-200units-v2.pages.dev 🆕 **← 最新デプロイ（OCR API致命的バグ修正）**
+- **Production URL (Latest v3.45.0)**: https://73a5e10c.real-estate-200units-v2.pages.dev 🆕 **← 最新（OCRデータベーススキーマ修正）**
+- **Previous URL (v3.44.0)**: https://73a5e10c.real-estate-200units-v2.pages.dev（OCR API致命的バグ修正）
 - **Previous URL (v3.43.0)**: https://64d2e35a.real-estate-200units-v2.pages.dev
-- **Previous URL (v3.42.0)**: https://79a2845f.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.41.0)**: https://f521a2bb.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.40.1)**: https://11953975.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.39.0)**: https://6c17d177.real-estate-200units-v2.pages.dev
@@ -26,6 +26,13 @@
 - **メールアドレス**: `navigator-187@docomo.ne.jp`
 - **パスワード**: `kouki187`
 - **ロール**: ADMIN（管理者）
+
+#### ✅ v3.45.0 - OCRデータベーススキーマ修正 🚨 CRITICAL
+- **本番D1データベースのocr_jobsテーブルスキーマ修正**
+- 古いスキーマ（file_id）→ 新しいスキーマ（user_id）に更新
+- 「table ocr_jobs has no column named user_id」エラーを解消
+- OCRジョブ作成・処理が完全復旧
+- ✅ テスト確認: OCRジョブ作成成功
 
 #### ✅ v3.44.0 - OCR API致命的バグ修正 🚨 CRITICAL
 - **OCRジョブAPI（500エラー）の完全修正**

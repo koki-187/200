@@ -3,7 +3,8 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.39.0)**: https://6c17d177.real-estate-200units-v2.pages.dev 🆕 **← 最新デプロイ**
+- **Production URL (Latest v3.40.1)**: https://11953975.real-estate-200units-v2.pages.dev 🆕 **← 最新デプロイ**
+- **Previous URL (v3.39.0)**: https://6c17d177.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.38.1)**: https://3af7bbf4.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.38.0)**: https://dc91950b.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.37.0)**: https://ad24adae.real-estate-200units-v2.pages.dev
@@ -64,17 +65,22 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.39.0 (Production - Critical Fixes) ✅
-- **進捗状況**: Phase 2完了（本番環境重大バグ修正完了） ✅
+- **バージョン**: v3.40.1 (Production - Template Removal + Form Enhancement) ✅
+- **進捗状況**: Phase 2完了 + テンプレート機能削除完了 ✅
 - **デプロイ日**: 2025-11-25
-- **本番URL**: https://6c17d177.real-estate-200units-v2.pages.dev 
+- **本番URL**: https://11953975.real-estate-200units-v2.pages.dev 
 - **ローカル動作**: ✅ 完全に動作（全APIエンドポイント動作確認済み）
 - **本番環境**: ✅ 主要バグ修正完了（案件詳細ページ、OCRアップロード、404ハンドラー）
-- **最新の変更**: 
+- **最新の変更 (v3.40.1)**: 
+  - ✅ テンプレート選択機能をUIから完全削除（ユーザーリクエスト対応）
+  - ✅ 案件作成フォームのUX改善（ローディング状態、エラーハンドリング強化）
+  - ✅ フォーム送信中のボタン無効化実装
+  - ✅ APIタイムアウト15秒設定
+- **前回の変更 (v3.39.0)**: 
   - ✅ 案件詳細ページの無限ローディング問題を修正
   - ✅ OCRファイルアップロード機能を修正（グローバル公開）
   - ✅ 存在しないファイルへのリクエストに404を返すように修正
-- **次の予定**: ユーザーによるブラウザ実機テスト、テンプレート選択機能の動作確認
+- **次の予定**: ユーザーによる実機テスト（OCR機能、案件詳細ページ）
 
 ## 主要機能
 

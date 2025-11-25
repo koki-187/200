@@ -3,7 +3,8 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.41.0)**: https://f521a2bb.real-estate-200units-v2.pages.dev 🆕 **← 最新デプロイ**
+- **Production URL (Latest v3.42.0)**: https://79a2845f.real-estate-200units-v2.pages.dev 🆕 **← 最新デプロイ**
+- **Previous URL (v3.41.0)**: https://f521a2bb.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.40.1)**: https://11953975.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.39.0)**: https://6c17d177.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.38.1)**: https://3af7bbf4.real-estate-200units-v2.pages.dev
@@ -66,16 +67,19 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.41.0 (Production - AI Proposal History API) ✅
-- **進捗状況**: 全機能完全実装完了（51/51機能） ✅
+- **バージョン**: v3.42.0 (Production - MLIT API Integration) ✅
+- **進捗状況**: OCR機能検証中、不動産情報ライブラリAPI統合準備完了 ✅
 - **デプロイ日**: 2025-11-25
-- **本番URL**: https://f521a2bb.real-estate-200units-v2.pages.dev 
+- **本番URL**: https://79a2845f.real-estate-200units-v2.pages.dev 
 - **ローカル動作**: ✅ 完全に動作（全APIエンドポイント動作確認済み）
 - **本番環境**: ✅ 主要バグ修正完了（案件詳細ページ、OCRアップロード、404ハンドラー）
-- **最新の変更 (v3.41.0)**: 
-  - ✅ AI提案履歴取得API実装（`GET /api/ai-proposals/history/:dealId`）
-  - ✅ 認証・認可チェック完備（AGENT/ADMIN権限管理）
-  - ✅ 提案データを作成日降順で取得
+- **最新の変更 (v3.42.0)**: 
+  - ✅ 不動産情報ライブラリAPIキー設定（`MLIT_API_KEY`）
+  - ✅ OCR機能の詳細テストガイド作成（`OCR_TEST_GUIDE_v3.42.0.md`）
+  - ✅ OpenAI APIキー動作確認済み
+  - ⏳ OCR機能の実機テスト進行中
+- **前回の変更 (v3.41.0)**: 
+  - ✅ AI提案履歴取得API実装
   - ✅ すべての未実装機能の完全確認と実装完了
 - **前回の変更 (v3.40.1)**: 
   - ✅ テンプレート選択機能をUIから完全削除

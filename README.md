@@ -3,17 +3,17 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.37.0)**: https://ad24adae.real-estate-200units-v2.pages.dev 🆕
-- **DEBUG URL (v3.37.0 - 詳細ログ有効)**: https://debug.real-estate-200units-v2.pages.dev 🔧
+- **Production URL (Latest v3.38.1)**: https://3af7bbf4.real-estate-200units-v2.pages.dev 🆕 **← 最新デプロイ**
+- **Previous URL (v3.38.0)**: https://dc91950b.real-estate-200units-v2.pages.dev
+- **Previous URL (v3.37.0)**: https://ad24adae.real-estate-200units-v2.pages.dev
 - **Previous URL (v3.36.0)**: https://a227c307.real-estate-200units-v2.pages.dev
-- **Previous URL (v3.35.0)**: https://9c3e46c0.real-estate-200units-v2.pages.dev
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Showcase**: https://ad24adae.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR UI強化版)**: https://ad24adae.real-estate-200units-v2.pages.dev/deals/new
-- **Deal Detail (with Map)**: https://ad24adae.real-estate-200units-v2.pages.dev/deals/:id
-- **API Documentation**: https://ad24adae.real-estate-200units-v2.pages.dev/api/docs
-- **API Specification (OpenAPI)**: https://ad24adae.real-estate-200units-v2.pages.dev/api/openapi.json
-- **Debug Endpoint**: https://ad24adae.real-estate-200units-v2.pages.dev/api/debug/env
+- **Showcase**: https://3af7bbf4.real-estate-200units-v2.pages.dev/showcase
+- **Deal Creation (OCR UI強化版)**: https://3af7bbf4.real-estate-200units-v2.pages.dev/deals/new
+- **Deal Detail (with Map)**: https://3af7bbf4.real-estate-200units-v2.pages.dev/deals/deal-001
+- **API Documentation**: https://3af7bbf4.real-estate-200units-v2.pages.dev/api/docs
+- **API Specification (OpenAPI)**: https://3af7bbf4.real-estate-200units-v2.pages.dev/api/openapi.json
+- **Debug Endpoint**: https://3af7bbf4.real-estate-200units-v2.pages.dev/api/debug/env
 
 ### デフォルトログイン情報
 
@@ -64,15 +64,14 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.37.1 (Production - ログイン問題解決完了) ✅
-- **進捗状況**: Phase 1完了（100%）+ Phase 2完了、CODEX Phase 1最適化完了、ログイン修正完了 🎉
-- **デプロイ日**: 2025-11-21
-- **本番URL**: https://ad24adae.real-estate-200units-v2.pages.dev 
-- **DEBUG URL**: https://debug.real-estate-200units-v2.pages.dev 🔧
-- **ローカル動作**: ✅ 完全に動作
-- **本番環境**: ✅ ログイン問題解決、正常稼働中
-- **最新の変更**: ログイン問題修正（本番D1データベースにadminユーザー追加）
-- **次の予定**: ユーザーテスト後、Phase 2（コード分割）の検討
+- **バージョン**: v3.38.1 (Production - CSP修正完了) ✅
+- **進捗状況**: Phase 1進行中（本番環境デバッグ・テスト実施中） 🔧
+- **デプロイ日**: 2025-11-25
+- **本番URL**: https://3af7bbf4.real-estate-200units-v2.pages.dev 
+- **ローカル動作**: ✅ 完全に動作（全APIエンドポイント動作確認済み）
+- **本番環境**: 🔧 デバッグ中（CSP修正済み、ログイン・API正常、ブラウザテスト待ち）
+- **最新の変更**: CSPポリシー修正（Leaflet.js用にunpkg.com許可）
+- **次の予定**: ブラウザでのログインフローテスト、案件詳細ページの「読み込み中」問題の根本原因特定
 
 ## 主要機能
 
@@ -639,10 +638,46 @@ GenSpark AI Assistant + User
 
 ## 更新履歴
 
+### v3.38.1 (2025-11-25) 🔒 **CSP修正 + 本番環境デバッグ**
+**CSPポリシー修正とAPI動作確認完了**
+
+**デプロイURL**: ✅ https://3af7bbf4.real-estate-200units-v2.pages.dev
+
+#### 実施した修正
+**1. CSP（Content Security Policy）修正**
+- Leaflet.js（地図ライブラリ）使用のため、unpkg.comをscript-srcとstyle-srcに追加
+- CSP違反エラーを解消し、案件詳細ページの地図表示を修正
+
+**2. 本番環境APIテスト完了**
+- ✅ ログインAPI（/api/auth/login）：正常動作確認
+- ✅ 案件一覧API（/api/deals）：正常動作確認
+- ✅ 案件詳細API（/api/deals/:id）：正常動作確認
+- ⚠️ 500エラー（静的リソース？）: 調査中
+
+**3. コードベース確認**
+- イベント委譲パターン（deals-new-events.js）：正常実装確認
+- テンプレート選択機能（openTemplateModal）：正常実装確認
+- OCR機能（ファイル読み込み）：正常実装確認
+
+#### 次のタスク
+**Phase 1 完了目標：本番環境での完全なブラウザテスト**
+- 🔄 ブラウザでログインフローをテスト
+- 🔄 案件詳細ページの「読み込み中」問題の根本原因を特定
+- ⏳ 買取条件チェックリストの動作確認
+- ⏳ OCR機能（ファイル読み込みボタン）の動作確認
+- ⏳ テンプレート選択機能の動作確認
+
+#### デプロイ情報
+- **Git Commit**: ee21fa6
+- **Build Size**: 760.28 kB
+- **デプロイ時刻**: 2025-11-25
+
+---
+
 ### v3.38.0 (2025-11-25) 🐛 **DEBUG FEATURES**
 **案件詳細ページデバッグ機能追加**
 
-**デプロイURL**: ⏸️ ローカル完了、本番デプロイ待機中（Cloudflare APIキー必要）
+**デプロイURL**: https://dc91950b.real-estate-200units-v2.pages.dev
 
 #### 実施した修正
 **1. 案件詳細ページのデバッグ機能実装**

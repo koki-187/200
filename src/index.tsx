@@ -4337,6 +4337,9 @@ app.get('/deals/new', (c) => {
         displayOCRError(error);
       }
     }
+    
+    // OCR処理関数をグローバルに公開（イベント委譲から呼び出し可能にする）
+    window.processMultipleOCR = processMultipleOCR;
 
     // OCR結果編集UIの表示
     function displayOCRResultEditor(extractedData) {
@@ -6894,6 +6897,16 @@ app.get('/deals/:id', (c) => {
           </div>
         </div>
       \`;
+
+      // メッセージ添付ファイルイベントリスナー（displayDeal実行後に登録）
+      const messageAttachmentInput = document.getElementById('message-attachment');
+      if (messageAttachmentInput) {
+        messageAttachmentInput.addEventListener('change', (e) => {
+          messageAttachment = e.target.files[0];
+          document.getElementById('attachment-name').textContent = messageAttachment ? messageAttachment.name : '';
+        });
+        if (DEBUG_MODE) console.log('[Deal Detail] Message attachment listener registered');
+      }
     }
 
     function showTab(tab) {
@@ -7372,21 +7385,14 @@ app.get('/deals/:id', (c) => {
       
       // ユーザー名表示
       if (user.name) {
-        document.getElementById('user-name').textContent = user.name;
-        if (DEBUG_MODE) console.log('[Deal Detail] User name displayed:', user.name);
+        const userNameElement = document.getElementById('user-name');
+        if (userNameElement) {
+          userNameElement.textContent = user.name;
+          if (DEBUG_MODE) console.log('[Deal Detail] User name displayed:', user.name);
+        }
       }
 
-      // メッセージ添付ファイルイベントリスナー
-      const messageAttachmentInput = document.getElementById('message-attachment');
-      if (messageAttachmentInput) {
-        messageAttachmentInput.addEventListener('change', (e) => {
-          messageAttachment = e.target.files[0];
-          document.getElementById('attachment-name').textContent = messageAttachment ? messageAttachment.name : '';
-        });
-        if (DEBUG_MODE) console.log('[Deal Detail] Message attachment listener registered');
-      }
-
-      // 案件データ読み込み
+      // 案件データ読み込み（メッセージ添付ファイルイベントはdisplayDeal内で登録）
       if (DEBUG_MODE) console.log('[Deal Detail] Starting deal load...');
       loadDeal();
     });
@@ -7805,6 +7811,12 @@ self.addEventListener('pushsubscriptionchange', (event) => {
     },
   });
 });
+
+// 存在しない静的アセットへのリクエストに404を返す（静的ファイル配信の前に配置）
+app.get('/favicon.ico', (c) => c.text('Not Found', 404));
+app.get('/apple-touch-icon.png', (c) => c.text('Not Found', 404));
+app.get('/manifest.json', (c) => c.text('Not Found', 404));
+app.get('/robots.txt', (c) => c.text('Not Found', 404));
 
 // 静的ファイルの配信（最後に配置してAPIルートより優先度を下げる）
 app.use('/*', serveStatic({ root: './' }));

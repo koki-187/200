@@ -6523,6 +6523,12 @@ app.get('/deals/:id', (c) => {
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
+    'use strict';
+    
+    // デバッグモード（本番環境でも有効）
+    const DEBUG_MODE = true;
+    const PAGE_LOAD_TIMEOUT = 10000; // 10秒
+
     const token = localStorage.getItem('auth_token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const dealId = '${dealId}';
@@ -6539,15 +6545,22 @@ app.get('/deals/:id', (c) => {
 
     async function loadDeal() {
       try {
+        if (DEBUG_MODE) console.log('[Deal Detail] Loading deal:', dealId);
+        
         const response = await axios.get('/api/deals/' + dealId, {
-          headers: { 'Authorization': 'Bearer ' + token }
+          headers: { 'Authorization': 'Bearer ' + token },
+          timeout: 15000  // 15秒タイムアウト
         });
+
+        if (DEBUG_MODE) console.log('[Deal Detail] API response received:', response.data);
 
         const deal = response.data.deal;
         currentDealData = deal; // AI提案用にグローバル保存
         displayDeal(deal);
+        
+        if (DEBUG_MODE) console.log('[Deal Detail] Deal displayed successfully');
       } catch (error) {
-        console.error('Failed to load deal:', error);
+        console.error('[Deal Detail] Failed to load deal:', error);
         if (error.response && error.response.status === 401) {
           logout();
         } else if (error.response && error.response.status === 404) {
@@ -6562,10 +6575,15 @@ app.get('/deals/:id', (c) => {
             </div>
           \`;
         } else {
+          const errorMsg = error.response?.data?.error || error.message || '不明なエラー';
           document.getElementById('deal-content').innerHTML = \`
             <div class="text-center py-12 text-red-600">
               <i class="fas fa-exclamation-triangle text-5xl mb-4"></i>
-              <p>案件の読み込みに失敗しました</p>
+              <p class="text-xl font-semibold mb-2">案件の読み込みに失敗しました</p>
+              <p class="text-sm text-gray-600">\${errorMsg}</p>
+              <button onclick="loadDeal()" class="mt-4 bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700">
+                再試行
+              </button>
             </div>
           \`;
         }
@@ -7303,11 +7321,59 @@ app.get('/deals/:id', (c) => {
       }
     }
 
+    // ページロードタイムアウト監視
+    const pageLoadTimer = setTimeout(() => {
+      if (DEBUG_MODE) {
+        console.error('[Deal Detail] Page load timeout exceeded');
+        const dealContent = document.getElementById('deal-content');
+        if (dealContent && dealContent.innerHTML.includes('読み込み中')) {
+          dealContent.innerHTML = \`
+            <div class="text-center py-12 text-orange-600">
+              <i class="fas fa-clock text-5xl mb-4"></i>
+              <p class="text-xl font-semibold mb-2">ページの読み込みがタイムアウトしました</p>
+              <p class="text-sm text-gray-600 mb-4">ネットワーク接続を確認してください</p>
+              <button onclick="window.location.reload()" class="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700">
+                ページを再読み込み
+              </button>
+            </div>
+          \`;
+        }
+      }
+    }, PAGE_LOAD_TIMEOUT);
+
+    // グローバルエラーハンドラー
+    window.addEventListener('error', function(event) {
+      console.error('[Deal Detail] Global error:', event.error);
+      if (DEBUG_MODE) {
+        const errorOverlay = document.createElement('div');
+        errorOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;z-index:99999;';
+        errorOverlay.textContent = 'エラー: ' + (event.error?.message || 'Unknown error');
+        document.body.insertBefore(errorOverlay, document.body.firstChild);
+      }
+    });
+
+    // Promise拒否エラーハンドラー
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('[Deal Detail] Unhandled rejection:', event.reason);
+      if (DEBUG_MODE) {
+        const errorOverlay = document.createElement('div');
+        errorOverlay.style.cssText = 'position:fixed;top:20px;left:0;right:0;background:orange;color:white;padding:10px;z-index:99999;';
+        errorOverlay.textContent = '非同期エラー: ' + (event.reason?.message || 'Unknown error');
+        document.body.insertBefore(errorOverlay, document.body.firstChild);
+      }
+    });
+
     // ページ読み込み後に初期化(window.load で確実に実行)
     window.addEventListener('load', function() {
+      if (DEBUG_MODE) console.log('[Deal Detail] Window load event fired');
+      
+      // タイマークリア
+      clearTimeout(pageLoadTimer);
+      
       // ユーザー名表示
       if (user.name) {
         document.getElementById('user-name').textContent = user.name;
+        if (DEBUG_MODE) console.log('[Deal Detail] User name displayed:', user.name);
       }
 
       // メッセージ添付ファイルイベントリスナー
@@ -7317,9 +7383,11 @@ app.get('/deals/:id', (c) => {
           messageAttachment = e.target.files[0];
           document.getElementById('attachment-name').textContent = messageAttachment ? messageAttachment.name : '';
         });
+        if (DEBUG_MODE) console.log('[Deal Detail] Message attachment listener registered');
       }
 
       // 案件データ読み込み
+      if (DEBUG_MODE) console.log('[Deal Detail] Starting deal load...');
       loadDeal();
     });
   </script>

@@ -639,6 +639,62 @@ GenSpark AI Assistant + User
 
 ## 更新履歴
 
+### v3.38.0 (2025-11-25) 🐛 **DEBUG FEATURES**
+**案件詳細ページデバッグ機能追加**
+
+**デプロイURL**: ⏸️ ローカル完了、本番デプロイ待機中（Cloudflare APIキー必要）
+
+#### 実施した修正
+**1. 案件詳細ページのデバッグ機能実装**
+- デバッグモード有効化（DEBUG_MODE = true、本番環境でも有効）
+- ページロードタイムアウト監視（10秒）
+- グローバルエラーハンドラー追加（JavaScriptエラーを赤色オーバーレイ表示）
+- Promise拒否エラーハンドラー追加（非同期エラーをオレンジ色オーバーレイ表示）
+- 詳細なコンソールログ出力（全処理工程をログ記録）
+- API呼び出しに15秒タイムアウト追加
+- エラー時の再試行ボタン実装
+
+**2. エラーハンドリング強化**
+- タイムアウト時に「ページを再読み込み」ボタン表示
+- API呼び出し失敗時に詳細なエラーメッセージ表示
+- ユーザーフレンドリーなエラーメッセージとアクションボタン
+
+**3. ローカル開発環境セットアップ**
+- 依存関係インストール完了（npm install --legacy-peer-deps）
+- D1ローカルマイグレーション完了（13マイグレーション）
+- シードデータ投入完了（3ユーザー、1案件）
+- PM2でサーバー起動成功
+- 全APIエンドポイント動作確認済み
+
+#### デバッグログ出力例
+```javascript
+[Deal Detail] Loading deal: deal-001
+[Deal Detail] API response received: {...}
+[Deal Detail] Deal displayed successfully
+[Deal Detail] Window load event fired
+[Deal Detail] User name displayed: 管理者
+[Deal Detail] Message attachment listener registered
+[Deal Detail] Starting deal load...
+```
+
+#### テスト結果
+- ✅ ローカル環境: 全APIエンドポイント正常動作
+- ✅ ヘルスチェック: 200 OK
+- ✅ ログイン: トークン生成成功
+- ✅ 案件一覧: 1件取得成功
+- ✅ 案件詳細: データ取得成功
+- ⏸️ 本番環境: Cloudflare APIキー設定後デプロイ予定
+
+#### 次のステップ
+1. **ユーザー様対応**: Cloudflare APIキーの設定
+2. **本番デプロイ**: `npx wrangler pages deploy dist --project-name real-estate-200units-v2`
+3. **ブラウザテスト**: コンソールログでエラー診断
+4. **買取条件チェックリスト**: 実装確認と修正
+5. **OCR機能**: ファイル読み込みボタンの修正
+6. **テンプレート選択**: ボタン機能の修正
+
+---
+
 ### v3.37.1 (2025-11-21) 🔧 **LOGIN FIX**
 **ログイン問題の完全解決 - 本番D1データベースにユーザー追加**
 

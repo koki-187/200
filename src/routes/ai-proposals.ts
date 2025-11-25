@@ -104,19 +104,53 @@ ${buyerRequirements || '特になし'}
   }
 });
 
-// 提案履歴取得（将来拡張用）
+// 提案履歴取得
 aiProposals.get('/history/:dealId', authMiddleware, async (c) => {
   try {
     const dealId = c.req.param('dealId');
+    const userId = c.get('userId') as string;
+    const role = c.get('userRole') as string;
+    const db = c.env.DB;
     
-    // TODO: データベースから提案履歴を取得
+    // 案件の存在確認と権限チェック
+    const deal = await db.prepare('SELECT * FROM deals WHERE id = ?').bind(dealId).first();
+    if (!deal) {
+      return c.json({ error: 'Deal not found' }, 404);
+    }
+    
+    // AGENTは自分の案件のみ、ADMINはすべて閲覧可能
+    if (role === 'AGENT' && deal.seller_id !== userId) {
+      return c.json({ error: 'Access denied' }, 403);
+    }
+    
+    // データベースから提案履歴を取得（作成日降順）
+    const proposals = await db.prepare(`
+      SELECT 
+        id,
+        buyer_profile,
+        summary,
+        strengths,
+        risks,
+        cf_summary,
+        proposal_text,
+        meeting_points,
+        created_at,
+        updated_at
+      FROM proposals 
+      WHERE deal_id = ? 
+      ORDER BY created_at DESC
+    `).bind(dealId).all();
+    
     return c.json({
       dealId: dealId,
-      proposals: []
+      proposals: proposals.results || []
     });
   } catch (error) {
     console.error('Get proposals history error:', error);
-    return c.json({ error: 'Internal server error' }, 500);
+    return c.json({ 
+      error: 'AI提案履歴の取得に失敗しました',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500);
   }
 });
 

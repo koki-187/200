@@ -7827,7 +7827,9 @@ app.onError((err, c) => {
 });
 
 // 静的ファイルの配信（最後に配置してAPIルートより優先度を下げる）
-app.use('/*', serveStatic({ root: './' }));
+// Cloudflare Pagesでは静的ファイルは自動的に配信されるため、
+// Workers専用のserveStaticは使用しない
+// app.use('/*', serveStatic({ root: './' }));
 
 // Cloudflare Workers export with Cron support
 export default {

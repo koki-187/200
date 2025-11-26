@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { Bindings } from '../types';
+import { extractJsonContentFromMessage, mergePropertyData, normalizePropertyExtraction } from '../utils/ocr';
 
 const ocrJobs = new Hono<{ Bindings: Bindings }>();
 
@@ -288,7 +289,7 @@ ocrJobs.delete('/:jobId', async (c) => {
 async function processOCRJob(jobId: string, files: File[], env: Bindings): Promise<void> {
   const startTime = Date.now();
   const { DB, OPENAI_API_KEY } = env;
-  
+
   try {
     // ステータスを処理中に更新
     await DB.prepare(`
@@ -318,13 +319,13 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
     // 各ファイル処理用のプロミス関数
     const processFile = async (file: File, index: number) => {
       await semaphore.acquire();
-      
+
       try {
         // キャンセルチェック
         const currentJob = await DB.prepare(`
           SELECT status FROM ocr_jobs WHERE id = ?
         `).bind(jobId).first();
-        
+
         if (currentJob && currentJob.status === 'cancelled') {
           console.log(`Job ${jobId} was cancelled, stopping file processing`);
           return { index, success: false, cancelled: true };
@@ -366,7 +367,8 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
               }
             ],
             max_tokens: 1500,
-            temperature: 0.1
+            temperature: 0.1,
+            response_format: { type: 'json_object' }
           })
         });
         
@@ -376,26 +378,27 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
           return { index, success: false };
         }
         
-        const result = await openaiResponse.json();
-        
-        if (result.choices && result.choices.length > 0) {
-          const content = result.choices[0].message.content;
-          
-          // JSON抽出
+        let result: any;
+        try {
+          result = await openaiResponse.json();
+        } catch (parseError) {
+          console.error(`Failed to parse OpenAI response for ${file.name}:`, parseError);
+          return { index, success: false };
+        }
+
+        const message = result?.choices?.[0]?.message;
+
+        if (message) {
           try {
-            const jsonMatch = content.match(/```json\n([\s\S]+?)\n```/) || content.match(/\{[\s\S]+\}/);
-            
-            if (jsonMatch) {
-              const jsonStr = jsonMatch[1] || jsonMatch[0];
-              const extractedData = JSON.parse(jsonStr);
-              return { index, success: true, data: extractedData, fileName: file.name };
-            }
+            const parsed = extractJsonContentFromMessage(message.content);
+            const normalized = normalizePropertyExtraction(parsed);
+            return { index, success: true, data: normalized, fileName: file.name };
           } catch (parseError) {
             console.error(`JSON parse error for ${file.name}:`, parseError);
           }
         }
-        
-        return { index, success: false };
+
+        return { index, success: false, data: null };
         
       } catch (fileError) {
         console.error(`Error processing ${file.name}:`, fileError);
@@ -417,7 +420,9 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
     const results = await Promise.all(
       files.map((file, index) => processFile(file, index))
     );
-    
+
+    const wasCancelled = results.some((r) => r.cancelled);
+
     // 成功した結果のみ収集
     for (const result of results) {
       if (result.success && result.data) {
@@ -428,11 +433,22 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
     
     // 最終進捗を更新
     await DB.prepare(`
-      UPDATE ocr_jobs 
-      SET processed_files = ?, updated_at = CURRENT_TIMESTAMP 
+      UPDATE ocr_jobs
+      SET processed_files = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).bind(files.length, jobId).run();
-    
+
+    if (wasCancelled) {
+      console.log(`Job ${jobId} was cancelled after processing started`);
+      await DB.prepare(`
+        UPDATE ocr_jobs
+        SET status = 'cancelled',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).bind(jobId).run();
+      return;
+    }
+
     if (extractionResults.length === 0) {
       throw new Error('物件情報を抽出できませんでした');
     }
@@ -582,67 +598,5 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは20年以上の経験を持つ不
 **overall_confidence**: 全体の抽出精度（全フィールドの平均）
 
 抽出できない情報は必ず {"value": null, "confidence": 0} にしてください。推測や創作は厳禁です。`;
-
-/**
- * 複数の抽出結果を統合
- * より詳細な情報を持つものを優先
- */
-function mergePropertyData(results: any[]): any {
-  const merged: any = {};
-  
-  // 各フィールドについて、最も信頼度が高く詳細な情報を選択
-  const fields = [
-    'property_name', 'location', 'station', 'walk_minutes',
-    'land_area', 'building_area', 'zoning', 'building_coverage',
-    'floor_area_ratio', 'price', 'structure', 'built_year',
-    'road_info', 'current_status', 'yield', 'occupancy'
-  ];
-  
-  for (const field of fields) {
-    let bestValue: any = null;
-    let maxScore = 0;
-    
-    for (const result of results) {
-      const value = result[field];
-      if (value && value !== null) {
-        // 新形式の場合
-        if (typeof value === 'object' && value.value !== null) {
-          const confidence = value.confidence || 0.5;
-          const length = String(value.value).length;
-          const score = confidence * length;
-          
-          if (score > maxScore) {
-            maxScore = score;
-            bestValue = value;
-          }
-        } else {
-          // 旧形式の場合
-          const valueStr = String(value);
-          if (valueStr.length > maxScore) {
-            maxScore = valueStr.length;
-            bestValue = { value: valueStr, confidence: 0.5 };
-          }
-        }
-      }
-    }
-    
-    merged[field] = bestValue;
-  }
-  
-  // overall_confidenceの計算
-  let totalConfidence = 0;
-  let count = 0;
-  
-  for (const field of fields) {
-    if (merged[field] && typeof merged[field] === 'object' && merged[field].confidence) {
-      totalConfidence += merged[field].confidence;
-      count++;
-    }
-  }
-  
-  merged.overall_confidence = count > 0 ? totalConfidence / count : 0.5;
-  
-  return merged;
-}
 
 export default ocrJobs;

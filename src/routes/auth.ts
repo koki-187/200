@@ -10,20 +10,36 @@ const auth = new Hono<{ Bindings: Bindings }>();
 // ログイン
 auth.post('/login', async (c) => {
   try {
-    const body = await c.req.json();
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch (jsonError) {
+      console.error('Login request JSON parse error:', jsonError);
+      return c.json({ error: 'Invalid request body' }, 400);
+    }
+
+    const { DB, JWT_SECRET } = c.env;
+    if (!DB || !JWT_SECRET) {
+      console.error('Login configuration error: missing DB or JWT_SECRET');
+      return c.json({ error: 'Authentication service is not configured correctly' }, 500);
+    }
 
     // Zodバリデーション
     const validation = validateData(loginSchema, body);
     if (!validation.success) {
       return c.json({ error: 'Validation failed', details: validation.errors }, 400);
     }
-
     const { email, password, rememberMe } = validation.data;
 
-    const db = new Database(c.env.DB);
+    const db = new Database(DB);
     const user = await db.getUserByEmail(email);
 
     if (!user) {
+      return c.json({ error: 'Invalid credentials' }, 401);
+    }
+
+    if (!user.password_hash) {
+      console.error('User record is missing password hash:', user.id);
       return c.json({ error: 'Invalid credentials' }, 401);
     }
 
@@ -38,7 +54,7 @@ auth.post('/login', async (c) => {
 
     // JWTトークン生成（HMAC-SHA256署名）
     // rememberMe = true なら30日間、false なら7日間
-    const token = await generateToken(user.id, user.role, c.env.JWT_SECRET, rememberMe || false);
+    const token = await generateToken(user.id, user.role, JWT_SECRET, rememberMe || false);
 
     return c.json({
       token,

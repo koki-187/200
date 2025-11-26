@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
+import { extractJsonContentFromMessage, mergePropertyData, normalizePropertyExtraction } from '../utils/ocr';
 
 const propertyOCR = new Hono<{ Bindings: Bindings }>();
 
@@ -208,7 +209,8 @@ propertyOCR.post('/extract-multiple', async (c) => {
               }
             ],
             max_tokens: 1500,
-            temperature: 0.1
+            temperature: 0.1,
+            response_format: { type: 'json_object' }
           })
         });
         
@@ -218,26 +220,27 @@ propertyOCR.post('/extract-multiple', async (c) => {
           continue;
         }
         
-        const result = await openaiResponse.json();
-        
-        if (result.choices && result.choices.length > 0) {
-          const content = result.choices[0].message.content;
-          
-          // JSON抽出
+        let result: any;
+        try {
+          result = await openaiResponse.json();
+        } catch (parseError) {
+          console.error(`Failed to parse OpenAI response for ${file.name}:`, parseError);
+          continue;
+        }
+
+        const message = result?.choices?.[0]?.message;
+
+        if (message) {
           try {
-            const jsonMatch = content.match(/```json\n([\s\S]+?)\n```/) || content.match(/\{[\s\S]+\}/);
-            
-            if (jsonMatch) {
-              const jsonStr = jsonMatch[1] || jsonMatch[0];
-              const extractedData = JSON.parse(jsonStr);
-              extractionResults.push(extractedData);
-              processedFiles.push(file.name);
-            } else {
-              console.error(`No JSON found in response for ${file.name}`);
-            }
+            const parsed = extractJsonContentFromMessage(message.content);
+            const normalized = normalizePropertyExtraction(parsed);
+            extractionResults.push(normalized);
+            processedFiles.push(file.name);
           } catch (parseError) {
             console.error(`JSON parse error for ${file.name}:`, parseError);
           }
+        } else {
+          console.error(`OpenAI response missing message content for ${file.name}:`, result);
         }
         
       } catch (fileError) {
@@ -273,42 +276,6 @@ propertyOCR.post('/extract-multiple', async (c) => {
     }, 500);
   }
 });
-
-/**
- * 複数の抽出結果を統合
- * より詳細な情報を持つものを優先
- */
-function mergePropertyData(results: any[]): any {
-  const merged: any = {};
-  
-  // 各フィールドについて、最も詳細な情報を選択
-  const fields = [
-    'property_name', 'location', 'station', 'walk_minutes',
-    'land_area', 'building_area', 'zoning', 'building_coverage',
-    'floor_area_ratio', 'price', 'structure', 'built_year',
-    'road_info', 'current_status', 'yield', 'occupancy'
-  ];
-  
-  for (const field of fields) {
-    let bestValue: any = null;
-    let maxLength = 0;
-    
-    for (const result of results) {
-      const value = result[field];
-      if (value && value !== null) {
-        const valueStr = String(value);
-        if (valueStr.length > maxLength) {
-          maxLength = valueStr.length;
-          bestValue = value;
-        }
-      }
-    }
-    
-    merged[field] = bestValue;
-  }
-  
-  return merged;
-}
 
 /**
  * 単一ファイルから物件情報を抽出（互換性のため）

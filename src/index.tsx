@@ -4012,10 +4012,12 @@ app.get('/deals/new', (c) => {
     // ストレージ使用量を取得して表示
     async function loadStorageQuota() {
       try {
+        console.log('[Storage Quota] Loading storage quota...');
         const response = await axios.get('/api/storage-quota', {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         
+        console.log('[Storage Quota] Response received:', response.status);
         const quota = response.data.quota;
         const usage = quota.usage;
         const usagePercent = usage.usage_percent.toFixed(1);
@@ -4033,12 +4035,37 @@ app.get('/deals/new', (c) => {
           } else {
             storageDisplay.className = 'text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium border border-blue-200';
           }
+          console.log('[Storage Quota] Successfully loaded:', usage.used_mb + 'MB / ' + usage.limit_mb + 'MB');
         }
       } catch (error) {
-        console.error('Failed to load storage quota:', error);
+        console.error('[Storage Quota] Failed to load storage quota:', error);
+        console.error('[Storage Quota] Error details:', error.response?.status, error.response?.data);
+        
         const storageText = document.getElementById('storage-usage-text');
+        const storageDisplay = document.getElementById('storage-quota-display');
+        
         if (storageText) {
-          storageText.textContent = '取得失敗';
+          // 認証エラーの場合は明確に表示
+          if (error.response?.status === 401) {
+            storageText.textContent = '認証エラー';
+            if (storageDisplay) {
+              storageDisplay.className = 'text-sm bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium border border-red-200';
+            }
+            console.warn('[Storage Quota] Authentication error - token may be expired');
+            // 5秒後にログイン画面にリダイレクト
+            setTimeout(() => {
+              if (confirm('認証の有効期限が切れています。ログインページに移動しますか？')) {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user');
+                window.location.href = '/';
+              }
+            }, 2000);
+          } else {
+            storageText.textContent = '取得失敗';
+            if (storageDisplay) {
+              storageDisplay.className = 'text-sm bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full font-medium border border-yellow-200';
+            }
+          }
         }
       }
     }
@@ -4205,12 +4232,21 @@ app.get('/deals/new', (c) => {
     }
 
     async function processMultipleOCR(files) {
+      console.log('[OCR] ========================================');
+      console.log('[OCR] OCR処理開始');
+      console.log('[OCR] ファイル数:', files.length);
+      console.log('[OCR] 認証トークン存在:', !!token);
+      console.log('[OCR] ========================================');
+      
       // ファイルを保存（リトライ用）
       lastUploadedFiles = Array.from(files);
       
       // PDFファイルを画像に変換
       const pdfFiles = files.filter(f => f.type === 'application/pdf');
       const imageFiles = files.filter(f => f.type.startsWith('image/'));
+      
+      console.log('[OCR] PDFファイル:', pdfFiles.length, '個');
+      console.log('[OCR] 画像ファイル:', imageFiles.length, '個');
       
       let allFiles = [...imageFiles];
       
@@ -4312,6 +4348,9 @@ app.get('/deals/new', (c) => {
         });
 
         // ステップ1: ジョブを作成
+        console.log('[OCR] ジョブ作成リクエスト送信中...');
+        console.log('[OCR] ファイル数:', allFiles.length);
+        
         const createResponse = await axios.post('/api/ocr-jobs', formData, {
           headers: {
             'Authorization': 'Bearer ' + token,
@@ -4320,7 +4359,8 @@ app.get('/deals/new', (c) => {
         });
         
         currentJobId = createResponse.data.job_id;
-        console.log('OCR job created:', currentJobId);
+        console.log('[OCR] ✅ ジョブ作成成功 - Job ID:', currentJobId);
+        console.log('[OCR] レスポンス:', createResponse.data);
         
         // localStorageにjobIdを保存（永続化）
         localStorage.setItem('currentOCRJobId', currentJobId);
@@ -4464,7 +4504,12 @@ app.get('/deals/new', (c) => {
 
 
       } catch (error) {
-        console.error('OCR error:', error);
+        console.error('[OCR] ❌ OCR処理エラー:', error);
+        console.error('[OCR] エラー詳細:');
+        console.error('[OCR]   - Status:', error.response?.status);
+        console.error('[OCR]   - Message:', error.message);
+        console.error('[OCR]   - Response:', error.response?.data);
+        
         if (cancelBtn) {
           cancelBtn.style.display = 'none';
         }
@@ -4473,6 +4518,12 @@ app.get('/deals/new', (c) => {
         }
         localStorage.removeItem('currentOCRJobId');
         progressSection.classList.add('hidden');
+        
+        // 認証エラーの場合は特別な処理
+        if (error.response?.status === 401) {
+          console.error('[OCR] 認証エラー - トークンが無効または期限切れ');
+          showMessage('認証エラーが発生しました。ページを再読み込みしてログインし直してください。', 'error');
+        }
         
         // エラー表示
         displayOCRError(error);

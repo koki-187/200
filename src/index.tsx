@@ -74,9 +74,10 @@ app.use('*', async (c, next) => {
   // パフォーマンス最適化 - キャッシュ戦略
   const path = c.req.path;
   
-  // 静的リソースには長期キャッシュを設定
+  // 静的リソースには短期キャッシュを設定（デプロイ時の更新を即座に反映）
   if (path.startsWith('/static/') || path.startsWith('/assets/')) {
-    c.header('Cache-Control', 'public, max-age=31536000, immutable');
+    // 開発中は短期キャッシュ（5分）、本番環境では1日
+    c.header('Cache-Control', 'public, max-age=300, must-revalidate');
   }
   // APIレスポンスはキャッシュしない
   else if (path.startsWith('/api/')) {
@@ -4060,6 +4061,13 @@ app.get('/deals/new', (c) => {
                 window.location.href = '/';
               }
             }, 2000);
+          } else if (!error.response) {
+            // ネットワークエラーまたはCORS問題
+            storageText.textContent = 'ネットワークエラー';
+            if (storageDisplay) {
+              storageDisplay.className = 'text-sm bg-orange-50 text-orange-700 px-3 py-1 rounded-full font-medium border border-orange-200';
+            }
+            console.warn('[Storage Quota] Network error - please check your connection');
           } else {
             storageText.textContent = '取得失敗';
             if (storageDisplay) {

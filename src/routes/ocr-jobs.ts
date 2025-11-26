@@ -399,7 +399,10 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
           try {
             const extractedData = JSON.parse(content);
             console.log(`[OCR] Successfully parsed JSON for ${file.name}`);
-            console.log(`[OCR] Extracted data sample:`, JSON.stringify(extractedData).substring(0, 200));
+            console.log(`[OCR] Extracted data type:`, typeof extractedData);
+            console.log(`[OCR] Extracted data keys:`, Object.keys(extractedData || {}));
+            console.log(`[OCR] Sample field (property_name):`, JSON.stringify(extractedData.property_name));
+            console.log(`[OCR] Full data:`, JSON.stringify(extractedData).substring(0, 500));
             return { index, success: true, data: extractedData, fileName: file.name };
           } catch (parseError) {
             const errorMsg = `JSON解析エラー: ${parseError instanceof Error ? parseError.message : 'Unknown'}`;
@@ -629,27 +632,33 @@ function mergePropertyData(results: any[]): any {
   ];
   
   for (const field of fields) {
-    let bestValue: any = null;
+    let bestValue: any = { value: null, confidence: 0 };
     let maxScore = 0;
     
     for (const result of results) {
       const value = result[field];
       if (value && value !== null) {
-        // 新形式の場合
-        if (typeof value === 'object' && value.value !== null) {
+        // 新形式の場合 (object with value and confidence)
+        if (typeof value === 'object' && 'value' in value && 'confidence' in value) {
           const confidence = value.confidence || 0.5;
-          const length = String(value.value).length;
-          const score = confidence * length;
+          const valueStr = value.value !== null ? String(value.value) : '';
+          const length = valueStr.length;
+          const score = confidence * (length + 1); // +1 to avoid zero score for empty strings
           
           if (score > maxScore) {
             maxScore = score;
             bestValue = value;
           }
+        } else if (typeof value === 'object' && !('value' in value)) {
+          // オブジェクトだが期待する形式ではない場合 (単なるオブジェクト)
+          console.warn(`[OCR] Unexpected object format for ${field}:`, JSON.stringify(value).substring(0, 100));
+          bestValue = { value: null, confidence: 0 };
         } else {
-          // 旧形式の場合
+          // 旧形式の場合 (直接文字列や数値)
           const valueStr = String(value);
-          if (valueStr.length > maxScore) {
-            maxScore = valueStr.length;
+          const score = valueStr.length;
+          if (score > maxScore) {
+            maxScore = score;
             bestValue = { value: valueStr, confidence: 0.5 };
           }
         }

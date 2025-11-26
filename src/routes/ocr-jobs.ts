@@ -396,6 +396,13 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
         
         if (result.choices && result.choices.length > 0) {
           const content = result.choices[0].message.content;
+          
+          if (!content) {
+            const errorMsg = 'OpenAI APIレスポンスのcontentが空です';
+            console.error(`[OCR] Empty content in OpenAI response for ${file.name}`);
+            return { index, success: false, error: errorMsg };
+          }
+          
           console.log(`[OCR] OpenAI response for ${file.name}:`, content.substring(0, 500));
           
           // JSON抽出 (response_format: json_objectを使用しているため直接パース)

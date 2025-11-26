@@ -1,7 +1,11 @@
 import { Hono } from 'hono';
 import type { Bindings } from '../types';
+import { authMiddleware } from '../utils/auth';
 
 const ocrHistory = new Hono<{ Bindings: Bindings }>();
+
+// 全てのルートに認証必須
+ocrHistory.use('*', authMiddleware);
 
 /**
  * OCR履歴を保存

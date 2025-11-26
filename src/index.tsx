@@ -3790,13 +3790,14 @@ app.get('/deals/new', (c) => {
           console.log('Restoring OCR job:', savedJobId);
           
           // ユーザーに確認ダイアログを表示
-          const shouldRestore = confirm(
-            '前回のOCR処理が中断されています。\n\n' +
-            'ファイル: ' + (job.file_names ? job.file_names.join(', ') : '不明') + '\n' +
-            'ステータス: ' + (job.status === 'processing' ? '処理中' : '待機中') + '\n\n' +
-            '処理を再開しますか？\n' +
-            '「キャンセル」を選択すると、前回の処理をクリアして新しくOCRを開始できます。'
-          );
+          const fileName = job.file_names ? job.file_names.join(', ') : '不明';
+          const statusText = job.status === 'processing' ? '処理中' : '待機中';
+          const confirmMessage = '前回のOCR処理が中断されています。\\n\\n' +
+            'ファイル: ' + fileName + '\\n' +
+            'ステータス: ' + statusText + '\\n\\n' +
+            '処理を再開しますか？\\n' +
+            '「キャンセル」を選択すると、前回の処理をクリアして新しくOCRを開始できます。';
+          const shouldRestore = confirm(confirmMessage);
           
           if (shouldRestore) {
             resumeOCRProgressDisplay(savedJobId, job);

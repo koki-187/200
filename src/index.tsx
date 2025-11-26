@@ -44,11 +44,12 @@ app.use('*', async (c, next) => {
   // Content Security Policy
   c.header('Content-Security-Policy', 
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.tailwindcss.com cdn.jsdelivr.net unpkg.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.tailwindcss.com cdn.jsdelivr.net unpkg.com cdnjs.cloudflare.com; " +
     "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com unpkg.com; " +
     "font-src 'self' cdn.jsdelivr.net fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
-    "connect-src 'self';"
+    "connect-src 'self' cdnjs.cloudflare.com;" +
+    "worker-src 'self' blob: cdnjs.cloudflare.com;"
   );
   
   // クリックジャッキング対策
@@ -249,6 +250,8 @@ app.get('/register', (c) => {
   <title>ユーザー登録 - 200棟土地仕入れ管理システム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- PDF.js for PDF to Image conversion -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs" type="module"></script>
   <style>
     body {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -4022,17 +4025,16 @@ app.get('/deals/new', (c) => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
             const files = Array.from(e.dataTransfer.files).filter(f => 
-              f.type.startsWith('image/')
+              f.type.startsWith('image/') || f.type === 'application/pdf'
             );
             console.log('[OCR Elements] Files dropped:', files.length);
             if (files.length > 0) {
               processMultipleOCR(files);
             } else {
-              // PDFまたは非対応ファイルの場合
+              // 非対応ファイルの場合
               displayOCRError(
                 'ファイル形式が対応していません',
-                '画像ファイル（PNG, JPG, JPEG, WEBP）のみをドロップしてください。\n\n' +
-                'PDFファイルは現在サポートされていません。'
+                '画像ファイル（PNG, JPG, JPEG, WEBP）またはPDFファイルをドロップしてください。'
               );
             }
           });
@@ -4081,22 +4083,105 @@ app.get('/deals/new', (c) => {
     // リトライ用のファイル保存
     let lastUploadedFiles = [];
 
+    /**
+     * Convert PDF to images using PDF.js
+     * @param {File} pdfFile - PDF file to convert
+     * @returns {Promise<File[]>} Array of image files (one per page)
+     */
+    async function convertPdfToImages(pdfFile) {
+      try {
+        // Dynamically import PDF.js
+        const pdfjsLib = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs');
+        
+        // Set worker source
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
+        
+        // Read PDF file as ArrayBuffer
+        const arrayBuffer = await pdfFile.arrayBuffer();
+        
+        // Load PDF document
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        
+        console.log(`[PDF Conversion] PDFファイル "${pdfFile.name}" を読み込みました（${pdf.numPages}ページ）`);
+        
+        // Convert each page to image
+        const imageFiles = [];
+        
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          
+          // Set scale for high resolution (2.0 = 2x resolution)
+          const scale = 2.0;
+          const viewport = page.getViewport({ scale });
+          
+          // Create canvas
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          
+          // Render PDF page to canvas
+          const renderContext = {
+            canvasContext: context,
+            viewport: viewport
+          };
+          await page.render(renderContext).promise;
+          
+          // Convert canvas to Blob
+          const blob = await new Promise((resolve) => {
+            canvas.toBlob(resolve, 'image/png', 1.0);
+          });
+          
+          // Create File object
+          const fileName = pdfFile.name.replace(/\.pdf$/i, `_page${pageNum}.png`);
+          const imageFile = new File([blob], fileName, { type: 'image/png' });
+          imageFiles.push(imageFile);
+          
+          console.log(`[PDF Conversion] ページ ${pageNum}/${pdf.numPages} を変換しました (${(imageFile.size / 1024).toFixed(1)}KB)`);
+        }
+        
+        return imageFiles;
+      } catch (error) {
+        console.error('[PDF Conversion] PDF変換エラー:', error);
+        throw new Error(`PDF変換に失敗しました: ${error.message}`);
+      }
+    }
+
     async function processMultipleOCR(files) {
       // ファイルを保存（リトライ用）
       lastUploadedFiles = Array.from(files);
       
-      // PDFファイルのチェック
+      // PDFファイルを画像に変換
       const pdfFiles = files.filter(f => f.type === 'application/pdf');
+      const imageFiles = files.filter(f => f.type.startsWith('image/'));
+      
+      let allFiles = [...imageFiles];
+      
       if (pdfFiles.length > 0) {
-        const pdfNames = pdfFiles.map(f => f.name).join(', ');
-        const errorMessage = '以下のPDFファイルは処理できません:\n' + pdfNames + '\n\n' +
-          'PDFファイルを使用する場合:\n' +
-          '1. PDFビューアーでファイルを開く\n' +
-          '2. スクリーンショットを撮る、またはPDFを画像としてエクスポート\n' +
-          '3. 画像ファイル(PNG, JPG)をアップロード\n\n' +
-          '対応形式: PNG, JPG, JPEG, WEBP（画像のみ）';
-        displayOCRError('PDFファイルは現在サポートされていません', errorMessage);
-        return;
+        try {
+          // Show conversion progress
+          previewContainer.classList.remove('hidden');
+          const progressSection = document.getElementById('ocr-progress-section');
+          progressSection.classList.remove('hidden');
+          document.getElementById('ocr-progress-text').textContent = 'PDFファイルを画像に変換中...';
+          document.getElementById('ocr-progress-bar').style.width = '10%';
+          
+          for (const pdfFile of pdfFiles) {
+            console.log(`[PDF Conversion] PDFファイル "${pdfFile.name}" を変換中...`);
+            const convertedImages = await convertPdfToImages(pdfFile);
+            allFiles.push(...convertedImages);
+            console.log(`[PDF Conversion] ${pdfFile.name} から ${convertedImages.length} 枚の画像を生成しました`);
+          }
+          
+          document.getElementById('ocr-progress-text').textContent = 'PDF変換完了。OCR処理を開始します...';
+          document.getElementById('ocr-progress-bar').style.width = '20%';
+          
+        } catch (error) {
+          console.error('[PDF Conversion] PDF変換エラー:', error);
+          displayOCRError('PDF変換エラー', error.message);
+          return;
+        }
       }
       
       // リセット
@@ -4111,7 +4196,7 @@ app.get('/deals/new', (c) => {
       multiPreview.innerHTML = '';
       multiPreview.className = 'grid grid-cols-2 gap-4 mb-4';
       
-      files.forEach(file => {
+      allFiles.forEach(file => {
         const fileCard = document.createElement('div');
         fileCard.className = 'flex flex-col items-center p-4 bg-gray-50 rounded-lg border border-gray-200';
         
@@ -4144,13 +4229,13 @@ app.get('/deals/new', (c) => {
       
       progressSection.classList.remove('hidden');
       progressBar.style.width = '0%';
-      progressText.textContent = '0/' + files.length + ' 完了';
+      progressText.textContent = '0/' + allFiles.length + ' 完了';
       fileStatusList.innerHTML = '';
       etaSection.classList.add('hidden');
       
       // ファイル毎のステータス作成
       const fileStatusItems = {};
-      files.forEach((file, index) => {
+      allFiles.forEach((file, index) => {
         const statusItem = document.createElement('div');
         statusItem.className = 'flex items-center justify-between text-sm p-2 bg-white rounded border border-gray-200';
         statusItem.innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-clock text-gray-400 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-gray-500 text-xs">待機中</span>';
@@ -4166,7 +4251,7 @@ app.get('/deals/new', (c) => {
       
       try {
         const formData = new FormData();
-        files.forEach(file => {
+        allFiles.forEach(file => {
           formData.append('files', file);
         });
 
@@ -4211,7 +4296,7 @@ app.get('/deals/new', (c) => {
             
             const job = statusResponse.data.job;
             const processedFiles = job.processed_files || 0;
-            const totalFiles = job.total_files || files.length;
+            const totalFiles = job.total_files || allFiles.length;
             const status = job.status;
             
             // 進捗バーを更新（実際の進捗に基づく）
@@ -4229,7 +4314,7 @@ app.get('/deals/new', (c) => {
             }
             
             // ファイルステータス更新（実際の進捗に基づく）
-            files.forEach((file, index) => {
+            allFiles.forEach((file, index) => {
               if (index < processedFiles) {
                 fileStatusItems[index].innerHTML = '<div class="flex items-center flex-1"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="text-gray-700 truncate">' + file.name + '</span></div><span class="text-green-600 text-xs font-medium">完了</span>';
               } else if (index === processedFiles) {

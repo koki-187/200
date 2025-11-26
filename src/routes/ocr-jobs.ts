@@ -375,7 +375,7 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
                 ]
               }
             ],
-            max_tokens: 4000,
+            max_tokens: 2000,
             temperature: 0.1,
             response_format: { type: "json_object" }
           })

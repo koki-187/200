@@ -7810,6 +7810,22 @@ app.get('/apple-touch-icon.png', (c) => c.text('Not Found', 404));
 app.get('/manifest.json', (c) => c.text('Not Found', 404));
 app.get('/robots.txt', (c) => c.text('Not Found', 404));
 
+// グローバルエラーハンドラ
+app.onError((err, c) => {
+  console.error('[Global Error Handler]', err);
+  console.error('[Error Stack]', err.stack);
+  
+  const errorResponse = {
+    error: 'Internal server error',
+    message: err.message || 'Unknown error',
+    ...(process.env.NODE_ENV === 'development' && {
+      stack: err.stack?.substring(0, 500)
+    })
+  };
+  
+  return c.json(errorResponse, 500);
+});
+
 // 静的ファイルの配信（最後に配置してAPIルートより優先度を下げる）
 app.use('/*', serveStatic({ root: './' }));
 

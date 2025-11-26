@@ -1,5 +1,18 @@
 # 200棟土地仕入れ管理システム
 
+## 🚨 重要: OCR機能を使用するには OpenAI APIキーの設定が必要です
+
+**現在、OCR機能が使用できない原因: OpenAI APIキーが未設定です。**
+
+詳細な設定手順は [`OPENAI_API_KEY_SETUP.md`](./OPENAI_API_KEY_SETUP.md) を参照してください。
+
+### クイックスタート
+
+1. **OpenAI APIキーを取得**: [OpenAI Platform](https://platform.openai.com/)
+2. **ローカル環境に設定**: `.dev.vars`ファイルの`OPENAI_API_KEY`を実際の値に置き換え
+3. **本番環境に設定**: `npx wrangler pages secret put OPENAI_API_KEY --project-name real-estate-200units-v2`
+4. **サーバー再起動**: `pm2 restart webapp`
+
 ## 🔐 ログイン情報
 
 ### 本番環境URL

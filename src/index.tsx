@@ -2830,7 +2830,13 @@ app.get('/deals/new', (c) => {
         <label for="ocr-file-input" class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 cursor-pointer inline-block transition font-medium shadow-lg">
           <i class="fas fa-folder-open mr-2"></i>ファイルを選択またはドラッグ＆ドロップ
         </label>
-        <input type="file" id="ocr-file-input" accept="image/*,application/pdf,.pdf" class="hidden" multiple>
+        <input type="file" id="ocr-file-input" accept="image/png,image/jpeg,image/jpg,image/webp" class="hidden" multiple>
+        <p class="text-sm text-gray-600 mt-2">
+          <i class="fas fa-info-circle mr-1"></i>
+          対応形式: PNG, JPG, JPEG, WEBP（画像のみ）
+          <br>
+          <span class="text-purple-600">※ PDFファイルは画像形式に変換してからアップロードしてください</span>
+        </p>
       </div>
 
       <!-- プレビューとプログレスバー -->
@@ -4016,11 +4022,18 @@ app.get('/deals/new', (c) => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
             const files = Array.from(e.dataTransfer.files).filter(f => 
-              f.type.startsWith('image/') || f.type === 'application/pdf'
+              f.type.startsWith('image/')
             );
             console.log('[OCR Elements] Files dropped:', files.length);
             if (files.length > 0) {
               processMultipleOCR(files);
+            } else {
+              // PDFまたは非対応ファイルの場合
+              displayOCRError(
+                'ファイル形式が対応していません',
+                '画像ファイル（PNG, JPG, JPEG, WEBP）のみをドロップしてください。\n\n' +
+                'PDFファイルは現在サポートされていません。'
+              );
             }
           });
 
@@ -4071,6 +4084,22 @@ app.get('/deals/new', (c) => {
     async function processMultipleOCR(files) {
       // ファイルを保存（リトライ用）
       lastUploadedFiles = Array.from(files);
+      
+      // PDFファイルのチェック
+      const pdfFiles = files.filter(f => f.type === 'application/pdf');
+      if (pdfFiles.length > 0) {
+        const pdfNames = pdfFiles.map(f => f.name).join(', ');
+        displayOCRError(
+          'PDFファイルは現在サポートされていません',
+          `以下のPDFファイルは処理できません:\n${pdfNames}\n\n` +
+          'PDFファイルを使用する場合:\n' +
+          '1. PDFビューアーでファイルを開く\n' +
+          '2. スクリーンショットを撮る、またはPDFを画像としてエクスポート\n' +
+          '3. 画像ファイル(PNG, JPG)をアップロード\n\n' +
+          '対応形式: PNG, JPG, JPEG, WEBP（画像のみ）'
+        );
+        return;
+      }
       
       // リセット
       previewContainer.classList.remove('hidden');

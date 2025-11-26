@@ -397,13 +397,15 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
           
           // JSON抽出 (response_format: json_objectを使用しているため直接パース)
           try {
-            const extractedData = JSON.parse(content);
+            let rawData = JSON.parse(content);
             console.log(`[OCR] Successfully parsed JSON for ${file.name}`);
-            console.log(`[OCR] Extracted data type:`, typeof extractedData);
-            console.log(`[OCR] Extracted data keys:`, Object.keys(extractedData || {}));
-            console.log(`[OCR] Sample field (property_name):`, JSON.stringify(extractedData.property_name));
-            console.log(`[OCR] Full data:`, JSON.stringify(extractedData).substring(0, 500));
-            return { index, success: true, data: extractedData, fileName: file.name };
+            console.log(`[OCR] Raw data sample:`, JSON.stringify(rawData).substring(0, 300));
+            
+            // データ正規化: OpenAI APIのレスポンスを期待する形式に変換
+            const normalizedData = normalizePropertyData(rawData);
+            console.log(`[OCR] Normalized data sample:`, JSON.stringify(normalizedData).substring(0, 300));
+            
+            return { index, success: true, data: normalizedData, fileName: file.name };
           } catch (parseError) {
             const errorMsg = `JSON解析エラー: ${parseError instanceof Error ? parseError.message : 'Unknown'}`;
             console.error(`[OCR] JSON parse error for ${file.name}:`, parseError);
@@ -615,6 +617,55 @@ Start your response directly with { and end with }
 **overall_confidence**: 全体の抽出精度（全フィールドの平均）
 
 抽出できない情報は必ず {"value": null, "confidence": 0} にしてください。推測や創作は厳禁です。`;
+
+/**
+ * OpenAI APIレスポンスを正規化
+ * 期待する {value, confidence} 形式に変換
+ */
+function normalizePropertyData(rawData: any): any {
+  const normalized: any = {};
+  
+  const fields = [
+    'property_name', 'location', 'station', 'walk_minutes',
+    'land_area', 'building_area', 'zoning', 'building_coverage',
+    'floor_area_ratio', 'price', 'structure', 'built_year',
+    'road_info', 'current_status', 'yield', 'occupancy', 'overall_confidence'
+  ];
+  
+  for (const field of fields) {
+    const value = rawData[field];
+    
+    // 既に正しい形式の場合
+    if (value && typeof value === 'object' && 'value' in value && 'confidence' in value) {
+      normalized[field] = value;
+    }
+    // 文字列または数値の場合
+    else if (value !== null && value !== undefined && typeof value !== 'object') {
+      normalized[field] = {
+        value: String(value),
+        confidence: field === 'overall_confidence' ? (Number(value) || 0.5) : 0.5
+      };
+    }
+    // その他のオブジェクトまたはnullの場合
+    else {
+      normalized[field] = {
+        value: null,
+        confidence: 0
+      };
+    }
+  }
+  
+  // overall_confidenceは数値として扱う
+  if (normalized.overall_confidence && typeof normalized.overall_confidence.value === 'string') {
+    normalized.overall_confidence = Number(normalized.overall_confidence.value) || 0.5;
+  } else if (typeof rawData.overall_confidence === 'number') {
+    normalized.overall_confidence = rawData.overall_confidence;
+  } else {
+    normalized.overall_confidence = 0.5;
+  }
+  
+  return normalized;
+}
 
 /**
  * 複数の抽出結果を統合

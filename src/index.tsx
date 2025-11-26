@@ -4111,8 +4111,9 @@ app.get('/deals/new', (c) => {
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           const page = await pdf.getPage(pageNum);
           
-          // Set scale for high resolution (2.0 = 2x resolution)
-          const scale = 2.0;
+          // Set scale for high resolution (3.0 = 3x resolution for better OCR)
+          // Higher resolution improves text recognition for small fonts in registry documents
+          const scale = 3.0;
           const viewport = page.getViewport({ scale });
           
           // Create canvas

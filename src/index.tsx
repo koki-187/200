@@ -4089,15 +4089,13 @@ app.get('/deals/new', (c) => {
       const pdfFiles = files.filter(f => f.type === 'application/pdf');
       if (pdfFiles.length > 0) {
         const pdfNames = pdfFiles.map(f => f.name).join(', ');
-        displayOCRError(
-          'PDFファイルは現在サポートされていません',
-          `以下のPDFファイルは処理できません:\n${pdfNames}\n\n` +
+        const errorMessage = '以下のPDFファイルは処理できません:\n' + pdfNames + '\n\n' +
           'PDFファイルを使用する場合:\n' +
           '1. PDFビューアーでファイルを開く\n' +
           '2. スクリーンショットを撮る、またはPDFを画像としてエクスポート\n' +
           '3. 画像ファイル(PNG, JPG)をアップロード\n\n' +
-          '対応形式: PNG, JPG, JPEG, WEBP（画像のみ）'
-        );
+          '対応形式: PNG, JPG, JPEG, WEBP（画像のみ）';
+        displayOCRError('PDFファイルは現在サポートされていません', errorMessage);
         return;
       }
       

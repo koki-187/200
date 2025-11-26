@@ -2838,12 +2838,12 @@ app.get('/deals/new', (c) => {
         <label for="ocr-file-input" class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 cursor-pointer inline-block transition font-medium shadow-lg">
           <i class="fas fa-folder-open mr-2"></i>ファイルを選択またはドラッグ＆ドロップ
         </label>
-        <input type="file" id="ocr-file-input" accept="image/png,image/jpeg,image/jpg,image/webp" class="hidden" multiple>
+        <input type="file" id="ocr-file-input" accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf" class="hidden" multiple>
         <p class="text-sm text-gray-600 mt-2">
           <i class="fas fa-info-circle mr-1"></i>
-          対応形式: PNG, JPG, JPEG, WEBP（画像のみ）
+          対応形式: PNG, JPG, JPEG, WEBP, PDF
           <br>
-          <span class="text-purple-600">※ PDFファイルは画像形式に変換してからアップロードしてください</span>
+          <span class="text-purple-600">※ PDFは自動的に画像に変換してOCR処理します</span>
         </p>
       </div>
 
@@ -5629,13 +5629,35 @@ app.get('/deals/new', (c) => {
       }
     }
 
-    // 初期化
-    loadSellers();
-    loadOCRExtractedData();
-    loadStorageQuota();
+    // 初期化 - DOM要素が存在する場合のみ実行
+    function initializePage() {
+      loadSellers();
+      loadOCRExtractedData();
+      
+      // ストレージ使用量表示の初期化
+      const storageText = document.getElementById('storage-usage-text');
+      if (storageText) {
+        loadStorageQuota();
+      } else {
+        // DOM要素がまだ存在しない場合は再試行
+        setTimeout(() => {
+          const storageTextRetry = document.getElementById('storage-usage-text');
+          if (storageTextRetry) {
+            loadStorageQuota();
+          }
+        }, 500);
+      }
+      
+      // ページロード時にOCRジョブを復元（ブラウザリロード対応）
+      restoreOCRJobIfExists();
+    }
     
-    // ページロード時にOCRジョブを復元（ブラウザリロード対応）
-    restoreOCRJobIfExists();
+    // DOMContentLoaded後に初期化を実行
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      initializePage();
+    }
 
     // ============================================================
     // テンプレート機能

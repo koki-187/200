@@ -47,7 +47,7 @@ export async function getUserStorageQuota(
 export async function initializeUserStorageQuota(
   db: D1Database,
   userId: string,
-  quotaLimitBytes: number = 524288000 // 500MB default
+  quotaLimitBytes: number = 104857600 // 100MB default (10 users per 1GB)
 ): Promise<void> {
   await db
     .prepare(`
@@ -205,12 +205,12 @@ export const STORAGE_LIMITS = {
   R2_FREE_TIER_BYTES: 10 * 1024 * 1024 * 1024, // 10GB
   R2_FREE_TIER_MB: 10 * 1024,
   
-  // ユーザー別デフォルト制限: 500MB
-  USER_DEFAULT_QUOTA_BYTES: 500 * 1024 * 1024, // 500MB
-  USER_DEFAULT_QUOTA_MB: 500,
+  // ユーザー別デフォルト制限: 100MB（10名で1GB）
+  USER_DEFAULT_QUOTA_BYTES: 100 * 1024 * 1024, // 100MB
+  USER_DEFAULT_QUOTA_MB: 100,
   
-  // 推定最大ユーザー数: 10GB / 500MB = 20ユーザー
-  ESTIMATED_MAX_USERS: 20,
+  // 推定最大ユーザー数: 1GB / 100MB = 10ユーザー
+  ESTIMATED_MAX_USERS: 10,
   
   // ファイルサイズ制限
   MAX_FILE_SIZE_BYTES: 10 * 1024 * 1024, // 10MB

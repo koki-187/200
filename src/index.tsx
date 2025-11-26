@@ -49,7 +49,7 @@ app.use('*', async (c, next) => {
     "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com unpkg.com; " +
     "font-src 'self' cdn.jsdelivr.net fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
-    "connect-src 'self' cdnjs.cloudflare.com;" +
+    "connect-src 'self' cdn.jsdelivr.net cdnjs.cloudflare.com; " +
     "worker-src 'self' blob: cdnjs.cloudflare.com;"
   );
   

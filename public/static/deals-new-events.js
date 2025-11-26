@@ -245,10 +245,10 @@ function initializeEventDelegation() {
       event.stopPropagation();
       
       // 設定を保存する処理を実行
-      if (typeof saveSettings === 'function') {
-        saveSettings();
+      if (typeof window.saveOCRSettings === 'function') {
+        window.saveOCRSettings();
       } else {
-        console.warn('[Event Delegation] saveSettings function not found - closing modal');
+        console.warn('[Event Delegation] saveOCRSettings function not found - closing modal');
         // 関数が見つからない場合はモーダルを閉じるだけ
         const modal = document.getElementById('ocr-settings-modal');
         if (modal) {

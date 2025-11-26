@@ -5030,32 +5030,45 @@ app.get('/deals/new', (c) => {
     });
     
     // OCR設定フォーム送信
-    document.getElementById('ocr-settings-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
+    // OCR設定保存関数をグローバルスコープに定義（deals-new-events.jsから呼び出し可能）
+    window.saveOCRSettings = async function() {
+      console.log('[OCR Settings] saveOCRSettings called');
       try {
         const settings = {
-          auto_save: document.getElementById('setting-auto-save').checked,
-          confidence_threshold: parseFloat(document.getElementById('setting-confidence-threshold').value) / 100,
-          enable_batch: document.getElementById('setting-enable-batch').checked,
+          auto_save_history: document.getElementById('setting-auto-save').checked ? 1 : 0,
+          default_confidence_threshold: parseFloat(document.getElementById('setting-confidence-threshold').value) / 100,
+          enable_batch_processing: document.getElementById('setting-enable-batch').checked ? 1 : 0,
           max_batch_size: parseInt(document.getElementById('setting-max-batch-size').value)
         };
         
-        await axios.post('/api/ocr-settings', settings, {
+        console.log('[OCR Settings] Sending settings:', settings);
+        
+        const response = await axios.put('/api/ocr-settings', settings, {
           headers: { 
             'Authorization': 'Bearer ' + token,
             'Content-Type': 'application/json'
           }
         });
         
+        console.log('[OCR Settings] Save response:', response.data);
+        
         settingsModal.classList.add('hidden');
         alert('✓ 設定を保存しました');
         
       } catch (error) {
-        console.error('Failed to save settings:', error);
+        console.error('[OCR Settings] Failed to save settings:', error);
+        console.error('[OCR Settings] Error details:', error.response?.data);
         alert('設定の保存に失敗しました');
       }
+    };
+    
+    // フォーム送信は deals-new-events.js でハンドリング（重複防止のためコメントアウト）
+    /*
+    document.getElementById('ocr-settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await window.saveOCRSettings();
     });
+    */
 
       // 履歴モーダル
       console.log('[OCR] Initializing OCR history button');

@@ -4103,7 +4103,7 @@ app.get('/deals/new', (c) => {
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
         
-        console.log(`[PDF Conversion] PDFファイル "${pdfFile.name}" を読み込みました（${pdf.numPages}ページ）`);
+        console.log('[PDF Conversion] PDFファイル "' + pdfFile.name + '" を読み込みました（' + pdf.numPages + 'ページ）');
         
         // Convert each page to image
         const imageFiles = [];
@@ -4134,17 +4134,17 @@ app.get('/deals/new', (c) => {
           });
           
           // Create File object
-          const fileName = pdfFile.name.replace(/\.pdf$/i, `_page${pageNum}.png`);
+          const fileName = pdfFile.name.replace(/\.pdf$/i, '_page' + pageNum + '.png');
           const imageFile = new File([blob], fileName, { type: 'image/png' });
           imageFiles.push(imageFile);
           
-          console.log(`[PDF Conversion] ページ ${pageNum}/${pdf.numPages} を変換しました (${(imageFile.size / 1024).toFixed(1)}KB)`);
+          console.log('[PDF Conversion] ページ ' + pageNum + '/' + pdf.numPages + ' を変換しました (' + (imageFile.size / 1024).toFixed(1) + 'KB)');
         }
         
         return imageFiles;
       } catch (error) {
         console.error('[PDF Conversion] PDF変換エラー:', error);
-        throw new Error(`PDF変換に失敗しました: ${error.message}`);
+        throw new Error('PDF変換に失敗しました: ' + error.message);
       }
     }
 
@@ -4168,10 +4168,10 @@ app.get('/deals/new', (c) => {
           document.getElementById('ocr-progress-bar').style.width = '10%';
           
           for (const pdfFile of pdfFiles) {
-            console.log(`[PDF Conversion] PDFファイル "${pdfFile.name}" を変換中...`);
+            console.log('[PDF Conversion] PDFファイル "' + pdfFile.name + '" を変換中...');
             const convertedImages = await convertPdfToImages(pdfFile);
             allFiles.push(...convertedImages);
-            console.log(`[PDF Conversion] ${pdfFile.name} から ${convertedImages.length} 枚の画像を生成しました`);
+            console.log('[PDF Conversion] ' + pdfFile.name + ' から ' + convertedImages.length + ' 枚の画像を生成しました');
           }
           
           document.getElementById('ocr-progress-text').textContent = 'PDF変換完了。OCR処理を開始します...';

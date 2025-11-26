@@ -4012,13 +4012,16 @@ app.get('/deals/new', (c) => {
 
     // ストレージ使用量を取得して表示
     async function loadStorageQuota() {
+      console.log('[Storage Quota] ========== START ==========');
+      console.log('[Storage Quota] Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL/UNDEFINED');
+      
       try {
-        console.log('[Storage Quota] Loading storage quota...');
+        console.log('[Storage Quota] Calling API: /api/storage-quota');
         const response = await axios.get('/api/storage-quota', {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         
-        console.log('[Storage Quota] Response received:', response.status);
+        console.log('[Storage Quota] API Response received:', response.status);
         const quota = response.data.quota;
         const usage = quota.usage;
         const usagePercent = usage.usage_percent.toFixed(1);
@@ -4037,10 +4040,17 @@ app.get('/deals/new', (c) => {
             storageDisplay.className = 'text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium border border-blue-200';
           }
           console.log('[Storage Quota] Successfully loaded:', usage.used_mb + 'MB / ' + usage.limit_mb + 'MB');
+        } else {
+          console.error('[Storage Quota] CRITICAL: DOM elements not found after successful API call');
         }
       } catch (error) {
-        console.error('[Storage Quota] Failed to load storage quota:', error);
-        console.error('[Storage Quota] Error details:', error.response?.status, error.response?.data);
+        console.error('[Storage Quota] ========== ERROR ==========');
+        console.error('[Storage Quota] Error object:', error);
+        console.error('[Storage Quota] Error type:', typeof error);
+        console.error('[Storage Quota] Error.response:', error.response);
+        console.error('[Storage Quota] Error.response?.status:', error.response?.status);
+        console.error('[Storage Quota] Error.response?.data:', error.response?.data);
+        console.error('[Storage Quota] Error.message:', error.message);
         
         const storageText = document.getElementById('storage-usage-text');
         const storageDisplay = document.getElementById('storage-quota-display');
@@ -4074,7 +4084,11 @@ app.get('/deals/new', (c) => {
               storageDisplay.className = 'text-sm bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full font-medium border border-yellow-200';
             }
           }
+        } else {
+          console.error('[Storage Quota] CRITICAL: storageText element not found in error handler');
         }
+      } finally {
+        console.log('[Storage Quota] ========== END ==========');
       }
     }
     
@@ -5690,19 +5704,35 @@ app.get('/deals/new', (c) => {
 
     // 初期化 - DOM要素が存在する場合のみ実行
     function initializePage() {
+      console.log('[Init] initializePage called');
       loadSellers();
       loadOCRExtractedData();
       
       // ストレージ使用量表示の初期化
       const storageText = document.getElementById('storage-usage-text');
+      console.log('[Init] storageText element:', storageText ? 'found' : 'NOT found');
+      console.log('[Init] token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL');
+      
       if (storageText) {
+        console.log('[Init] Calling loadStorageQuota() immediately');
         loadStorageQuota();
       } else {
+        console.warn('[Init] storageText NOT found, will retry in 500ms');
         // DOM要素がまだ存在しない場合は再試行
         setTimeout(() => {
           const storageTextRetry = document.getElementById('storage-usage-text');
+          console.log('[Init] Retry: storageText element:', storageTextRetry ? 'found' : 'STILL NOT found');
           if (storageTextRetry) {
+            console.log('[Init] Calling loadStorageQuota() after retry');
             loadStorageQuota();
+          } else {
+            console.error('[Init] CRITICAL: storageText element never found!');
+            // 強制的にエラー表示
+            const storageDisplay = document.getElementById('storage-quota-display');
+            if (storageDisplay) {
+              storageDisplay.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i><span>要素エラー</span>';
+              storageDisplay.className = 'text-sm bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium border border-red-200';
+            }
           }
         }, 500);
       }

@@ -1,6 +1,10 @@
 -- OCRジョブテーブル（非同期処理用）
 -- Note: user_idはTEXT型（usersテーブルのidに合わせる）
-CREATE TABLE IF NOT EXISTS ocr_jobs (
+-- 既存の古いテーブルを削除
+DROP TABLE IF EXISTS ocr_jobs;
+
+-- 新しいスキーマでテーブル作成
+CREATE TABLE ocr_jobs (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',  -- pending, processing, completed, failed

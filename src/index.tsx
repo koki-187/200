@@ -29,6 +29,7 @@ import ocrHistory from './routes/ocr-history';
 import ocrSettings from './routes/ocr-settings';
 import ocrJobs from './routes/ocr-jobs';
 import propertyTemplates from './routes/property-templates';
+import storageQuota from './routes/storage-quota';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -135,6 +136,7 @@ app.route('/api/ocr-history', ocrHistory);
 app.route('/api/ocr-settings', ocrSettings);
 app.route('/api/ocr-jobs', ocrJobs);
 app.route('/api/property-templates', propertyTemplates);
+app.route('/api/storage-quota', storageQuota);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {
@@ -2818,6 +2820,9 @@ app.get('/deals/new', (c) => {
           <button id="ocr-settings-btn" type="button" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition">
             <i class="fas fa-cog mr-1"></i>設定
           </button>
+          <span id="storage-quota-display" class="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium border border-blue-200">
+            <i class="fas fa-database mr-1"></i><span id="storage-usage-text">読込中...</span>
+          </span>
           <span class="text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
             画像・PDF混在OK
           </span>
@@ -3782,7 +3787,23 @@ app.get('/deals/new', (c) => {
         // 進行中のジョブのみ復元
         if (job.status === 'processing' || job.status === 'pending') {
           console.log('Restoring OCR job:', savedJobId);
-          resumeOCRProgressDisplay(savedJobId, job);
+          
+          // ユーザーに確認ダイアログを表示
+          const shouldRestore = confirm(
+            '前回のOCR処理が中断されています。\n\n' +
+            'ファイル: ' + (job.file_names ? job.file_names.join(', ') : '不明') + '\n' +
+            'ステータス: ' + (job.status === 'processing' ? '処理中' : '待機中') + '\n\n' +
+            '処理を再開しますか？\n' +
+            '「キャンセル」を選択すると、前回の処理をクリアして新しくOCRを開始できます。'
+          );
+          
+          if (shouldRestore) {
+            resumeOCRProgressDisplay(savedJobId, job);
+          } else {
+            // ユーザーがキャンセルした場合はlocalStorageをクリア
+            localStorage.removeItem('currentOCRJobId');
+            console.log('User cancelled OCR job restoration');
+          }
         } else {
           // 完了/失敗/キャンセル済みの場合はlocalStorageをクリア
           localStorage.removeItem('currentOCRJobId');
@@ -3988,6 +4009,40 @@ app.get('/deals/new', (c) => {
       }
     }
 
+    // ストレージ使用量を取得して表示
+    async function loadStorageQuota() {
+      try {
+        const response = await axios.get('/api/storage-quota', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const quota = response.data.quota;
+        const usage = quota.usage;
+        const usagePercent = usage.usage_percent.toFixed(1);
+        const storageText = document.getElementById('storage-usage-text');
+        const storageDisplay = document.getElementById('storage-quota-display');
+        
+        if (storageText && storageDisplay) {
+          storageText.textContent = usage.used_mb + 'MB / ' + usage.limit_mb + 'MB (' + usagePercent + '%)';
+          
+          // 使用率に応じて色を変更
+          if (usage.usage_percent >= 90) {
+            storageDisplay.className = 'text-sm bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium border border-red-200';
+          } else if (usage.usage_percent >= 75) {
+            storageDisplay.className = 'text-sm bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full font-medium border border-yellow-200';
+          } else {
+            storageDisplay.className = 'text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium border border-blue-200';
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load storage quota:', error);
+        const storageText = document.getElementById('storage-usage-text');
+        if (storageText) {
+          storageText.textContent = '取得失敗';
+        }
+      }
+    }
+    
     // OCR機能 - DOMContentLoaded後に初期化
     let dropZone, fileInput, previewContainer, previewImage, ocrStatus, ocrResult;
     
@@ -5577,6 +5632,7 @@ app.get('/deals/new', (c) => {
     // 初期化
     loadSellers();
     loadOCRExtractedData();
+    loadStorageQuota();
     
     // ページロード時にOCRジョブを復元（ブラウザリロード対応）
     restoreOCRJobIfExists();

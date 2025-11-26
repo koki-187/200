@@ -10,35 +10,51 @@ const auth = new Hono<{ Bindings: Bindings }>();
 // ログイン
 auth.post('/login', async (c) => {
   try {
+    console.log('[Login] Starting login attempt');
+    
     const body = await c.req.json();
+    console.log('[Login] Request body received');
 
     // Zodバリデーション
     const validation = validateData(loginSchema, body);
     if (!validation.success) {
+      console.log('[Login] Validation failed:', validation.errors);
       return c.json({ error: 'Validation failed', details: validation.errors }, 400);
     }
 
     const { email, password, rememberMe } = validation.data;
+    console.log('[Login] Validation passed for email:', email);
 
+    console.log('[Login] Creating database instance, DB exists:', !!c.env.DB);
     const db = new Database(c.env.DB);
+    
+    console.log('[Login] Querying user by email');
     const user = await db.getUserByEmail(email);
+    console.log('[Login] User found:', !!user);
 
     if (!user) {
+      console.log('[Login] User not found');
       return c.json({ error: 'Invalid credentials' }, 401);
     }
 
     // パスワード検証（SHA-256）
+    console.log('[Login] Verifying password');
     const isValid = await verifyPassword(password, user.password_hash);
+    console.log('[Login] Password valid:', isValid);
+    
     if (!isValid) {
       return c.json({ error: 'Invalid credentials' }, 401);
     }
 
     // 最終ログイン時刻を更新
+    console.log('[Login] Updating last login');
     await db.updateLastLogin(user.id);
 
     // JWTトークン生成（HMAC-SHA256署名）
     // rememberMe = true なら30日間、false なら7日間
+    console.log('[Login] Generating JWT token, JWT_SECRET exists:', !!c.env.JWT_SECRET);
     const token = await generateToken(user.id, user.role, c.env.JWT_SECRET, rememberMe || false);
+    console.log('[Login] Token generated successfully');
 
     return c.json({
       token,
@@ -51,8 +67,16 @@ auth.post('/login', async (c) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
-    return c.json({ error: 'Internal server error' }, 500);
+    console.error('[Login] Error occurred:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace';
+    console.error('[Login] Error details - Message:', errorMessage);
+    console.error('[Login] Error details - Stack:', errorStack);
+    return c.json({ 
+      error: 'Internal server error', 
+      message: errorMessage,
+      stack: errorStack.substring(0, 500)
+    }, 500);
   }
 });
 

@@ -334,7 +334,7 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
         
         if (currentJob && currentJob.status === 'cancelled') {
           console.log(`Job ${jobId} was cancelled, stopping file processing`);
-          return { index, success: false, cancelled: true };
+          return { index, success: false, cancelled: true, error: 'ジョブがキャンセルされました' };
         }
         
         // ファイルをBase64に変換
@@ -361,7 +361,7 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
                 content: [
                   {
                     type: 'text',
-                    text: 'この不動産物件資料から情報を抽出してください。'
+                    text: 'Extract property information from this real estate document. Return ONLY a JSON object, no other text.'
                   },
                   {
                     type: 'image_url',
@@ -373,40 +373,53 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
               }
             ],
             max_tokens: 1500,
-            temperature: 0.1
+            temperature: 0.1,
+            response_format: { type: "json_object" }
           })
         });
         
         if (!openaiResponse.ok) {
           const errorText = await openaiResponse.text();
-          console.error(`OpenAI API error for ${file.name}:`, errorText);
-          return { index, success: false };
+          const errorMsg = `OpenAI API error (${openaiResponse.status}): ${errorText}`;
+          console.error(`[OCR] ${errorMsg} for ${file.name}`);
+          return { 
+            index, 
+            success: false, 
+            error: errorMsg 
+          };
         }
         
         const result = await openaiResponse.json();
         
         if (result.choices && result.choices.length > 0) {
           const content = result.choices[0].message.content;
+          console.log(`[OCR] OpenAI response for ${file.name}:`, content.substring(0, 500));
           
-          // JSON抽出
+          // JSON抽出 (response_format: json_objectを使用しているため直接パース)
           try {
-            const jsonMatch = content.match(/```json\n([\s\S]+?)\n```/) || content.match(/\{[\s\S]+\}/);
-            
-            if (jsonMatch) {
-              const jsonStr = jsonMatch[1] || jsonMatch[0];
-              const extractedData = JSON.parse(jsonStr);
-              return { index, success: true, data: extractedData, fileName: file.name };
-            }
+            const extractedData = JSON.parse(content);
+            console.log(`[OCR] Successfully parsed JSON for ${file.name}`);
+            console.log(`[OCR] Extracted data sample:`, JSON.stringify(extractedData).substring(0, 200));
+            return { index, success: true, data: extractedData, fileName: file.name };
           } catch (parseError) {
-            console.error(`JSON parse error for ${file.name}:`, parseError);
+            const errorMsg = `JSON解析エラー: ${parseError instanceof Error ? parseError.message : 'Unknown'}`;
+            console.error(`[OCR] JSON parse error for ${file.name}:`, parseError);
+            console.error(`[OCR] Content that failed to parse:`, content);
+            return { index, success: false, error: errorMsg };
           }
+        } else {
+          const errorMsg = 'OpenAI APIレスポンスが空です';
+          console.error(`[OCR] No choices in OpenAI response for ${file.name}`);
+          return { index, success: false, error: errorMsg };
         }
         
-        return { index, success: false };
-        
       } catch (fileError) {
-        console.error(`Error processing ${file.name}:`, fileError);
-        return { index, success: false };
+        console.error(`[OCR] Error processing ${file.name}:`, fileError);
+        return { 
+          index, 
+          success: false, 
+          error: fileError instanceof Error ? fileError.message : 'Unknown error' 
+        };
       } finally {
         semaphore.release();
         
@@ -426,10 +439,13 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
     );
     
     // 成功した結果のみ収集
+    const errors: string[] = [];
     for (const result of results) {
       if (result.success && result.data) {
         extractionResults.push(result.data);
         processedFiles.push(result.fileName!);
+      } else if (result.error) {
+        errors.push(`${files[result.index]?.name || 'unknown'}: ${result.error}`);
       }
     }
     
@@ -441,7 +457,11 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
     `).bind(files.length, jobId).run();
     
     if (extractionResults.length === 0) {
-      throw new Error('物件情報を抽出できませんでした');
+      const errorMsg = errors.length > 0 
+        ? `物件情報を抽出できませんでした。詳細: ${errors.join('; ')}`
+        : '物件情報を抽出できませんでした';
+      console.error(`[OCR] Job ${jobId} failed:`, errorMsg);
+      throw new Error(errorMsg);
     }
     
     // 複数ファイルの結果を統合
@@ -503,10 +523,12 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 /**
  * 物件情報抽出用システムプロンプト
  */
-const PROPERTY_EXTRACTION_PROMPT = `あなたは20年以上の経験を持つ不動産物件資料の情報抽出専門家です。
-登記簿謄本、物件概要書、仲介資料などから、物件情報を高精度で抽出してください。
+const PROPERTY_EXTRACTION_PROMPT = `You are an expert in extracting property information from Japanese real estate documents with over 20 years of experience.
+Extract property information from registry documents, property overview sheets, and brokerage materials with high accuracy.
 
-# 重要な抽出ルール
+CRITICAL: You MUST respond with ONLY a valid JSON object. Do not include any explanatory text, comments, or markdown formatting.
+
+# Important Extraction Rules
 
 ## 文字認識の優先順位
 1. **明瞭な印字テキスト**を最優先で読み取る
@@ -556,9 +578,10 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは20年以上の経験を持つ不
 - 利回り: パーセント記号を含める
 - 賃貸状況: 空室率や入居状況
 
-## 出力フォーマット
+## Output Format
 
-必ず以下のJSON形式で返してください。説明文やコメントは不要です。
+CRITICAL: Return ONLY the JSON object below. Do NOT include markdown code blocks, explanations, or any other text.
+Start your response directly with { and end with }
 
 {
   "property_name": {"value": "物件名称", "confidence": 0.95},

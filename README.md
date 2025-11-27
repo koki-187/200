@@ -16,15 +16,15 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.58.0)**: https://656dfb5f.real-estate-200units-v2.pages.dev 🆕 **← 最新（管理者ファイル管理UI実装）**
+- **Production URL (Latest v3.59.0)**: https://40a284e6.real-estate-200units-v2.pages.dev 🆕 **← 最新（REINFOLIB API連携、一括DL、プレビュー）**
+- **Previous URL (v3.58.0)**: https://656dfb5f.real-estate-200units-v2.pages.dev（管理者ファイル管理UI実装）
 - **Previous URL (v3.57.0)**: https://50f38790.real-estate-200units-v2.pages.dev（ストレージ3GB/20GB対応）
 - **Previous URL (v3.56.0)**: https://f96caa6e.real-estate-200units-v2.pages.dev（R2統合完了）
-- **Previous URL (v3.45.0)**: https://73a5e10c.real-estate-200units-v2.pages.dev（OCRデータベーススキーマ修正）
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Dashboard**: https://656dfb5f.real-estate-200units-v2.pages.dev/dashboard
-- **Deal Creation**: https://656dfb5f.real-estate-200units-v2.pages.dev/deals/new
-- **Deal List**: https://656dfb5f.real-estate-200units-v2.pages.dev/deals
-- **Showcase**: https://656dfb5f.real-estate-200units-v2.pages.dev/showcase
+- **Dashboard**: https://40a284e6.real-estate-200units-v2.pages.dev/dashboard
+- **Deal Creation**: https://40a284e6.real-estate-200units-v2.pages.dev/deals/new
+- **Deal List**: https://40a284e6.real-estate-200units-v2.pages.dev/deals
+- **Showcase**: https://40a284e6.real-estate-200units-v2.pages.dev/showcase
 
 ### デフォルトログイン情報
 
@@ -33,7 +33,24 @@
 - **パスワード**: `kouki187`
 - **ロール**: ADMIN（管理者）
 
-#### ✅ v3.58.0 - 管理者ファイル管理UI実装 ✨ NEW
+#### ✅ v3.59.0 - REINFOLIB API連携 + 一括DL + プレビュー機能 ✨ NEW
+- **不動産情報ライブラリAPI連携** 🏠
+  - 住所入力で物件情報を自動取得（国土交通省REINFOLIB API）
+  - 土地面積、用途地域、建蔽率、容積率、道路情報など自動入力
+  - `/deals/new` に「物件情報を自動入力」ボタン追加
+- **ファイル一括ダウンロード機能** 📦
+  - チェックボックスで複数ファイル選択
+  - JSZipライブラリでクライアント側ZIP作成
+  - 全選択/ダウンロード進捗表示
+- **ファイルプレビュー機能** 👁️
+  - 画像プレビュー（JPG, PNG, GIF等）
+  - PDFプレビュー（PDF.js、ページネーション対応）
+  - 全画面モーダル表示
+- **パフォーマンス改善** ⚡
+  - 案件一覧ページネーション（20件/ページ）
+  - キャッシング最適化（Cache-Control）
+
+#### ✅ v3.58.0 - 管理者ファイル管理UI実装
 - **管理者専用のファイル一元管理機能を実装**
 - `/dashboard` に「ファイル管理」タブ追加（管理者専用）
 - 全ユーザーのファイル一覧表示・統計情報

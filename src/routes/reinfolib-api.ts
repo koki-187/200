@@ -1,0 +1,334 @@
+import { Hono } from 'hono';
+import type { JWTPayload } from 'hono/utils/jwt/types';
+
+type Bindings = {
+  DB: D1Database;
+  FILES_BUCKET: R2Bucket;
+  JWT_SECRET: string;
+  MLIT_API_KEY?: string;
+};
+
+type Variables = {
+  user: JWTPayload & { userId: number; role: string; };
+};
+
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+
+/**
+ * 不動産情報ライブラリAPI - 住所から物件情報を取得
+ * GET /api/reinfolib/property-info
+ * 
+ * クエリパラメータ:
+ * - address: 住所（例: "東京都板橋区蓮根三丁目17-7"）
+ * - year: 取得年（例: "2024"）デフォルトは現在年
+ * - quarter: 四半期（1-4）デフォルトは最新
+ */
+app.get('/property-info', async (c) => {
+  try {
+    const address = c.req.query('address');
+    const year = c.req.query('year') || new Date().getFullYear().toString();
+    const quarter = c.req.query('quarter') || '4';
+
+    if (!address) {
+      return c.json({ error: '住所が指定されていません' }, 400);
+    }
+
+    // MLIT API Key確認
+    const apiKey = c.env.MLIT_API_KEY;
+    if (!apiKey) {
+      return c.json({ 
+        error: 'MLIT API Keyが設定されていません',
+        message: 'wrangler secret put MLIT_API_KEY でAPIキーを設定してください'
+      }, 500);
+    }
+
+    // 住所から都道府県コード・市区町村コードを抽出
+    const locationCodes = parseAddress(address);
+    if (!locationCodes) {
+      return c.json({ 
+        error: '住所の解析に失敗しました',
+        message: '正しい形式の住所を入力してください（例: "東京都板橋区蓮根三丁目17-7"）'
+      }, 400);
+    }
+
+    const { prefectureCode, cityCode, prefectureName, cityName } = locationCodes;
+
+    // 不動産情報ライブラリAPIエンドポイント
+    const baseUrl = 'https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001';
+    const url = `${baseUrl}?year=${year}&quarter=${quarter}&area=${prefectureCode}&city=${cityCode}&priceClassification=01&language=ja`;
+
+    console.log('🔍 Fetching REINFOLIB API:', url);
+
+    // 不動産情報ライブラリAPIへリクエスト
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Accept': 'application/json',
+        'Accept-Encoding': 'gzip, deflate, br'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('❌ REINFOLIB API Error:', response.status, response.statusText);
+      
+      if (response.status === 401) {
+        return c.json({ 
+          error: 'API認証エラー',
+          message: 'MLIT_API_KEYが無効です。正しいAPIキーを設定してください。'
+        }, 401);
+      }
+      
+      return c.json({ 
+        error: 'データ取得に失敗しました',
+        status: response.status,
+        message: response.statusText
+      }, response.status);
+    }
+
+    const data = await response.json();
+    console.log('✅ REINFOLIB API Response received');
+
+    // データが空の場合
+    if (!data.data || data.data.length === 0) {
+      return c.json({
+        success: true,
+        message: '指定された条件に一致するデータが見つかりませんでした',
+        data: [],
+        metadata: {
+          address,
+          prefectureName,
+          cityName,
+          year,
+          quarter,
+          count: 0
+        }
+      });
+    }
+
+    // データを整形して返す
+    const properties = data.data.map((item: any) => ({
+      // 基本情報
+      transaction_period: item.Period || item.取引時点,
+      location: item.Location || item.所在地,
+      
+      // 土地情報
+      land_area: item.Area || item.面積,
+      land_shape: item.LandShape || item.土地の形状,
+      frontage: item.Frontage || item.間口,
+      
+      // 建物情報
+      building_area: item.TotalFloorArea || item.延床面積,
+      building_structure: item.Structure || item.建物の構造,
+      building_year: item.BuildingYear || item.建築年,
+      
+      // 用途・都市計画
+      use: item.Use || item.用途,
+      city_planning: item.CityPlanning || item.都市計画,
+      
+      // 建蔽率・容積率（用途地域API XKT002から取得される項目）
+      building_coverage_ratio: item.CoverageRatio || item.建蔽率 || item.u_building_coverage_ratio_ja,
+      floor_area_ratio: item.FloorAreaRatio || item.容積率 || item.u_floor_area_ratio_ja,
+      
+      // 道路情報
+      front_road_direction: item.Direction || item.前面道路方位,
+      front_road_type: item.Classification || item.前面道路種類,
+      front_road_width: item.Breadth || item.前面道路幅員,
+      
+      // 取引価格
+      trade_price: item.TradePrice || item.取引価格,
+      unit_price: item.UnitPrice || item.単価,
+      price_per_tsubo: item.PricePerUnit || item.坪単価,
+      
+      // その他
+      remarks: item.Remarks || item.取引の事情等,
+      future_use: item.Purpose || item.今後の利用目的,
+      
+      // 座標情報
+      latitude: item.Latitude || item.緯度,
+      longitude: item.Longitude || item.経度
+    }));
+
+    return c.json({
+      success: true,
+      message: `${properties.length}件のデータを取得しました`,
+      data: properties,
+      metadata: {
+        address,
+        prefectureName,
+        cityName,
+        prefectureCode,
+        cityCode,
+        year,
+        quarter,
+        count: properties.length
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error fetching REINFOLIB data:', error);
+    return c.json({ 
+      error: 'サーバーエラーが発生しました',
+      message: error.message 
+    }, 500);
+  }
+});
+
+/**
+ * 不動産情報ライブラリAPI - 用途地域情報を取得（GIS API）
+ * GET /api/reinfolib/zoning-info
+ * 
+ * クエリパラメータ:
+ * - address: 住所
+ * - latitude: 緯度（オプション）
+ * - longitude: 経度（オプション）
+ */
+app.get('/zoning-info', async (c) => {
+  try {
+    const address = c.req.query('address');
+    const lat = c.req.query('latitude');
+    const lon = c.req.query('longitude');
+
+    if (!address && (!lat || !lon)) {
+      return c.json({ error: '住所または座標が必要です' }, 400);
+    }
+
+    const apiKey = c.env.MLIT_API_KEY;
+    if (!apiKey) {
+      return c.json({ 
+        error: 'MLIT API Keyが設定されていません'
+      }, 500);
+    }
+
+    // 座標が指定されていない場合は住所から座標を取得
+    let latitude = lat;
+    let longitude = lon;
+    
+    if (!latitude || !longitude) {
+      // TODO: ジオコーディングAPIを使用して住所→座標変換
+      // 現時点では簡易実装としてエラーを返す
+      return c.json({ 
+        error: '座標情報が必要です',
+        message: '住所から座標への変換は今後実装予定です'
+      }, 400);
+    }
+
+    // タイル座標に変換（簡易実装: ズームレベル18を使用）
+    const zoom = 18;
+    const tileX = Math.floor((parseFloat(longitude) + 180) / 360 * Math.pow(2, zoom));
+    const tileY = Math.floor((1 - Math.log(Math.tan(parseFloat(latitude) * Math.PI / 180) + 1 / Math.cos(parseFloat(latitude) * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
+
+    // 用途地域API（XKT002）
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKT002?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      return c.json({ 
+        error: 'データ取得に失敗しました',
+        status: response.status
+      }, response.status);
+    }
+
+    const data = await response.json();
+
+    return c.json({
+      success: true,
+      data: data,
+      metadata: {
+        latitude,
+        longitude,
+        zoom,
+        tileX,
+        tileY
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error fetching zoning info:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+/**
+ * 住所を解析して都道府県コード・市区町村コードを取得
+ */
+function parseAddress(address: string): { 
+  prefectureCode: string; 
+  cityCode: string; 
+  prefectureName: string;
+  cityName: string;
+} | null {
+  // 都道府県コードマッピング
+  const prefectures: Record<string, string> = {
+    '北海道': '01', '青森県': '02', '岩手県': '03', '宮城県': '04', '秋田県': '05',
+    '山形県': '06', '福島県': '07', '茨城県': '08', '栃木県': '09', '群馬県': '10',
+    '埼玉県': '11', '千葉県': '12', '東京都': '13', '神奈川県': '14', '新潟県': '15',
+    '富山県': '16', '石川県': '17', '福井県': '18', '山梨県': '19', '長野県': '20',
+    '岐阜県': '21', '静岡県': '22', '愛知県': '23', '三重県': '24', '滋賀県': '25',
+    '京都府': '26', '大阪府': '27', '兵庫県': '28', '奈良県': '29', '和歌山県': '30',
+    '鳥取県': '31', '島根県': '32', '岡山県': '33', '広島県': '34', '山口県': '35',
+    '徳島県': '36', '香川県': '37', '愛媛県': '38', '高知県': '39', '福岡県': '40',
+    '佐賀県': '41', '長崎県': '42', '熊本県': '43', '大分県': '44', '宮崎県': '45',
+    '鹿児島県': '46', '沖縄県': '47'
+  };
+
+  // 市区町村コードマッピング（主要都市のみ）
+  const cities: Record<string, Record<string, string>> = {
+    '13': { // 東京都
+      '千代田区': '13101', '中央区': '13102', '港区': '13103', '新宿区': '13104',
+      '文京区': '13105', '台東区': '13106', '墨田区': '13107', '江東区': '13108',
+      '品川区': '13109', '目黒区': '13110', '大田区': '13111', '世田谷区': '13112',
+      '渋谷区': '13113', '中野区': '13114', '杉並区': '13115', '豊島区': '13116',
+      '北区': '13117', '荒川区': '13118', '板橋区': '13119', '練馬区': '13120',
+      '足立区': '13121', '葛飾区': '13122', '江戸川区': '13123'
+    }
+  };
+
+  // 都道府県を検出
+  let prefectureCode = '';
+  let prefectureName = '';
+  
+  for (const [name, code] of Object.entries(prefectures)) {
+    if (address.includes(name)) {
+      prefectureCode = code;
+      prefectureName = name;
+      break;
+    }
+  }
+
+  if (!prefectureCode) {
+    return null;
+  }
+
+  // 市区町村を検出
+  let cityCode = prefectureCode + '000'; // デフォルト（都道府県全体）
+  let cityName = '';
+
+  if (cities[prefectureCode]) {
+    for (const [name, code] of Object.entries(cities[prefectureCode])) {
+      if (address.includes(name)) {
+        cityCode = code;
+        cityName = name;
+        break;
+      }
+    }
+  }
+
+  // 市区町村名が見つからない場合は住所から推測
+  if (!cityName) {
+    const match = address.match(/[都道府県](.*?)[市区町村]/);
+    if (match) {
+      cityName = match[1] + (match[0].slice(-1));
+    }
+  }
+
+  return { prefectureCode, cityCode, prefectureName, cityName };
+}
+
+export default app;

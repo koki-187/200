@@ -12,16 +12,55 @@ const deals = new Hono<{ Bindings: Bindings }>();
 // 全てのルートに認証必須
 deals.use('*', authMiddleware);
 
-// 案件一覧取得
+// 案件一覧取得（ページネーション対応）
 deals.get('/', async (c) => {
   try {
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
     
+    // ページネーションパラメータ取得
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = parseInt(c.req.query('limit') || '20');
+    const offset = (page - 1) * limit;
+    
+    // ステータスフィルター
+    const status = c.req.query('status');
+    
     const db = new Database(c.env.DB);
-    const dealsList = await db.getDeals(userId, role);
-
-    return c.json({ deals: dealsList });
+    
+    // フィルタリング付きクエリ
+    let query = `
+      SELECT * FROM deals
+      WHERE ${role === 'ADMIN' ? '1=1' : 'seller_id = ?'}
+    `;
+    const params: any[] = role === 'ADMIN' ? [] : [userId];
+    
+    if (status) {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+    
+    // 合計件数を取得
+    const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total');
+    const countResult = await c.env.DB.prepare(countQuery).bind(...params).first<{ total: number }>();
+    const totalCount = countResult?.total || 0;
+    
+    // ページネーション付きでデータ取得
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+    
+    const result = await c.env.DB.prepare(query).bind(...params).all();
+    const dealsList = result.results || [];
+    
+    return c.json({
+      deals: dealsList,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
   } catch (error) {
     console.error('Get deals error:', error);
     return c.json({ error: 'Internal server error' }, 500);

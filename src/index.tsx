@@ -32,6 +32,7 @@ import dealFiles from './routes/deal-files';
 import dealValidation from './routes/deal-validation';
 import propertyTemplates from './routes/property-templates';
 import storageQuota from './routes/storage-quota';
+import reinfolibApi from './routes/reinfolib-api';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -142,6 +143,7 @@ app.route('/api/ocr-settings', ocrSettings);
 app.route('/api/ocr-jobs', ocrJobs);
 app.route('/api/property-templates', propertyTemplates);
 app.route('/api/storage-quota', storageQuota);
+app.route('/api/reinfolib', reinfolibApi);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {
@@ -3460,9 +3462,19 @@ app.get('/deals/new', (c) => {
           <label class="block text-sm font-medium text-gray-700 mb-2">
             所在地 <span class="text-red-500">*</span>
           </label>
-          <input type="text" id="location" required
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="例: 〇〇市〇〇区〇〇町1丁目2-3">
+          <div class="flex gap-2">
+            <input type="text" id="location" required
+              class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="例: 東京都板橋区蓮根三丁目17-7">
+            <button type="button" id="auto-fill-btn" onclick="autoFillFromReinfolib()"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 whitespace-nowrap">
+              <i class="fas fa-magic"></i>
+              物件情報を自動入力
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">
+            住所を入力後、「物件情報を自動入力」ボタンをクリックすると、不動産情報ライブラリから物件情報を取得して自動入力します
+          </p>
         </div>
 
         <!-- 最寄り駅 -->
@@ -3699,8 +3711,24 @@ app.get('/deals/new', (c) => {
         </div>
 
         <!-- ファイル一覧 -->
-        <div id="deal-files-list" class="space-y-2">
-          <!-- ファイルがここに表示されます -->
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-medium text-gray-700">アップロード済みファイル</h3>
+            <div class="flex gap-2">
+              <button type="button" id="select-all-files" onclick="toggleSelectAllFiles()" 
+                class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition">
+                <i class="fas fa-check-square mr-1"></i>全選択
+              </button>
+              <button type="button" id="bulk-download-btn" onclick="bulkDownloadFiles()" 
+                class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled>
+                <i class="fas fa-download mr-1"></i>選択ファイルをダウンロード
+              </button>
+            </div>
+          </div>
+          <div id="deal-files-list" class="space-y-2">
+            <!-- ファイルがここに表示されます -->
+          </div>
         </div>
       </div>
 
@@ -4046,6 +4074,45 @@ app.get('/deals/new', (c) => {
           class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
           <i class="fas fa-check mr-2"></i>
           このテンプレートを適用
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ファイルプレビューモーダル -->
+  <div id="file-preview-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50 p-4" style="display: none;">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-5xl h-[90vh] overflow-hidden flex flex-col">
+      <!-- モーダルヘッダー -->
+      <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-xl font-bold text-white flex items-center">
+          <i class="fas fa-eye mr-2"></i>
+          <span id="preview-file-name">ファイルプレビュー</span>
+        </h3>
+        <button onclick="closeFilePreview()" class="text-white hover:text-gray-200 transition p-2">
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+
+      <!-- モーダルコンテンツ -->
+      <div id="preview-content-area" class="flex-1 overflow-auto bg-gray-100 p-4">
+        <div class="flex items-center justify-center h-full">
+          <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+            <p class="text-gray-600">読み込み中...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- フッター（ダウンロードボタン） -->
+      <div class="border-t bg-gray-50 px-6 py-4 flex items-center justify-end space-x-3">
+        <button type="button" onclick="closeFilePreview()" 
+          class="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+          閉じる
+        </button>
+        <button type="button" id="download-preview-file" onclick="downloadPreviewFile()"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+          <i class="fas fa-download mr-2"></i>
+          ダウンロード
         </button>
       </div>
     </div>
@@ -6306,6 +6373,104 @@ app.get('/deals/new', (c) => {
     }
 
     // ============================================================
+    // 不動産情報ライブラリAPI自動入力機能
+    // ============================================================
+    
+    /**
+     * 不動産情報ライブラリAPIから物件情報を取得して自動入力
+     */
+    async function autoFillFromReinfolib() {
+      const locationInput = document.getElementById('location');
+      const address = locationInput.value.trim();
+      
+      if (!address) {
+        alert('住所を入力してください');
+        return;
+      }
+      
+      const btn = document.getElementById('auto-fill-btn');
+      const originalHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 取得中...';
+      
+      try {
+        const token = localStorage.getItem('token');
+        const year = new Date().getFullYear();
+        const quarter = Math.ceil((new Date().getMonth() + 1) / 3); // 現在の四半期
+        
+        const response = await axios.get(\`/api/reinfolib/property-info\`, {
+          params: { address, year, quarter },
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (!response.data.success) {
+          alert('データの取得に失敗しました: ' + response.data.message);
+          return;
+        }
+        
+        const properties = response.data.data;
+        const metadata = response.data.metadata;
+        
+        if (!properties || properties.length === 0) {
+          alert(\`\${metadata.prefectureName}\${metadata.cityName}のデータが見つかりませんでした。\\n別の住所で試してください。\`);
+          return;
+        }
+        
+        // 最新のデータを取得（最初のデータを使用）
+        const property = properties[0];
+        
+        // 各フィールドに自動入力
+        const fields = [
+          { id: 'land_area', value: property.land_area, label: '土地面積' },
+          { id: 'zoning', value: property.use || property.city_planning, label: '用途地域' },
+          { id: 'building_coverage', value: property.building_coverage_ratio, label: '建蔽率' },
+          { id: 'floor_area_ratio', value: property.floor_area_ratio, label: '容積率' },
+          { id: 'road_info', value: \`\${property.front_road_direction || ''} \${property.front_road_type || ''} 幅員\${property.front_road_width || ''}\`.trim(), label: '道路情報' },
+          { id: 'frontage', value: property.frontage, label: '間口' },
+          { id: 'building_area', value: property.building_area, label: '建物面積' },
+          { id: 'structure', value: property.building_structure, label: '構造' },
+          { id: 'built_year', value: property.building_year, label: '築年月' },
+          { id: 'desired_price', value: property.trade_price, label: '希望価格' }
+        ];
+        
+        let filledCount = 0;
+        let filledFields = [];
+        
+        fields.forEach(field => {
+          const input = document.getElementById(field.id);
+          if (input && field.value) {
+            const currentValue = input.value.trim();
+            // 既に値が入っている場合は上書きしない
+            if (!currentValue) {
+              input.value = field.value;
+              filledCount++;
+              filledFields.push(field.label);
+            }
+          }
+        });
+        
+        if (filledCount > 0) {
+          alert(\`✅ \${filledCount}項目を自動入力しました\\n\\n入力項目: \${filledFields.join(', ')}\\n\\nデータ元: 不動産情報ライブラリ（\${metadata.year}年第\${metadata.quarter}四半期）\`);
+        } else {
+          alert('入力可能な項目が見つかりませんでした（既に入力済みの可能性があります）');
+        }
+        
+      } catch (error) {
+        console.error('Auto-fill error:', error);
+        if (error.response?.status === 401) {
+          alert('認証エラー: MLIT_API_KEYが設定されていません');
+        } else if (error.response?.status === 400) {
+          alert('住所の解析に失敗しました。正しい形式で入力してください（例: 東京都板橋区蓮根三丁目17-7）');
+        } else {
+          alert('データの取得に失敗しました: ' + (error.response?.data?.message || error.message));
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+      }
+    }
+    
+    // ============================================================
     // ファイル管理機能
     // ============================================================
     
@@ -6396,6 +6561,12 @@ app.get('/deals/new', (c) => {
           return \`
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100">
               <div class="flex items-center space-x-3 flex-1">
+                <input 
+                  type="checkbox" 
+                  class="file-checkbox w-4 h-4 text-blue-600 rounded" 
+                  data-file-id="\${file.id}"
+                  onchange="updateBulkDownloadButton()"
+                />
                 <i class="fas \${iconClass} text-lg"></i>
                 <div class="flex-1">
                   <div class="text-sm font-medium text-gray-900">\${file.file_name}</div>
@@ -6403,6 +6574,13 @@ app.get('/deals/new', (c) => {
                 </div>
               </div>
               <div class="flex space-x-2">
+                <button 
+                  onclick="previewFile('\${dealId}', '\${file.id}', '\${file.file_name}')"
+                  class="text-green-600 hover:text-green-800 text-sm"
+                  title="プレビュー"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
                 <button 
                   onclick="downloadDealFile('\${dealId}', '\${file.id}')"
                   class="text-blue-600 hover:text-blue-800 text-sm"
@@ -6458,6 +6636,338 @@ app.get('/deals/new', (c) => {
         console.error('Delete error:', error);
         alert('削除に失敗しました');
       }
+    };
+    
+    /**
+     * チェックボックスの状態に応じて一括ダウンロードボタンを有効/無効化
+     */
+    window.updateBulkDownloadButton = function() {
+      const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+      const bulkDownloadBtn = document.getElementById('bulk-download-btn');
+      if (bulkDownloadBtn) {
+        bulkDownloadBtn.disabled = checkboxes.length === 0;
+      }
+    };
+    
+    /**
+     * 全選択/全解除トグル
+     */
+    window.toggleSelectAllFiles = function() {
+      const checkboxes = document.querySelectorAll('.file-checkbox');
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      
+      checkboxes.forEach(cb => {
+        cb.checked = !allChecked;
+      });
+      
+      updateBulkDownloadButton();
+    };
+    
+    /**
+     * 選択ファイルを一括ダウンロード（JSZipを使用してクライアント側でZIP作成）
+     */
+    window.bulkDownloadFiles = async function() {
+      const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+      const fileIds = Array.from(checkboxes).map(cb => cb.getAttribute('data-file-id'));
+      
+      if (fileIds.length === 0) {
+        alert('ダウンロードするファイルを選択してください');
+        return;
+      }
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const dealId = urlParams.get('deal_id') || window.location.pathname.split('/').pop();
+      
+      const btn = document.getElementById('bulk-download-btn');
+      const originalHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>ダウンロード準備中...';
+      
+      try {
+        const token = localStorage.getItem('token');
+        
+        // JSZipライブラリを動的ロード
+        if (!window.JSZip) {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+          document.head.appendChild(script);
+          await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+          });
+        }
+        
+        // 一括ダウンロードAPIを呼び出し
+        const response = await axios.post(
+          \`/api/deals/\${dealId}/files/bulk-download\`,
+          { file_ids: fileIds },
+          { headers: { 'Authorization': 'Bearer ' + token } }
+        );
+        
+        if (!response.data.success) {
+          throw new Error(response.data.error || 'ダウンロード準備に失敗しました');
+        }
+        
+        // ZIP作成
+        const zip = new JSZip();
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>ZIPファイル作成中...';
+        
+        // 各ファイルをダウンロードしてZIPに追加
+        for (let i = 0; i < response.data.files.length; i++) {
+          const file = response.data.files[i];
+          btn.innerHTML = \`<i class="fas fa-spinner fa-spin mr-1"></i>(\${i + 1}/\${response.data.files.length}) \${file.file_name}\`;
+          
+          try {
+            const fileResponse = await axios.get(file.download_url, {
+              headers: { 'Authorization': 'Bearer ' + token },
+              responseType: 'blob'
+            });
+            
+            zip.file(file.file_name, fileResponse.data);
+          } catch (error) {
+            console.error(\`Failed to download \${file.file_name}:\`, error);
+          }
+        }
+        
+        // ZIP生成とダウンロード
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>ZIPファイル生成中...';
+        const content = await zip.generateAsync({ type: 'blob' });
+        
+        // ダウンロード実行
+        const url = window.URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = \`deal_\${dealId}_files_\${new Date().toISOString().split('T')[0]}.zip\`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        alert(\`✅ \${response.data.files.length}件のファイルをダウンロードしました\`);
+        
+        // チェックボックスをリセット
+        checkboxes.forEach(cb => cb.checked = false);
+        updateBulkDownloadButton();
+        
+      } catch (error) {
+        console.error('Bulk download error:', error);
+        alert('一括ダウンロードに失敗しました: ' + (error.response?.data?.error || error.message));
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+      }
+    };
+    
+    /**
+     * ファイルプレビュー機能
+     */
+    let currentPreviewFile = null;
+    
+    window.previewFile = async function(dealId, fileId, fileName) {
+      try {
+        currentPreviewFile = { dealId, fileId, fileName };
+        
+        // モーダル表示
+        const modal = document.getElementById('file-preview-modal');
+        modal.style.display = 'flex';
+        
+        // ファイル名を設定
+        document.getElementById('preview-file-name').textContent = fileName;
+        
+        // プレビューエリア
+        const previewArea = document.getElementById('preview-content-area');
+        previewArea.innerHTML = \`
+          <div class="flex items-center justify-center h-full">
+            <div class="text-center">
+              <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+              <p class="text-gray-600">読み込み中...</p>
+            </div>
+          </div>
+        \`;
+        
+        // ファイル拡張子から種類を判定
+        const ext = fileName.toLowerCase().split('.').pop();
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        const pdfExtensions = ['pdf'];
+        
+        const token = localStorage.getItem('token');
+        const fileUrl = \`/api/deals/\${dealId}/files/\${fileId}/download\`;
+        
+        if (imageExtensions.includes(ext)) {
+          // 画像プレビュー
+          previewArea.innerHTML = \`
+            <div class="flex items-center justify-center h-full bg-gray-900 rounded-lg">
+              <img 
+                src="\${fileUrl}?token=\${token}" 
+                alt="\${fileName}" 
+                class="max-w-full max-h-full object-contain"
+                onerror="this.parentElement.innerHTML='<div class=\\"text-white\\"><i class=\\"fas fa-exclamation-triangle text-3xl mb-2\\"></i><p>画像の読み込みに失敗しました</p></div>'"
+              />
+            </div>
+          \`;
+        } else if (pdfExtensions.includes(ext)) {
+          // PDFプレビュー（PDF.jsを使用）
+          await loadPDFPreview(fileUrl, token, previewArea);
+        } else {
+          // その他のファイル（プレビュー不可）
+          previewArea.innerHTML = \`
+            <div class="flex items-center justify-center h-full">
+              <div class="text-center">
+                <i class="fas fa-file-alt text-6xl text-gray-400 mb-4"></i>
+                <p class="text-gray-600 text-lg font-medium mb-2">このファイル形式はプレビューできません</p>
+                <p class="text-gray-500 text-sm mb-4">ダウンロードしてご確認ください</p>
+                <button 
+                  onclick="downloadPreviewFile()" 
+                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  <i class="fas fa-download mr-2"></i>ダウンロード
+                </button>
+              </div>
+            </div>
+          \`;
+        }
+        
+      } catch (error) {
+        console.error('Preview error:', error);
+        alert('プレビューの表示に失敗しました: ' + error.message);
+      }
+    };
+    
+    /**
+     * PDFプレビュー読み込み（PDF.js使用）
+     */
+    async function loadPDFPreview(fileUrl, token, previewArea) {
+      try {
+        // PDF.jsライブラリを動的ロード
+        if (!window.pdfjsLib) {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+          document.head.appendChild(script);
+          await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+          });
+          
+          // Worker設定
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        }
+        
+        // PDFファイルをBlobとして取得
+        const response = await axios.get(fileUrl, {
+          headers: { 'Authorization': 'Bearer ' + token },
+          responseType: 'blob'
+        });
+        
+        const blob = response.data;
+        const arrayBuffer = await blob.arrayBuffer();
+        
+        // PDFを読み込み
+        const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const totalPages = pdf.numPages;
+        
+        // プレビューエリアを初期化
+        previewArea.innerHTML = \`
+          <div class="bg-white rounded-lg p-4 w-full">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm text-gray-600">ページ <span id="current-page">1</span> / \${totalPages}</span>
+              <div class="flex gap-2">
+                <button id="prev-page" onclick="changePDFPage(-1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50" disabled>
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <button id="next-page" onclick="changePDFPage(1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+            <div id="pdf-canvas-container" class="flex justify-center bg-gray-100 rounded overflow-auto" style="max-height: 70vh;">
+              <canvas id="pdf-canvas"></canvas>
+            </div>
+          </div>
+        \`;
+        
+        // ページレンダリング変数を保存
+        window.currentPDF = {
+          pdf: pdf,
+          currentPage: 1,
+          totalPages: totalPages
+        };
+        
+        // 最初のページをレンダリング
+        await renderPDFPage(1);
+        
+      } catch (error) {
+        console.error('PDF preview error:', error);
+        previewArea.innerHTML = \`
+          <div class="flex items-center justify-center h-full">
+            <div class="text-center">
+              <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+              <p class="text-gray-600">PDFの読み込みに失敗しました</p>
+              <p class="text-sm text-gray-500 mt-2">\${error.message}</p>
+            </div>
+          </div>
+        \`;
+      }
+    }
+    
+    /**
+     * PDFページをレンダリング
+     */
+    async function renderPDFPage(pageNum) {
+      if (!window.currentPDF) return;
+      
+      const pdf = window.currentPDF.pdf;
+      const page = await pdf.getPage(pageNum);
+      
+      const canvas = document.getElementById('pdf-canvas');
+      const context = canvas.getContext('2d');
+      
+      // スケール設定（高DPI対応）
+      const viewport = page.getViewport({ scale: 1.5 });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      
+      await page.render({
+        canvasContext: context,
+        viewport: viewport
+      }).promise;
+      
+      // ページ番号とボタンの状態を更新
+      document.getElementById('current-page').textContent = pageNum;
+      document.getElementById('prev-page').disabled = pageNum === 1;
+      document.getElementById('next-page').disabled = pageNum === window.currentPDF.totalPages;
+    }
+    
+    /**
+     * PDFページ変更
+     */
+    window.changePDFPage = function(delta) {
+      if (!window.currentPDF) return;
+      
+      const newPage = window.currentPDF.currentPage + delta;
+      if (newPage < 1 || newPage > window.currentPDF.totalPages) return;
+      
+      window.currentPDF.currentPage = newPage;
+      renderPDFPage(newPage);
+    };
+    
+    /**
+     * プレビューモーダルを閉じる
+     */
+    window.closeFilePreview = function() {
+      const modal = document.getElementById('file-preview-modal');
+      modal.style.display = 'none';
+      currentPreviewFile = null;
+      window.currentPDF = null;
+    };
+    
+    /**
+     * プレビュー中のファイルをダウンロード
+     */
+    window.downloadPreviewFile = function() {
+      if (!currentPreviewFile) return;
+      
+      const { dealId, fileId } = currentPreviewFile;
+      downloadDealFile(dealId, fileId);
     };
     
     // ファイルアップロードボタンのイベントリスナー

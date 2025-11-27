@@ -312,6 +312,72 @@ dealFiles.get('/admin/files/all', async (c) => {
 });
 
 /**
+ * 複数ファイルの一括ダウンロード（ZIP形式）
+ * POST /api/deals/:deal_id/files/bulk-download
+ * リクエストボディ: { file_ids: string[] }
+ */
+dealFiles.post('/:deal_id/files/bulk-download', async (c) => {
+  try {
+    const dealId = c.req.param('deal_id');
+    const userId = c.get('userId') as string;
+    const userRole = c.get('userRole') as string;
+    const { DB, FILES_BUCKET } = c.env;
+
+    // 権限チェック
+    const hasAccess = await canAccessDealFiles(DB, userId, userRole, dealId);
+    if (!hasAccess) {
+      return c.json({ error: 'アクセス権限がありません' }, 403);
+    }
+
+    // リクエストボディから file_ids を取得
+    const body = await c.req.json();
+    const fileIds = body.file_ids as string[];
+
+    if (!fileIds || fileIds.length === 0) {
+      return c.json({ error: 'ファイルIDが指定されていません' }, 400);
+    }
+
+    // ファイルメタデータを一括取得
+    const placeholders = fileIds.map(() => '?').join(',');
+    const files = await DB.prepare(`
+      SELECT * FROM deal_files
+      WHERE deal_id = ? AND id IN (${placeholders})
+    `).bind(dealId, ...fileIds).all();
+
+    if (!files.results || files.results.length === 0) {
+      return c.json({ error: 'ファイルが見つかりません' }, 404);
+    }
+
+    // ZIP作成（簡易実装: TransformStreamを使用）
+    // Cloudflare WorkersではNode.jsのzipライブラリが使えないため、
+    // クライアント側でZIP作成するか、シンプルなストリーミング実装が必要
+    
+    // ここでは、複数ファイルのメタデータを返し、
+    // クライアント側で個別ダウンロード→JSZipでZIP化する方式を採用
+    const downloadableFiles = files.results.map((file: any) => ({
+      id: file.id,
+      file_name: file.file_name,
+      file_size: file.file_size,
+      download_url: `/api/deals/${dealId}/files/${file.id}/download`
+    }));
+
+    return c.json({
+      success: true,
+      message: `${downloadableFiles.length}件のファイルをダウンロード準備完了`,
+      files: downloadableFiles,
+      deal_id: dealId
+    });
+
+  } catch (error) {
+    console.error('Bulk download error:', error);
+    return c.json({
+      error: '一括ダウンロードの準備に失敗しました',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
  * ファイル削除
  * DELETE /api/deals/:deal_id/files/:file_id
  */

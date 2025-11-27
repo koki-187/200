@@ -28,6 +28,7 @@ import geocoding from './routes/geocoding';
 import ocrHistory from './routes/ocr-history';
 import ocrSettings from './routes/ocr-settings';
 import ocrJobs from './routes/ocr-jobs';
+import dealFiles from './routes/deal-files';
 import propertyTemplates from './routes/property-templates';
 import storageQuota from './routes/storage-quota';
 
@@ -114,6 +115,7 @@ app.use('/api/*', rateLimitPresets.api);
 // APIルートのマウント
 app.route('/api/auth', auth);
 app.route('/api/deals', deals);
+app.route('/api/deals', dealFiles);
 app.route('/api/messages', messages);
 app.route('/api/files', files);
 app.route('/api/proposals', proposals);

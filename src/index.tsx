@@ -3467,78 +3467,100 @@ app.get('/deals/new', (c) => {
 
         <!-- 最寄り駅 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">最寄り駅</label>
-          <input type="text" id="station"
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            最寄り駅 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="station" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="例: 〇〇駅">
         </div>
 
         <!-- 徒歩分数 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">徒歩分数</label>
-          <input type="number" id="walk_minutes" min="0"
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            徒歩分数 <span class="text-red-500">*</span>
+          </label>
+          <input type="number" id="walk_minutes" min="0" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="例: 10">
         </div>
 
         <!-- 土地面積 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">土地面積</label>
-          <input type="text" id="land_area"
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            土地面積 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="land_area" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="例: 150㎡">
         </div>
 
         <!-- 用途地域 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">用途地域</label>
-          <input type="text" id="zoning"
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            用途地域 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="zoning" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="例: 第一種住居地域">
         </div>
 
         <!-- 建ぺい率 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">建ぺい率</label>
-          <input type="text" id="building_coverage"
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            建ぺい率 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="building_coverage" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="例: 60%">
         </div>
 
         <!-- 容積率 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">容積率</label>
-          <input type="text" id="floor_area_ratio"
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            容積率 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="floor_area_ratio" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="例: 200%">
         </div>
 
         <!-- 高度地区 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">高度地区</label>
-          <input type="text" id="height_district"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            高度地区 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="height_district" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 第3種高度地区">
         </div>
 
         <!-- 防火地域 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">防火地域</label>
-          <input type="text" id="fire_zone"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            防火地域 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="fire_zone" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 準防火地域">
         </div>
 
         <!-- 道路情報 -->
         <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-2">道路情報</label>
-          <input type="text" id="road_info"
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            道路情報 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="road_info" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="例: 南側公道 幅員4.0m 接道6.0m">
         </div>
 
         <!-- 間口 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">間口</label>
-          <input type="text" id="frontage"
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            間口 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="frontage" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="例: 7.5m">
         </div>
@@ -3593,8 +3615,10 @@ app.get('/deals/new', (c) => {
 
         <!-- 希望価格 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">希望価格</label>
-          <input type="text" id="desired_price"
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            希望価格 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="desired_price" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="例: 5,000万円">
         </div>

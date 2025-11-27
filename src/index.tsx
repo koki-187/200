@@ -1176,23 +1176,108 @@ app.get('/dashboard', (c) => {
     <div class="bg-white rounded-xl shadow-lg mb-6 border border-slate-200">
       <div class="border-b border-slate-200">
         <nav class="flex space-x-8 px-6" aria-label="Tabs">
-          <a href="/deals" class="border-b-2 border-blue-600 py-4 px-1 text-sm font-semibold text-blue-600 hover:text-blue-700 transition">
+          <button 
+            onclick="switchDashboardTab('overview')" 
+            id="tab-overview"
+            class="dashboard-tab border-b-2 border-blue-600 py-4 px-1 text-sm font-semibold text-blue-600 hover:text-blue-700 transition">
+            <i class="fas fa-chart-line mr-2"></i>概要
+          </button>
+          <a href="/deals" class="border-b-2 border-transparent py-4 px-1 text-sm font-semibold text-gray-600 hover:text-blue-700 transition">
             <i class="fas fa-list mr-2"></i>案件一覧
           </a>
+          <button 
+            onclick="switchDashboardTab('files')" 
+            id="tab-files-admin"
+            class="dashboard-tab border-b-2 border-transparent py-4 px-1 text-sm font-semibold text-gray-600 hover:text-blue-700 transition"
+            style="display: none;">
+            <i class="fas fa-folder-open mr-2"></i>ファイル管理
+          </button>
         </nav>
       </div>
     </div>
 
-    <!-- 最近の案件 -->
-    <div class="bg-white rounded-xl shadow-lg border border-slate-200">
-      <div class="px-6 py-4 border-b">
-        <h2 class="text-lg font-semibold text-gray-900">最近の案件</h2>
+    <!-- 概要タブ -->
+    <div id="content-overview" class="dashboard-content">
+      <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+        <div class="px-6 py-4 border-b">
+          <h2 class="text-lg font-semibold text-gray-900">最近の案件</h2>
+        </div>
+        <div class="p-6">
+          <div id="recent-deals" class="space-y-4">
+            <div class="text-center py-8 text-gray-500">
+              <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+              <p>読み込み中...</p>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="p-6">
-        <div id="recent-deals" class="space-y-4">
-          <div class="text-center py-8 text-gray-500">
-            <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
-            <p>読み込み中...</p>
+    </div>
+
+    <!-- ファイル管理タブ（管理者専用） -->
+    <div id="content-files-admin" class="dashboard-content hidden">
+      <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+        <div class="px-6 py-4 border-b">
+          <h2 class="text-lg font-semibold text-gray-900">
+            <i class="fas fa-folder-open mr-2"></i>全ユーザーのファイル管理
+          </h2>
+        </div>
+
+        <!-- 統計情報 -->
+        <div class="p-6 border-b">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-blue-50 rounded-lg p-4">
+              <div class="text-sm text-blue-600 font-medium">総ファイル数</div>
+              <div id="stats-total-files" class="text-2xl font-bold text-blue-900 mt-1">-</div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-4">
+              <div class="text-sm text-green-600 font-medium">総ストレージ使用量</div>
+              <div id="stats-total-size" class="text-2xl font-bold text-green-900 mt-1">-</div>
+            </div>
+            <div class="bg-purple-50 rounded-lg p-4">
+              <div class="text-sm text-purple-600 font-medium">登録ユーザー数</div>
+              <div id="stats-user-count" class="text-2xl font-bold text-purple-900 mt-1">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ユーザー別統計 -->
+        <div class="p-6 border-b">
+          <h3 class="text-md font-semibold text-gray-900 mb-4">ユーザー別統計</h3>
+          <div id="user-stats-list" class="space-y-2">
+            <div class="text-center py-4 text-gray-500">
+              <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+              <p>読み込み中...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ファイル一覧 -->
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-md font-semibold text-gray-900">全ファイル一覧</h3>
+            <div class="flex items-center space-x-2">
+              <input 
+                type="text" 
+                id="file-search-input" 
+                placeholder="ファイル名で検索..." 
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+              >
+              <select id="file-type-filter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">全タイプ</option>
+                <option value="ocr">OCR資料</option>
+                <option value="image">画像</option>
+                <option value="document">書類</option>
+                <option value="registry">登記簿謄本</option>
+                <option value="proposal">提案書</option>
+                <option value="report">報告書</option>
+              </select>
+            </div>
+          </div>
+          <div id="admin-files-list" class="divide-y">
+            <div class="text-center py-8 text-gray-500">
+              <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+              <p>読み込み中...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -1308,12 +1393,182 @@ app.get('/dashboard', (c) => {
       window.location.href = '/deals/' + dealId;
     }
 
+    // タブ切り替え
+    function switchDashboardTab(tab) {
+      // タブボタンのスタイル更新
+      document.querySelectorAll('.dashboard-tab').forEach(btn => {
+        btn.classList.remove('border-blue-600', 'text-blue-600');
+        btn.classList.add('border-transparent', 'text-gray-600');
+      });
+      const activeTab = document.getElementById('tab-' + tab);
+      if (activeTab) {
+        activeTab.classList.remove('border-transparent', 'text-gray-600');
+        activeTab.classList.add('border-blue-600', 'text-blue-600');
+      }
+
+      // コンテンツの表示切替
+      document.querySelectorAll('.dashboard-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      const activeContent = document.getElementById('content-' + tab + (tab === 'files' ? '-admin' : ''));
+      if (activeContent) {
+        activeContent.classList.remove('hidden');
+      }
+
+      // タブ切り替え時にデータをロード
+      if (tab === 'files') {
+        loadAdminFiles();
+      }
+    }
+
+    // 管理者向けファイル一覧読み込み
+    let allFiles = [];
+    async function loadAdminFiles() {
+      try {
+        const response = await axios.get('/api/deals/admin/files/all', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        allFiles = response.data.files || [];
+        const stats = response.data.statistics;
+
+        // 統計情報を更新
+        document.getElementById('stats-total-files').textContent = stats.total_files;
+        document.getElementById('stats-total-size').textContent = (stats.total_size / 1024 / 1024).toFixed(2) + ' MB';
+        document.getElementById('stats-user-count').textContent = stats.user_stats.length;
+
+        // ユーザー別統計を表示
+        displayUserStats(stats.user_stats);
+
+        // ファイル一覧を表示
+        displayAdminFiles(allFiles);
+      } catch (error) {
+        console.error('Failed to load admin files:', error);
+        document.getElementById('admin-files-list').innerHTML = 
+          '<div class="text-center py-8 text-red-600"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><p>ファイル読み込みに失敗しました</p></div>';
+      }
+    }
+
+    // ユーザー別統計を表示
+    function displayUserStats(userStats) {
+      const container = document.getElementById('user-stats-list');
+      
+      if (userStats.length === 0) {
+        container.innerHTML = '<div class="text-center py-4 text-gray-500">統計データがありません</div>';
+        return;
+      }
+
+      container.innerHTML = userStats.map(stat => \`
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200">
+          <div class="flex items-center space-x-3">
+            <i class="fas fa-user text-blue-600"></i>
+            <div>
+              <div class="font-medium text-gray-900">\${stat.user_name}</div>
+              <div class="text-xs text-gray-500">\${stat.file_count} ファイル</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-sm font-medium text-gray-900">\${(stat.total_size / 1024 / 1024).toFixed(2)} MB</div>
+            <div class="text-xs text-gray-500">使用中</div>
+          </div>
+        </div>
+      \`).join('');
+    }
+
+    // ファイル一覧を表示
+    function displayAdminFiles(files) {
+      const container = document.getElementById('admin-files-list');
+      
+      if (files.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-gray-500">ファイルがありません</div>';
+        return;
+      }
+
+      container.innerHTML = files.map(file => {
+        const iconClass = file.file_type === 'ocr' ? 'fa-file-pdf text-red-500' :
+                         file.file_type === 'image' ? 'fa-image text-blue-500' :
+                         'fa-file text-gray-500';
+        const sizeKB = (file.file_size / 1024).toFixed(2);
+        
+        return \`
+        <div class="p-4 hover:bg-gray-50 transition">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3 flex-1">
+              <i class="fas \${iconClass} text-2xl"></i>
+              <div class="flex-1">
+                <div class="font-medium text-gray-900">\${file.file_name}</div>
+                <div class="text-sm text-gray-500 space-x-2">
+                  <span class="px-2 py-1 bg-gray-100 rounded text-xs">\${file.file_type}</span>
+                  \${file.is_ocr_source ? '<span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"><i class="fas fa-robot"></i> OCR</span>' : ''}
+                  <span class="ml-2">\${sizeKB} KB</span>
+                  <span class="ml-2">\${new Date(file.uploaded_at).toLocaleString('ja-JP')}</span>
+                </div>
+                <div class="text-sm text-gray-600 mt-1">
+                  <i class="fas fa-user mr-1"></i>\${file.user_name || '不明'}
+                  <i class="fas fa-map-marker-alt ml-3 mr-1"></i>\${file.deal_location || '場所不明'}
+                </div>
+              </div>
+            </div>
+            <div class="flex space-x-2">
+              <button 
+                onclick="downloadAdminFile('\${file.deal_id}', '\${file.id}')" 
+                class="text-blue-600 hover:text-blue-800 transition" 
+                title="ダウンロード">
+                <i class="fas fa-download"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      \`;
+      }).join('');
+    }
+
+    // ファイルダウンロード（管理者用）
+    window.downloadAdminFile = function(dealId, fileId) {
+      window.location.href = \`/api/deals/\${dealId}/files/\${fileId}/download?token=\${token}\`;
+    };
+
+    // ファイル検索・フィルター
+    function filterFiles() {
+      const searchTerm = document.getElementById('file-search-input').value.toLowerCase();
+      const fileType = document.getElementById('file-type-filter').value;
+
+      const filtered = allFiles.filter(file => {
+        const matchesSearch = file.file_name.toLowerCase().includes(searchTerm);
+        const matchesType = !fileType || file.file_type === fileType;
+        return matchesSearch && matchesType;
+      });
+
+      displayAdminFiles(filtered);
+    }
+
+    // イベントリスナー設定
+    document.addEventListener('DOMContentLoaded', function() {
+      const searchInput = document.getElementById('file-search-input');
+      const typeFilter = document.getElementById('file-type-filter');
+      
+      if (searchInput) {
+        searchInput.addEventListener('input', filterFiles);
+      }
+      if (typeFilter) {
+        typeFilter.addEventListener('change', filterFiles);
+      }
+    });
+
     // ページ読み込み後に初期化(window.load で確実に実行)
     window.addEventListener('load', function() {
       // ユーザー情報表示
       if (user.name) {
         document.getElementById('user-name').textContent = user.name;
         document.getElementById('user-role').textContent = user.role === 'ADMIN' ? '管理者' : 'ユーザー';
+        
+        // 管理者の場合、ファイル管理タブを表示
+        if (user.role === 'ADMIN') {
+          const filesTab = document.getElementById('tab-files-admin');
+          if (filesTab) {
+            filesTab.style.display = 'block';
+          }
+        }
       }
 
       // KPIデータ読み込み
@@ -7533,14 +7788,16 @@ app.get('/deals/:id', (c) => {
                     hover:file:bg-blue-100 cursor-pointer">
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">フォルダー分類</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">ファイル種別</label>
                   <select id="file-folder" required
                     class="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    <option value="deals">案件資料</option>
+                    <option value="document">書類</option>
+                    <option value="ocr">OCR資料</option>
+                    <option value="image">画像</option>
                     <option value="registry">登記簿謄本</option>
-                    <option value="proposals">提案書</option>
-                    <option value="reports">報告書</option>
-                    <option value="chat">その他</option>
+                    <option value="proposal">提案書</option>
+                    <option value="report">報告書</option>
+                    <option value="other">その他</option>
                   </select>
                 </div>
                 <button type="submit" 
@@ -7649,18 +7906,24 @@ app.get('/deals/:id', (c) => {
     // ファイル管理機能
     async function loadFiles() {
       try {
-        const response = await axios.get('/api/files/deals/' + dealId, {
+        // 新しいAPIエンドポイントを使用
+        const filesResponse = await axios.get('/api/deals/' + dealId + '/files', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        // ストレージ情報を取得
+        const storageResponse = await axios.get('/api/storage-quota', {
           headers: { 'Authorization': 'Bearer ' + token }
         });
 
-        const files = response.data.files || [];
-        const storage = response.data.storage;
+        const files = filesResponse.data.files || [];
+        const storage = storageResponse.data;
 
         // ストレージ使用状況を更新
         const percentage = storage.percentage || 0;
         document.getElementById('storage-bar').style.width = percentage + '%';
         document.getElementById('storage-text').textContent = 
-          \`\${(storage.used / 1024 / 1024).toFixed(2)} MB / \${(storage.max / 1024 / 1024).toFixed(2)} MB 使用中 (\${percentage}%)\`;
+          \`\${(storage.used_mb).toFixed(2)} MB / \${(storage.limit_mb).toFixed(2)} MB 使用中 (\${percentage.toFixed(1)}%)\`;
 
         // ファイルリスト表示
         const filesList = document.getElementById('files-list');
@@ -7669,27 +7932,41 @@ app.get('/deals/:id', (c) => {
           return;
         }
 
-        filesList.innerHTML = '<div class="divide-y">' + files.map(file => \`
+        filesList.innerHTML = '<div class="divide-y">' + files.map(file => {
+          const iconClass = file.file_type === 'ocr' ? 'fa-file-pdf text-red-500' :
+                           file.file_type === 'image' ? 'fa-image text-blue-500' :
+                           'fa-file text-gray-500';
+          const sizeKB = (file.file_size / 1024).toFixed(2);
+          
+          return \`
           <div class="p-4 hover:bg-gray-50 transition">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
-                <i class="fas fa-file text-gray-400 text-2xl"></i>
+                <i class="fas \${iconClass} text-2xl"></i>
                 <div>
-                  <div class="font-medium text-gray-900">\${file.filename}</div>
+                  <div class="font-medium text-gray-900">\${file.file_name}</div>
                   <div class="text-sm text-gray-500">
-                    <span class="px-2 py-1 bg-gray-100 rounded text-xs">\${file.folder}</span>
-                    <span class="ml-2">\${(file.size_bytes / 1024).toFixed(2)} KB</span>
-                    <span class="ml-2">\${new Date(file.created_at).toLocaleString('ja-JP')}</span>
+                    <span class="px-2 py-1 bg-gray-100 rounded text-xs">\${file.file_type}</span>
+                    \${file.is_ocr_source ? '<span class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"><i class="fas fa-robot"></i> OCRソース</span>' : ''}
+                    <span class="ml-2">\${sizeKB} KB</span>
+                    <span class="ml-2">\${new Date(file.uploaded_at).toLocaleString('ja-JP')}</span>
                   </div>
                 </div>
               </div>
-              <button onclick="downloadFile('\${file.id}', '\${file.filename}')" 
-                class="text-blue-600 hover:text-blue-800 transition">
-                <i class="fas fa-download"></i>
-              </button>
+              <div class="flex space-x-2">
+                <button onclick="downloadDealFileFromDetail('\${file.id}')" 
+                  class="text-blue-600 hover:text-blue-800 transition" title="ダウンロード">
+                  <i class="fas fa-download"></i>
+                </button>
+                <button onclick="deleteDealFileFromDetail('\${file.id}')" 
+                  class="text-red-600 hover:text-red-800 transition" title="削除">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
             </div>
           </div>
-        \`).join('') + '</div>';
+        \`;
+        }).join('') + '</div>';
       } catch (error) {
         console.error('Failed to load files:', error);
         document.getElementById('files-list').innerHTML = 
@@ -7702,28 +7979,30 @@ app.get('/deals/:id', (c) => {
       e.preventDefault();
       
       const fileInput = document.getElementById('file-input');
-      const folder = document.getElementById('file-folder').value;
-      const file = fileInput.files[0];
+      const fileType = document.getElementById('file-folder').value;
+      const files = fileInput.files;
 
-      if (!file) {
+      if (!files || files.length === 0) {
         alert('ファイルを選択してください');
         return;
       }
 
       try {
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('folder', folder);
-        formData.append('deal_id', dealId);
+        for (let i = 0; i < files.length; i++) {
+          formData.append('files', files[i]);
+        }
+        formData.append('file_type', fileType);
+        formData.append('is_ocr_source', 'false');
 
-        const response = await axios.post('/api/r2/upload', formData, {
+        const response = await axios.post('/api/deals/' + dealId + '/files', formData, {
           headers: {
             'Authorization': 'Bearer ' + token,
             'Content-Type': 'multipart/form-data'
           }
         });
 
-        alert('ファイルをアップロードしました');
+        alert(response.data.message || 'ファイルをアップロードしました');
         fileInput.value = '';
         loadFiles();
       } catch (error) {
@@ -7732,25 +8011,31 @@ app.get('/deals/:id', (c) => {
       }
     });
 
-    async function downloadFile(fileId, filename) {
+    // ダウンロード関数をグローバルスコープに追加
+    window.downloadDealFileFromDetail = async function(fileId) {
       try {
-        const response = await axios.get('/api/r2/download/' + fileId, {
-          headers: { 'Authorization': 'Bearer ' + token },
-          responseType: 'blob'
-        });
-
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        window.location.href = \`/api/deals/\${dealId}/files/\${fileId}/download?token=\${token}\`;
       } catch (error) {
         console.error('Download error:', error);
         alert('ダウンロードに失敗しました');
       }
-    }
+    };
+
+    // 削除関数をグローバルスコープに追加
+    window.deleteDealFileFromDetail = async function(fileId) {
+      if (!confirm('このファイルを削除しますか?')) return;
+      
+      try {
+        await axios.delete(\`/api/deals/\${dealId}/files/\${fileId}\`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        alert('ファイルを削除しました');
+        loadFiles();
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('削除に失敗しました');
+      }
+    };
 
     // メッセージ機能
     let messageAttachment = null;

@@ -238,6 +238,80 @@ dealFiles.get('/:deal_id/files/:file_id/download', async (c) => {
 });
 
 /**
+ * 管理者用: 全ユーザーのファイル一覧取得
+ * GET /api/deals/admin/files/all
+ */
+dealFiles.get('/admin/files/all', async (c) => {
+  try {
+    const userRole = c.get('userRole') as string;
+    const { DB } = c.env;
+
+    // 管理者権限チェック
+    if (userRole !== 'ADMIN') {
+      return c.json({ error: 'アクセス権限がありません' }, 403);
+    }
+
+    // 全ファイルを取得（案件情報、ユーザー情報を結合）
+    const files = await DB.prepare(`
+      SELECT 
+        df.id,
+        df.file_name,
+        df.file_type,
+        df.file_size,
+        df.uploaded_at,
+        df.deal_id,
+        df.user_id,
+        df.is_ocr_source,
+        d.location AS deal_location,
+        d.status AS deal_status,
+        u.name AS user_name
+      FROM deal_files df
+      LEFT JOIN deals d ON df.deal_id = d.id
+      LEFT JOIN users u ON df.user_id = u.id
+      ORDER BY df.uploaded_at DESC
+    `).all();
+
+    // 統計情報を計算
+    const totalSize = files.results.reduce((sum: number, file: any) => sum + (file.file_size || 0), 0);
+    const totalFiles = files.results.length;
+
+    // ユーザー別統計
+    const userStats = new Map<string, { user_name: string; file_count: number; total_size: number }>();
+    for (const file of files.results) {
+      const userId = (file as any).user_id as string;
+      const userName = (file as any).user_name as string;
+      const fileSize = (file as any).file_size as number;
+      
+      if (!userStats.has(userId)) {
+        userStats.set(userId, { user_name: userName, file_count: 0, total_size: 0 });
+      }
+      const stats = userStats.get(userId)!;
+      stats.file_count++;
+      stats.total_size += fileSize;
+    }
+
+    return c.json({
+      success: true,
+      files: files.results || [],
+      statistics: {
+        total_files: totalFiles,
+        total_size: totalSize,
+        user_stats: Array.from(userStats.entries()).map(([user_id, stats]) => ({
+          user_id,
+          ...stats
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Get all files error:', error);
+    return c.json({
+      error: 'ファイル一覧の取得に失敗しました',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
  * ファイル削除
  * DELETE /api/deals/:deal_id/files/:file_id
  */

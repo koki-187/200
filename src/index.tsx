@@ -3225,6 +3225,54 @@ app.get('/deals/new', (c) => {
             placeholder="例: 南側公道 幅員4.0m 接道6.0m">
         </div>
 
+        <!-- 間口 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">間口</label>
+          <input type="text" id="frontage"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 7.5m">
+        </div>
+
+        <!-- 建物面積 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">建物面積</label>
+          <input type="text" id="building_area"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 120.50㎡">
+        </div>
+
+        <!-- 構造 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">構造</label>
+          <input type="text" id="structure"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 木造2階建">
+        </div>
+
+        <!-- 築年月 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">築年月</label>
+          <input type="text" id="built_year"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 1995年3月">
+        </div>
+
+        <!-- 表面利回り -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">表面利回り</label>
+          <input type="text" id="yield_rate"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 5.2%">
+        </div>
+
+        <!-- 賃貸状況 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">賃貸状況</label>
+          <input type="text" id="occupancy_status"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="例: 満室">
+        </div>
+
         <!-- 現況 -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">現況</label>
@@ -4596,6 +4644,7 @@ app.get('/deals/new', (c) => {
         structure: '構造',
         built_year: '築年月',
         road_info: '道路情報',
+        frontage: '間口',
         current_status: '現況',
         yield: '表面利回り',
         occupancy: '賃貸状況'
@@ -4926,11 +4975,20 @@ app.get('/deals/new', (c) => {
       // フォームに自動入力
       if (updatedData.property_name) document.getElementById('title').value = updatedData.property_name;
       if (updatedData.location) document.getElementById('location').value = updatedData.location;
+      if (updatedData.station) document.getElementById('station').value = updatedData.station;
+      if (updatedData.walk_minutes) document.getElementById('walk_minutes').value = updatedData.walk_minutes;
       if (updatedData.land_area) document.getElementById('land_area').value = updatedData.land_area;
+      if (updatedData.building_area) document.getElementById('building_area').value = updatedData.building_area;
       if (updatedData.zoning) document.getElementById('zoning').value = updatedData.zoning;
       if (updatedData.building_coverage) document.getElementById('building_coverage').value = updatedData.building_coverage;
       if (updatedData.floor_area_ratio) document.getElementById('floor_area_ratio').value = updatedData.floor_area_ratio;
       if (updatedData.road_info) document.getElementById('road_info').value = updatedData.road_info;
+      if (updatedData.frontage) document.getElementById('frontage').value = updatedData.frontage;
+      if (updatedData.structure) document.getElementById('structure').value = updatedData.structure;
+      if (updatedData.built_year) document.getElementById('built_year').value = updatedData.built_year;
+      if (updatedData.current_status) document.getElementById('current_status').value = updatedData.current_status;
+      if (updatedData.yield) document.getElementById('yield_rate').value = updatedData.yield;
+      if (updatedData.occupancy) document.getElementById('occupancy_status').value = updatedData.occupancy;
       if (updatedData.price) document.getElementById('desired_price').value = updatedData.price;
       
       // 成功メッセージ

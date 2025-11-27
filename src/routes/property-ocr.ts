@@ -65,10 +65,12 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは20年以上の経験を持つ不
 - 築年月は和暦・西暦どちらでも可
 - 例: structure: "木造3階建", built_year: "平成28年3月" または "2016年3月"
 
-### 道路情報（road_info）
+### 道路情報・間口（road_info, frontage）
 - 接道状況を詳細に抽出
 - 幅員、接道長さ、方位を含める
-- 例: "北側私道 幅員2.0m 接道2.0m"
+- 例: road_info: "北側私道 幅員2.0m 接道2.0m"
+- 間口: 道路に接する土地の幅（単位込み）
+- 例: frontage: "7.5m"
 
 ### 現況・利回り（current_status, yield, occupancy）
 - 現況: "更地", "古家あり", "賃貸中" など
@@ -93,6 +95,7 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは20年以上の経験を持つ不
   "structure": {"value": "構造（正式名称）", "confidence": 0.80},
   "built_year": {"value": "築年月", "confidence": 0.75},
   "road_info": {"value": "道路情報（詳細）", "confidence": 0.70},
+  "frontage": {"value": "間口（単位込み）", "confidence": 0.72},
   "current_status": {"value": "現況", "confidence": 0.88},
   "yield": {"value": "表面利回り（%込み）", "confidence": 0.65},
   "occupancy": {"value": "賃貸状況", "confidence": 0.60},
@@ -286,7 +289,7 @@ function mergePropertyData(results: any[]): any {
     'property_name', 'location', 'station', 'walk_minutes',
     'land_area', 'building_area', 'zoning', 'building_coverage',
     'floor_area_ratio', 'price', 'structure', 'built_year',
-    'road_info', 'current_status', 'yield', 'occupancy'
+    'road_info', 'frontage', 'current_status', 'yield', 'occupancy'
   ];
   
   for (const field of fields) {

@@ -25,6 +25,7 @@ export interface Deal {
   station?: string;
   walk_minutes?: number;
   land_area?: string;
+  building_area?: string;
   frontage?: string;
   zoning?: string;
   building_coverage?: string;
@@ -32,6 +33,10 @@ export interface Deal {
   height_district?: string;
   fire_zone?: string;
   road_info?: string;
+  structure?: string;
+  built_year?: string;
+  yield_rate?: string;
+  occupancy_status?: string;
   current_status?: string;
   desired_price?: string;
   remarks?: string;

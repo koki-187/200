@@ -9,7 +9,160 @@ const files = new Hono<{ Bindings: Bindings }>();
 // 全てのルートに認証必須
 files.use('*', authMiddleware);
 
-// ファイル一覧取得
+// ファイル検索（全案件横断）
+files.get('/search', async (c) => {
+  try {
+    const userId = c.get('userId') as string;
+    const role = c.get('userRole') as 'ADMIN' | 'AGENT';
+    
+    // 検索パラメータ取得
+    const filename = c.req.query('filename');
+    const fileType = c.req.query('file_type');
+    const uploaderId = c.req.query('uploader_id');
+    const dealId = c.req.query('deal_id');
+    const startDate = c.req.query('start_date');
+    const endDate = c.req.query('end_date');
+    const isArchived = c.req.query('is_archived');
+    const minSize = c.req.query('min_size');
+    const maxSize = c.req.query('max_size');
+    
+    // ページネーション
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = parseInt(c.req.query('limit') || '50');
+    const offset = (page - 1) * limit;
+    
+    // ソート
+    const sortBy = c.req.query('sort_by') || 'created_at';
+    const sortOrder = (c.req.query('sort_order') || 'desc').toLowerCase();
+    
+    const allowedSortColumns = ['created_at', 'filename', 'size_bytes', 'file_type'];
+    const orderColumn = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    
+    let query = `
+      SELECT f.*, d.title as deal_title, u.name as uploader_name
+      FROM files f
+      LEFT JOIN deals d ON f.deal_id = d.id
+      LEFT JOIN users u ON f.uploader_id = u.id
+      WHERE 1=1
+    `;
+    const params: any[] = [];
+    
+    // エージェントの場合、自分に関連する案件のファイルのみ表示
+    if (role === 'AGENT') {
+      query += ' AND (d.seller_id = ? OR d.buyer_id = ?)';
+      params.push(userId, userId);
+    }
+    
+    // ファイル名検索（部分一致）
+    if (filename) {
+      query += ' AND f.filename LIKE ?';
+      params.push(`%${filename}%`);
+    }
+    
+    // ファイルタイプフィルター
+    if (fileType) {
+      query += ' AND f.file_type = ?';
+      params.push(fileType);
+    }
+    
+    // アップローダーフィルター
+    if (uploaderId) {
+      query += ' AND f.uploader_id = ?';
+      params.push(uploaderId);
+    }
+    
+    // 案件IDフィルター
+    if (dealId) {
+      query += ' AND f.deal_id = ?';
+      params.push(dealId);
+    }
+    
+    // 日付範囲フィルター
+    if (startDate) {
+      query += ' AND f.created_at >= ?';
+      params.push(startDate);
+    }
+    if (endDate) {
+      query += ' AND f.created_at <= ?';
+      params.push(endDate);
+    }
+    
+    // アーカイブステータスフィルター
+    if (isArchived !== undefined) {
+      query += ' AND f.is_archived = ?';
+      params.push(isArchived === '1' ? 1 : 0);
+    }
+    
+    // ファイルサイズ範囲フィルター
+    if (minSize) {
+      query += ' AND f.size_bytes >= ?';
+      params.push(parseInt(minSize));
+    }
+    if (maxSize) {
+      query += ' AND f.size_bytes <= ?';
+      params.push(parseInt(maxSize));
+    }
+    
+    // 合計件数取得
+    const countQuery = query.replace(
+      'SELECT f.*, d.title as deal_title, u.name as uploader_name',
+      'SELECT COUNT(*) as total'
+    );
+    const countResult = await c.env.DB.prepare(countQuery).bind(...params).first<{ total: number }>();
+    const totalCount = countResult?.total || 0;
+    
+    // ソートとページネーション
+    query += ` ORDER BY f.${orderColumn} ${orderDirection} LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+    
+    const result = await c.env.DB.prepare(query).bind(...params).all();
+    const filesList = result.results || [];
+    
+    // 総ファイルサイズを計算
+    const totalSizeQuery = query
+      .replace('SELECT f.*, d.title as deal_title, u.name as uploader_name', 'SELECT SUM(f.size_bytes) as total_size')
+      .replace(`ORDER BY f.${orderColumn} ${orderDirection} LIMIT ? OFFSET ?`, '');
+    const sizeParams = params.slice(0, -2); // limit と offset を除外
+    const totalSizeResult = await c.env.DB.prepare(totalSizeQuery).bind(...sizeParams).first<{ total_size: number }>();
+    const totalSize = totalSizeResult?.total_size || 0;
+    
+    return c.json({
+      files: filesList,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      },
+      summary: {
+        total_files: totalCount,
+        total_size_bytes: totalSize,
+        total_size_mb: Math.round(totalSize / (1024 * 1024) * 100) / 100
+      },
+      filters: {
+        filename,
+        file_type: fileType,
+        uploader_id: uploaderId,
+        deal_id: dealId,
+        start_date: startDate,
+        end_date: endDate,
+        is_archived: isArchived,
+        min_size: minSize,
+        max_size: maxSize
+      },
+      sort: {
+        by: orderColumn,
+        order: orderDirection
+      }
+    });
+  } catch (error) {
+    console.error('Search files error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// ファイル一覧取得（特定案件）
 files.get('/deals/:dealId', async (c) => {
   try {
     const dealId = c.req.param('dealId');

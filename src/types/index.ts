@@ -125,6 +125,8 @@ export type Bindings = {
   OPENAI_API_KEY: string;
   JWT_SECRET: string;
   RESEND_API_KEY?: string;
+  MLIT_API_KEY?: string;
+  FILES_BUCKET?: R2Bucket;
 };
 
 export interface JWTPayload {

@@ -210,6 +210,73 @@ export class EmailService {
       html
     });
   }
+
+  // 新規案件通知（管理者向け）
+  async sendAdminNewDealNotification(
+    to: string,
+    dealTitle: string,
+    dealDetails: {
+      location?: string;
+      station?: string;
+      deadline?: string;
+      sellerName?: string;
+      sellerEmail?: string;
+      buyerId?: string;
+    }
+  ): Promise<{ success: boolean; error?: string }> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: 'Noto Sans JP', sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #DC2626; color: white; padding: 20px; text-align: center; }
+          .content { background: #f9f9f9; padding: 30px; border: 1px solid #ddd; }
+          .info-box { background: white; padding: 20px; margin: 20px 0; border: 1px solid #ddd; }
+          .highlight { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 20px 0; }
+          .button { display: inline-block; background: #DC2626; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🚨 管理者通知：新規案件登録</h1>
+          </div>
+          <div class="content">
+            <div class="highlight">
+              <strong>ユーザーが新しい案件を登録しました。</strong>
+            </div>
+            
+            <div class="info-box">
+              <h2>${dealTitle}</h2>
+              ${dealDetails.location ? `<p><strong>所在地:</strong> ${dealDetails.location}</p>` : ''}
+              ${dealDetails.station ? `<p><strong>最寄駅:</strong> ${dealDetails.station}</p>` : ''}
+              ${dealDetails.deadline ? `<p><strong>回答期限:</strong> ${new Date(dealDetails.deadline).toLocaleString('ja-JP')}</p>` : ''}
+              ${dealDetails.sellerName ? `<p><strong>エージェント:</strong> ${dealDetails.sellerName}</p>` : ''}
+              ${dealDetails.sellerEmail ? `<p><strong>エージェントメール:</strong> ${dealDetails.sellerEmail}</p>` : ''}
+            </div>
+            
+            <p>案件の詳細を確認し、必要に応じて対応をお願いいたします。</p>
+            
+            <a href="https://47bfb6df.real-estate-200units-v2.pages.dev" class="button">案件を確認する</a>
+          </div>
+          <div class="footer">
+            <p>200棟アパート用地仕入れプロジェクト - 管理者通知</p>
+            <p>このメールは自動送信されています。</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return await this.sendEmail({
+      to,
+      subject: `【管理者通知】新規案件登録: ${dealTitle}`,
+      html
+    });
+  }
 }
 
 // Cloudflare Workers環境用のヘルパー関数

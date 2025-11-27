@@ -183,53 +183,105 @@ app.get('/reports/monthly', async (c) => {
   }
 });
 
-// トレンド分析 - 案件推移
+// トレンド分析 - 案件推移（拡張版）
 app.get('/trends/deals', async (c) => {
-  const { period = '12' } = c.req.query(); // デフォルト12ヶ月
+  const { period = '12', granularity = 'month' } = c.req.query(); // デフォルト12ヶ月、月単位
 
   try {
-    const months = parseInt(period);
+    const periods = parseInt(period);
     
-    // 月別の新規案件数
+    // 期間単位の決定（日、週、月）
+    let dateFormat = '%Y-%m'; // 月単位
+    let periodUnit = 'months';
+    
+    if (granularity === 'day') {
+      dateFormat = '%Y-%m-%d';
+      periodUnit = 'days';
+    } else if (granularity === 'week') {
+      dateFormat = '%Y-W%W';
+      periodUnit = 'days';
+    }
+    
+    // 月別/週別/日別の新規案件数
     const newDeals = await c.env.DB.prepare(`
       SELECT 
-        strftime('%Y-%m', created_at) as month,
+        strftime(?, created_at) as period,
         COUNT(*) as count
       FROM deals
-      WHERE created_at >= datetime('now', '-' || ? || ' months')
-      GROUP BY month
-      ORDER BY month
-    `).bind(months).all();
+      WHERE created_at >= datetime('now', '-' || ? || ' ' || ?)
+      GROUP BY period
+      ORDER BY period
+    `).bind(dateFormat, periods, periodUnit).all();
 
-    // 月別の成約件数
+    // 月別/週別/日別の成約件数
     const contractedDeals = await c.env.DB.prepare(`
       SELECT 
-        strftime('%Y-%m', updated_at) as month,
+        strftime(?, updated_at) as period,
         COUNT(*) as count,
-        SUM(estimated_value) as total_value
+        SUM(desired_price) as total_value,
+        AVG(desired_price) as avg_value
       FROM deals
-      WHERE status = 'contracted'
-        AND updated_at >= datetime('now', '-' || ? || ' months')
-      GROUP BY month
-      ORDER BY month
-    `).bind(months).all();
+      WHERE status = 'CONTRACTED'
+        AND updated_at >= datetime('now', '-' || ? || ' ' || ?)
+      GROUP BY period
+      ORDER BY period
+    `).bind(dateFormat, periods, periodUnit).all();
 
-    // ステータス別推移
+    // ステータス別推移（積み上げグラフ用）
     const statusTrend = await c.env.DB.prepare(`
       SELECT 
-        strftime('%Y-%m', created_at) as month,
+        strftime(?, created_at) as period,
         status,
         COUNT(*) as count
       FROM deals
-      WHERE created_at >= datetime('now', '-' || ? || ' months')
-      GROUP BY month, status
-      ORDER BY month, status
-    `).bind(months).all();
+      WHERE created_at >= datetime('now', '-' || ? || ' ' || ?)
+      GROUP BY period, status
+      ORDER BY period, status
+    `).bind(dateFormat, periods, periodUnit).all();
+
+    // 各ステータスの現在の件数
+    const currentStatusCount = await c.env.DB.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM deals
+      GROUP BY status
+    `).all();
+
+    // ステータス遷移分析（NEW → REVIEWING → NEGOTIATING → CONTRACTED）
+    const statusTransitions = await c.env.DB.prepare(`
+      SELECT 
+        status,
+        COUNT(*) as count,
+        AVG(julianday(updated_at) - julianday(created_at)) as avg_days
+      FROM deals
+      WHERE created_at >= datetime('now', '-' || ? || ' ' || ?)
+      GROUP BY status
+    `).bind(periods, periodUnit).all();
+
+    // 成約率推移
+    const conversionTrend = await c.env.DB.prepare(`
+      SELECT 
+        strftime(?, created_at) as period,
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'CONTRACTED' THEN 1 ELSE 0 END) as contracted,
+        ROUND(CAST(SUM(CASE WHEN status = 'CONTRACTED' THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*) * 100, 2) as conversion_rate
+      FROM deals
+      WHERE created_at >= datetime('now', '-' || ? || ' ' || ?)
+      GROUP BY period
+      ORDER BY period
+    `).bind(dateFormat, periods, periodUnit).all();
 
     return c.json({
       newDeals: newDeals.results,
       contractedDeals: contractedDeals.results,
       statusTrend: statusTrend.results,
+      currentStatusCount: currentStatusCount.results,
+      statusTransitions: statusTransitions.results,
+      conversionTrend: conversionTrend.results,
+      metadata: {
+        period: periods,
+        granularity,
+        unit: periodUnit
+      }
     });
   } catch (error: any) {
     console.error('Failed to get deal trends:', error);

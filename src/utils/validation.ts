@@ -115,7 +115,7 @@ export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): {
     return { success: true, data: validData };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map(err => {
+      const errors = error.issues.map(err => {
         const path = err.path.join('.');
         return `${path}: ${err.message}`;
       });

@@ -19,7 +19,11 @@ auth.post('/login', async (c) => {
     const validation = validateData(loginSchema, body);
     if (!validation.success) {
       console.log('[Login] Validation failed:', validation.errors);
-      return c.json({ error: 'Validation failed', details: validation.errors }, 400);
+      return c.json({ 
+        error: 'バリデーションエラー', 
+        message: '入力内容に誤りがあります',
+        details: validation.errors || []
+      }, 400);
     }
 
     const { email, password, rememberMe } = validation.data;
@@ -69,13 +73,12 @@ auth.post('/login', async (c) => {
   } catch (error) {
     console.error('[Login] Error occurred:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorStack = error instanceof Error ? error.stack : 'No stack trace';
     console.error('[Login] Error details - Message:', errorMessage);
-    console.error('[Login] Error details - Stack:', errorStack);
+    
+    // 本番環境ではスタックトレースを表示しない
     return c.json({ 
       error: 'Internal server error', 
-      message: errorMessage,
-      stack: errorStack.substring(0, 500)
+      message: 'ログイン処理中にエラーが発生しました'
     }, 500);
   }
 });

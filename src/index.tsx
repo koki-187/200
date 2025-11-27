@@ -171,6 +171,7 @@ app.get('/test-deals-page', (c) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Test Deals Page Loading</title>
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script defer src="/static/error-handler.js"></script>
 </head>
 <body>
   <h1>Testing Deals Page Load</h1>

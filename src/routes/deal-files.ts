@@ -3,6 +3,7 @@ import { Bindings } from '../types';
 import { authMiddleware } from '../utils/auth';
 import { nanoid } from 'nanoid';
 import { checkStorageQuota, updateStorageQuotaOnUpload, updateStorageQuotaOnDelete } from '../utils/storage-quota';
+import { handleDatabaseError, handleFileUploadError, logError, createErrorResponse } from '../utils/error-handler';
 
 const dealFiles = new Hono<{ Bindings: Bindings }>();
 
@@ -74,11 +75,8 @@ dealFiles.get('/:deal_id/files', async (c) => {
       file_count: files.results.length
     });
   } catch (error) {
-    console.error('Get deal files error:', error);
-    return c.json({
-      error: 'ファイル一覧の取得に失敗しました',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, 500);
+    logError('Get deal files', error, { dealId: c.req.param('deal_id') });
+    return handleDatabaseError(c, error, 'ファイル一覧の取得');
   }
 });
 

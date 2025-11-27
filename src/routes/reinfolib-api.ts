@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { JWTPayload } from 'hono/utils/jwt/types';
+import { handleAPIError, retryAsync, withTimeout, logError, createErrorResponse } from '../utils/error-handler';
 
 type Bindings = {
   DB: D1Database;
@@ -166,11 +167,31 @@ app.get('/property-info', async (c) => {
     });
 
   } catch (error: any) {
-    console.error('❌ Error fetching REINFOLIB data:', error);
-    return c.json({ 
-      error: 'サーバーエラーが発生しました',
-      message: error.message 
-    }, 500);
+    logError('REINFOLIB property-info', error, { address });
+    
+    // タイムアウトエラー
+    if (error.message && error.message.includes('タイムアウト')) {
+      return c.json(
+        createErrorResponse(
+          'タイムアウトエラー',
+          'APIからの応答に時間がかかっています。しばらく待ってから再試行してください。'
+        ),
+        504
+      );
+    }
+    
+    // ネットワークエラー
+    if (error.message && (error.message.includes('fetch') || error.message.includes('network'))) {
+      return c.json(
+        createErrorResponse(
+          'ネットワークエラー',
+          'API接続に失敗しました。ネットワーク接続を確認してください。'
+        ),
+        503
+      );
+    }
+    
+    return handleAPIError(c, error, 'REINFOLIB API');
   }
 });
 

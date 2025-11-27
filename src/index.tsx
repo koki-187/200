@@ -116,6 +116,7 @@ app.use('/api/*', rateLimitPresets.api);
 app.route('/api/auth', auth);
 app.route('/api/deals', deals);
 app.route('/api/deals', dealFiles);
+app.route('/api/deals', dealValidation);
 app.route('/api/messages', messages);
 app.route('/api/files', files);
 app.route('/api/proposals', proposals);

@@ -1433,9 +1433,9 @@ app.get('/dashboard', (c) => {
         const stats = response.data.statistics;
 
         // 統計情報を更新
-        document.getElementById('stats-total-files').textContent = stats.total_files;
-        document.getElementById('stats-total-size').textContent = (stats.total_size / 1024 / 1024).toFixed(2) + ' MB';
-        document.getElementById('stats-user-count').textContent = stats.user_stats.length;
+        document.getElementById('stats-total-files').textContent = stats.total_files.toLocaleString();
+        document.getElementById('stats-total-size').textContent = formatFileSize(stats.total_size);
+        document.getElementById('stats-user-count').textContent = stats.user_stats.length.toLocaleString();
 
         // ユーザー別統計を表示
         displayUserStats(stats.user_stats);
@@ -1454,25 +1454,37 @@ app.get('/dashboard', (c) => {
       const container = document.getElementById('user-stats-list');
       
       if (userStats.length === 0) {
-        container.innerHTML = '<div class="text-center py-4 text-gray-500">統計データがありません</div>';
+        container.innerHTML = '<div class="text-center py-4 text-gray-500"><i class="fas fa-users text-3xl mb-2 text-gray-400"></i><p>統計データがありません</p></div>';
         return;
       }
 
-      container.innerHTML = userStats.map(stat => \`
-        <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200">
+      // ファイル数でソート（降順）
+      const sortedStats = [...userStats].sort((a, b) => b.file_count - a.file_count);
+
+      container.innerHTML = sortedStats.map(stat => \`
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100 transition">
           <div class="flex items-center space-x-3">
-            <i class="fas fa-user text-blue-600"></i>
+            <i class="fas fa-user-circle text-blue-600 text-xl"></i>
             <div>
-              <div class="font-medium text-gray-900">\${stat.user_name}</div>
+              <div class="font-medium text-gray-900">\${stat.user_name || '名前なし'}</div>
               <div class="text-xs text-gray-500">\${stat.file_count} ファイル</div>
             </div>
           </div>
           <div class="text-right">
-            <div class="text-sm font-medium text-gray-900">\${(stat.total_size / 1024 / 1024).toFixed(2)} MB</div>
+            <div class="text-sm font-medium text-gray-900">\${formatFileSize(stat.total_size)}</div>
             <div class="text-xs text-gray-500">使用中</div>
           </div>
         </div>
       \`).join('');
+    }
+
+    // ファイルサイズをフォーマット
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
     }
 
     // ファイル一覧を表示
@@ -1480,7 +1492,7 @@ app.get('/dashboard', (c) => {
       const container = document.getElementById('admin-files-list');
       
       if (files.length === 0) {
-        container.innerHTML = '<div class="text-center py-8 text-gray-500">ファイルがありません</div>';
+        container.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-folder-open text-4xl mb-3 text-gray-400"></i><p>ファイルがありません</p><p class="text-sm mt-2">ユーザーがファイルをアップロードすると、ここに表示されます。</p></div>';
         return;
       }
 
@@ -1488,7 +1500,7 @@ app.get('/dashboard', (c) => {
         const iconClass = file.file_type === 'ocr' ? 'fa-file-pdf text-red-500' :
                          file.file_type === 'image' ? 'fa-image text-blue-500' :
                          'fa-file text-gray-500';
-        const sizeKB = (file.file_size / 1024).toFixed(2);
+        const formattedSize = formatFileSize(file.file_size);
         
         return \`
         <div class="p-4 hover:bg-gray-50 transition">
@@ -1500,7 +1512,7 @@ app.get('/dashboard', (c) => {
                 <div class="text-sm text-gray-500 space-x-2">
                   <span class="px-2 py-1 bg-gray-100 rounded text-xs">\${file.file_type}</span>
                   \${file.is_ocr_source ? '<span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"><i class="fas fa-robot"></i> OCR</span>' : ''}
-                  <span class="ml-2">\${sizeKB} KB</span>
+                  <span class="ml-2">\${formattedSize}</span>
                   <span class="ml-2">\${new Date(file.uploaded_at).toLocaleString('ja-JP')}</span>
                 </div>
                 <div class="text-sm text-gray-600 mt-1">

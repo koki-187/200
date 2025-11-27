@@ -2825,12 +2825,34 @@ app.get('/deals/new', (c) => {
           <button id="ocr-settings-btn" type="button" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition">
             <i class="fas fa-cog mr-1"></i>設定
           </button>
-          <span id="storage-quota-display" class="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium border border-blue-200">
-            <i class="fas fa-database mr-1"></i><span id="storage-usage-text">読込中...</span>
-          </span>
+          <div id="storage-quota-display" class="text-sm bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-medium border border-blue-200">
+            <div class="flex items-center space-x-2 mb-1">
+              <i class="fas fa-database"></i>
+              <span id="storage-usage-text">読込中...</span>
+            </div>
+            <div class="w-48 bg-gray-200 rounded-full h-2 hidden" id="storage-progress-container">
+              <div id="storage-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
           <span class="text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
             画像・PDF混在OK
           </span>
+        </div>
+        
+        <!-- ストレージ警告メッセージ -->
+        <div id="storage-warning-alert" class="hidden mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-yellow-700">
+                <span class="font-medium">ストレージ容量警告</span>
+                <br>
+                <span id="storage-warning-message"></span>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -3345,6 +3367,49 @@ app.get('/deals/new', (c) => {
             <i class="fas fa-info-circle mr-1"></i>
             物件情報を入力すると、自動的に買取条件をチェックします
           </div>
+        </div>
+      </div>
+
+      <!-- ファイルアップロードセクション -->
+      <div class="border-t pt-6 mt-6" id="deal-files-section" style="display: none;">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          <i class="fas fa-paperclip mr-2"></i>添付資料
+        </h3>
+        
+        <!-- ファイルアップロード -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            ファイルをアップロード
+          </label>
+          <div class="flex items-center space-x-2">
+            <input 
+              type="file" 
+              id="deal-file-input" 
+              multiple 
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              class="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            >
+            <select id="deal-file-type" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="document">一般資料</option>
+              <option value="ocr">OCR資料</option>
+              <option value="image">物件写真</option>
+            </select>
+            <button 
+              type="button"
+              id="deal-file-upload-btn"
+              class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+            >
+              <i class="fas fa-upload mr-1"></i>アップロード
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">
+            PDF, JPG, PNG, Word形式に対応（1ファイル最大10MB）
+          </p>
+        </div>
+
+        <!-- ファイル一覧 -->
+        <div id="deal-files-list" class="space-y-2">
+          <!-- ファイルがここに表示されます -->
         </div>
       </div>
 
@@ -4097,18 +4162,57 @@ app.get('/deals/new', (c) => {
         const usagePercent = usage.usage_percent.toFixed(1);
         const storageText = document.getElementById('storage-usage-text');
         const storageDisplay = document.getElementById('storage-quota-display');
+        const progressContainer = document.getElementById('storage-progress-container');
+        const progressBar = document.getElementById('storage-progress-bar');
+        const warningAlert = document.getElementById('storage-warning-alert');
+        const warningMessage = document.getElementById('storage-warning-message');
         
         if (storageText && storageDisplay) {
           storageText.textContent = usage.used_mb + 'MB / ' + usage.limit_mb + 'MB (' + usagePercent + '%)';
           
-          // 使用率に応じて色を変更
-          if (usage.usage_percent >= 90) {
-            storageDisplay.className = 'text-sm bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium border border-red-200';
-          } else if (usage.usage_percent >= 75) {
-            storageDisplay.className = 'text-sm bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full font-medium border border-yellow-200';
-          } else {
-            storageDisplay.className = 'text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium border border-blue-200';
+          // プログレスバー表示
+          if (progressContainer && progressBar) {
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = Math.min(usage.usage_percent, 100) + '%';
+            
+            // 使用率に応じてプログレスバーの色を変更
+            if (usage.usage_percent >= 95) {
+              progressBar.className = 'bg-red-500 h-2 rounded-full transition-all duration-300';
+            } else if (usage.usage_percent >= 80) {
+              progressBar.className = 'bg-yellow-500 h-2 rounded-full transition-all duration-300';
+            } else {
+              progressBar.className = 'bg-blue-500 h-2 rounded-full transition-all duration-300';
+            }
           }
+          
+          // 使用率に応じて色を変更
+          if (usage.usage_percent >= 95) {
+            storageDisplay.className = 'text-sm bg-red-50 text-red-700 px-4 py-2 rounded-lg font-medium border border-red-200';
+            
+            // 重大警告表示
+            if (warningAlert && warningMessage) {
+              warningAlert.className = 'mb-4 bg-red-50 border-l-4 border-red-400 p-4';
+              warningMessage.textContent = 'ストレージ容量が限界に達しています（' + usagePercent + '%使用中）。ファイルのアップロードができなくなる可能性があります。不要なファイルを削除してください。';
+              warningAlert.classList.remove('hidden');
+            }
+          } else if (usage.usage_percent >= 80) {
+            storageDisplay.className = 'text-sm bg-yellow-50 text-yellow-700 px-4 py-2 rounded-lg font-medium border border-yellow-200';
+            
+            // 警告表示
+            if (warningAlert && warningMessage) {
+              warningAlert.className = 'mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4';
+              warningMessage.textContent = 'ストレージ容量が残りわずかです（' + usagePercent + '%使用中）。残り容量: ' + usage.available_mb + 'MB';
+              warningAlert.classList.remove('hidden');
+            }
+          } else {
+            storageDisplay.className = 'text-sm bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-medium border border-blue-200';
+            
+            // 警告非表示
+            if (warningAlert) {
+              warningAlert.classList.add('hidden');
+            }
+          }
+          
           console.log('[Storage Quota] Successfully loaded:', usage.used_mb + 'MB / ' + usage.limit_mb + 'MB');
         } else {
           console.error('[Storage Quota] CRITICAL: DOM elements not found after successful API call');
@@ -5909,6 +6013,182 @@ app.get('/deals/new', (c) => {
     } else {
       initializePage();
     }
+
+    // ============================================================
+    // ファイル管理機能
+    // ============================================================
+    
+    /**
+     * ファイルアップロード処理
+     */
+    async function uploadDealFiles(dealId) {
+      const fileInput = document.getElementById('deal-file-input');
+      const fileType = document.getElementById('deal-file-type').value;
+      const files = fileInput.files;
+      
+      if (!files || files.length === 0) {
+        alert('ファイルを選択してください');
+        return;
+      }
+      
+      // ファイルサイズチェック（10MB制限）
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].size > maxSize) {
+          alert(files[i].name + ' のサイズが大きすぎます（最大10MB）');
+          return;
+        }
+      }
+      
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+      formData.append('file_type', fileType);
+      
+      const uploadBtn = document.getElementById('deal-file-upload-btn');
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>アップロード中...';
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(\`/api/deals/\${dealId}/files\`, formData, {
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        if (response.data.success) {
+          alert(response.data.message);
+          fileInput.value = '';
+          await loadDealFiles(dealId);
+          await loadStorageQuota(); // ストレージ使用量を更新
+        }
+      } catch (error) {
+        console.error('File upload error:', error);
+        if (error.response?.status === 413) {
+          alert('ストレージ容量不足: ' + error.response.data.message);
+        } else {
+          alert('ファイルのアップロードに失敗しました: ' + (error.response?.data?.error || error.message));
+        }
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-upload mr-1"></i>アップロード';
+      }
+    }
+    
+    /**
+     * ファイル一覧読み込み
+     */
+    async function loadDealFiles(dealId) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(\`/api/deals/\${dealId}/files\`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const filesList = document.getElementById('deal-files-list');
+        if (!filesList) return;
+        
+        if (response.data.files.length === 0) {
+          filesList.innerHTML = '<p class="text-sm text-gray-500">まだファイルがアップロードされていません</p>';
+          return;
+        }
+        
+        filesList.innerHTML = response.data.files.map(file => {
+          const iconClass = file.file_type === 'ocr' ? 'fa-file-pdf text-red-500' :
+                           file.file_type === 'image' ? 'fa-image text-blue-500' :
+                           'fa-file text-gray-500';
+          const sizeKB = Math.round(file.file_size / 1024);
+          
+          return \`
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100">
+              <div class="flex items-center space-x-3 flex-1">
+                <i class="fas \${iconClass} text-lg"></i>
+                <div class="flex-1">
+                  <div class="text-sm font-medium text-gray-900">\${file.file_name}</div>
+                  <div class="text-xs text-gray-500">\${sizeKB} KB · \${new Date(file.uploaded_at).toLocaleString('ja-JP')}</div>
+                </div>
+              </div>
+              <div class="flex space-x-2">
+                <button 
+                  onclick="downloadDealFile('\${dealId}', '\${file.id}')"
+                  class="text-blue-600 hover:text-blue-800 text-sm"
+                  title="ダウンロード"
+                >
+                  <i class="fas fa-download"></i>
+                </button>
+                <button 
+                  onclick="deleteDealFile('\${dealId}', '\${file.id}')"
+                  class="text-red-600 hover:text-red-800 text-sm"
+                  title="削除"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          \`;
+        }).join('');
+      } catch (error) {
+        console.error('Load files error:', error);
+      }
+    }
+    
+    /**
+     * ファイルダウンロード
+     */
+    window.downloadDealFile = async function(dealId, fileId) {
+      try {
+        const token = localStorage.getItem('token');
+        window.location.href = \`/api/deals/\${dealId}/files/\${fileId}/download?token=\${token}\`;
+      } catch (error) {
+        console.error('Download error:', error);
+        alert('ダウンロードに失敗しました');
+      }
+    };
+    
+    /**
+     * ファイル削除
+     */
+    window.deleteDealFile = async function(dealId, fileId) {
+      if (!confirm('このファイルを削除しますか？')) return;
+      
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(\`/api/deals/\${dealId}/files/\${fileId}\`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        alert('ファイルを削除しました');
+        await loadDealFiles(dealId);
+        await loadStorageQuota(); // ストレージ使用量を更新
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('削除に失敗しました');
+      }
+    };
+    
+    // ファイルアップロードボタンのイベントリスナー
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const dealId = urlParams.get('deal_id');
+      
+      if (dealId) {
+        // 既存案件の編集モードの場合、ファイルセクションを表示
+        const filesSection = document.getElementById('deal-files-section');
+        if (filesSection) {
+          filesSection.style.display = 'block';
+          loadDealFiles(dealId);
+        }
+        
+        // アップロードボタンのイベントリスナー
+        const uploadBtn = document.getElementById('deal-file-upload-btn');
+        if (uploadBtn) {
+          uploadBtn.addEventListener('click', () => uploadDealFiles(dealId));
+        }
+      }
+    });
 
     // ============================================================
     // テンプレート機能

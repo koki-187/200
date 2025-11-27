@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { authMiddleware } from '../utils/auth';
 import { nanoid } from 'nanoid';
+import { checkStorageQuota, updateStorageQuotaOnUpload, updateStorageQuotaOnDelete } from '../utils/storage-quota';
 
 const dealFiles = new Hono<{ Bindings: Bindings }>();
 
@@ -84,15 +85,13 @@ dealFiles.get('/:deal_id/files', async (c) => {
 /**
  * ファイルアップロード
  * POST /api/deals/:deal_id/files
- * 
- * Note: R2が有効でない場合、ファイルメタデータのみをDBに保存
  */
 dealFiles.post('/:deal_id/files', async (c) => {
   try {
     const dealId = c.req.param('deal_id');
     const userId = c.get('userId') as string;
     const userRole = c.get('userRole') as string;
-    const { DB } = c.env;
+    const { DB, FILES_BUCKET } = c.env;
 
     // 権限チェック
     const hasAccess = await canAccessDealFiles(DB, userId, userRole, dealId);
@@ -110,6 +109,18 @@ dealFiles.post('/:deal_id/files', async (c) => {
       return c.json({ error: 'ファイルが選択されていません' }, 400);
     }
 
+    // 合計ファイルサイズ計算
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+
+    // ストレージクォータチェック
+    const quotaCheck = await checkStorageQuota(DB, userId, totalSize);
+    if (!quotaCheck.allowed) {
+      return c.json({ 
+        error: 'ストレージ容量不足',
+        message: quotaCheck.message 
+      }, 413);
+    }
+
     const uploadedFiles = [];
 
     for (const file of files) {
@@ -118,8 +129,16 @@ dealFiles.post('/:deal_id/files', async (c) => {
       const fileSize = file.size;
       const mimeType = file.type;
 
-      // R2キー生成（将来R2を有効にした場合に備えて）
+      // R2キー生成
       const r2Key = `deals/${dealId}/${fileType}/${fileId}_${fileName}`;
+
+      // R2にファイル実体を保存
+      const arrayBuffer = await file.arrayBuffer();
+      await FILES_BUCKET.put(r2Key, arrayBuffer, {
+        httpMetadata: {
+          contentType: mimeType
+        }
+      });
 
       // DBにメタデータを保存
       await DB.prepare(`
@@ -139,6 +158,11 @@ dealFiles.post('/:deal_id/files', async (c) => {
         userId,
         isOcrSource ? 1 : 0
       ).run();
+
+      // ストレージクォータを更新
+      const fileCategory = fileType === 'ocr' ? 'ocr_document' : 
+                          fileType === 'image' ? 'photo' : 'other';
+      await updateStorageQuotaOnUpload(DB, userId, fileSize, fileCategory);
 
       uploadedFiles.push({
         id: fileId,
@@ -165,8 +189,6 @@ dealFiles.post('/:deal_id/files', async (c) => {
 /**
  * ファイルダウンロード
  * GET /api/deals/:deal_id/files/:file_id/download
- * 
- * Note: R2が有効でない場合、メタデータのみを返す
  */
 dealFiles.get('/:deal_id/files/:file_id/download', async (c) => {
   try {
@@ -174,7 +196,7 @@ dealFiles.get('/:deal_id/files/:file_id/download', async (c) => {
     const fileId = c.req.param('file_id');
     const userId = c.get('userId') as string;
     const userRole = c.get('userRole') as string;
-    const { DB } = c.env;
+    const { DB, FILES_BUCKET } = c.env;
 
     // 権限チェック
     const hasAccess = await canAccessDealFiles(DB, userId, userRole, dealId);
@@ -192,16 +214,18 @@ dealFiles.get('/:deal_id/files/:file_id/download', async (c) => {
       return c.json({ error: 'ファイルが見つかりません' }, 404);
     }
 
-    // R2が有効でない場合、メタデータのみを返す
-    return c.json({
-      success: true,
-      message: 'R2ストレージが有効でないため、ファイルのダウンロードは現在利用できません',
-      file: {
-        id: file.id,
-        file_name: file.file_name,
-        file_size: file.file_size,
-        mime_type: file.mime_type,
-        uploaded_at: file.uploaded_at
+    // R2からファイル実体を取得
+    const object = await FILES_BUCKET.get(file.r2_key as string);
+    if (!object) {
+      return c.json({ error: 'ファイルの実体が見つかりません' }, 404);
+    }
+
+    // ファイルをダウンロード
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': file.mime_type as string || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${file.file_name}"`,
+        'Content-Length': String(file.file_size)
       }
     });
   } catch (error) {
@@ -223,7 +247,7 @@ dealFiles.delete('/:deal_id/files/:file_id', async (c) => {
     const fileId = c.req.param('file_id');
     const userId = c.get('userId') as string;
     const userRole = c.get('userRole') as string;
-    const { DB } = c.env;
+    const { DB, FILES_BUCKET } = c.env;
 
     // 権限チェック
     const hasAccess = await canAccessDealFiles(DB, userId, userRole, dealId);
@@ -231,11 +255,29 @@ dealFiles.delete('/:deal_id/files/:file_id', async (c) => {
       return c.json({ error: 'アクセス権限がありません' }, 403);
     }
 
-    // ファイル削除
+    // ファイルメタデータ取得
+    const file = await DB.prepare(`
+      SELECT * FROM deal_files
+      WHERE id = ? AND deal_id = ?
+    `).bind(fileId, dealId).first();
+
+    if (!file) {
+      return c.json({ error: 'ファイルが見つかりません' }, 404);
+    }
+
+    // R2からファイル実体を削除
+    await FILES_BUCKET.delete(file.r2_key as string);
+
+    // DBからメタデータを削除
     await DB.prepare(`
       DELETE FROM deal_files
       WHERE id = ? AND deal_id = ?
     `).bind(fileId, dealId).run();
+
+    // ストレージクォータを更新
+    const fileCategory = (file.file_type as string) === 'ocr' ? 'ocr_document' : 
+                        (file.file_type as string) === 'image' ? 'photo' : 'other';
+    await updateStorageQuotaOnDelete(DB, file.user_id as string, file.file_size as number, fileCategory);
 
     return c.json({
       success: true,

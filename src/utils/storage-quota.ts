@@ -43,11 +43,12 @@ export async function getUserStorageQuota(
 
 /**
  * ユーザーのストレージクォータを初期化
+ * @param quotaLimitBytes デフォルトは2GB（一般ユーザー）
  */
 export async function initializeUserStorageQuota(
   db: D1Database,
   userId: string,
-  quotaLimitBytes: number = 1073741824 // 1GB default (11 users per 11GB)
+  quotaLimitBytes: number = 2147483648 // 2GB default for regular users
 ): Promise<void> {
   await db
     .prepare(`
@@ -57,6 +58,21 @@ export async function initializeUserStorageQuota(
     `)
     .bind(userId, quotaLimitBytes)
     .run();
+}
+
+/**
+ * ユーザーロール別にストレージクォータを初期化
+ */
+export async function initializeUserStorageQuotaByRole(
+  db: D1Database,
+  userId: string,
+  userRole: 'ADMIN' | 'AGENT' | string
+): Promise<void> {
+  const quotaBytes = userRole === 'ADMIN' 
+    ? STORAGE_LIMITS.ADMIN_QUOTA_BYTES 
+    : STORAGE_LIMITS.USER_DEFAULT_QUOTA_BYTES;
+  
+  await initializeUserStorageQuota(db, userId, quotaBytes);
 }
 
 /**
@@ -198,21 +214,30 @@ export async function updateStorageQuotaOnDelete(
 }
 
 /**
- * Cloudflare無料プランの制限
+ * ストレージ制限定数
  */
 export const STORAGE_LIMITS = {
   // R2 無料プラン: 10GB/月
   R2_FREE_TIER_BYTES: 10 * 1024 * 1024 * 1024, // 10GB
   R2_FREE_TIER_MB: 10 * 1024,
   
-  // ユーザー別デフォルト制限: 1GB（11名で11GB）
-  USER_DEFAULT_QUOTA_BYTES: 1024 * 1024 * 1024, // 1GB
-  USER_DEFAULT_QUOTA_MB: 1024,
+  // 一般ユーザー制限: 2GB
+  USER_DEFAULT_QUOTA_BYTES: 2 * 1024 * 1024 * 1024, // 2GB
+  USER_DEFAULT_QUOTA_MB: 2048, // 2GB = 2048MB
   
-  // 推定最大ユーザー数: 11GB / 1GB = 11ユーザー（10名+管理者1名）
-  ESTIMATED_MAX_USERS: 11,
+  // 管理者制限: 10GB
+  ADMIN_QUOTA_BYTES: 10 * 1024 * 1024 * 1024, // 10GB
+  ADMIN_QUOTA_MB: 10240, // 10GB = 10240MB
+  
+  // 推定最大ユーザー数: 10名（一般ユーザー）+ 1名（管理者）
+  ESTIMATED_MAX_REGULAR_USERS: 10,
+  ESTIMATED_MAX_ADMINS: 1,
   
   // ファイルサイズ制限
   MAX_FILE_SIZE_BYTES: 10 * 1024 * 1024, // 10MB
-  MAX_FILE_SIZE_MB: 10
+  MAX_FILE_SIZE_MB: 10,
+  
+  // 警告閾値（使用率）
+  WARNING_THRESHOLD_PERCENT: 80, // 80%以上で警告
+  CRITICAL_THRESHOLD_PERCENT: 95 // 95%以上で重大警告
 } as const;

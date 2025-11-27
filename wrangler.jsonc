@@ -11,6 +11,13 @@
       "database_name": "real-estate-200units-db",
       "database_id": "4df8f06f-eca1-48b0-9dcc-a17778913760"
     }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "FILES_BUCKET",
+      "bucket_name": "real-estate-files"
+    }
   ]
 
   // Note: Cron triggers are not supported in Cloudflare Pages

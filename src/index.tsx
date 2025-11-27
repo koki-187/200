@@ -3137,6 +3137,23 @@ app.get('/deals/new', (c) => {
       </div>
     </div>
 
+    <!-- 不足書類通知セクション -->
+    <div id="missing-items-alert" class="hidden bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+      <div class="flex items-start">
+        <i class="fas fa-exclamation-triangle text-yellow-600 text-xl mr-3 mt-1"></i>
+        <div class="flex-1">
+          <h4 class="font-semibold text-yellow-800 mb-2">案件審査に必要な情報が不足しています</h4>
+          <div id="missing-fields-list" class="text-sm text-yellow-700 mb-2"></div>
+          <div id="missing-files-list" class="text-sm text-yellow-700 mb-3"></div>
+          <div class="flex items-center space-x-4">
+            <button type="button" id="dismiss-missing-alert" class="text-sm text-yellow-700 underline hover:text-yellow-900">
+              閉じる
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 案件フォーム -->
     <form id="deal-form" class="bg-white rounded-xl shadow-lg p-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -5815,6 +5832,75 @@ app.get('/deals/new', (c) => {
       
       // ページロード時にOCRジョブを復元（ブラウザリロード対応）
       restoreOCRJobIfExists();
+      
+      // 不足項目チェック（案件IDがある場合のみ）
+      checkMissingItems();
+    }
+    
+    /**
+     * 不足項目チェック関数
+     */
+    async function checkMissingItems() {
+      try {
+        // URLから案件IDを取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const dealId = urlParams.get('deal_id');
+        
+        if (!dealId || !token) {
+          return; // 新規作成の場合はチェック不要
+        }
+        
+        console.log('[MissingItems] Checking for deal:', dealId);
+        
+        const response = await axios.get(\`/api/deals/\${dealId}/missing-items\`, {
+          headers: { Authorization: \`Bearer \${token}\` }
+        });
+        
+        if (response.data.success && response.data.total_missing > 0) {
+          displayMissingItemsAlert(response.data);
+        }
+      } catch (error) {
+        console.error('[MissingItems] Error:', error);
+      }
+    }
+    
+    /**
+     * 不足項目アラート表示
+     */
+    function displayMissingItemsAlert(data) {
+      const alertBox = document.getElementById('missing-items-alert');
+      const fieldsList = document.getElementById('missing-fields-list');
+      const filesList = document.getElementById('missing-files-list');
+      
+      if (!alertBox) return;
+      
+      // 不足フィールド表示
+      if (data.missing_fields && data.missing_fields.length > 0) {
+        const fieldsHTML = '<ul class="list-disc list-inside space-y-1">' +
+          data.missing_fields.map(item => 
+            \`<li><strong>\${item.label}</strong>の入力が必要です</li>\`
+          ).join('') +
+          '</ul>';
+        fieldsList.innerHTML = fieldsHTML;
+      }
+      
+      // 不足ファイル表示
+      if (data.missing_files && data.missing_files.length > 0) {
+        const filesHTML = '<ul class="list-disc list-inside space-y-1 mt-2">' +
+          data.missing_files.map(item => 
+            \`<li><strong>\${item.description}</strong>のアップロードが必要です（\${item.missing_count}件不足）</li>\`
+          ).join('') +
+          '</ul>';
+        filesList.innerHTML = filesHTML;
+      }
+      
+      // アラート表示
+      alertBox.classList.remove('hidden');
+      
+      // 閉じるボタン
+      document.getElementById('dismiss-missing-alert').addEventListener('click', () => {
+        alertBox.classList.add('hidden');
+      });
     }
     
     // DOMContentLoaded後に初期化を実行

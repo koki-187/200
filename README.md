@@ -16,22 +16,15 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.45.0)**: https://73a5e10c.real-estate-200units-v2.pages.dev 🆕 **← 最新（OCRデータベーススキーマ修正）**
-- **Previous URL (v3.44.0)**: https://73a5e10c.real-estate-200units-v2.pages.dev（OCR API致命的バグ修正）
-- **Previous URL (v3.43.0)**: https://64d2e35a.real-estate-200units-v2.pages.dev
-- **Previous URL (v3.41.0)**: https://f521a2bb.real-estate-200units-v2.pages.dev
-- **Previous URL (v3.40.1)**: https://11953975.real-estate-200units-v2.pages.dev
-- **Previous URL (v3.39.0)**: https://6c17d177.real-estate-200units-v2.pages.dev
-- **Previous URL (v3.38.1)**: https://3af7bbf4.real-estate-200units-v2.pages.dev
-- **Previous URL (v3.38.0)**: https://dc91950b.real-estate-200units-v2.pages.dev
-- **Previous URL (v3.37.0)**: https://ad24adae.real-estate-200units-v2.pages.dev
+- **Production URL (Latest v3.58.0)**: https://656dfb5f.real-estate-200units-v2.pages.dev 🆕 **← 最新（管理者ファイル管理UI実装）**
+- **Previous URL (v3.57.0)**: https://50f38790.real-estate-200units-v2.pages.dev（ストレージ3GB/20GB対応）
+- **Previous URL (v3.56.0)**: https://f96caa6e.real-estate-200units-v2.pages.dev（R2統合完了）
+- **Previous URL (v3.45.0)**: https://73a5e10c.real-estate-200units-v2.pages.dev（OCRデータベーススキーマ修正）
 - **Project URL**: https://real-estate-200units-v2.pages.dev
-- **Showcase**: https://6c17d177.real-estate-200units-v2.pages.dev/showcase
-- **Deal Creation (OCR UI強化版)**: https://6c17d177.real-estate-200units-v2.pages.dev/deals/new
-- **Deal Detail (with Map)**: https://6c17d177.real-estate-200units-v2.pages.dev/deals/deal-001
-- **API Documentation**: https://6c17d177.real-estate-200units-v2.pages.dev/api/docs
-- **API Specification (OpenAPI)**: https://6c17d177.real-estate-200units-v2.pages.dev/api/openapi.json
-- **Debug Endpoint**: https://6c17d177.real-estate-200units-v2.pages.dev/api/debug/env
+- **Dashboard**: https://656dfb5f.real-estate-200units-v2.pages.dev/dashboard
+- **Deal Creation**: https://656dfb5f.real-estate-200units-v2.pages.dev/deals/new
+- **Deal List**: https://656dfb5f.real-estate-200units-v2.pages.dev/deals
+- **Showcase**: https://656dfb5f.real-estate-200units-v2.pages.dev/showcase
 
 ### デフォルトログイン情報
 
@@ -40,24 +33,33 @@
 - **パスワード**: `kouki187`
 - **ロール**: ADMIN（管理者）
 
-#### ✅ v3.45.0 - OCRデータベーススキーマ修正 🚨 CRITICAL
-- **本番D1データベースのocr_jobsテーブルスキーマ修正**
-- 古いスキーマ（file_id）→ 新しいスキーマ（user_id）に更新
-- 「table ocr_jobs has no column named user_id」エラーを解消
-- OCRジョブ作成・処理が完全復旧
-- ✅ テスト確認: OCRジョブ作成成功
+#### ✅ v3.58.0 - 管理者ファイル管理UI実装 ✨ NEW
+- **管理者専用のファイル一元管理機能を実装**
+- `/dashboard` に「ファイル管理」タブ追加（管理者専用）
+- 全ユーザーのファイル一覧表示・統計情報
+- ユーザー別ストレージ使用状況の可視化
+- ファイル検索・フィルター機能
+- `/deals/:id` のファイル管理を新APIに移行
+- 複数ファイルアップロード対応
 
-#### ✅ v3.44.0 - OCR API致命的バグ修正 🚨 CRITICAL
-- **OCRジョブAPI（500エラー）の完全修正**
-- JWT検証エラー修正（`c.env.jwt.verify()` → `verifyToken()`）
-- OCRファイルアップロード機能が完全復旧
-- ユーザー認証が正常に動作
+#### ✅ v3.57.0 - ストレージクォータ拡張 💾
+- 一般ユーザー: 2GB → 3GB に拡張
+- 管理者: 10GB → 20GB に拡張
+- 合計容量: 50GB（10ユーザー + 1管理者）
+- Cloudflare R2料金: 約$0.60/月（約¥90/月）
 
-#### ✅ v3.43.0 - JavaScript構文エラー完全修正 ✨
-- `confirm()`内の改行文字によるエラー修正
-- 重複変数宣言の修正（`lastUploadedFiles`, `dropZone`）
-- HTML属性内のエスケープ問題修正（`onclick`）
-- OCR機能が正常にロード、構文エラーなし
+#### ✅ v3.56.0 - R2ストレージ統合完了 🚀
+- Cloudflare R2バケット作成・統合
+- ファイル実体の保存・取得・削除機能
+- ストレージ使用量の視覚化（プログレスバー）
+- 容量警告機能（80%黄色、95%赤色）
+- `/deals/new` でファイルアップロード機能実装
+
+#### ✅ v3.55.0 - フィールド拡張とOCR最適化 📊
+- 6フィールド追加（間口、築年月、建物面積、構造、利回り、賃貸状況）
+- OCR抽出対応を11→17フィールドに拡張
+- 不足書類検出API実装
+- 完全性スコア計算機能
 
 #### ✅ v3.30.1 - JavaScript初期化問題を完全修正
 **状態**: 🟢 修正完了（2025-11-20）
@@ -101,28 +103,26 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.42.0 (Production - MLIT API Integration) ✅
-- **進捗状況**: OCR機能検証中、不動産情報ライブラリAPI統合準備完了 ✅
-- **デプロイ日**: 2025-11-25
-- **本番URL**: https://79a2845f.real-estate-200units-v2.pages.dev 
+- **バージョン**: v3.58.0 (Production - Admin File Management) ✅
+- **進捗状況**: 全機能実装完了、実用可能な状態 ✅
+- **デプロイ日**: 2025-11-27
+- **本番URL**: https://656dfb5f.real-estate-200units-v2.pages.dev 
+- **GitHubリポジトリ**: https://github.com/koki-187/200
 - **ローカル動作**: ✅ 完全に動作（全APIエンドポイント動作確認済み）
-- **本番環境**: ✅ 主要バグ修正完了（案件詳細ページ、OCRアップロード、404ハンドラー）
-- **最新の変更 (v3.42.0)**: 
-  - ✅ 不動産情報ライブラリAPIキー設定（`MLIT_API_KEY`）
-  - ✅ OCR機能の詳細テストガイド作成（`OCR_TEST_GUIDE_v3.42.0.md`）
-  - ✅ OpenAI APIキー動作確認済み
-  - ⏳ OCR機能の実機テスト進行中
-- **前回の変更 (v3.41.0)**: 
-  - ✅ AI提案履歴取得API実装
-  - ✅ すべての未実装機能の完全確認と実装完了
-- **前回の変更 (v3.40.1)**: 
-  - ✅ テンプレート選択機能をUIから完全削除
-  - ✅ 案件作成フォームのUX改善（ローディング、エラーハンドリング）
-- **Phase 2完了 (v3.39.0)**: 
-  - ✅ 案件詳細ページの無限ローディング問題を修正
-  - ✅ OCRファイルアップロード機能を修正
-  - ✅ 404ハンドラー実装
-- **ステータス**: 全機能実装完了、本番環境で稼働中
+- **本番環境**: ✅ 全機能正常動作確認済み
+- **最新の変更 (v3.58.0)**: 
+  - ✅ 管理者専用ファイル管理UI実装
+  - ✅ 全ユーザーのファイル一覧表示・統計情報
+  - ✅ ファイル検索・フィルター機能
+  - ✅ `/deals/:id` のファイル管理を新APIに移行
+  - ✅ 複数ファイルアップロード対応
+- **前回の変更 (v3.57.0)**: 
+  - ✅ ストレージクォータ拡張（一般3GB、管理者20GB）
+- **前回の変更 (v3.56.0)**: 
+  - ✅ Cloudflare R2統合完了
+  - ✅ ファイル実体の保存・取得・削除機能
+  - ✅ ストレージ使用量の視覚化
+- **ステータス**: 全機能実装完了、本番環境で完全稼働中 🎉
 
 ## 主要機能
 
@@ -170,14 +170,19 @@
 - ✅ リアルタイム通知
 - ✅ **プッシュ通知（Web Push API、Service Worker）** 実装済み
 
-#### ファイル管理
-- Cloudflare R2統合
-- フォルダー分類（deals, proposals, registry, reports, chat）
-- ファイルバリデーション
-- バージョン管理
-- ファイルプレビュー対応
-- アップロード/ダウンロード
-- 論理削除/物理削除
+#### ファイル管理 🆕 v3.56.0-v3.58.0
+- ✅ Cloudflare R2統合（実ファイル保存）
+- ✅ ファイルタイプ分類（document, ocr, image, registry, proposal, report）
+- ✅ ストレージクォータ管理（一般3GB、管理者20GB）
+- ✅ ストレージ使用量の視覚化（プログレスバー、警告機能）
+- ✅ 複数ファイルアップロード対応
+- ✅ ファイルバリデーション（最大10MB）
+- ✅ アップロード/ダウンロード/削除
+- ✅ **管理者専用ファイル管理UI** 🆕 v3.58.0
+  - 全ユーザーのファイル一覧表示
+  - ユーザー別統計情報
+  - ファイル検索・フィルター機能
+  - 統計情報ダッシュボード
 
 #### テンプレート管理機能 🆕
 - ✅ **4種類のプリセットテンプレート** v3.14.0
@@ -559,39 +564,33 @@ webapp/
 │   ├── index.tsx                     # メインエントリーポイント
 │   ├── types/                        # TypeScript型定義
 │   ├── routes/                       # APIルート
-│   │   ├── auth.ts
-│   │   ├── deals.ts
-│   │   ├── messages.ts
-│   │   ├── r2.ts
-│   │   ├── notification-settings.ts  🆕
-│   │   ├── push-subscriptions.ts     🆕
-│   │   ├── backup.ts                 🆕
-│   │   ├── feedback.ts               🆕
-│   │   ├── analytics.ts              🆕
+│   │   ├── auth.ts                   # 認証API
+│   │   ├── deals.ts                  # 案件管理API
+│   │   ├── deal-files.ts             🆕 v3.56.0 # ファイル管理API
+│   │   ├── deal-validation.ts        🆕 v3.55.0 # 不足書類検出API
+│   │   ├── messages.ts               # メッセージAPI
+│   │   ├── storage-quota.ts          🆕 v3.56.0 # ストレージクォータAPI
+│   │   ├── ocr.ts                    # OCR処理API
+│   │   ├── ai-proposal.ts            # AI提案API
+│   │   ├── notification-settings.ts  # 通知設定API
+│   │   ├── push-subscriptions.ts     # プッシュ通知API
 │   │   └── ...
 │   ├── middleware/                   # ミドルウェア
-│   │   ├── rate-limit.ts
-│   │   ├── api-version.ts            🆕
-│   │   └── error-tracking.ts         🆕
+│   │   ├── rate-limit.ts             # レート制限
+│   │   └── error-tracking.ts         # エラートラッキング
 │   ├── utils/                        # ユーティリティ
-│   │   ├── crypto.ts
-│   │   ├── validation.ts
-│   │   ├── r2-helpers.ts
-│   │   ├── file-validators.ts
-│   │   ├── mentions.ts
+│   │   ├── auth.ts                   # JWT認証
+│   │   ├── crypto.ts                 # 暗号化
+│   │   ├── validation.ts             # 入力検証
+│   │   ├── storage-quota.ts          🆕 v3.56.0 # ストレージクォータ管理
 │   │   └── ...
-│   ├── openapi/                      🆕
-│   │   └── spec.ts                   # OpenAPI仕様書定義
-│   ├── db/                           # データベースクエリ
-│   │   └── queries.ts
-│   └── client/                       # React フロントエンド
-│       ├── App.tsx
-│       ├── components/
-│       ├── pages/
-│       ├── hooks/
-│       └── store/
+│   └── client/                       # フロントエンド（SSR）
+│       └── pages/                    # HTMLページ
 ├── migrations/                       # D1マイグレーション
 │   ├── 0001_initial_schema.sql
+│   ├── ...
+│   ├── 0018_update_storage_quota_2gb.sql  🆕 v3.56.0
+│   └── 0019_update_storage_quota_3gb_20gb.sql  🆕 v3.57.0
 │   ├── 0002_add_file_versions.sql
 │   ├── 0003_add_message_attachments.sql
 │   ├── 0004_add_message_mentions.sql
@@ -689,6 +688,71 @@ Private - All Rights Reserved
 GenSpark AI Assistant + User
 
 ## 更新履歴
+
+### v3.58.0 (2025-11-27) 🎉 **管理者ファイル管理UI実装完了**
+**全ユーザーのファイル一元管理機能を実装**
+
+**デプロイURL**: ✅ https://656dfb5f.real-estate-200units-v2.pages.dev
+**GitHubコミット**: `ffac0c3`
+
+#### 🚀 新機能
+
+**1. 管理者専用ファイル管理UI**
+- `/dashboard` に「ファイル管理」タブを追加（管理者専用、自動表示/非表示）
+- 全ユーザーのファイル一覧表示・統計情報
+- ユーザー別ストレージ使用状況の可視化
+- ファイル検索・フィルター機能（ファイル名、タイプ）
+- 統計情報ダッシュボード（総ファイル数、総容量、ユーザー数）
+
+**2. ファイル管理API拡張**
+- `GET /api/deals/admin/files/all` エンドポイント新規実装
+- 案件情報・ユーザー情報との結合クエリ
+- 統計情報の計算（総数、総容量、ユーザー別統計）
+
+**3. 案件詳細ページのファイル管理改善**
+- `/deals/:id` のファイル管理を新しいAPI (`/api/deals/:deal_id/files`) に移行
+- 複数ファイルアップロード対応
+- ファイルタイプ別アイコン表示（PDF, 画像, その他）
+- OCRソースファイルのバッジ表示
+- ダウンロード・削除機能の改善
+
+#### 📊 技術的な変更
+- API統合: `/api/deals/:deal_id/files` 配下にファイル操作を集約
+- UI/UX改善: 検索・フィルター機能による大量ファイルの管理
+- 権限管理: 管理者専用タブの自動表示/非表示、APIレベルでの権限チェック
+
+### v3.57.0 (2025-11-27) 💾 **ストレージクォータ拡張**
+**一般ユーザー3GB、管理者20GBに拡張**
+
+**デプロイURL**: ✅ https://50f38790.real-estate-200units-v2.pages.dev
+
+#### 変更内容
+- 一般ユーザー: 2GB → 3GB（3072MB）
+- 管理者: 10GB → 20GB（20480MB）
+- 合計容量: 50GB（10ユーザー + 1管理者）
+- Cloudflare R2料金: 約$0.60/月（約¥90/月）
+
+### v3.56.0 (2025-11-27) 🚀 **R2ストレージ統合完了**
+**Cloudflare R2バケットでファイル実体を管理**
+
+**デプロイURL**: ✅ https://f96caa6e.real-estate-200units-v2.pages.dev
+
+#### 🎯 新機能
+- Cloudflare R2バケット `real-estate-files` 作成・統合
+- ファイル実体の保存・取得・削除機能（R2統合）
+- ストレージ使用量の視覚化（プログレスバー、色分け、警告アラート）
+- `/deals/new` でファイルアップロードUI実装
+- ストレージクォータチェック（容量不足時の413エラー）
+
+### v3.55.0 (2025-11-27) 📊 **フィールド拡張とOCR最適化**
+**6フィールド追加、OCR17フィールド対応**
+
+#### 新機能
+- 6フィールド追加: 間口、築年月、建物面積、構造、利回り、賃貸状況
+- OCR抽出対応: 11フィールド → 17フィールドに拡張
+- 不足書類検出API実装 (`/api/deals/:deal_id/missing-items`)
+- 完全性スコア計算機能 (`/api/deals/:deal_id/completeness`)
+- `/deals/new` で不足項目アラートUI実装
 
 ### v3.39.0 (2025-11-25) 🐛 **CRITICAL FIXES COMPLETE**
 **案件詳細ページ無限ローディング、OCRアップロード、404ハンドラー修正完了**

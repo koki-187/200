@@ -29,6 +29,7 @@ import ocrHistory from './routes/ocr-history';
 import ocrSettings from './routes/ocr-settings';
 import ocrJobs from './routes/ocr-jobs';
 import dealFiles from './routes/deal-files';
+import dealValidation from './routes/deal-validation';
 import propertyTemplates from './routes/property-templates';
 import storageQuota from './routes/storage-quota';
 

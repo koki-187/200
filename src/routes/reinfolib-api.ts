@@ -51,12 +51,22 @@ app.get('/property-info', async (c) => {
     const locationCodes = parseAddress(address);
     if (!locationCodes) {
       console.error('❌ Failed to parse address:', address);
-      return c.json({ 
+      
+      // 明示的にResponseオブジェクトを返す
+      const errorResponse = {
         success: false,
         error: '住所の解析に失敗しました',
-        message: '正しい形式の住所を入力してください（例: "東京都板橋区蓮根三丁目17-7"）',
-        address: address
-      }, 400);
+        message: '都道府県または市区町村が認識できません。正しい形式で入力してください（例: "東京都板橋区"、"埼玉県さいたま市北区"）',
+        address: address,
+        hint: '現在対応している都道府県：全都道府県、市区町村：東京23区、さいたま市（全区）、川越市、熊谷市、川口市、所沢市'
+      };
+      
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     }
 
     const { prefectureCode, cityCode, prefectureName, cityName } = locationCodes;
@@ -95,15 +105,19 @@ app.get('/property-info', async (c) => {
       });
       
       if (response.status === 401) {
-        return c.json({ 
+        const errorResponse = {
           success: false,
           error: 'API認証エラー',
           message: 'MLIT_API_KEYが無効です。正しいAPIキーを設定してください。'
-        }, 401);
+        };
+        return new Response(JSON.stringify(errorResponse), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
       
       if (response.status === 400) {
-        return c.json({ 
+        const errorResponse = {
           success: false,
           error: 'リクエストエラー',
           message: 'リクエストパラメータに問題があります。住所、年、四半期を確認してください。',
@@ -112,18 +126,28 @@ app.get('/property-info', async (c) => {
             year,
             quarter,
             prefectureCode,
-            cityCode
+            cityCode,
+            prefectureName,
+            cityName
           }
-        }, 400);
+        };
+        return new Response(JSON.stringify(errorResponse), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
       
-      return c.json({ 
+      const errorResponse = {
         success: false,
         error: 'データ取得に失敗しました',
         status: response.status,
         message: response.statusText,
         details: errorText
-      }, response.status);
+      };
+      return new Response(JSON.stringify(errorResponse), {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const data = await response.json();
@@ -346,7 +370,16 @@ function parseAddress(address: string): {
       'さいたま市見沼区': '11104', 'さいたま市中央区': '11105', 'さいたま市桜区': '11106',
       'さいたま市浦和区': '11107', 'さいたま市南区': '11108', 'さいたま市緑区': '11109',
       'さいたま市岩槻区': '11110',
-      '川越市': '11201', '熊谷市': '11202', '川口市': '11203', '所沢市': '11208'
+      '川越市': '11201', '熊谷市': '11202', '川口市': '11203', '行田市': '11204', 
+      '秩父市': '11205', '所沢市': '11208', '飯能市': '11209', '加須市': '11210',
+      '本庄市': '11211', '東松山市': '11212', '春日部市': '11214', '狭山市': '11215',
+      '羽生市': '11216', '鴻巣市': '11217', '深谷市': '11218', '上尾市': '11219',
+      '草加市': '11221', '越谷市': '11222', '蕨市': '11223', '戸田市': '11224',
+      '入間市': '11225', '朝霞市': '11227', '志木市': '11228', '和光市': '11229',
+      '新座市': '11230', '桶川市': '11231', '久喜市': '11232', '北本市': '11233',
+      '八潮市': '11234', '富士見市': '11237', '三郷市': '11238', '蓮田市': '11239',
+      '坂戸市': '11240', '幸手市': '11241', '鶴ヶ島市': '11242', '日高市': '11243',
+      'ふじみ野市': '11246', '白岡市': '11464'
     },
     '13': { // 東京都
       '千代田区': '13101', '中央区': '13102', '港区': '13103', '新宿区': '13104',

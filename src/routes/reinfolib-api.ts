@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { JWTPayload } from 'hono/utils/jwt/types';
 import { handleAPIError, retryAsync, withTimeout, logError, createErrorResponse } from '../utils/error-handler';
+import { authMiddleware } from '../utils/auth';
 
 type Bindings = {
   DB: D1Database;
@@ -14,6 +15,9 @@ type Variables = {
 };
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+
+// 全てのルートに認証必須
+app.use('*', authMiddleware);
 
 /**
  * 不動産情報ライブラリAPI - 住所から物件情報を取得
@@ -301,6 +305,14 @@ function parseAddress(address: string): {
 
   // 市区町村コードマッピング（主要都市のみ）
   const cities: Record<string, Record<string, string>> = {
+    '11': { // 埼玉県
+      'さいたま市': '11100', 
+      'さいたま市西区': '11101', 'さいたま市北区': '11102', 'さいたま市大宮区': '11103',
+      'さいたま市見沼区': '11104', 'さいたま市中央区': '11105', 'さいたま市桜区': '11106',
+      'さいたま市浦和区': '11107', 'さいたま市南区': '11108', 'さいたま市緑区': '11109',
+      'さいたま市岩槻区': '11110',
+      '川越市': '11201', '熊谷市': '11202', '川口市': '11203', '所沢市': '11208'
+    },
     '13': { // 東京都
       '千代田区': '13101', '中央区': '13102', '港区': '13103', '新宿区': '13104',
       '文京区': '13105', '台東区': '13106', '墨田区': '13107', '江東区': '13108',

@@ -6464,12 +6464,26 @@ app.get('/deals/new', (c) => {
         
       } catch (error) {
         console.error('Auto-fill error:', error);
+        console.error('Error response:', error.response);
+        
         if (error.response?.status === 401) {
-          alert('認証エラー: MLIT_API_KEYが設定されていません');
+          alert('❌ 認証エラー\\n\\nMLIT_API_KEYが設定されていません');
         } else if (error.response?.status === 400) {
-          alert('住所の解析に失敗しました。正しい形式で入力してください（例: 東京都板橋区蓮根三丁目17-7）');
+          const message = error.response?.data?.message || '住所の解析に失敗しました';
+          const details = error.response?.data?.details;
+          let alertMessage = \`❌ エラー\\n\\n\${message}\\n\\n正しい形式で入力してください（例: 東京都板橋区蓮根三丁目17-7）\`;
+          if (details) {
+            alertMessage += \`\\n\\n入力された住所: \${details.address}\`;
+          }
+          alert(alertMessage);
+        } else if (error.response?.status === 404) {
+          alert('❌ エラー\\n\\n指定された住所のデータが見つかりませんでした。\\n\\n別の住所で試してください。');
+        } else if (error.response?.data) {
+          const errorData = error.response.data;
+          const message = errorData.message || errorData.error || 'データ取得エラー';
+          alert(\`❌ データの取得に失敗しました\\n\\n\${message}\`);
         } else {
-          alert('データの取得に失敗しました: ' + (error.response?.data?.message || error.message));
+          alert(\`❌ データの取得に失敗しました\\n\\nエラー: \${error.message}\\n\\nステータス: \${error.response?.status || '不明'}\`);
         }
       } finally {
         btn.disabled = false;

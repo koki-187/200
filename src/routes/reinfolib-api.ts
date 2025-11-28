@@ -50,13 +50,24 @@ app.get('/property-info', async (c) => {
     // 住所から都道府県コード・市区町村コードを抽出
     const locationCodes = parseAddress(address);
     if (!locationCodes) {
+      console.error('❌ Failed to parse address:', address);
       return c.json({ 
+        success: false,
         error: '住所の解析に失敗しました',
-        message: '正しい形式の住所を入力してください（例: "東京都板橋区蓮根三丁目17-7"）'
+        message: '正しい形式の住所を入力してください（例: "東京都板橋区蓮根三丁目17-7"）',
+        address: address
       }, 400);
     }
 
     const { prefectureCode, cityCode, prefectureName, cityName } = locationCodes;
+    
+    console.log('✅ Address parsed:', {
+      address,
+      prefectureName,
+      cityName,
+      prefectureCode,
+      cityCode
+    });
 
     // 不動産情報ライブラリAPIエンドポイント
     const baseUrl = 'https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001';
@@ -75,19 +86,43 @@ app.get('/property-info', async (c) => {
     });
 
     if (!response.ok) {
-      console.error('❌ REINFOLIB API Error:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('❌ REINFOLIB API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: url,
+        errorBody: errorText
+      });
       
       if (response.status === 401) {
         return c.json({ 
+          success: false,
           error: 'API認証エラー',
           message: 'MLIT_API_KEYが無効です。正しいAPIキーを設定してください。'
         }, 401);
       }
       
+      if (response.status === 400) {
+        return c.json({ 
+          success: false,
+          error: 'リクエストエラー',
+          message: 'リクエストパラメータに問題があります。住所、年、四半期を確認してください。',
+          details: {
+            address,
+            year,
+            quarter,
+            prefectureCode,
+            cityCode
+          }
+        }, 400);
+      }
+      
       return c.json({ 
+        success: false,
         error: 'データ取得に失敗しました',
         status: response.status,
-        message: response.statusText
+        message: response.statusText,
+        details: errorText
       }, response.status);
     }
 

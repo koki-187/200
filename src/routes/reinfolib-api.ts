@@ -16,8 +16,58 @@ type Variables = {
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// 全てのルートに認証必須
-app.use('*', authMiddleware);
+// 認証必須（テストエンドポイントを除く）
+app.use('/property-info', authMiddleware);
+app.use('/zoning-info', authMiddleware);
+
+/**
+ * テストエンドポイント - デバッグ用
+ */
+app.get('/test', async (c) => {
+  return c.json({
+    success: true,
+    message: 'REINFOLIB API is working',
+    timestamp: new Date().toISOString()
+  }, 200);
+});
+
+/**
+ * テストエンドポイント - 住所解析テスト
+ */
+app.get('/test-parse', async (c) => {
+  try {
+    const address = c.req.query('address') || '埼玉県さいたま市北区';
+    console.log('[test-parse] Received address:', address);
+    
+    const result = parseAddress(address);
+    console.log('[test-parse] Parse result:', result);
+    
+    if (!result) {
+      console.log('[test-parse] Parse failed, returning 400');
+      return c.json({
+        success: false,
+        error: '住所の解析に失敗しました',
+        address: address,
+        message: '市区町村が認識できません'
+      }, 400);
+    }
+    
+    console.log('[test-parse] Parse succeeded, returning 200');
+    return c.json({
+      success: true,
+      address: address,
+      result: result
+    }, 200);
+  } catch (error: any) {
+    console.error('[test-parse] Exception:', error);
+    return c.json({
+      success: false,
+      error: 'Exception in test-parse',
+      message: error.message,
+      stack: error.stack?.substring(0, 300)
+    }, 500);
+  }
+});
 
 /**
  * 不動産情報ライブラリAPI - 住所から物件情報を取得
@@ -52,21 +102,30 @@ app.get('/property-info', async (c) => {
     if (!locationCodes) {
       console.error('❌ Failed to parse address:', address);
       
-      // 明示的にResponseオブジェクトを返す
-      const errorResponse = {
+      return c.json({
         success: false,
         error: '住所の解析に失敗しました',
-        message: '都道府県または市区町村が認識できません。正しい形式で入力してください（例: "東京都板橋区"、"埼玉県さいたま市北区"）',
+        message: '市区町村が認識できません。対応している市区町村を入力してください。',
         address: address,
-        hint: '現在対応している都道府県：全都道府県、市区町村：東京23区、さいたま市（全区）、川越市、熊谷市、川口市、所沢市'
-      };
-      
-      return new Response(JSON.stringify(errorResponse), {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+        supportedCities: {
+          '埼玉県': [
+            'さいたま市西区', 'さいたま市北区', 'さいたま市大宮区', 'さいたま市見沼区',
+            'さいたま市中央区', 'さいたま市桜区', 'さいたま市浦和区', 'さいたま市南区',
+            'さいたま市緑区', 'さいたま市岩槻区', '川越市', '熊谷市', '川口市', '行田市',
+            '秩父市', '所沢市', '飯能市', '加須市', '本庄市', '東松山市', '春日部市',
+            '狭山市', '羽生市', '鴻巣市', '深谷市', '上尾市', '草加市', '越谷市', '蕨市',
+            '戸田市', '入間市', '朝霞市', '志木市', '和光市', '新座市', '桶川市', '久喜市',
+            '北本市', '八潮市', '富士見市', '三郷市', '蓮田市', '坂戸市', '幸手市',
+            '鶴ヶ島市', '日高市', 'ふじみ野市', '白岡市'
+          ],
+          '東京都': [
+            '千代田区', '中央区', '港区', '新宿区', '文京区', '台東区', '墨田区', '江東区',
+            '品川区', '目黒区', '大田区', '世田谷区', '渋谷区', '中野区', '杉並区', '豊島区',
+            '北区', '荒川区', '板橋区', '練馬区', '足立区', '葛飾区', '江戸川区'
+          ]
+        },
+        example: '例: "東京都板橋区"、"埼玉県さいたま市北区"、"埼玉県幸手市"'
+      }, 400);
     }
 
     const { prefectureCode, cityCode, prefectureName, cityName } = locationCodes;
@@ -105,19 +164,15 @@ app.get('/property-info', async (c) => {
       });
       
       if (response.status === 401) {
-        const errorResponse = {
+        return c.json({
           success: false,
           error: 'API認証エラー',
           message: 'MLIT_API_KEYが無効です。正しいAPIキーを設定してください。'
-        };
-        return new Response(JSON.stringify(errorResponse), {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 401);
       }
       
       if (response.status === 400) {
-        const errorResponse = {
+        return c.json({
           success: false,
           error: 'リクエストエラー',
           message: 'リクエストパラメータに問題があります。住所、年、四半期を確認してください。',
@@ -130,24 +185,31 @@ app.get('/property-info', async (c) => {
             prefectureName,
             cityName
           }
-        };
-        return new Response(JSON.stringify(errorResponse), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 400);
       }
       
-      const errorResponse = {
+      if (response.status === 404) {
+        return c.json({
+          success: false,
+          error: 'データが見つかりません',
+          message: '指定された条件に一致するデータがMLIT APIに存在しません。',
+          details: {
+            address,
+            year,
+            quarter,
+            prefectureName,
+            cityName
+          }
+        }, 404);
+      }
+      
+      return c.json({
         success: false,
         error: 'データ取得に失敗しました',
         status: response.status,
         message: response.statusText,
         details: errorText
-      };
-      return new Response(JSON.stringify(errorResponse), {
-        status: response.status,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, response.status);
     }
 
     const data = await response.json();
@@ -407,12 +469,15 @@ function parseAddress(address: string): {
     return null;
   }
 
-  // 市区町村を検出
-  let cityCode = prefectureCode + '000'; // デフォルト（都道府県全体）
+  // 市区町村を検出（長いマッチを優先）
+  let cityCode = '';
   let cityName = '';
 
   if (cities[prefectureCode]) {
-    for (const [name, code] of Object.entries(cities[prefectureCode])) {
+    // 市区町村名を長い順にソートして、最も長いマッチを見つける
+    const sortedCities = Object.entries(cities[prefectureCode]).sort((a, b) => b[0].length - a[0].length);
+    
+    for (const [name, code] of sortedCities) {
       if (address.includes(name)) {
         cityCode = code;
         cityName = name;
@@ -421,12 +486,11 @@ function parseAddress(address: string): {
     }
   }
 
-  // 市区町村名が見つからない場合は住所から推測
-  if (!cityName) {
-    const match = address.match(/[都道府県](.*?)[市区町村]/);
-    if (match) {
-      cityName = match[1] + (match[0].slice(-1));
-    }
+  // 市区町村名が見つからない場合はエラーとして null を返す
+  // MLIT API は都道府県全体のコード（11000など）をサポートしていないため
+  if (!cityCode) {
+    console.warn(`市区町村が見つかりません: ${address}, 都道府県: ${prefectureName}`);
+    return null;
   }
 
   return { prefectureCode, cityCode, prefectureName, cityName };

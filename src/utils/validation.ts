@@ -39,10 +39,25 @@ export const dealSchema = z.object({
   zoning: z.string().max(100, '用途地域は100文字以内で入力してください').optional(),
   building_coverage: z.string().max(50, '建蔽率は50文字以内で入力してください').optional(),
   floor_area_ratio: z.string().max(50, '容積率は50文字以内で入力してください').optional(),
+  height_district: z.string().max(100, '高度地区は100文字以内で入力してください').optional(),
+  fire_zone: z.string().max(100, '防火地域は100文字以内で入力してください').optional(),
   road_info: z.string().max(500, '接道状況は500文字以内で入力してください').optional(),
+  frontage: z.string().max(50, '間口は50文字以内で入力してください').optional(),
+  building_area: z.string().max(100, '建物面積は100文字以内で入力してください').optional(),
+  structure: z.string().max(100, '構造は100文字以内で入力してください').optional(),
+  built_year: z.string().max(50, '築年月は50文字以内で入力してください').optional(),
+  yield_rate: z.string().max(50, '利回りは50文字以内で入力してください').optional(),
+  occupancy_status: z.string().max(100, '賃貸状況は100文字以内で入力してください').optional(),
+  current_status: z.string().max(200, '現況は200文字以内で入力してください').optional(),
   current_use: z.string().max(200, '現況は200文字以内で入力してください').optional(),
   station: z.string().max(200, '最寄駅は200文字以内で入力してください').optional(),
-  walk_minutes: z.number().int().min(0).max(999).optional(),
+  walk_minutes: z.union([z.number().int().min(0).max(999), z.string()]).optional().transform(val => {
+    if (typeof val === 'string') {
+      const num = parseInt(val);
+      return isNaN(num) ? undefined : num;
+    }
+    return val;
+  }),
   desired_price: z.string().max(100, '希望価格は100文字以内で入力してください').optional(),
   remarks: z.string().max(2000, '備考は2000文字以内で入力してください').optional()
 });

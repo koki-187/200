@@ -31,7 +31,7 @@ export const registerSchema = z.object({
 export const dealSchema = z.object({
   title: z.string().min(1, '案件名を入力してください').max(200, '案件名は200文字以内で入力してください'),
   seller_id: z.string().min(1, '売主担当者を選択してください'),
-  status: z.enum(['NEW', 'IN_REVIEW', 'REPLIED', 'CLOSED'], { 
+  status: z.enum(['NEW', 'IN_REVIEW', 'REVIEWING', 'REPLIED', 'NEGOTIATING', 'CONTRACTED', 'REJECTED', 'CLOSED'], { 
     errorMap: () => ({ message: '有効なステータスを選択してください' }) 
   }).optional(),
   location: z.string().max(500, '所在地は500文字以内で入力してください').optional(),

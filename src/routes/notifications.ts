@@ -1,134 +1,93 @@
-import { Hono } from 'hono'
-import type { Context } from 'hono'
-import { Database } from '../db/queries'
+import { Hono } from 'hono';
+import { nanoid } from 'nanoid';
 
-const notifications = new Hono()
+const notifications = new Hono();
 
-// 通知一覧取得
+// Get user notifications (with unread count)
 notifications.get('/', async (c: Context) => {
   try {
-    const userId = c.get('userId') as string
-    const db = new Database(c.env.DB)
+    const userId = c.get('userId');
     
-    const notificationsList = await db.getNotificationsByUser(userId)
-    
-    return c.json({ notifications: notificationsList })
-  } catch (error: any) {
-    console.error('Failed to get notifications:', error)
-    return c.json({ error: error.message }, 500)
-  }
-})
+    // Get unread count
+    const unreadCount = await c.env.DB.prepare(
+      'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0'
+    ).bind(userId).first<{ count: number }>();
 
-// 未読通知数取得
-notifications.get('/unread-count', async (c: Context) => {
-  try {
-    const userId = c.get('userId') as string
-    const db = new Database(c.env.DB)
-    
-    const count = await db.getUnreadNotificationCount(userId)
-    
-    return c.json({ count })
-  } catch (error: any) {
-    console.error('Failed to get unread count:', error)
-    return c.json({ error: error.message }, 500)
-  }
-})
+    // Get recent notifications (last 50)
+    const notificationsList = await c.env.DB.prepare(
+      `SELECT id, type, title, message, link, is_read, created_at 
+       FROM notifications 
+       WHERE user_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT 50`
+    ).bind(userId).all();
 
-// 通知既読化
+    return c.json({
+      unreadCount: unreadCount?.count || 0,
+      notifications: notificationsList.results || []
+    });
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Mark notification as read
 notifications.put('/:id/read', async (c: Context) => {
   try {
-    const notificationId = c.req.param('id')
-    const userId = c.get('userId') as string
-    const db = new Database(c.env.DB)
-    
-    // 通知の所有者チェック
-    const notification = await db.getNotificationById(notificationId)
-    if (!notification) {
-      return c.json({ error: 'Notification not found' }, 404)
-    }
-    
-    if (notification.user_id !== userId) {
-      return c.json({ error: 'Access denied' }, 403)
-    }
-    
-    await db.markNotificationAsRead(notificationId)
-    
-    return c.json({ success: true })
-  } catch (error: any) {
-    console.error('Failed to mark notification as read:', error)
-    return c.json({ error: error.message }, 500)
-  }
-})
+    const notificationId = c.req.param('id');
+    const userId = c.get('userId');
 
-// 全ての通知を既読化
-notifications.put('/read-all', async (c: Context) => {
+    await c.env.DB.prepare(
+      'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?'
+    ).bind(notificationId, userId).run();
+
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Mark notification as read error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Mark all notifications as read
+notifications.put('/read-all', authMiddleware, async (c) => {
   try {
-    const userId = c.get('userId') as string
-    const db = new Database(c.env.DB)
-    
-    await db.markAllNotificationsAsRead(userId)
-    
-    return c.json({ success: true })
-  } catch (error: any) {
-    console.error('Failed to mark all notifications as read:', error)
-    return c.json({ error: error.message }, 500)
-  }
-})
+    const userId = c.get('userId');
 
-// 通知作成（システム内部用）
-notifications.post('/', async (c: Context) => {
+    await c.env.DB.prepare(
+      'UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0'
+    ).bind(userId).run();
+
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Mark all notifications as read error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Create notification (internal use)
+export async function createNotification(
+  db: D1Database,
+  userId: string,
+  type: 'NEW_DEAL' | 'DEADLINE' | 'MESSAGE' | 'STATUS_CHANGE',
+  title: string,
+  message: string,
+  link?: string
+) {
+  const notificationId = nanoid();
+  
   try {
-    const role = c.get('userRole') as string
-    
-    // 管理者権限チェック
-    if (role !== 'ADMIN') {
-      return c.json({ error: 'Admin access required' }, 403)
-    }
-    
-    const { user_id, deal_id, type, title, message } = await c.req.json()
-    const db = new Database(c.env.DB)
-    
-    const notificationId = await db.createNotification(
-      user_id,
-      deal_id,
-      type,
-      title,
-      message
-    )
-    
-    return c.json({ 
-      notification: { id: notificationId, user_id, deal_id, type, title, message }
-    })
-  } catch (error: any) {
-    console.error('Failed to create notification:', error)
-    return c.json({ error: error.message }, 500)
-  }
-})
+    await db.prepare(
+      `INSERT INTO notifications (id, user_id, type, title, message, link, deal_id, channel, payload, sent_at, is_read, created_at) 
+       VALUES (?, ?, ?, ?, ?, ?, NULL, 'system', '{}', datetime('now'), 0, datetime('now'))`
+    ).bind(notificationId, userId, type, title, message, link || '').run();
 
-// 通知削除
-notifications.delete('/:id', async (c: Context) => {
-  try {
-    const notificationId = c.req.param('id')
-    const userId = c.get('userId') as string
-    const db = new Database(c.env.DB)
-    
-    // 通知の所有者チェック
-    const notification = await db.getNotificationById(notificationId)
-    if (!notification) {
-      return c.json({ error: 'Notification not found' }, 404)
-    }
-    
-    if (notification.user_id !== userId) {
-      return c.json({ error: 'Access denied' }, 403)
-    }
-    
-    await db.deleteNotification(notificationId)
-    
-    return c.json({ success: true })
-  } catch (error: any) {
-    console.error('Failed to delete notification:', error)
-    return c.json({ error: error.message }, 500)
+    console.log(`✅ Notification created for user ${userId}: ${title}`);
+    return { success: true, notificationId };
+  } catch (error) {
+    console.error(`❌ Failed to create notification for user ${userId}:`, error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
-})
+}
 
-export default notifications
+export default notifications;

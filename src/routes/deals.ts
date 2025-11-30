@@ -241,14 +241,37 @@ deals.post('/', adminOnly, async (c) => {
 
     await db.createDeal(newDeal);
 
-    // 新規案件通知メール送信（エージェントと管理者へ）
+    // 新規案件通知（メール + D1通知）
     try {
+      const seller = await db.getUserById(body.seller_id);
+      
+      // D1データベースに通知を保存（管理者用）
+      const { createNotification } = await import('./notifications');
+      
+      // 管理者への通知を作成
+      const adminUsers = await c.env.DB.prepare(
+        'SELECT id FROM users WHERE role = ? LIMIT 10'
+      ).bind('ADMIN').all();
+
+      for (const admin of (adminUsers.results || [])) {
+        await createNotification(
+          c.env.DB,
+          admin.id as string,
+          'NEW_DEAL',
+          `新規案件登録: ${newDeal.title}`,
+          `${seller?.name || '担当者'}が新しい案件を登録しました。\n所在地: ${newDeal.location || '未設定'}\n最寄駅: ${newDeal.station || '未設定'}`,
+          `/deals/${newDeal.id}`
+        );
+      }
+      
+      console.log(`✅ D1 notifications created for ${adminUsers.results?.length || 0} admin(s)`);
+
+      // メール送信を試みる（失敗しても続行）
       const resendApiKey = c.env.RESEND_API_KEY;
       if (!resendApiKey) {
-        console.warn('⚠️ RESEND_API_KEY not configured - skipping email notification');
+        console.warn('⚠️ RESEND_API_KEY not configured - using D1 notifications only');
       } else {
         const emailService = createEmailService(resendApiKey);
-        const seller = await db.getUserById(body.seller_id);
         
         // エージェントへの通知
         if (seller?.email) {
@@ -262,13 +285,13 @@ deals.post('/', adminOnly, async (c) => {
             }
           );
           if (agentResult.success) {
-            console.log(`✅ New deal notification sent to agent: ${seller.email} (MessageID: ${agentResult.messageId})`);
+            console.log(`✅ Email notification sent to agent: ${seller.email} (MessageID: ${agentResult.messageId})`);
           } else {
-            console.error(`❌ Failed to send notification to agent: ${seller.email} - Error: ${agentResult.error}`);
+            console.error(`❌ Failed to send email to agent: ${seller.email} - Error: ${agentResult.error}`);
           }
         }
 
-        // 管理者への通知（realestate.navigator01@gmail.com）
+        // 管理者へのメール通知
         const adminEmail = 'realestate.navigator01@gmail.com';
         const adminResult = await emailService.sendAdminNewDealNotification(
           adminEmail,
@@ -283,17 +306,17 @@ deals.post('/', adminOnly, async (c) => {
           }
         );
         if (adminResult.success) {
-          console.log(`✅ New deal notification sent to admin: ${adminEmail} (MessageID: ${adminResult.messageId})`);
+          console.log(`✅ Email notification sent to admin: ${adminEmail} (MessageID: ${adminResult.messageId})`);
         } else {
-          console.error(`❌ Failed to send notification to admin: ${adminEmail} - Error: ${adminResult.error}`);
+          console.warn(`⚠️ Email failed but D1 notification was created - Error: ${adminResult.error}`);
         }
       }
-    } catch (emailError) {
-      // メール送信失敗してもエラーレスポンスは返さない（ログのみ）
-      console.error('❌ Failed to send new deal notification email:', emailError);
-      if (emailError instanceof Error) {
-        console.error('Error details:', emailError.message);
-        console.error('Stack trace:', emailError.stack);
+    } catch (notificationError) {
+      // 通知失敗してもエラーレスポンスは返さない（ログのみ）
+      console.error('❌ Failed to send notifications:', notificationError);
+      if (notificationError instanceof Error) {
+        console.error('Error details:', notificationError.message);
+        console.error('Stack trace:', notificationError.stack);
       }
     }
 

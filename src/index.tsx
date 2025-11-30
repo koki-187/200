@@ -2809,8 +2809,45 @@ app.get('/deals', (c) => {
       </div>
     </div>
 
+    <!-- 一括操作バー（管理者のみ表示） -->
+    <div id="bulk-actions-bar" class="bg-white rounded-xl shadow-lg border border-slate-200 p-4 mb-6 hidden">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <span id="selected-count" class="text-sm text-gray-600">0件選択中</span>
+          <button onclick="clearSelection()" class="text-sm text-blue-600 hover:text-blue-800">
+            選択解除
+          </button>
+        </div>
+        <div class="flex items-center space-x-3">
+          <select id="bulk-status" class="border border-slate-300 rounded-lg px-4 py-2 text-sm">
+            <option value="">ステータス変更...</option>
+            <option value="NEW">新規</option>
+            <option value="REVIEWING">レビュー中</option>
+            <option value="NEGOTIATING">交渉中</option>
+            <option value="CONTRACTED">契約済み</option>
+            <option value="REJECTED">却下</option>
+          </select>
+          <button onclick="bulkUpdateStatus()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
+            <i class="fas fa-edit mr-1"></i>ステータス更新
+          </button>
+          <button onclick="bulkDelete()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition">
+            <i class="fas fa-trash mr-1"></i>一括削除
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 案件リスト -->
     <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+      <!-- テーブルヘッダー（管理者のみ表示） -->
+      <div id="table-header" class="p-4 border-b border-slate-200 bg-slate-50 hidden">
+        <div class="flex items-center">
+          <label class="flex items-center cursor-pointer">
+            <input type="checkbox" id="select-all" onchange="toggleSelectAll()" class="mr-3 w-4 h-4">
+            <span class="text-sm text-gray-600">全て選択</span>
+          </label>
+        </div>
+      </div>
       <div id="deals-container" class="divide-y">
         <div class="p-8 text-center text-gray-500">
           <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
@@ -2834,12 +2871,123 @@ app.get('/deals', (c) => {
 
     let allDeals = [];
     let filteredDeals = [];
+    let selectedDeals = new Set();
+
+    // 管理者権限チェック
+    const isAdmin = user.role === 'ADMIN';
 
     function logout() {
       // 認証トークンとユーザー情報のみ削除（Remember Me情報は保持）
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       window.location.href = '/';
+    }
+
+    // 一括操作機能
+    function toggleSelectAll() {
+      const selectAll = document.getElementById('select-all').checked;
+      const checkboxes = document.querySelectorAll('.deal-checkbox');
+      
+      selectedDeals.clear();
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll;
+        if (selectAll) {
+          selectedDeals.add(checkbox.value);
+        }
+      });
+      
+      updateSelectionUI();
+    }
+
+    function toggleDealSelection(dealId) {
+      if (selectedDeals.has(dealId)) {
+        selectedDeals.delete(dealId);
+      } else {
+        selectedDeals.add(dealId);
+      }
+      updateSelectionUI();
+    }
+
+    function clearSelection() {
+      selectedDeals.clear();
+      document.getElementById('select-all').checked = false;
+      document.querySelectorAll('.deal-checkbox').forEach(cb => cb.checked = false);
+      updateSelectionUI();
+    }
+
+    function updateSelectionUI() {
+      const count = selectedDeals.size;
+      document.getElementById('selected-count').textContent = \`\${count}件選択中\`;
+      
+      if (count > 0) {
+        document.getElementById('bulk-actions-bar').classList.remove('hidden');
+      } else {
+        document.getElementById('bulk-actions-bar').classList.add('hidden');
+      }
+      
+      // 全選択チェックボックスの状態更新
+      const totalCheckboxes = document.querySelectorAll('.deal-checkbox').length;
+      document.getElementById('select-all').checked = (count === totalCheckboxes && count > 0);
+    }
+
+    async function bulkUpdateStatus() {
+      const newStatus = document.getElementById('bulk-status').value;
+      
+      if (!newStatus) {
+        alert('ステータスを選択してください');
+        return;
+      }
+      
+      if (selectedDeals.size === 0) {
+        alert('案件を選択してください');
+        return;
+      }
+      
+      if (!confirm(\`選択した\${selectedDeals.size}件の案件のステータスを「\${newStatus}」に変更しますか？\`)) {
+        return;
+      }
+      
+      try {
+        const response = await axios.post('/api/deals/bulk/status', {
+          deal_ids: Array.from(selectedDeals),
+          status: newStatus
+        }, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        alert(\`\${response.data.results.success}件のステータスを更新しました\`);
+        clearSelection();
+        loadDeals();
+      } catch (error) {
+        console.error('Bulk status update failed:', error);
+        alert('ステータス更新に失敗しました: ' + (error.response?.data?.error || error.message));
+      }
+    }
+
+    async function bulkDelete() {
+      if (selectedDeals.size === 0) {
+        alert('案件を選択してください');
+        return;
+      }
+      
+      if (!confirm(\`選択した\${selectedDeals.size}件の案件を削除しますか？この操作は取り消せません。\`)) {
+        return;
+      }
+      
+      try {
+        const response = await axios.post('/api/deals/bulk/delete', {
+          deal_ids: Array.from(selectedDeals)
+        }, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        alert(\`\${response.data.results.success}件の案件を削除しました\`);
+        clearSelection();
+        loadDeals();
+      } catch (error) {
+        console.error('Bulk delete failed:', error);
+        alert('一括削除に失敗しました: ' + (error.response?.data?.error || error.message));
+      }
     }
 
     async function loadDeals() {
@@ -2928,6 +3076,10 @@ app.get('/deals', (c) => {
 
       const statusColors = {
         'NEW': 'bg-blue-100 text-blue-800',
+        'REVIEWING': 'bg-yellow-100 text-yellow-800',
+        'NEGOTIATING': 'bg-purple-100 text-purple-800',
+        'CONTRACTED': 'bg-green-100 text-green-800',
+        'REJECTED': 'bg-red-100 text-red-800',
         'IN_REVIEW': 'bg-yellow-100 text-yellow-800',
         'REPLIED': 'bg-green-100 text-green-800',
         'CLOSED': 'bg-gray-100 text-gray-800'
@@ -2935,47 +3087,70 @@ app.get('/deals', (c) => {
 
       const statusLabels = {
         'NEW': '新規',
+        'REVIEWING': 'レビュー中',
+        'NEGOTIATING': '交渉中',
+        'CONTRACTED': '契約済み',
+        'REJECTED': '却下',
         'IN_REVIEW': 'レビュー中',
         'REPLIED': '回答済み',
         'CLOSED': '終了'
       };
 
-      container.innerHTML = filteredDeals.map(deal => \`
-        <div class="p-6 hover:bg-gray-50 cursor-pointer" onclick="viewDeal('\${deal.id}')">
-          <div class="flex justify-between items-start">
-            <div class="flex-1">
-              <div class="flex items-center mb-2">
-                <h3 class="text-lg font-semibold text-gray-900 mr-3">\${deal.title}</h3>
-                <span class="px-2 py-1 rounded text-xs font-medium \${statusColors[deal.status] || 'bg-gray-100 text-gray-800'}">
-                  \${statusLabels[deal.status] || deal.status}
-                </span>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                <div>
-                  <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
-                  <span>\${deal.location || '-'}</span>
+      // 管理者の場合はチェックボックス付きで表示
+      container.innerHTML = filteredDeals.map(deal => {
+        const checkboxHtml = isAdmin ? \`
+          <div class="flex items-start mr-4" onclick="event.stopPropagation()">
+            <input type="checkbox" 
+              class="deal-checkbox mt-2 w-4 h-4 cursor-pointer" 
+              value="\${deal.id}" 
+              onchange="toggleDealSelection('\${deal.id}')"
+              \${selectedDeals.has(deal.id) ? 'checked' : ''}>
+          </div>
+        \` : '';
+        
+        return \`
+          <div class="p-6 hover:bg-gray-50 cursor-pointer flex" onclick="viewDeal('\${deal.id}')">
+            \${checkboxHtml}
+            <div class="flex justify-between items-start flex-1">
+              <div class="flex-1">
+                <div class="flex items-center mb-2">
+                  <h3 class="text-lg font-semibold text-gray-900 mr-3">\${deal.title}</h3>
+                  <span class="px-2 py-1 rounded text-xs font-medium \${statusColors[deal.status] || 'bg-gray-100 text-gray-800'}">
+                    \${statusLabels[deal.status] || deal.status}
+                  </span>
                 </div>
-                <div>
-                  <i class="fas fa-ruler-combined mr-2 text-gray-400"></i>
-                  <span>土地面積: \${deal.land_area || '-'}</span>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                  <div>
+                    <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                    <span>\${deal.location || '-'}</span>
+                  </div>
+                  <div>
+                    <i class="fas fa-ruler-combined mr-2 text-gray-400"></i>
+                    <span>土地面積: \${deal.land_area || '-'}</span>
+                  </div>
+                  <div>
+                    <i class="fas fa-yen-sign mr-2 text-gray-400"></i>
+                    <span>希望価格: \${deal.desired_price || '-'}</span>
+                  </div>
                 </div>
-                <div>
-                  <i class="fas fa-yen-sign mr-2 text-gray-400"></i>
-                  <span>希望価格: \${deal.desired_price || '-'}</span>
+                <div class="mt-2 text-xs text-gray-500">
+                  <span>作成: \${new Date(deal.created_at).toLocaleDateString('ja-JP')}</span>
+                  <span class="mx-2">•</span>
+                  <span>更新: \${new Date(deal.updated_at).toLocaleDateString('ja-JP')}</span>
                 </div>
               </div>
-              <div class="mt-2 text-xs text-gray-500">
-                <span>作成: \${new Date(deal.created_at).toLocaleDateString('ja-JP')}</span>
-                <span class="mx-2">•</span>
-                <span>更新: \${new Date(deal.updated_at).toLocaleDateString('ja-JP')}</span>
+              <div class="ml-4">
+                <i class="fas fa-chevron-right text-gray-400"></i>
               </div>
-            </div>
-            <div class="ml-4">
-              <i class="fas fa-chevron-right text-gray-400"></i>
             </div>
           </div>
-        </div>
-      \`).join('');
+        \`;
+      }).join('');
+      
+      // 管理者の場合はヘッダーも表示
+      if (isAdmin) {
+        document.getElementById('table-header').classList.remove('hidden');
+      }
     }
 
     function viewDeal(dealId) {

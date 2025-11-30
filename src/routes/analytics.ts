@@ -26,13 +26,14 @@ app.get('/kpi/dashboard', async (c) => {
       GROUP BY status
     `).all();
 
-    // 見込額合計（desired_priceから計算、文字列のため数値変換が必要）
+    // 見込額合計（desired_priceは数値文字列なので単純にキャスト）
     const totalValue = await c.env.DB.prepare(`
       SELECT 
-        SUM(CAST(REPLACE(REPLACE(desired_price, ',', ''), '円', '') AS INTEGER)) as total
+        SUM(CAST(desired_price AS INTEGER)) as total
       FROM deals
       WHERE desired_price IS NOT NULL 
         AND desired_price != ''
+        AND CAST(desired_price AS INTEGER) > 0
         AND status IN ('IN_REVIEW', 'REPLIED')
     `).first();
 
@@ -102,8 +103,13 @@ app.get('/kpi/dashboard', async (c) => {
       },
     });
   } catch (error: any) {
-    console.error('Failed to get KPI dashboard:', error);
-    return c.json({ error: 'KPIダッシュボードの取得に失敗しました' }, 500);
+    console.error('❌ Failed to get KPI dashboard:', error);
+    console.error('Error details:', error.message || error);
+    console.error('Error stack:', error.stack);
+    return c.json({ 
+      error: 'KPIダッシュボードの取得に失敗しました',
+      details: error.message || String(error)
+    }, 500);
   }
 });
 

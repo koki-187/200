@@ -1,7 +1,11 @@
-import { Hono } from 'hono';
+import { Hono, Context } from 'hono';
 import { nanoid } from 'nanoid';
+import { authMiddleware } from '../utils/auth';
 
 const notifications = new Hono();
+
+// Apply auth middleware to all routes
+notifications.use('/*', authMiddleware);
 
 // Get user notifications (with unread count)
 notifications.get('/', async (c: Context) => {
@@ -50,7 +54,7 @@ notifications.put('/:id/read', async (c: Context) => {
 });
 
 // Mark all notifications as read
-notifications.put('/read-all', authMiddleware, async (c) => {
+notifications.put('/read-all', async (c: Context) => {
   try {
     const userId = c.get('userId');
 

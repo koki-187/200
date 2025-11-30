@@ -6,7 +6,7 @@
 # Target: Production Environment
 ##############################################
 
-BASE_URL="https://136df0c6.real-estate-200units-v2.pages.dev"
+BASE_URL="https://7e9cee29.real-estate-200units-v2.pages.dev"
 
 # Colors
 RED='\033[0;31m'

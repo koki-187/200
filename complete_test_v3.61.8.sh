@@ -17,7 +17,7 @@ PASSED_TESTS=0
 FAILED_TESTS=0
 WARNING_TESTS=0
 
-BASE_URL="https://3eeb0965.real-estate-200units-v2.pages.dev"
+BASE_URL="https://136df0c6.real-estate-200units-v2.pages.dev"
 
 declare -a FAILED_TEST_NAMES=()
 declare -a WARNING_TEST_NAMES=()

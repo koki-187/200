@@ -70,16 +70,16 @@ app.get('/kpi/dashboard', async (c) => {
       WHERE created_at >= datetime('now', '-7 days')
     `).first();
 
-    // ファイル統計
+    // ファイル統計（is_archived = 0 のみカウント）
     const totalFiles = await c.env.DB.prepare(`
-      SELECT COUNT(*) as count FROM files WHERE deleted_at IS NULL
+      SELECT COUNT(*) as count FROM files WHERE is_archived = 0
     `).first();
 
     const filesThisMonth = await c.env.DB.prepare(`
       SELECT COUNT(*) as count
       FROM files
       WHERE created_at >= datetime('now', '-30 days')
-        AND deleted_at IS NULL
+        AND is_archived = 0
     `).first();
 
     return c.json({

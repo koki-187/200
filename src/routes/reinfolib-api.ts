@@ -19,6 +19,7 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 // 認証必須（テストエンドポイントを除く）
 app.use('/property-info', authMiddleware);
 app.use('/zoning-info', authMiddleware);
+// テストエンドポイントは認証不要
 
 /**
  * テストエンドポイント - デバッグ用
@@ -32,40 +33,54 @@ app.get('/test', async (c) => {
 });
 
 /**
- * テストエンドポイント - 住所解析テスト
+ * 超シンプルテスト - 何も処理しない
  */
-app.get('/test-parse', async (c) => {
+app.get('/test-simple', (c) => {
+  return c.json({ test: 'simple', status: 'ok' }, 200);
+});
+
+/**
+ * エラーレスポンステスト - 意図的に400を返す
+ */
+app.get('/test-error', (c) => {
+  return c.json({ error: 'This is a test error', test: true }, 400);
+});
+
+/**
+ * テストエンドポイント - 住所解析テスト（完全版）
+ */
+app.get('/test-parse', (c) => {
   try {
     const address = c.req.query('address') || '埼玉県さいたま市北区';
-    console.log('[test-parse] Received address:', address);
     
-    const result = parseAddress(address);
-    console.log('[test-parse] Parse result:', result);
+    // parseAddress関数を呼び出し
+    const locationCodes = parseAddress(address);
     
-    if (!result) {
-      console.log('[test-parse] Parse failed, returning 400');
+    if (!locationCodes) {
       return c.json({
         success: false,
-        error: '住所の解析に失敗しました',
         address: address,
-        message: '市区町村が認識できません'
-      }, 400);
+        error: '市区町村が認識できません',
+        supportedCities: {
+          '埼玉県': ['さいたま市北区', 'さいたま市', '幸手市', '川越市', '草加市'],
+          '東京都': ['千代田区', '新宿区', '世田谷区', '板橋区']
+        }
+      }, 200);
     }
     
-    console.log('[test-parse] Parse succeeded, returning 200');
     return c.json({
       success: true,
       address: address,
-      result: result
+      result: locationCodes,
+      timestamp: Date.now()
     }, 200);
   } catch (error: any) {
-    console.error('[test-parse] Exception:', error);
     return c.json({
       success: false,
-      error: 'Exception in test-parse',
-      message: error.message,
-      stack: error.stack?.substring(0, 300)
-    }, 500);
+      error: 'Exception occurred',
+      message: error.message || 'Unknown error',
+      timestamp: Date.now()
+    }, 200);
   }
 });
 
@@ -410,6 +425,11 @@ function parseAddress(address: string): {
   prefectureName: string;
   cityName: string;
 } | null {
+  try {
+    if (!address || typeof address !== 'string') {
+      console.error('[parseAddress] Invalid address input:', address);
+      return null;
+    }
   // 都道府県コードマッピング
   const prefectures: Record<string, string> = {
     '北海道': '01', '青森県': '02', '岩手県': '03', '宮城県': '04', '秋田県': '05',
@@ -489,11 +509,18 @@ function parseAddress(address: string): {
   // 市区町村名が見つからない場合はエラーとして null を返す
   // MLIT API は都道府県全体のコード（11000など）をサポートしていないため
   if (!cityCode) {
-    console.warn(`市区町村が見つかりません: ${address}, 都道府県: ${prefectureName}`);
+    console.warn(`[parseAddress] 市区町村が見つかりません: ${address}, 都道府県: ${prefectureName}`);
     return null;
   }
 
   return { prefectureCode, cityCode, prefectureName, cityName };
+  
+  } catch (error: any) {
+    console.error('[parseAddress] Exception during address parsing:', error);
+    console.error('[parseAddress] Address:', address);
+    console.error('[parseAddress] Stack:', error.stack);
+    return null;
+  }
 }
 
 export default app;

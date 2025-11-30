@@ -183,6 +183,67 @@ app.get('/reports/monthly', async (c) => {
   }
 });
 
+// ステータス推移分析（エイリアス: /status-trendsで簡単にアクセス可能）
+app.get('/status-trends', async (c) => {
+  const { days = '30' } = c.req.query();
+  
+  try {
+    const daysInt = parseInt(days);
+    
+    // 期間内のステータス別推移
+    const statusTrend = await c.env.DB.prepare(`
+      SELECT 
+        DATE(created_at) as date,
+        status,
+        COUNT(*) as count
+      FROM deals
+      WHERE created_at >= datetime('now', '-' || ? || ' days')
+      GROUP BY date, status
+      ORDER BY date, status
+    `).bind(daysInt).all();
+    
+    // 現在のステータス分布
+    const currentStatus = await c.env.DB.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM deals
+      GROUP BY status
+    `).all();
+    
+    // 成約率推移
+    const conversionRate = await c.env.DB.prepare(`
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'CLOSED' THEN 1 ELSE 0 END) as closed,
+        ROUND(CAST(SUM(CASE WHEN status = 'CLOSED' THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*) * 100, 2) as rate
+      FROM deals
+      WHERE created_at >= datetime('now', '-' || ? || ' days')
+      GROUP BY date
+      ORDER BY date
+    `).bind(daysInt).all();
+    
+    return c.json({
+      success: true,
+      data: {
+        statusTrend: statusTrend.results,
+        currentStatus: currentStatus.results,
+        conversionRate: conversionRate.results
+      },
+      metadata: {
+        days: daysInt,
+        generated_at: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('Failed to get status trends:', error);
+    return c.json({ 
+      success: false,
+      error: 'ステータス推移データの取得に失敗しました',
+      message: error.message 
+    }, 500);
+  }
+});
+
 // トレンド分析 - 案件推移（拡張版）
 app.get('/trends/deals', async (c) => {
   const { period = '12', granularity = 'month' } = c.req.query(); // デフォルト12ヶ月、月単位

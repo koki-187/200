@@ -26,10 +26,14 @@ app.get('/kpi/dashboard', async (c) => {
       GROUP BY status
     `).all();
 
+    // 見込額合計（desired_priceから計算、文字列のため数値変換が必要）
     const totalValue = await c.env.DB.prepare(`
-      SELECT SUM(estimated_value) as total
+      SELECT 
+        SUM(CAST(REPLACE(REPLACE(desired_price, ',', ''), '円', '') AS INTEGER)) as total
       FROM deals
-      WHERE status IN ('negotiating', 'contracted')
+      WHERE desired_price IS NOT NULL 
+        AND desired_price != ''
+        AND status IN ('IN_REVIEW', 'REPLIED')
     `).first();
 
     // 今月の新規案件
@@ -39,11 +43,11 @@ app.get('/kpi/dashboard', async (c) => {
       WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
     `).first();
 
-    // 今月の成約件数
-    const contractedThisMonth = await c.env.DB.prepare(`
+    // 今月の完了件数（CLOSEDステータス）
+    const closedThisMonth = await c.env.DB.prepare(`
       SELECT COUNT(*) as count
       FROM deals
-      WHERE status = 'contracted'
+      WHERE status = 'CLOSED'
         AND strftime('%Y-%m', updated_at) = strftime('%Y-%m', 'now')
     `).first();
 
@@ -83,7 +87,7 @@ app.get('/kpi/dashboard', async (c) => {
         byStatus: dealsByStatus.results,
         totalValue: totalValue?.total || 0,
         newThisMonth: newDealsThisMonth?.count || 0,
-        contractedThisMonth: contractedThisMonth?.count || 0,
+        closedThisMonth: closedThisMonth?.count || 0,
       },
       users: {
         activeUsers: activeUsers?.count || 0,

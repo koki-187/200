@@ -52,9 +52,9 @@ app.get('/kpi/dashboard', async (c) => {
         AND strftime('%Y-%m', updated_at) = strftime('%Y-%m', 'now')
     `).first();
 
-    // アクティブユーザー数
+    // アクティブユーザー数（過去30日間にメッセージを送信したユーザー）
     const activeUsers = await c.env.DB.prepare(`
-      SELECT COUNT(DISTINCT user_id) as count
+      SELECT COUNT(DISTINCT sender_id) as count
       FROM messages
       WHERE created_at >= datetime('now', '-30 days')
     `).first();

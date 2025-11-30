@@ -18,6 +18,13 @@ export class EmailService {
 
   async sendEmail(options: EmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
+      console.log('📧 Attempting to send email:', {
+        from: options.from || this.fromEmail,
+        to: options.to,
+        subject: options.subject,
+        htmlLength: options.html.length
+      });
+
       const { data, error } = await this.resend.emails.send({
         from: options.from || this.fromEmail,
         to: options.to,
@@ -26,13 +33,23 @@ export class EmailService {
       });
 
       if (error) {
-        console.error('Email send error:', error);
-        return { success: false, error: error.message };
+        console.error('❌ Email send error from Resend API:', JSON.stringify(error, null, 2));
+        return { success: false, error: error.message || JSON.stringify(error) };
       }
+
+      console.log('✅ Email sent successfully:', {
+        messageId: data?.id,
+        to: options.to
+      });
 
       return { success: true, messageId: data?.id };
     } catch (error) {
-      console.error('Email service error:', error);
+      console.error('❌ Email service exception:', error);
+      if (error instanceof Error) {
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 

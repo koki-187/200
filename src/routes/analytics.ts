@@ -508,4 +508,323 @@ app.get('/export/deals', async (c) => {
   }
 });
 
+// エージェント別パフォーマンス分析
+app.get('/kpi/agents', async (c) => {
+  try {
+    const { period = '30' } = c.req.query();
+    const daysInt = parseInt(period);
+    
+    // エージェント別の案件数とステータス分布
+    const agentPerformance = await c.env.DB.prepare(`
+      SELECT 
+        u.id as agent_id,
+        u.name as agent_name,
+        u.email as agent_email,
+        COUNT(d.id) as total_deals,
+        SUM(CASE WHEN d.status = 'NEW' THEN 1 ELSE 0 END) as new_deals,
+        SUM(CASE WHEN d.status = 'REVIEWING' THEN 1 ELSE 0 END) as reviewing_deals,
+        SUM(CASE WHEN d.status = 'NEGOTIATING' THEN 1 ELSE 0 END) as negotiating_deals,
+        SUM(CASE WHEN d.status = 'CONTRACTED' THEN 1 ELSE 0 END) as contracted_deals,
+        SUM(CASE WHEN d.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_deals,
+        ROUND(CAST(SUM(CASE WHEN d.status = 'CONTRACTED' THEN 1 ELSE 0 END) AS FLOAT) / COUNT(d.id) * 100, 2) as success_rate
+      FROM users u
+      LEFT JOIN deals d ON u.id = d.seller_id
+      WHERE u.role = 'AGENT'
+        AND (d.created_at IS NULL OR d.created_at >= datetime('now', '-' || ? || ' days'))
+      GROUP BY u.id, u.name, u.email
+      ORDER BY total_deals DESC
+    `).bind(daysInt).all();
+    
+    // 全体のサマリー
+    const totalStats = await c.env.DB.prepare(`
+      SELECT 
+        COUNT(DISTINCT seller_id) as active_agents,
+        COUNT(*) as total_deals,
+        SUM(CASE WHEN status = 'CONTRACTED' THEN 1 ELSE 0 END) as contracted_deals,
+        ROUND(CAST(SUM(CASE WHEN status = 'CONTRACTED' THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*) * 100, 2) as overall_success_rate
+      FROM deals
+      WHERE created_at >= datetime('now', '-' || ? || ' days')
+    `).bind(daysInt).first();
+    
+    return c.json({
+      success: true,
+      data: {
+        agents: agentPerformance.results,
+        summary: totalStats
+      },
+      metadata: {
+        period_days: daysInt,
+        generated_at: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('Failed to get agent performance:', error);
+    return c.json({ 
+      error: 'エージェント別分析の取得に失敗しました',
+      details: error.message || String(error)
+    }, 500);
+  }
+});
+
+// エリア別統計分析
+app.get('/kpi/areas', async (c) => {
+  try {
+    const { limit = '10' } = c.req.query();
+    const limitInt = parseInt(limit);
+    
+    // 都道府県別の案件分布
+    const prefectureStats = await c.env.DB.prepare(`
+      SELECT 
+        SUBSTR(location, 1, 3) as prefecture,
+        COUNT(*) as deal_count,
+        SUM(CASE WHEN status = 'CONTRACTED' THEN 1 ELSE 0 END) as contracted_count,
+        AVG(CASE 
+          WHEN desired_price IS NOT NULL AND desired_price != '' 
+          THEN CAST(desired_price AS INTEGER) 
+          ELSE 0 
+        END) as avg_price
+      FROM deals
+      WHERE location IS NOT NULL AND location != ''
+      GROUP BY SUBSTR(location, 1, 3)
+      ORDER BY deal_count DESC
+      LIMIT ?
+    `).bind(limitInt).all();
+    
+    // 市区町村別の詳細統計（上位）
+    const cityStats = await c.env.DB.prepare(`
+      SELECT 
+        location,
+        station,
+        COUNT(*) as deal_count,
+        SUM(CASE WHEN status = 'CONTRACTED' THEN 1 ELSE 0 END) as contracted_count,
+        AVG(CASE 
+          WHEN desired_price IS NOT NULL AND desired_price != '' 
+          THEN CAST(desired_price AS INTEGER) 
+          ELSE 0 
+        END) as avg_price
+      FROM deals
+      WHERE location IS NOT NULL AND location != ''
+      GROUP BY location, station
+      ORDER BY deal_count DESC
+      LIMIT ?
+    `).bind(limitInt).all();
+    
+    // 最寄り駅別の統計
+    const stationStats = await c.env.DB.prepare(`
+      SELECT 
+        station,
+        COUNT(*) as deal_count,
+        AVG(CASE 
+          WHEN walk_minutes IS NOT NULL AND walk_minutes != '' 
+          THEN CAST(walk_minutes AS INTEGER) 
+          ELSE 0 
+        END) as avg_walk_minutes,
+        AVG(CASE 
+          WHEN desired_price IS NOT NULL AND desired_price != '' 
+          THEN CAST(desired_price AS INTEGER) 
+          ELSE 0 
+        END) as avg_price
+      FROM deals
+      WHERE station IS NOT NULL AND station != ''
+      GROUP BY station
+      ORDER BY deal_count DESC
+      LIMIT ?
+    `).bind(limitInt).all();
+    
+    return c.json({
+      success: true,
+      data: {
+        prefectures: prefectureStats.results,
+        cities: cityStats.results,
+        stations: stationStats.results
+      },
+      metadata: {
+        limit: limitInt,
+        generated_at: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('Failed to get area statistics:', error);
+    return c.json({ 
+      error: 'エリア別統計の取得に失敗しました',
+      details: error.message || String(error)
+    }, 500);
+  }
+});
+
+// 時系列トレンド詳細分析（週次、月次）
+app.get('/kpi/trends/detailed', async (c) => {
+  try {
+    const { period = '90', granularity = 'week' } = c.req.query();
+    const daysInt = parseInt(period);
+    
+    let dateFormat: string;
+    let groupByClause: string;
+    
+    if (granularity === 'day') {
+      dateFormat = '%Y-%m-%d';
+      groupByClause = 'date';
+    } else if (granularity === 'week') {
+      dateFormat = '%Y-W%W'; // Year-Week format
+      groupByClause = 'week';
+    } else { // month
+      dateFormat = '%Y-%m';
+      groupByClause = 'month';
+    }
+    
+    // 案件作成数の推移
+    const dealTrend = await c.env.DB.prepare(`
+      SELECT 
+        strftime(?, created_at) as period,
+        COUNT(*) as deal_count,
+        SUM(CASE WHEN status = 'NEW' THEN 1 ELSE 0 END) as new_count,
+        SUM(CASE WHEN status = 'REVIEWING' THEN 1 ELSE 0 END) as reviewing_count,
+        SUM(CASE WHEN status = 'NEGOTIATING' THEN 1 ELSE 0 END) as negotiating_count,
+        SUM(CASE WHEN status = 'CONTRACTED' THEN 1 ELSE 0 END) as contracted_count,
+        SUM(CASE WHEN status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_count
+      FROM deals
+      WHERE created_at >= datetime('now', '-' || ? || ' days')
+      GROUP BY period
+      ORDER BY period
+    `).bind(dateFormat, daysInt).all();
+    
+    // メッセージ数の推移
+    const messageTrend = await c.env.DB.prepare(`
+      SELECT 
+        strftime(?, created_at) as period,
+        COUNT(*) as message_count,
+        COUNT(DISTINCT sender_id) as active_users
+      FROM messages
+      WHERE created_at >= datetime('now', '-' || ? || ' days')
+      GROUP BY period
+      ORDER BY period
+    `).bind(dateFormat, daysInt).all();
+    
+    // 平均成約価格の推移
+    const priceTrend = await c.env.DB.prepare(`
+      SELECT 
+        strftime(?, created_at) as period,
+        AVG(CASE 
+          WHEN desired_price IS NOT NULL AND desired_price != '' 
+          THEN CAST(desired_price AS INTEGER) 
+          ELSE 0 
+        END) as avg_price,
+        MIN(CASE 
+          WHEN desired_price IS NOT NULL AND desired_price != '' 
+          THEN CAST(desired_price AS INTEGER) 
+          ELSE 0 
+        END) as min_price,
+        MAX(CASE 
+          WHEN desired_price IS NOT NULL AND desired_price != '' 
+          THEN CAST(desired_price AS INTEGER) 
+          ELSE 0 
+        END) as max_price
+      FROM deals
+      WHERE created_at >= datetime('now', '-' || ? || ' days')
+        AND desired_price IS NOT NULL 
+        AND desired_price != ''
+      GROUP BY period
+      ORDER BY period
+    `).bind(dateFormat, daysInt).all();
+    
+    return c.json({
+      success: true,
+      data: {
+        deals: dealTrend.results,
+        messages: messageTrend.results,
+        prices: priceTrend.results
+      },
+      metadata: {
+        period_days: daysInt,
+        granularity: granularity,
+        generated_at: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('Failed to get detailed trends:', error);
+    return c.json({ 
+      error: '詳細トレンド分析の取得に失敗しました',
+      details: error.message || String(error)
+    }, 500);
+  }
+});
+
+// 買取条件マッチング分析
+app.get('/kpi/matching', async (c) => {
+  try {
+    // 希望価格帯別の案件分布
+    const priceDistribution = await c.env.DB.prepare(`
+      SELECT 
+        CASE 
+          WHEN CAST(desired_price AS INTEGER) < 1000 THEN '1000万円未満'
+          WHEN CAST(desired_price AS INTEGER) < 3000 THEN '1000-3000万円'
+          WHEN CAST(desired_price AS INTEGER) < 5000 THEN '3000-5000万円'
+          WHEN CAST(desired_price AS INTEGER) < 10000 THEN '5000万円-1億円'
+          ELSE '1億円以上'
+        END as price_range,
+        COUNT(*) as deal_count
+      FROM deals
+      WHERE desired_price IS NOT NULL 
+        AND desired_price != ''
+        AND CAST(desired_price AS INTEGER) > 0
+      GROUP BY price_range
+      ORDER BY MIN(CAST(desired_price AS INTEGER))
+    `).all();
+    
+    // 土地面積帯別の分布
+    const areaDistribution = await c.env.DB.prepare(`
+      SELECT 
+        CASE 
+          WHEN CAST(land_area AS REAL) < 50 THEN '50㎡未満'
+          WHEN CAST(land_area AS REAL) < 100 THEN '50-100㎡'
+          WHEN CAST(land_area AS REAL) < 200 THEN '100-200㎡'
+          WHEN CAST(land_area AS REAL) < 500 THEN '200-500㎡'
+          ELSE '500㎡以上'
+        END as area_range,
+        COUNT(*) as deal_count
+      FROM deals
+      WHERE land_area IS NOT NULL 
+        AND land_area != ''
+        AND CAST(land_area AS REAL) > 0
+      GROUP BY area_range
+      ORDER BY MIN(CAST(land_area AS REAL))
+    `).all();
+    
+    // 用途地域別の統計
+    const zoningStats = await c.env.DB.prepare(`
+      SELECT 
+        zoning,
+        COUNT(*) as deal_count,
+        AVG(CASE 
+          WHEN desired_price IS NOT NULL AND desired_price != '' 
+          THEN CAST(desired_price AS INTEGER) 
+          ELSE 0 
+        END) as avg_price
+      FROM deals
+      WHERE zoning IS NOT NULL AND zoning != ''
+      GROUP BY zoning
+      ORDER BY deal_count DESC
+      LIMIT 10
+    `).all();
+    
+    return c.json({
+      success: true,
+      data: {
+        price_distribution: priceDistribution.results,
+        area_distribution: areaDistribution.results,
+        zoning_stats: zoningStats.results
+      },
+      metadata: {
+        generated_at: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('Failed to get matching analysis:', error);
+    return c.json({ 
+      error: 'マッチング分析の取得に失敗しました',
+      details: error.message || String(error)
+    }, 500);
+  }
+});
+
 export default app;

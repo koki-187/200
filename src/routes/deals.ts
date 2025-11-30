@@ -353,9 +353,74 @@ deals.put('/:id', async (c) => {
       return c.json({ error: 'Access denied' }, 403);
     }
 
+    // ステータス変更の検出
+    const statusChanged = body.status && body.status !== deal.status;
+    const oldStatus = deal.status;
+
     await db.updateDeal(dealId, body);
 
     const updatedDeal = await db.getDealById(dealId);
+    
+    // ステータス変更時の通知を送信
+    if (statusChanged && updatedDeal) {
+      try {
+        const { createNotification } = await import('./notifications');
+        
+        // ステータス変更の日本語表示
+        const statusMap: Record<string, string> = {
+          'NEW': '新規',
+          'REVIEWING': 'レビュー中',
+          'NEGOTIATING': '交渉中',
+          'CONTRACTED': '契約済み',
+          'REJECTED': '却下'
+        };
+        
+        const oldStatusText = statusMap[oldStatus] || oldStatus;
+        const newStatusText = statusMap[updatedDeal.status] || updatedDeal.status;
+        
+        // 関係者への通知（担当エージェントと管理者）
+        const notificationRecipients = [];
+        
+        // 担当エージェント
+        if (updatedDeal.seller_id && updatedDeal.seller_id !== userId) {
+          notificationRecipients.push(updatedDeal.seller_id);
+        }
+        
+        // 管理者（更新者が管理者でない場合）
+        if (role !== 'ADMIN') {
+          const adminUsers = await c.env.DB.prepare(
+            'SELECT id FROM users WHERE role = ? LIMIT 10'
+          ).bind('ADMIN').all();
+          
+          for (const admin of (adminUsers.results || [])) {
+            if (admin.id !== userId) {
+              notificationRecipients.push(admin.id as string);
+            }
+          }
+        }
+        
+        // 重複を排除
+        const uniqueRecipients = [...new Set(notificationRecipients)];
+        
+        // 通知を作成
+        for (const recipientId of uniqueRecipients) {
+          await createNotification(
+            c.env.DB,
+            recipientId,
+            'STATUS_CHANGE',
+            `案件ステータス変更: ${updatedDeal.title}`,
+            `ステータスが「${oldStatusText}」から「${newStatusText}」に変更されました。\n所在地: ${updatedDeal.location || '未設定'}`,
+            `/deals/${dealId}`
+          );
+        }
+        
+        console.log(`✅ Status change notifications created for ${uniqueRecipients.length} user(s)`);
+      } catch (notifError) {
+        console.error('Failed to send status change notification:', notifError);
+        // 通知失敗してもDeal更新は成功とする
+      }
+    }
+
     return c.json({ deal: updatedDeal });
   } catch (error) {
     console.error('Update deal error:', error);
@@ -409,6 +474,7 @@ deals.post('/bulk/status', adminOnly, async (c) => {
     };
 
     // 各案件を更新
+    const updatedDeals = [];
     for (const dealId of deal_ids) {
       try {
         const deal = await db.getDealById(dealId);
@@ -420,12 +486,63 @@ deals.post('/bulk/status', adminOnly, async (c) => {
 
         await db.updateDeal(dealId, { status });
         results.success++;
+        
+        // 通知用に更新後のDealを保存
+        const updatedDeal = await db.getDealById(dealId);
+        if (updatedDeal) {
+          updatedDeals.push({ 
+            deal: updatedDeal, 
+            oldStatus: deal.status 
+          });
+        }
       } catch (error) {
         results.failed++;
         results.errors.push({ 
           deal_id: dealId, 
           error: error instanceof Error ? error.message : 'Unknown error' 
         });
+      }
+    }
+
+    // バルク更新の通知を送信
+    if (updatedDeals.length > 0) {
+      try {
+        const { createNotification } = await import('./notifications');
+        const userId = c.get('userId') as string;
+        
+        // ステータス変更の日本語表示
+        const statusMap: Record<string, string> = {
+          'NEW': '新規',
+          'REVIEWING': 'レビュー中',
+          'NEGOTIATING': '交渉中',
+          'CONTRACTED': '契約済み',
+          'REJECTED': '却下'
+        };
+        
+        const newStatusText = statusMap[status] || status;
+        
+        // 関係する全てのエージェントに通知
+        const notifiedUsers = new Set<string>();
+        
+        for (const { deal } of updatedDeals) {
+          if (deal.seller_id && deal.seller_id !== userId) {
+            if (!notifiedUsers.has(deal.seller_id)) {
+              await createNotification(
+                c.env.DB,
+                deal.seller_id,
+                'STATUS_CHANGE',
+                `案件ステータス一括変更`,
+                `${updatedDeals.length}件の案件のステータスが「${newStatusText}」に変更されました。`,
+                `/deals`
+              );
+              notifiedUsers.add(deal.seller_id);
+            }
+          }
+        }
+        
+        console.log(`✅ Bulk status change notifications sent to ${notifiedUsers.size} user(s)`);
+      } catch (notifError) {
+        console.error('Failed to send bulk status change notification:', notifError);
       }
     }
 

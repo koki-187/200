@@ -169,27 +169,40 @@ messages.post('/deals/:dealId', async (c) => {
 
     // 新着メッセージ通知（受信者へ）
     try {
-      const resendApiKey = c.env.RESEND_API_KEY;
-      if (resendApiKey) {
-        const emailService = createEmailService(resendApiKey);
-        const sender = await db.getUserById(userId);
-        
-        // 送信者以外の関係者に通知
-        const recipientId = role === 'ADMIN' ? deal.seller_id : deal.buyer_id;
-        const recipient = await db.getUserById(recipientId);
-        
-        if (recipient?.email) {
-          await emailService.sendNewMessageNotification(
-            recipient.email,
-            deal.title,
-            sender?.name || 'Unknown',
-            sanitizedContent
-          );
-          console.log(`New message notification sent to ${recipient.email}`);
-        }
+      const sender = await db.getUserById(userId);
+      
+      // 送信者以外の関係者に通知
+      const recipientId = role === 'ADMIN' ? deal.seller_id : deal.buyer_id;
+      const recipient = await db.getUserById(recipientId);
+      
+      // D1通知システムへの通知作成
+      if (recipient) {
+        const { createNotification } = await import('./notifications');
+        await createNotification(
+          c.env.DB,
+          recipient.id,
+          'MESSAGE',
+          `新着メッセージ: ${deal.title}`,
+          `${sender?.name || 'Unknown'}からメッセージが届きました。\n${sanitizedContent.substring(0, 100)}${sanitizedContent.length > 100 ? '...' : ''}`,
+          `/deals/${dealId}`
+        );
+        console.log(`D1 notification created for user ${recipient.id}`);
       }
-    } catch (emailError) {
-      console.error('Failed to send new message notification email:', emailError);
+      
+      // メール通知（オプショナル）
+      const resendApiKey = c.env.RESEND_API_KEY;
+      if (resendApiKey && recipient?.email) {
+        const emailService = createEmailService(resendApiKey);
+        await emailService.sendNewMessageNotification(
+          recipient.email,
+          deal.title,
+          sender?.name || 'Unknown',
+          sanitizedContent
+        );
+        console.log(`Email notification sent to ${recipient.email}`);
+      }
+    } catch (notifError) {
+      console.error('Failed to send new message notification:', notifError);
     }
 
     return c.json({ message: newMessage }, 201);

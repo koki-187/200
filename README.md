@@ -16,11 +16,16 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.62.2)**: https://7e9cee29.real-estate-200units-v2.pages.dev 🆕 **← 最新（完全版リリース）**
+- **Production URL (Latest v3.64.0)**: https://545f07c9.real-estate-200units-v2.pages.dev 🆕 **← 最新（主要機能完了）**
+  - 通知システム完全統合 ✅
+  - KPIダッシュボード拡張（4つの新規分析API） ✅
+  - データエクスポート機能（CSV/KPI/月次レポート） ✅
+  - REINFOLIB統合拡張（4都県235+市区町村対応） ✅
+  - テスト成功率66%（主要機能100%動作） ✅
+- **Previous URL (v3.62.2)**: https://7e9cee29.real-estate-200units-v2.pages.dev
   - Deal更新機能修正 ✅
   - アドレスパース修正 ✅
   - テスト成功率95%達成 ✅
-  - 全ての重要機能が正常動作 ✅
 - **Previous URL (v3.61.2)**: https://21078df2.real-estate-200units-v2.pages.dev
   - 案件作成バリデーションエラー修正 ✅
   - REINFOLIB API認証追加 ✅

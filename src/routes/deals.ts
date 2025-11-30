@@ -544,4 +544,81 @@ deals.post('/bulk/assign', adminOnly, async (c) => {
   }
 });
 
+// 古いテストデータの一括削除（管理者のみ）
+deals.delete('/batch/cleanup', adminOnly, async (c) => {
+  try {
+    const db = new Database(c.env.DB);
+    const { older_than_days } = await c.req.json();
+    
+    if (!older_than_days || older_than_days < 1) {
+      return c.json({ error: '削除対象期間（日数）を指定してください' }, 400);
+    }
+
+    // 指定日数より古いDealを削除（テストデータのみを対象）
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - older_than_days);
+    const cutoffISO = cutoffDate.toISOString();
+
+    // 削除対象の案件を取得
+    const { results: oldDeals } = await c.env.DB.prepare(`
+      SELECT id, title, created_at 
+      FROM deals 
+      WHERE created_at < ? 
+        AND (
+          title LIKE '%テスト%' 
+          OR title LIKE '%test%' 
+          OR title LIKE '%Test%'
+          OR title LIKE '%完全版%'
+          OR remarks LIKE '%テスト%'
+        )
+      ORDER BY created_at ASC
+    `).bind(cutoffISO).all();
+
+    if (!oldDeals || oldDeals.length === 0) {
+      return c.json({ 
+        success: true,
+        message: '削除対象のデータはありません',
+        deleted_count: 0
+      });
+    }
+
+    let deletedCount = 0;
+    const errors = [];
+
+    for (const deal of oldDeals) {
+      try {
+        // 関連ファイルを削除
+        await c.env.DB.prepare('DELETE FROM deal_files WHERE deal_id = ?').bind(deal.id).run();
+        
+        // メッセージを削除
+        await c.env.DB.prepare('DELETE FROM messages WHERE deal_id = ?').bind(deal.id).run();
+        
+        // 通知を削除
+        await c.env.DB.prepare('DELETE FROM notifications WHERE deal_id = ?').bind(deal.id).run();
+        
+        // Dealを削除
+        await c.env.DB.prepare('DELETE FROM deals WHERE id = ?').bind(deal.id).run();
+        
+        deletedCount++;
+      } catch (error) {
+        errors.push({ 
+          id: deal.id, 
+          title: deal.title,
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: `${deletedCount}件の古いテストデータを削除しました`,
+      deleted_count: deletedCount,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Cleanup error:', error);
+    return c.json({ error: 'データ削除に失敗しました' }, 500);
+  }
+});
+
 export default deals;

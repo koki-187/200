@@ -34,7 +34,7 @@ app.post('/upload', async (c) => {
     const fileId = nanoid()
 
     // Upload to R2
-    const objectKey = await uploadToR2(c.env.R2_FILES, fileId, file, {
+    const objectKey = await uploadToR2(c.env.FILES_BUCKET, fileId, file, {
       folder,
       dealId: dealId || undefined,
       userId: c.get('userId'),
@@ -94,7 +94,7 @@ app.get('/download/:fileId', async (c) => {
     }
 
     // Get file from R2
-    const object = await getFromR2(c.env.R2_FILES, fileRecord.storage_path as string)
+    const object = await getFromR2(c.env.FILES_BUCKET, fileRecord.storage_path as string)
 
     if (!object) {
       return c.json({ error: 'ファイルが見つかりません' }, 404)
@@ -191,7 +191,7 @@ app.delete('/permanent/:fileId', async (c) => {
     }
 
     // Delete from R2
-    await deleteFromR2(c.env.R2_FILES, fileRecord.storage_path as string)
+    await deleteFromR2(c.env.FILES_BUCKET, fileRecord.storage_path as string)
 
     // Delete from database
     await db

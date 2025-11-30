@@ -187,6 +187,29 @@ messages.post('/deals/:dealId', async (c) => {
           `/deals/${dealId}`
         );
         console.log(`D1 notification created for user ${recipient.id}`);
+        
+        // LINE/Slack通知を送信
+        try {
+          const { sendNotificationToUser } = await import('../services/notification-service');
+          await sendNotificationToUser(c.env, recipient.id, {
+            type: 'message',
+            title: '新着メッセージ',
+            message: `案件「${deal.title}」に${sender?.name || 'Unknown'}からメッセージが届きました。\n\n${sanitizedContent.substring(0, 100)}${sanitizedContent.length > 100 ? '...' : ''}`,
+            url: `${c.req.url.replace(/\/api\/.*/, '')}/deals/${dealId}`,
+            user: {
+              id: sender?.id || userId,
+              name: sender?.name || 'Unknown',
+              email: sender?.email || 'unknown@example.com'
+            },
+            deal: {
+              id: dealId,
+              title: deal.title
+            }
+          });
+          console.log(`✅ LINE/Slack notification sent to user ${recipient.id}`);
+        } catch (slackError) {
+          console.error('LINE/Slack notification error:', slackError);
+        }
       }
       
       // メール通知（オプショナル）

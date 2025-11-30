@@ -266,6 +266,34 @@ deals.post('/', adminOnly, async (c) => {
       
       console.log(`✅ D1 notifications created for ${adminUsers.results?.length || 0} admin(s)`);
 
+      // LINE/Slack通知を送信（管理者向け）
+      try {
+        const { sendNotificationToUsers } = await import('../services/notification-service');
+        const adminIds = (adminUsers.results || []).map((admin) => admin.id as string);
+        
+        if (adminIds.length > 0) {
+          await sendNotificationToUsers(c.env, adminIds, {
+            type: 'deal_create',
+            title: '新規案件登録',
+            message: `${seller?.name || '担当者'}が新しい案件を登録しました。\n\n📍 所在地: ${newDeal.location || '未設定'}\n🚉 最寄駅: ${newDeal.station || '未設定'}`,
+            url: `${c.req.url.replace(/\/api\/deals.*/, '')}/deals/${newDeal.id}`,
+            user: {
+              id: user.id,
+              name: seller?.name || user.name,
+              email: seller?.email || user.email
+            },
+            deal: {
+              id: newDeal.id,
+              title: newDeal.title,
+              status: newDeal.status
+            }
+          });
+          console.log(`✅ LINE/Slack notifications sent to ${adminIds.length} admin(s)`);
+        }
+      } catch (notifError) {
+        console.error('LINE/Slack notification error:', notifError);
+      }
+
       // メール送信を試みる（失敗しても続行）
       const resendApiKey = c.env.RESEND_API_KEY;
       if (!resendApiKey) {
@@ -415,6 +443,28 @@ deals.put('/:id', async (c) => {
         }
         
         console.log(`✅ Status change notifications created for ${uniqueRecipients.length} user(s)`);
+        
+        // LINE/Slack通知を送信
+        try {
+          const { sendNotificationToUsers } = await import('../services/notification-service');
+          
+          if (uniqueRecipients.length > 0) {
+            await sendNotificationToUsers(c.env, uniqueRecipients, {
+              type: 'status_change',
+              title: '案件ステータス変更',
+              message: `案件「${updatedDeal.title}」のステータスが変更されました。\n\n📊 ${oldStatusText} → ${newStatusText}\n📍 ${updatedDeal.location || '未設定'}`,
+              url: `${c.req.url.replace(/\/api\/deals.*/, '')}/deals/${dealId}`,
+              deal: {
+                id: dealId,
+                title: updatedDeal.title,
+                status: newStatusText
+              }
+            });
+            console.log(`✅ LINE/Slack status change notifications sent to ${uniqueRecipients.length} user(s)`);
+          }
+        } catch (slackError) {
+          console.error('LINE/Slack notification error:', slackError);
+        }
       } catch (notifError) {
         console.error('Failed to send status change notification:', notifError);
         // 通知失敗してもDeal更新は成功とする

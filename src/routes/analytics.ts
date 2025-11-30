@@ -462,41 +462,97 @@ app.get('/analytics/conversion', async (c) => {
   }
 });
 
-// エクスポート - CSV形式でレポートをエクスポート
+// エクスポート - CSV形式でレポートをエクスポート（拡張版）
 app.get('/export/deals', async (c) => {
-  const { format = 'json' } = c.req.query();
+  const { format = 'json', status, from_date, to_date } = c.req.query();
 
   try {
-    const { results: deals } = await c.env.DB.prepare(`
+    // フィルター条件を構築
+    let query = `
       SELECT 
         d.*,
-        u.name as created_by_name
+        u.name as created_by_name,
+        seller.name as seller_name,
+        buyer.name as buyer_name
       FROM deals d
       LEFT JOIN users u ON d.created_by = u.id
-      ORDER BY d.created_at DESC
-    `).all();
+      LEFT JOIN users seller ON d.seller_id = seller.id
+      LEFT JOIN users buyer ON d.buyer_id = buyer.id
+      WHERE 1=1
+    `;
+    const params: any[] = [];
+    
+    if (status) {
+      query += ' AND d.status = ?';
+      params.push(status);
+    }
+    
+    if (from_date) {
+      query += ' AND d.created_at >= ?';
+      params.push(from_date);
+    }
+    
+    if (to_date) {
+      query += ' AND d.created_at <= ?';
+      params.push(to_date);
+    }
+    
+    query += ' ORDER BY d.created_at DESC';
+    
+    const { results: deals } = await c.env.DB.prepare(query).bind(...params).all();
 
     if (format === 'csv') {
-      // CSV形式で出力
-      const headers = ['ID', 'タイトル', 'ステータス', '予想金額', '作成者', '作成日'];
+      // 詳細なCSV形式で出力
+      const headers = [
+        'ID', 'タイトル', 'ステータス', '所在地', '最寄り駅', '徒歩分', 
+        '土地面積', '建物面積', '用途地域', '建蔽率', '容積率', 
+        '希望価格', '構造', '築年', '道路情報', '現況', 
+        '売主', '買主', '作成者', '作成日', '更新日'
+      ];
+      
+      const statusMap: Record<string, string> = {
+        'NEW': '新規',
+        'REVIEWING': 'レビュー中',
+        'NEGOTIATING': '交渉中',
+        'CONTRACTED': '契約済み',
+        'REJECTED': '却下'
+      };
+      
       const rows = deals.map((d: any) => [
         d.id,
-        d.title,
-        d.status,
-        d.estimated_value || 0,
-        d.created_by_name,
-        d.created_at,
+        d.title || '',
+        statusMap[d.status] || d.status,
+        d.location || '',
+        d.station || '',
+        d.walk_minutes || '',
+        d.land_area || '',
+        d.building_area || '',
+        d.zoning || '',
+        d.building_coverage || '',
+        d.floor_area_ratio || '',
+        d.desired_price || '',
+        d.structure || '',
+        d.built_year || '',
+        d.road_info || '',
+        d.current_status || '',
+        d.seller_name || '',
+        d.buyer_name || '',
+        d.created_by_name || '',
+        d.created_at || '',
+        d.updated_at || ''
       ]);
 
       const csv = [
         headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
       ].join('\n');
 
-      return new Response(csv, {
+      const filename = `deals-export-${new Date().toISOString().split('T')[0]}.csv`;
+
+      return new Response('\uFEFF' + csv, {  // UTF-8 BOM for Excel compatibility
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': 'attachment; filename="deals-export.csv"',
+          'Content-Disposition': `attachment; filename="${filename}"`,
         },
       });
     }
@@ -505,6 +561,151 @@ app.get('/export/deals', async (c) => {
   } catch (error: any) {
     console.error('Failed to export deals:', error);
     return c.json({ error: 'データのエクスポートに失敗しました' }, 500);
+  }
+});
+
+// KPIレポートのエクスポート
+app.get('/export/kpi-report', async (c) => {
+  try {
+    const { period = '30' } = c.req.query();
+    const daysInt = parseInt(period);
+    
+    // 全体統計
+    const totalDeals = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM deals
+    `).first();
+
+    const dealsByStatus = await c.env.DB.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM deals
+      GROUP BY status
+    `).all();
+    
+    // エージェント別統計
+    const agentStats = await c.env.DB.prepare(`
+      SELECT 
+        u.name as agent_name,
+        COUNT(d.id) as total_deals,
+        SUM(CASE WHEN d.status = 'CONTRACTED' THEN 1 ELSE 0 END) as contracted_deals
+      FROM users u
+      LEFT JOIN deals d ON u.id = d.seller_id
+      WHERE u.role = 'AGENT'
+        AND (d.created_at IS NULL OR d.created_at >= datetime('now', '-' || ? || ' days'))
+      GROUP BY u.name
+      ORDER BY total_deals DESC
+    `).bind(daysInt).all();
+    
+    // CSV形式でレポート生成
+    const headers = ['エージェント名', '総案件数', '成約件数', '成約率'];
+    const rows = (agentStats.results as any[]).map((agent: any) => {
+      const successRate = agent.total_deals > 0 
+        ? ((agent.contracted_deals / agent.total_deals) * 100).toFixed(2) 
+        : '0.00';
+      return [
+        agent.agent_name,
+        agent.total_deals,
+        agent.contracted_deals,
+        `${successRate}%`
+      ];
+    });
+
+    const csv = [
+      `KPIレポート - ${new Date().toISOString().split('T')[0]}`,
+      `対象期間: 過去${daysInt}日間`,
+      '',
+      `総案件数: ${totalDeals?.count || 0}`,
+      '',
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const filename = `kpi-report-${new Date().toISOString().split('T')[0]}.csv`;
+
+    return new Response('\uFEFF' + csv, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    });
+  } catch (error: any) {
+    console.error('Failed to export KPI report:', error);
+    return c.json({ error: 'KPIレポートのエクスポートに失敗しました' }, 500);
+  }
+});
+
+// 月次レポートのエクスポート
+app.get('/export/monthly-report', async (c) => {
+  try {
+    const { year, month } = c.req.query();
+    
+    if (!year || !month) {
+      return c.json({ error: 'year と month パラメータが必要です' }, 400);
+    }
+
+    const targetMonth = `${year}-${month.padStart(2, '0')}`;
+    
+    // 月次統計
+    const newDeals = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM deals
+      WHERE strftime('%Y-%m', created_at) = ?
+    `).bind(targetMonth).first();
+
+    const contractedDeals = await c.env.DB.prepare(`
+      SELECT 
+        COUNT(*) as count,
+        AVG(CASE 
+          WHEN desired_price IS NOT NULL AND desired_price != '' 
+          THEN CAST(desired_price AS INTEGER) 
+          ELSE 0 
+        END) as avg_price
+      FROM deals
+      WHERE status = 'CONTRACTED'
+        AND strftime('%Y-%m', updated_at) = ?
+    `).bind(targetMonth).first();
+    
+    const dealsByStatus = await c.env.DB.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM deals
+      WHERE strftime('%Y-%m', created_at) = ?
+      GROUP BY status
+    `).bind(targetMonth).all();
+
+    // CSV形式でレポート生成
+    const statusMap: Record<string, string> = {
+      'NEW': '新規',
+      'REVIEWING': 'レビュー中',
+      'NEGOTIATING': '交渉中',
+      'CONTRACTED': '契約済み',
+      'REJECTED': '却下'
+    };
+    
+    const csv = [
+      `月次レポート - ${year}年${month}月`,
+      '',
+      '■ 案件統計',
+      `新規案件数,${newDeals?.count || 0}`,
+      `成約件数,${contractedDeals?.count || 0}`,
+      `平均成約価格,${Math.round(contractedDeals?.avg_price || 0).toLocaleString()}円`,
+      '',
+      '■ ステータス別案件数',
+      'ステータス,件数',
+      ...(dealsByStatus.results as any[]).map((s: any) => 
+        `${statusMap[s.status] || s.status},${s.count}`
+      )
+    ].join('\n');
+
+    const filename = `monthly-report-${year}-${month}.csv`;
+
+    return new Response('\uFEFF' + csv, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    });
+  } catch (error: any) {
+    console.error('Failed to export monthly report:', error);
+    return c.json({ error: '月次レポートのエクスポートに失敗しました' }, 500);
   }
 });
 

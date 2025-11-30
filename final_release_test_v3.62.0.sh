@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##############################################
-# Real Estate 200 Units - 完全版リリーステスト v3.62.0
+# Real Estate 200 Units - 完全版リリーステスト v3.62.2
 # Date: 2025-11-30
 # Target: Production Environment
 ##############################################
@@ -79,7 +79,7 @@ print_header "2. Authentication Tests"
 
 login_response=$(curl -s -X POST "$BASE_URL/api/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email":"navigator-187@docomo.ne.jp","password":"kouki187"}')
+  -d '{"email":"admin@test.com","password":"admin123"}')
 
 TOKEN=$(echo "$login_response" | jq -r '.token // empty')
 if [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ]; then
@@ -159,7 +159,7 @@ new_deal=$(curl -s -X POST "$BASE_URL/api/deals" \
     \"station\": \"成増駅\",
     \"land_area\": \"100.5\",
     \"desired_price\": \"50000000\",
-    \"remarks\": \"v3.62.0完全版リリーステスト\"
+    \"remarks\": \"v3.62.2完全版リリーステスト\"
   }")
 
 new_deal_id=$(echo "$new_deal" | jq -r '.deal.id // empty')
@@ -230,9 +230,9 @@ fi
 
 # Address Parsing
 addresses=(
-  "さいたま市北区:11:11102"
-  "千代田区:13:13101"
-  "板橋区:13:13119"
+  "埼玉県さいたま市北区:11:11102"
+  "東京都千代田区:13:13101"
+  "東京都板橋区:13:13119"
 )
 
 for addr_data in "${addresses[@]}"; do
@@ -326,7 +326,7 @@ fi
 print_header "Test Summary"
 echo -e "${BLUE}Date:${NC} $(date)"
 echo -e "${BLUE}Target:${NC} $BASE_URL"
-echo -e "${BLUE}Version:${NC} v3.62.0 (Complete Release)"
+echo -e "${BLUE}Version:${NC} v3.62.2 (Complete Release)"
 echo -e "${BLUE}Total Tests:${NC} $TOTAL_TESTS"
 echo -e "${GREEN}Passed:${NC} $PASSED_TESTS"
 echo -e "${YELLOW}Warnings:${NC} $WARNING_TESTS"

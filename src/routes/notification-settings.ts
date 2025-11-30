@@ -2,7 +2,7 @@
 // Version: v3.66.0
 
 import { Hono } from 'hono'
-import { authMiddleware } from '../middleware/auth'
+import { authMiddleware } from '../utils/auth'
 import { Env } from '../types'
 import { nanoid } from 'nanoid'
 
@@ -15,6 +15,12 @@ notificationSettings.use('/*', authMiddleware)
 notificationSettings.get('/', async (c) => {
   try {
     const user = c.get('user')
+    
+    if (!user || !user.id) {
+      console.error('User not found in context')
+      return c.json({ error: 'ユーザー情報が取得できませんでした' }, 401)
+    }
+
     const { DB } = c.env
 
     const settings = await DB.prepare(`
@@ -56,7 +62,10 @@ notificationSettings.get('/', async (c) => {
     return c.json(settings)
   } catch (error) {
     console.error('Get notification settings error:', error)
-    return c.json({ error: '通知設定の取得に失敗しました' }, 500)
+    return c.json({ 
+      error: '通知設定の取得に失敗しました', 
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
   }
 })
 

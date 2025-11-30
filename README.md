@@ -16,7 +16,11 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.61.2)**: https://21078df2.real-estate-200units-v2.pages.dev 🆕 **← 最新（バリデーション修正完了）**
+- **Production URL (Latest v3.62.1)**: https://7e9cee29.real-estate-200units-v2.pages.dev 🆕 **← 最新（通知システム修正完了）**
+  - 通知APIの修正と認証強化 ✅
+  - 本番環境テストユーザー追加 ✅
+  - テスト成功率76%達成 ✅
+- **Previous URL (v3.61.2)**: https://21078df2.real-estate-200units-v2.pages.dev
   - 案件作成バリデーションエラー修正 ✅
   - REINFOLIB API認証追加 ✅
   - 管理者メール通知機能 ✅
@@ -36,6 +40,12 @@
 - **Showcase**: https://40a284e6.real-estate-200units-v2.pages.dev/showcase
 
 ### デフォルトログイン情報
+
+#### テストアカウント（v3.62.1追加）
+- **メールアドレス**: `admin@test.com`
+- **パスワード**: `admin123`
+- **ロール**: ADMIN（管理者）
+- **用途**: 本番環境テスト用
 
 #### 管理者アカウント（更新済み v3.0.0）
 - **メールアドレス**: `navigator-187@docomo.ne.jp`
@@ -159,19 +169,19 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.58.0 (Production - Admin File Management) ✅
+- **バージョン**: v3.62.1 (Production - Notification System Fixed) ✅
 - **進捗状況**: 全機能実装完了、実用可能な状態 ✅
-- **デプロイ日**: 2025-11-27
-- **本番URL**: https://656dfb5f.real-estate-200units-v2.pages.dev 
+- **デプロイ日**: 2025-11-30
+- **本番URL**: https://7e9cee29.real-estate-200units-v2.pages.dev 
 - **GitHubリポジトリ**: https://github.com/koki-187/200
 - **ローカル動作**: ✅ 完全に動作（全APIエンドポイント動作確認済み）
-- **本番環境**: ✅ 全機能正常動作確認済み
-- **最新の変更 (v3.58.0)**: 
-  - ✅ 管理者専用ファイル管理UI実装
-  - ✅ 全ユーザーのファイル一覧表示・統計情報
-  - ✅ ファイル検索・フィルター機能
-  - ✅ `/deals/:id` のファイル管理を新APIに移行
-  - ✅ 複数ファイルアップロード対応
+- **本番環境**: ✅ 主要機能正常動作確認済み（76%テスト成功）
+- **最新の変更 (v3.62.1)**: 
+  - ✅ 通知APIの修正（認証ミドルウェア追加）
+  - ✅ 本番DBスキーマ修正（title, message, link, created_atカラム追加）
+  - ✅ テストユーザー追加（admin@test.com）
+  - ✅ パスワードハッシュ形式統一（SHA-256/PBKDF2）
+  - ✅ テスト成功率76%達成（16/21項目合格）
 - **前回の変更 (v3.57.0)**: 
   - ✅ ストレージクォータ拡張（一般3GB、管理者20GB）
 - **前回の変更 (v3.56.0)**: 

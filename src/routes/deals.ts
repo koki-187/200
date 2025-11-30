@@ -244,13 +244,15 @@ deals.post('/', adminOnly, async (c) => {
     // 新規案件通知メール送信（エージェントと管理者へ）
     try {
       const resendApiKey = c.env.RESEND_API_KEY;
-      if (resendApiKey) {
+      if (!resendApiKey) {
+        console.warn('⚠️ RESEND_API_KEY not configured - skipping email notification');
+      } else {
         const emailService = createEmailService(resendApiKey);
         const seller = await db.getUserById(body.seller_id);
         
         // エージェントへの通知
         if (seller?.email) {
-          await emailService.sendNewDealNotification(
+          const agentResult = await emailService.sendNewDealNotification(
             seller.email,
             newDeal.title,
             {
@@ -259,12 +261,16 @@ deals.post('/', adminOnly, async (c) => {
               deadline: newDeal.reply_deadline
             }
           );
-          console.log(`New deal notification sent to agent: ${seller.email}`);
+          if (agentResult.success) {
+            console.log(`✅ New deal notification sent to agent: ${seller.email} (MessageID: ${agentResult.messageId})`);
+          } else {
+            console.error(`❌ Failed to send notification to agent: ${seller.email} - Error: ${agentResult.error}`);
+          }
         }
 
         // 管理者への通知（realestate.navigator01@gmail.com）
         const adminEmail = 'realestate.navigator01@gmail.com';
-        await emailService.sendAdminNewDealNotification(
+        const adminResult = await emailService.sendAdminNewDealNotification(
           adminEmail,
           newDeal.title,
           {
@@ -276,11 +282,19 @@ deals.post('/', adminOnly, async (c) => {
             buyerId: userId
           }
         );
-        console.log(`New deal notification sent to admin: ${adminEmail}`);
+        if (adminResult.success) {
+          console.log(`✅ New deal notification sent to admin: ${adminEmail} (MessageID: ${adminResult.messageId})`);
+        } else {
+          console.error(`❌ Failed to send notification to admin: ${adminEmail} - Error: ${adminResult.error}`);
+        }
       }
     } catch (emailError) {
       // メール送信失敗してもエラーレスポンスは返さない（ログのみ）
-      console.error('Failed to send new deal notification email:', emailError);
+      console.error('❌ Failed to send new deal notification email:', emailError);
+      if (emailError instanceof Error) {
+        console.error('Error details:', emailError.message);
+        console.error('Stack trace:', emailError.stack);
+      }
     }
 
     return c.json({ deal: newDeal }, 201);

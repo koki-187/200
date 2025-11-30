@@ -11,7 +11,7 @@ export class EmailService {
   private resend: Resend;
   private fromEmail: string;
 
-  constructor(apiKey: string, fromEmail: string = 'noreply@example.com') {
+  constructor(apiKey: string, fromEmail: string = 'onboarding@resend.dev') {
     this.resend = new Resend(apiKey);
     this.fromEmail = fromEmail;
   }

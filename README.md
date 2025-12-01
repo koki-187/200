@@ -16,7 +16,12 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.64.0)**: https://e7b17707.real-estate-200units-v2.pages.dev 🆕 **← 最新（ログイン履歴UI追加）**
+- **Production URL (Latest v3.65.0)**: https://c1a201a3.real-estate-200units-v2.pages.dev 🆕 **← 最新（初回6情報必須チェック・特別案件フロー・建築基準法API）**
+  - ✅ 初回6情報の必須チェック機能（所在地/駅、面積、用途/建蔽/容積/防火、接道/間口、現況、希望価格）
+  - ✅ 特別案件フロー（クライテリア非該当時の申請・承認・却下）
+  - ✅ 建築基準法・条例の自動補足調査機能（駐車場設置義務など）
+  - ✅ OCR機能の精度向上（初回6情報優先抽出）
+- **Previous URL (v3.64.0)**: https://e7b17707.real-estate-200units-v2.pages.dev
   - ✅ ログイン履歴の可視化UI（ダッシュボード統合）
   - ✅ CSVエクスポート機能（案件、KPI）
   - ✅ 通知システム完全統合（D1、メール、LINE、Slack）

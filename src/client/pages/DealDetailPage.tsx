@@ -198,14 +198,14 @@ const DealDetailPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* ヘッダー */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold text-gray-900">{deal.title}</h1>
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 break-words">{deal.title}</h1>
             {getStatusBadge(deal.status)}
           </div>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
             <span>案件ID: {deal.id}</span>
             <span>登録日: {new Date(deal.created_at).toLocaleDateString('ja-JP')}</span>
           </div>
@@ -213,17 +213,17 @@ const DealDetailPage: React.FC = () => {
 
         {/* 購入条件チェック結果 */}
         {purchaseCheck && (
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">購入条件チェック結果</h2>
+          <div className="bg-white shadow rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">購入条件チェック結果</h2>
               {getPurchaseResultBadge(purchaseCheck.overall_result)}
             </div>
             
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm font-medium text-gray-700">総合スコア:</span>
-                <span className="text-2xl font-bold text-indigo-600">{purchaseCheck.check_score}点</span>
-                <span className="text-sm text-gray-500">/ 100点</span>
+                <span className="text-xl sm:text-2xl font-bold text-indigo-600">{purchaseCheck.check_score}点</span>
+                <span className="text-xs sm:text-sm text-gray-500">/ 100点</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div
@@ -237,24 +237,24 @@ const DealDetailPage: React.FC = () => {
             </div>
 
             {purchaseCheck.passed_conditions.length > 0 && (
-              <div className="mb-4">
+              <div className="mb-3 sm:mb-4">
                 <h3 className="text-sm font-medium text-green-800 mb-2">✅ 適合条件 ({purchaseCheck.passed_conditions.length}件)</h3>
                 <ul className="space-y-1">
                   {purchaseCheck.passed_conditions.map((condition, idx) => (
-                    <li key={idx} className="text-sm text-gray-700 pl-4">• {condition}</li>
+                    <li key={idx} className="text-xs sm:text-sm text-gray-700 pl-4 break-words">• {condition}</li>
                   ))}
                 </ul>
               </div>
             )}
 
             {purchaseCheck.failed_conditions.length > 0 && (
-              <div className="mb-4">
+              <div className="mb-3 sm:mb-4">
                 <h3 className="text-sm font-medium text-red-800 mb-2">❌ 非適合条件 ({purchaseCheck.failed_conditions.length}件)</h3>
                 <ul className="space-y-2">
                   {purchaseCheck.failed_conditions.map((condition, idx) => (
-                    <li key={idx} className="text-sm bg-red-50 p-3 rounded border border-red-200">
-                      <div className="font-medium text-red-900">{condition.condition}</div>
-                      <div className="text-red-700 mt-1">
+                    <li key={idx} className="text-xs sm:text-sm bg-red-50 p-3 rounded border border-red-200">
+                      <div className="font-medium text-red-900 break-words">{condition.condition}</div>
+                      <div className="text-red-700 mt-1 break-words">
                         実際: <span className="font-semibold">{condition.actual}</span> / 
                         必要: <span className="font-semibold">{condition.required}</span>
                       </div>
@@ -266,10 +266,10 @@ const DealDetailPage: React.FC = () => {
 
             {/* 特別案件申請ボタン */}
             {purchaseCheck.overall_result !== 'PASS' && !deal.is_special_case && user?.role === 'AGENT' && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
                 <button
                   onClick={() => setShowSpecialCaseModal(true)}
-                  className="w-full px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 font-medium"
+                  className="w-full px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 font-medium text-sm sm:text-base min-h-[44px]"
                 >
                   🌟 特別案件として申請する
                 </button>
@@ -293,14 +293,14 @@ const DealDetailPage: React.FC = () => {
 
         {/* 建築基準法情報 */}
         {buildingRegulations.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <div className="flex items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">建築基準法・条例情報</h2>
-              <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+          <div className="bg-white shadow rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center mb-3 sm:mb-4 gap-2">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">建築基準法・条例情報</h2>
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full self-start">
                 自動検出
               </span>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
               所在地と用途地域に基づき、適用される可能性のある法規制を表示しています。
             </p>
             <div className="space-y-3">
@@ -328,13 +328,13 @@ const DealDetailPage: React.FC = () => {
         )}
 
         {/* 基本情報 */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">基本情報</h2>
-          <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white shadow rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">基本情報</h2>
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {deal.location && (
               <div>
-                <dt className="text-sm font-medium text-gray-500">所在地</dt>
-                <dd className="mt-1 text-sm text-gray-900">{deal.location}</dd>
+                <dt className="text-xs sm:text-sm font-medium text-gray-500">所在地</dt>
+                <dd className="mt-1 text-sm sm:text-base text-gray-900 break-words">{deal.location}</dd>
               </div>
             )}
             {deal.nearest_station && (

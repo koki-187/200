@@ -7,6 +7,7 @@ import SpecialCasesPage from './pages/SpecialCasesPage'
 import HelpPage from './pages/HelpPage'
 import DealProposalPage from './pages/DealProposalPage'
 import InvestmentSimulatorPage from './pages/InvestmentSimulatorPage'
+import NotificationSettingsPage from './pages/NotificationSettingsPage'
 import Toast from './components/Toast'
 import { useAuthStore } from './store/authStore'
 
@@ -53,6 +54,8 @@ const App: React.FC = () => {
         return <SpecialCasesPage />
       case '/help':
         return <HelpPage />
+      case '/settings/notifications':
+        return <NotificationSettingsPage />
       default:
         return (
           <div className="min-h-screen flex items-center justify-center">

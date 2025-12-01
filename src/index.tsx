@@ -1195,6 +1195,12 @@ app.get('/dashboard', (c) => {
             style="display: none;">
             <i class="fas fa-folder-open mr-2"></i>ファイル管理
           </button>
+          <button 
+            onclick="switchDashboardTab('login-history')" 
+            id="tab-login-history"
+            class="dashboard-tab border-b-2 border-transparent py-4 px-1 text-sm font-semibold text-gray-600 hover:text-blue-700 transition">
+            <i class="fas fa-history mr-2"></i>ログイン履歴
+          </button>
         </nav>
       </div>
     </div>
@@ -1211,6 +1217,90 @@ app.get('/dashboard', (c) => {
               <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
               <p>読み込み中...</p>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ログイン履歴タブ -->
+    <div id="content-login-history" class="dashboard-content hidden">
+      <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+        <div class="px-6 py-4 border-b flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-900">
+            <i class="fas fa-history mr-2"></i>ログイン履歴
+          </h2>
+          <div class="text-sm text-gray-600">
+            <span id="login-history-count">-</span> 件
+          </div>
+        </div>
+
+        <!-- 統計情報 -->
+        <div class="p-6 border-b">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-green-50 rounded-lg p-4">
+              <div class="text-sm text-green-600 font-medium">成功したログイン</div>
+              <div id="login-success-count" class="text-2xl font-bold text-green-900 mt-1">-</div>
+            </div>
+            <div class="bg-red-50 rounded-lg p-4">
+              <div class="text-sm text-red-600 font-medium">失敗したログイン</div>
+              <div id="login-failure-count" class="text-2xl font-bold text-red-900 mt-1">-</div>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-4">
+              <div class="text-sm text-blue-600 font-medium">最終ログイン</div>
+              <div id="last-login-time" class="text-lg font-bold text-blue-900 mt-1">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- フィルター -->
+        <div class="p-6 border-b">
+          <div class="flex items-center space-x-4">
+            <div class="flex-1">
+              <label class="text-sm text-gray-600 mb-1 block">ステータス</label>
+              <select id="login-history-status-filter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full">
+                <option value="all">全て</option>
+                <option value="success">成功のみ</option>
+                <option value="failure">失敗のみ</option>
+              </select>
+            </div>
+            <div class="flex-1">
+              <label class="text-sm text-gray-600 mb-1 block">表示件数</label>
+              <select id="login-history-limit" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full">
+                <option value="20">20件</option>
+                <option value="50" selected>50件</option>
+                <option value="100">100件</option>
+              </select>
+            </div>
+            <div class="pt-5">
+              <button onclick="loadLoginHistory()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition">
+                <i class="fas fa-sync-alt mr-2"></i>更新
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ログイン履歴一覧 -->
+        <div class="p-6">
+          <div id="login-history-list" class="space-y-2">
+            <div class="text-center py-8 text-gray-500">
+              <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+              <p>読み込み中...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ページネーション -->
+        <div id="login-history-pagination" class="px-6 pb-6 hidden">
+          <div class="flex items-center justify-between">
+            <button onclick="loadLoginHistory(0)" id="prev-page" class="text-sm text-blue-600 hover:text-blue-700 disabled:text-gray-400" disabled>
+              <i class="fas fa-chevron-left mr-1"></i>前へ
+            </button>
+            <div class="text-sm text-gray-600">
+              ページ <span id="current-page">1</span> / <span id="total-pages">1</span>
+            </div>
+            <button onclick="loadLoginHistory(1)" id="next-page" class="text-sm text-blue-600 hover:text-blue-700 disabled:text-gray-400">
+              次へ<i class="fas fa-chevron-right ml-1"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -1421,6 +1511,8 @@ app.get('/dashboard', (c) => {
       // タブ切り替え時にデータをロード
       if (tab === 'files') {
         loadAdminFiles();
+      } else if (tab === 'login-history') {
+        loadLoginHistory();
       }
     }
 
@@ -1488,6 +1580,143 @@ app.get('/dashboard', (c) => {
       const sizes = ['B', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+    }
+
+    // ログイン履歴を読み込み
+    let currentOffset = 0;
+    async function loadLoginHistory(direction = 0) {
+      try {
+        const limit = parseInt(document.getElementById('login-history-limit').value);
+        const statusFilter = document.getElementById('login-history-status-filter').value;
+        
+        // ページネーション
+        if (direction === 0) {
+          currentOffset = Math.max(0, currentOffset - limit);
+        } else if (direction === 1) {
+          currentOffset += limit;
+        } else {
+          currentOffset = 0; // リセット
+        }
+
+        const response = await axios.get('/api/auth/login-history', {
+          params: { limit, offset: currentOffset },
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        const history = response.data.history || [];
+        const total = response.data.total || 0;
+
+        // フィルタリング
+        let filteredHistory = history;
+        if (statusFilter === 'success') {
+          filteredHistory = history.filter(h => h.success === 1);
+        } else if (statusFilter === 'failure') {
+          filteredHistory = history.filter(h => h.success === 0);
+        }
+
+        // 統計情報を更新
+        const successCount = history.filter(h => h.success === 1).length;
+        const failureCount = history.filter(h => h.success === 0).length;
+        const lastLogin = history.length > 0 ? history[0] : null;
+
+        document.getElementById('login-history-count').textContent = total.toLocaleString();
+        document.getElementById('login-success-count').textContent = successCount.toLocaleString();
+        document.getElementById('login-failure-count').textContent = failureCount.toLocaleString();
+        document.getElementById('last-login-time').textContent = lastLogin 
+          ? formatDateTime(lastLogin.login_at) 
+          : '記録なし';
+
+        // 履歴一覧を表示
+        displayLoginHistory(filteredHistory);
+
+        // ページネーション更新
+        const totalPages = Math.ceil(total / limit);
+        const currentPage = Math.floor(currentOffset / limit) + 1;
+        document.getElementById('current-page').textContent = currentPage;
+        document.getElementById('total-pages').textContent = totalPages;
+        document.getElementById('prev-page').disabled = currentOffset === 0;
+        document.getElementById('next-page').disabled = currentOffset + limit >= total;
+        document.getElementById('login-history-pagination').classList.remove('hidden');
+
+      } catch (error) {
+        console.error('Failed to load login history:', error);
+        document.getElementById('login-history-list').innerHTML = 
+          '<div class="text-center py-8 text-red-600"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><p>ログイン履歴の読み込みに失敗しました</p></div>';
+      }
+    }
+
+    // ログイン履歴を表示
+    function displayLoginHistory(history) {
+      const container = document.getElementById('login-history-list');
+      
+      if (history.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-history text-4xl mb-3 text-gray-400"></i><p>ログイン履歴がありません</p></div>';
+        return;
+      }
+
+      container.innerHTML = history.map(record => {
+        const isSuccess = record.success === 1;
+        const statusColor = isSuccess ? 'green' : 'red';
+        const statusIcon = isSuccess ? 'check-circle' : 'exclamation-circle';
+        const statusText = isSuccess ? '成功' : '失敗';
+        
+        return \`
+          <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition">
+            <div class="flex items-center space-x-4 flex-1">
+              <div class="bg-\${statusColor}-100 rounded-full p-2">
+                <i class="fas fa-\${statusIcon} text-\${statusColor}-600 text-lg"></i>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center space-x-3">
+                  <span class="font-medium text-gray-900">\${record.email || '不明'}</span>
+                  \${record.user_name ? \`<span class="text-sm text-gray-600">(\${record.user_name})</span>\` : ''}
+                  <span class="text-xs px-2 py-1 rounded-full bg-\${statusColor}-100 text-\${statusColor}-700 font-medium">
+                    \${statusText}
+                  </span>
+                </div>
+                <div class="text-sm text-gray-600 mt-1">
+                  <i class="fas fa-clock mr-1"></i>\${formatDateTime(record.login_at)}
+                  <span class="mx-2">|</span>
+                  <i class="fas fa-network-wired mr-1"></i>IP: \${record.ip_address || '不明'}
+                </div>
+                \${!isSuccess && record.failure_reason ? \`
+                  <div class="text-sm text-red-600 mt-1">
+                    <i class="fas fa-info-circle mr-1"></i>理由: \${record.failure_reason}
+                  </div>
+                \` : ''}
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs text-gray-500 truncate max-w-xs" title="\${record.user_agent || '不明'}">
+                <i class="fas fa-desktop mr-1"></i>\${truncateUserAgent(record.user_agent)}
+              </div>
+            </div>
+          </div>
+        \`;
+      }).join('');
+    }
+
+    // 日時をフォーマット
+    function formatDateTime(dateString) {
+      if (!dateString) return '不明';
+      const date = new Date(dateString);
+      return date.toLocaleString('ja-JP', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
+    // User-Agentを短縮
+    function truncateUserAgent(ua) {
+      if (!ua) return '不明';
+      if (ua.length > 50) {
+        return ua.substring(0, 50) + '...';
+      }
+      return ua;
     }
 
     // ファイル一覧を表示

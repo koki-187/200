@@ -36,6 +36,7 @@ import reinfolibApi from './routes/reinfolib-api';
 import buildingRegulations from './routes/building-regulations';
 import monitoring from './routes/monitoring';
 import reports from './routes/reports';
+import investmentSimulator from './routes/investment-simulator';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';

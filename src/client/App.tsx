@@ -1,16 +1,20 @@
-import React from 'react'
-import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
-import DealCreatePage from './pages/DealCreatePage'
-import DealDetailPage from './pages/DealDetailPage'
-import SpecialCasesPage from './pages/SpecialCasesPage'
-import HelpPage from './pages/HelpPage'
-import DealProposalPage from './pages/DealProposalPage'
-import InvestmentSimulatorPage from './pages/InvestmentSimulatorPage'
-import NotificationSettingsPage from './pages/NotificationSettingsPage'
+import React, { Suspense, lazy } from 'react'
 import Toast from './components/Toast'
 import ErrorBoundary from './components/ErrorBoundary'
+import { LoadingIndicator } from './components/LoadingIndicator'
 import { useAuthStore } from './store/authStore'
+
+// コード分割: React.lazy()を使用して動的インポート
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const DealCreatePage = lazy(() => import('./pages/DealCreatePage'))
+const DealDetailPage = lazy(() => import('./pages/DealDetailPage'))
+const SpecialCasesPage = lazy(() => import('./pages/SpecialCasesPage'))
+const HelpPage = lazy(() => import('./pages/HelpPage'))
+const DealProposalPage = lazy(() => import('./pages/DealProposalPage'))
+const InvestmentSimulatorPage = lazy(() => import('./pages/InvestmentSimulatorPage'))
+const NotificationSettingsPage = lazy(() => import('./pages/NotificationSettingsPage'))
+const MonitoringDashboardPage = lazy(() => import('./pages/MonitoringDashboardPage'))
 
 const App: React.FC = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -57,6 +61,8 @@ const App: React.FC = () => {
         return <HelpPage />
       case '/settings/notifications':
         return <NotificationSettingsPage />
+      case '/monitoring':
+        return <MonitoringDashboardPage />
       default:
         return (
           <div className="min-h-screen flex items-center justify-center">
@@ -74,7 +80,9 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      {renderPage()}
+      <Suspense fallback={<LoadingIndicator loading={true} fullScreen={true} message="ページを読み込んでいます..." />}>
+        {renderPage()}
+      </Suspense>
       <Toast />
     </ErrorBoundary>
   )

@@ -34,6 +34,7 @@ import propertyTemplates from './routes/property-templates';
 import storageQuota from './routes/storage-quota';
 import reinfolibApi from './routes/reinfolib-api';
 import buildingRegulations from './routes/building-regulations';
+import monitoring from './routes/monitoring';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -150,6 +151,7 @@ app.route('/api/property-templates', propertyTemplates);
 app.route('/api/storage-quota', storageQuota);
 app.route('/api/reinfolib', reinfolibApi);
 app.route('/api/building-regulations', buildingRegulations);
+app.route('/api/monitoring', monitoring);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {

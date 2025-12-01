@@ -16,7 +16,14 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.68.0)**: https://b7565fe4.real-estate-200units-v2.pages.dev 🆕 **← 最新（投資シミュレーター・PWA対応完了）**
+- **Production URL (Latest v3.69.0)**: https://40aa2396.real-estate-200units-v2.pages.dev 🆕 **← 最新（PWA Manifest修正・投資シミュレーター統合完了）**
+  - 💰 **投資シミュレーター統合**（案件詳細ページからワンクリックアクセス）
+  - 📱 **PWA Manifest修正**（vite.config.ts publicDir設定追加）
+  - 🔧 **レスポンシブ改善**（flex-wrapでモバイル対応強化）
+  - 📊 **OCR機能設定確認**（OPENAI_API_KEY_SETUP.md完備）
+  - 📅 **デプロイ日時**: 2025-12-01 09:09 UTC
+  - 📝 **Git コミット**: 43b478c
+- **Previous URL (v3.68.0)**: https://b7565fe4.real-estate-200units-v2.pages.dev
   - 💰 **投資シミュレーター機能**（利回り・キャッシュフロー・投資回収期間計算）
   - 📱 **PWA対応**（App Manifest、ホーム画面追加対応、オフライン準備）
   - 🔧 **APIレスポンス統一**（building-regulations API改善）

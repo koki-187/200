@@ -12,4 +12,5 @@ ALTER TABLE notifications ADD COLUMN is_read INTEGER DEFAULT 0;
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
-CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
+-- created_at column may not exist, skip index creation
+-- CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);

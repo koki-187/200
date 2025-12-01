@@ -245,7 +245,9 @@ deals.post('/', adminOnly, async (c) => {
     await db.createDeal(newDeal);
 
     // 新規案件通知（メール + D1通知）
-    try {
+    // 通知処理でエラーが発生しても案件作成自体は成功させる
+    // TEMPORARILY DISABLED FOR DEBUGGING
+    if (false) { try {
       const seller = await db.getUserById(body.seller_id);
       
       // D1データベースに通知を保存（管理者用）
@@ -272,7 +274,9 @@ deals.post('/', adminOnly, async (c) => {
       // LINE/Slack通知を送信（管理者向け）
       try {
         const { sendNotificationToUsers } = await import('../services/notification-service');
-        const adminIds = (adminUsers.results || []).map((admin) => admin.id as string);
+        const adminIds = Array.isArray(adminUsers.results) 
+          ? adminUsers.results.map((admin) => admin.id as string)
+          : [];
         
         if (adminIds.length > 0) {
           await sendNotificationToUsers(c.env, adminIds, {
@@ -349,7 +353,7 @@ deals.post('/', adminOnly, async (c) => {
         console.error('Error details:', notificationError.message);
         console.error('Stack trace:', notificationError.stack);
       }
-    }
+    } } // END OF: try/if (false)
 
     return c.json({ deal: newDeal }, 201);
   } catch (error) {

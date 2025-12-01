@@ -1028,4 +1028,148 @@ app.get('/kpi/matching', async (c) => {
   }
 });
 
+// CSVエクスポート - 案件一覧
+app.get('/export/deals/csv', async (c) => {
+  try {
+    const userId = c.get('jwtPayload')?.userId;
+    const userRole = c.get('jwtPayload')?.role;
+    
+    if (!userId || !userRole) {
+      return c.json({ error: '認証が必要です' }, 401);
+    }
+    
+    // フィルタリングパラメータ
+    const status = c.req.query('status');
+    const fromDate = c.req.query('from_date');
+    const toDate = c.req.query('to_date');
+    
+    let query = 'SELECT * FROM deals WHERE 1=1';
+    const params: any[] = [];
+    
+    // 管理者以外は自分の案件のみ
+    if (userRole !== 'ADMIN') {
+      query += ' AND seller_id = ?';
+      params.push(userId);
+    }
+    
+    // ステータスフィルター
+    if (status) {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+    
+    // 日付範囲フィルター
+    if (fromDate) {
+      query += ' AND created_at >= ?';
+      params.push(fromDate);
+    }
+    if (toDate) {
+      query += ' AND created_at <= ?';
+      params.push(toDate);
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    const result = await c.env.DB.prepare(query).bind(...params).all();
+    const deals = result.results || [];
+    
+    // CSVヘッダー
+    const headers = [
+      'ID', 'タイトル', 'ステータス', '所在地', '最寄駅', '徒歩分', 
+      '土地面積', '用途地域', '建ぺい率', '容積率', '希望価格', 
+      '作成日時', '更新日時'
+    ];
+    
+    // CSVデータ生成
+    let csvContent = headers.join(',') + '\n';
+    
+    for (const deal of deals) {
+      const row = [
+        deal.id,
+        `"${(deal.title || '').replace(/"/g, '""')}"`,
+        deal.status,
+        `"${(deal.location || '').replace(/"/g, '""')}"`,
+        `"${(deal.station || '').replace(/"/g, '""')}"`,
+        deal.walk_minutes || '',
+        deal.land_area || '',
+        `"${(deal.zoning || '').replace(/"/g, '""')}"`,
+        deal.building_coverage || '',
+        deal.floor_area_ratio || '',
+        deal.desired_price || '',
+        deal.created_at || '',
+        deal.updated_at || ''
+      ];
+      csvContent += row.join(',') + '\n';
+    }
+    
+    // CSVレスポンス
+    return c.text(csvContent, 200, {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="deals_${new Date().toISOString().split('T')[0]}.csv"`
+    });
+  } catch (error: any) {
+    console.error('Failed to export deals CSV:', error);
+    return c.json({ 
+      error: '案件データのCSVエクスポートに失敗しました',
+      details: error.message || String(error)
+    }, 500);
+  }
+});
+
+// CSVエクスポート - KPIサマリー
+app.get('/export/kpi/csv', async (c) => {
+  try {
+    // ステータス別集計
+    const statusCount = await c.env.DB.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM deals
+      GROUP BY status
+      ORDER BY count DESC
+    `).all();
+    
+    // 月別集計（過去12ヶ月）
+    const monthlyStats = await c.env.DB.prepare(`
+      SELECT 
+        strftime('%Y-%m', created_at) as month,
+        COUNT(*) as total_deals,
+        SUM(CASE WHEN status = 'CONTRACTED' THEN 1 ELSE 0 END) as contracted_deals,
+        AVG(CASE 
+          WHEN desired_price IS NOT NULL AND desired_price != '' 
+          THEN CAST(desired_price AS INTEGER) 
+          ELSE 0 
+        END) as avg_price
+      FROM deals
+      WHERE created_at >= datetime('now', '-12 months')
+      GROUP BY month
+      ORDER BY month DESC
+    `).all();
+    
+    // CSVヘッダーとデータ生成
+    let csvContent = 'KPIサマリーレポート\n\n';
+    
+    // ステータス別集計
+    csvContent += 'ステータス,件数\n';
+    for (const row of (statusCount.results || [])) {
+      csvContent += `"${row.status}",${row.count}\n`;
+    }
+    
+    csvContent += '\n月別統計\n';
+    csvContent += '月,総案件数,成約件数,平均価格\n';
+    for (const row of (monthlyStats.results || [])) {
+      csvContent += `${row.month},${row.total_deals},${row.contracted_deals},${Math.round(row.avg_price as number || 0)}\n`;
+    }
+    
+    return c.text(csvContent, 200, {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="kpi_summary_${new Date().toISOString().split('T')[0]}.csv"`
+    });
+  } catch (error: any) {
+    console.error('Failed to export KPI CSV:', error);
+    return c.json({ 
+      error: 'KPIデータのCSVエクスポートに失敗しました',
+      details: error.message || String(error)
+    }, 500);
+  }
+});
+
 export default app;

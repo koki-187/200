@@ -27,10 +27,8 @@ app.get('/check', async (c) => {
     
     return c.json({
       success: true,
-      applicable_regulations: result.applicable_regulations,
-      has_parking_requirement: result.has_parking_requirement,
-      parking_info: result.parking_info,
-      total_regulations: result.applicable_regulations.length
+      data: result,
+      message: `${result.applicable_regulations.length}件の建築基準法規定を検出しました`
     });
   } catch (error) {
     console.error('建築基準法チェックエラー:', error);

@@ -6,6 +6,7 @@ import DealDetailPage from './pages/DealDetailPage'
 import SpecialCasesPage from './pages/SpecialCasesPage'
 import HelpPage from './pages/HelpPage'
 import DealProposalPage from './pages/DealProposalPage'
+import InvestmentSimulatorPage from './pages/InvestmentSimulatorPage'
 import Toast from './components/Toast'
 import { useAuthStore } from './store/authStore'
 
@@ -28,6 +29,11 @@ const App: React.FC = () => {
     // Deal proposal page (must come before detail page)
     if (pathname.match(/^\/deals\/[^\/]+\/proposal$/)) {
       return <DealProposalPage />
+    }
+
+    // Investment simulator page (must come before detail page)
+    if (pathname.match(/^\/deals\/[^\/]+\/simulator$/)) {
+      return <InvestmentSimulatorPage />
     }
 
     // Deal detail page (must come before switch)

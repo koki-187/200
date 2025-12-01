@@ -9951,9 +9951,33 @@ app.get('/investment-simulator', (c) => {
     <!-- アクションボタン -->
     <div class="mb-6 flex justify-between items-center">
       <h2 class="text-2xl font-bold text-gray-900">シナリオ一覧</h2>
-      <button onclick="showCreateModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-all">
-        <i class="fas fa-plus mr-2"></i>新規シナリオ作成
-      </button>
+      <div class="flex gap-3">
+        <button onclick="showCompareMode()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg shadow-lg transition-all">
+          <i class="fas fa-chart-bar mr-2"></i>シナリオ比較
+        </button>
+        <button onclick="showCreateModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-all">
+          <i class="fas fa-plus mr-2"></i>新規シナリオ作成
+        </button>
+      </div>
+    </div>
+    
+    <!-- 比較モード表示 -->
+    <div id="compare-mode-banner" class="mb-4 bg-purple-100 border-l-4 border-purple-600 p-4 rounded hidden">
+      <div class="flex justify-between items-center">
+        <div>
+          <p class="font-bold text-purple-900">比較モード</p>
+          <p class="text-sm text-purple-700">比較したいシナリオを選択してください（最大5つ）</p>
+          <p class="text-xs text-purple-600 mt-1">選択数: <span id="compare-count">0</span></p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="compareSelected()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
+            <i class="fas fa-chart-bar mr-1"></i>比較実行
+          </button>
+          <button onclick="cancelCompareMode()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm">
+            キャンセル
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- シナリオ一覧 -->
@@ -10244,15 +10268,34 @@ app.get('/investment-simulator', (c) => {
     // シナリオカード作成
     function createScenarioCard(scenario) {
       const div = document.createElement('div');
-      div.className = 'bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all cursor-pointer';
-      div.onclick = () => showDetail(scenario.id);
+      const isSelected = selectedForCompare.has(scenario.id);
+      div.className = \`bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all relative \${isSelected ? 'ring-4 ring-purple-500' : ''}\`;
 
       const isFavorite = scenario.is_favorite === 1;
       
+      // 比較モードの場合はクリックで選択/解除
+      if (compareMode) {
+        div.onclick = () => toggleCompareSelection(scenario.id);
+        div.style.cursor = 'pointer';
+      }
+      
       div.innerHTML = \`
-        <div class="flex justify-between items-start mb-4">
-          <h3 class="text-xl font-bold text-gray-900">\${scenario.name}</h3>
-          \${isFavorite ? '<i class="fas fa-star text-yellow-500"></i>' : ''}
+        \${compareMode ? \`
+          <div class="absolute top-2 left-2">
+            <input type="checkbox" \${isSelected ? 'checked' : ''} class="w-5 h-5 text-purple-600" readonly>
+          </div>
+        \` : ''}
+        
+        <div class="flex justify-between items-start mb-4 \${compareMode ? 'ml-8' : ''}">
+          <h3 class="text-xl font-bold text-gray-900 \${!compareMode ? 'cursor-pointer' : ''}" \${!compareMode ? \`onclick="showDetail(\${scenario.id})"\` : ''}>\${scenario.name}</h3>
+          \${!compareMode ? \`
+            <button 
+              onclick="event.stopPropagation(); toggleFavorite(\${scenario.id}, \${!isFavorite})" 
+              class="text-2xl hover:scale-110 transition-transform"
+              title="\${isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}">
+              <i class="fas fa-star \${isFavorite ? 'text-yellow-500' : 'text-gray-300'}"></i>
+            </button>
+          \` : ''}
         </div>
         
         \${scenario.description ? \`<p class="text-gray-600 text-sm mb-4">\${scenario.description}</p>\` : ''}
@@ -10278,9 +10321,169 @@ app.get('/investment-simulator', (c) => {
             <span class="font-medium text-green-600">\${Number(scenario.annual_cash_flow).toLocaleString()}万円</span>
           </div>
         </div>
+        
+        \${!compareMode ? \`
+          <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between">
+            <button 
+              onclick="event.stopPropagation(); editScenario(\${scenario.id})" 
+              class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+              <i class="fas fa-edit mr-1"></i>編集
+            </button>
+            <button 
+              onclick="event.stopPropagation(); deleteScenarioConfirm(\${scenario.id})" 
+              class="text-red-600 hover:text-red-800 text-sm font-medium">
+              <i class="fas fa-trash mr-1"></i>削除
+            </button>
+          </div>
+        \` : ''}
       \`;
       
       return div;
+    }
+
+    // お気に入り切り替え
+    async function toggleFavorite(id, isFavorite) {
+      try {
+        await axios.patch(\`/api/investment-simulator/\${id}/favorite\`, { is_favorite: isFavorite });
+        loadScenarios(); // リロード
+      } catch (error) {
+        console.error('Error toggling favorite:', error);
+        alert('お気に入りの切り替えに失敗しました');
+      }
+    }
+
+    // 削除確認
+    async function deleteScenarioConfirm(id) {
+      if (!confirm('このシナリオを削除しますか？この操作は取り消せません。')) {
+        return;
+      }
+      
+      try {
+        await axios.delete(\`/api/investment-simulator/\${id}\`);
+        alert('シナリオを削除しました');
+        loadScenarios();
+      } catch (error) {
+        console.error('Error deleting scenario:', error);
+        alert('シナリオの削除に失敗しました');
+      }
+    }
+
+    // 編集機能（詳細モーダルを開く）
+    async function editScenario(id) {
+      showDetail(id);
+    }
+
+    // 比較モード
+    let compareMode = false;
+    let selectedForCompare = new Set();
+
+    function showCompareMode() {
+      compareMode = true;
+      selectedForCompare.clear();
+      document.getElementById('compare-mode-banner').classList.remove('hidden');
+      updateCompareCount();
+      loadScenarios(); // カードを再描画
+    }
+
+    function cancelCompareMode() {
+      compareMode = false;
+      selectedForCompare.clear();
+      document.getElementById('compare-mode-banner').classList.add('hidden');
+      updateCompareCount();
+      loadScenarios();
+    }
+
+    function toggleCompareSelection(id) {
+      if (selectedForCompare.has(id)) {
+        selectedForCompare.delete(id);
+      } else {
+        if (selectedForCompare.size >= 5) {
+          alert('最大5つまで選択できます');
+          return;
+        }
+        selectedForCompare.add(id);
+      }
+      updateCompareCount();
+      loadScenarios();
+    }
+
+    function updateCompareCount() {
+      const countEl = document.getElementById('compare-count');
+      if (countEl) {
+        countEl.textContent = selectedForCompare.size;
+      }
+    }
+
+    async function compareSelected() {
+      if (selectedForCompare.size < 2) {
+        alert('2つ以上のシナリオを選択してください');
+        return;
+      }
+
+      try {
+        const response = await axios.post('/api/investment-simulator/compare', {
+          scenario_ids: Array.from(selectedForCompare)
+        });
+
+        // 比較結果をモーダルで表示
+        showCompareResults(response.data);
+      } catch (error) {
+        console.error('Error comparing scenarios:', error);
+        alert('シナリオの比較に失敗しました');
+      }
+    }
+
+    function showCompareResults(data) {
+      // 簡易的な比較結果表示（フルバージョンは別途実装）
+      const scenarios = data.scenarios;
+      const metrics = data.metrics;
+
+      let html = '<div class="space-y-4">';
+      html += '<h3 class="text-xl font-bold mb-4">シナリオ比較結果</h3>';
+      
+      html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+      scenarios.forEach(s => {
+        html += \`
+          <div class="border rounded-lg p-4 \${metrics.best_roi?.id === s.id ? 'bg-yellow-50 border-yellow-500' : ''}">
+            <h4 class="font-bold text-lg mb-2">\${s.name}</h4>
+            <div class="space-y-1 text-sm">
+              <div class="flex justify-between"><span>ROI:</span><span class="font-medium">\${s.roi.toFixed(2)}%</span></div>
+              <div class="flex justify-between"><span>Cap Rate:</span><span class="font-medium">\${s.cap_rate.toFixed(2)}%</span></div>
+              <div class="flex justify-between"><span>年間CF:</span><span class="font-medium">\${Number(s.annual_cash_flow).toLocaleString()}万円</span></div>
+              <div class="flex justify-between"><span>DCR:</span><span class="font-medium">\${s.debt_coverage_ratio.toFixed(2)}</span></div>
+            </div>
+          </div>
+        \`;
+      });
+      html += '</div>';
+
+      html += '<div class="mt-4 bg-blue-50 p-4 rounded-lg">';
+      html += '<p class="font-bold text-blue-900 mb-2">ベストパフォーマンス</p>';
+      html += \`<p class="text-sm">最高ROI: \${metrics.best_roi?.name} (\${metrics.best_roi?.roi.toFixed(2)}%)</p>\`;
+      html += \`<p class="text-sm">最高CF: \${metrics.best_cash_flow?.name} (\${Number(metrics.best_cash_flow?.annual_cash_flow).toLocaleString()}万円)</p>\`;
+      html += \`<p class="text-sm">最高Cap Rate: \${metrics.best_cap_rate?.name} (\${metrics.best_cap_rate?.cap_rate.toFixed(2)}%)</p>\`;
+      html += \`<p class="text-sm">最低リスク: \${metrics.lowest_risk?.name} (DCR \${metrics.lowest_risk?.debt_coverage_ratio.toFixed(2)})</p>\`;
+      html += '</div>';
+
+      html += '</div>';
+
+      // モーダル表示
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50';
+      modal.innerHTML = \`
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+          \${html}
+          <div class="mt-6 text-right">
+            <button onclick="this.closest('.fixed').remove()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg">
+              閉じる
+            </button>
+          </div>
+        </div>
+      \`;
+      document.body.appendChild(modal);
+
+      // 比較モード終了
+      cancelCompareMode();
     }
 
     // 新規作成モーダル表示

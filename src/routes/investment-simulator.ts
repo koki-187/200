@@ -655,4 +655,34 @@ investmentSimulator.get('/:id/report', authMiddleware, asyncHandler(async (c) =>
   return c.json(report)
 }))
 
+// お気に入り切り替え
+investmentSimulator.patch('/:id/favorite', authMiddleware, asyncHandler(async (c) => {
+  const user = c.get('user')
+  const db = c.env.DB
+  const scenarioId = parseInt(c.req.param('id'))
+  const body = await c.req.json()
+  const { is_favorite } = body
+  
+  // 所有権確認
+  const existing = await db
+    .prepare('SELECT id FROM investment_scenarios WHERE id = ? AND user_id = ?')
+    .bind(scenarioId, user.id)
+    .first()
+  
+  if (!existing) {
+    return c.json({ error: 'シナリオが見つかりません' }, 404)
+  }
+  
+  // お気に入り更新
+  await db
+    .prepare('UPDATE investment_scenarios SET is_favorite = ? WHERE id = ?')
+    .bind(is_favorite ? 1 : 0, scenarioId)
+    .run()
+  
+  return c.json({ 
+    message: is_favorite ? 'お気に入りに追加しました' : 'お気に入りから削除しました',
+    is_favorite: is_favorite 
+  })
+}))
+
 export default investmentSimulator

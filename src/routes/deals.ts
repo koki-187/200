@@ -5,7 +5,7 @@ import { authMiddleware, adminOnly } from '../utils/auth';
 import { calculate48HourDeadline } from '../utils/businessTime';
 import { nanoid } from 'nanoid';
 import { createEmailService } from '../utils/email';
-import { validateData, dealSchema, dealUpdateSchema } from '../utils/validation';
+import { validateData, dealSchema, dealUpdateSchema, dealCreateSchema } from '../utils/validation';
 
 const deals = new Hono<{ Bindings: Bindings }>();
 
@@ -197,10 +197,13 @@ deals.post('/', adminOnly, async (c) => {
     const body = await c.req.json();
     const userId = c.get('userId') as string;
 
-    // Zodバリデーション
-    const validation = validateData(dealSchema, body);
+    // 初回6情報の必須チェック（Zodバリデーション）
+    const validation = validateData(dealCreateSchema, body);
     if (!validation.success) {
-      return c.json({ error: 'Validation failed', details: validation.errors }, 400);
+      return c.json({ 
+        error: '初回必須情報が不足しています。以下の項目を入力してください。', 
+        details: validation.errors 
+      }, 400);
     }
 
     const db = new Database(c.env.DB);

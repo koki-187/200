@@ -62,6 +62,42 @@ export const dealSchema = z.object({
   remarks: z.string().max(2000, '備考は2000文字以内で入力してください').optional()
 });
 
+// 初回6情報の必須チェック用スキーマ
+// 1. 所在地（住居表示／地番）・最寄駅
+// 2. 面積（実測／公簿）
+// 3. 用途・建蔽・容積・高度・防火
+// 4. 接道（方位・幅員・間口）
+// 5. 現況
+// 6. 希望価格
+export const requiredInitialInfoSchema = z.object({
+  // 1. 所在地・最寄駅
+  location: z.string().min(1, '【必須】所在地を入力してください').max(500, '所在地は500文字以内で入力してください'),
+  station: z.string().min(1, '【必須】最寄駅を入力してください').max(200, '最寄駅は200文字以内で入力してください'),
+  
+  // 2. 面積（実測／公簿）
+  land_area: z.string().min(1, '【必須】土地面積を入力してください').max(100, '面積は100文字以内で入力してください'),
+  
+  // 3. 用途・建蔽・容積・高度・防火
+  zoning: z.string().min(1, '【必須】用途地域を入力してください').max(100, '用途地域は100文字以内で入力してください'),
+  building_coverage: z.string().min(1, '【必須】建蔽率を入力してください').max(50, '建蔽率は50文字以内で入力してください'),
+  floor_area_ratio: z.string().min(1, '【必須】容積率を入力してください').max(50, '容積率は50文字以内で入力してください'),
+  height_district: z.string().max(100, '高度地区は100文字以内で入力してください').optional(),
+  fire_zone: z.string().min(1, '【必須】防火地域区分を入力してください').max(100, '防火地域は100文字以内で入力してください'),
+  
+  // 4. 接道（方位・幅員・間口）
+  road_info: z.string().min(1, '【必須】接道状況（方位・幅員）を入力してください').max(500, '接道状況は500文字以内で入力してください'),
+  frontage: z.string().min(1, '【必須】間口を入力してください').max(50, '間口は50文字以内で入力してください'),
+  
+  // 5. 現況
+  current_status: z.string().min(1, '【必須】現況を入力してください').max(200, '現況は200文字以内で入力してください'),
+  
+  // 6. 希望価格
+  desired_price: z.string().min(1, '【必須】希望価格を入力してください').max(100, '希望価格は100文字以内で入力してください')
+});
+
+// 通常の案件作成スキーマに初回6情報の必須チェックを統合
+export const dealCreateSchema = dealSchema.merge(requiredInitialInfoSchema);
+
 export const dealUpdateSchema = dealSchema.partial().extend({
   id: z.string().min(1, '案件IDが必要です')
 });

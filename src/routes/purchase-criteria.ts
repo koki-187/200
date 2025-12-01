@@ -134,4 +134,170 @@ app.get('/check/:dealId', async (c) => {
   }
 });
 
+/**
+ * POST /api/purchase-criteria/special-case
+ * 特別案件申請（クライテリア非該当時）
+ */
+app.post('/special-case', async (c) => {
+  try {
+    const { DB } = c.env;
+    const { deal_id, reason } = await c.req.json();
+    
+    if (!deal_id || !reason) {
+      return c.json({
+        success: false,
+        error: '案件IDと理由は必須です'
+      }, 400);
+    }
+    
+    // 案件の存在確認
+    const deal = await DB
+      .prepare('SELECT id, title FROM deals WHERE id = ?')
+      .bind(deal_id)
+      .first();
+    
+    if (!deal) {
+      return c.json({
+        success: false,
+        error: '案件が見つかりません'
+      }, 404);
+    }
+    
+    // 特別案件フラグと理由を設定
+    await DB
+      .prepare(`
+        UPDATE deals 
+        SET is_special_case = 1,
+            special_case_reason = ?,
+            special_case_status = 'PENDING',
+            updated_at = datetime('now')
+        WHERE id = ?
+      `)
+      .bind(reason, deal_id)
+      .run();
+    
+    return c.json({
+      success: true,
+      message: '特別案件として申請しました。管理者の承認をお待ちください。'
+    });
+  } catch (error) {
+    console.error('特別案件申請エラー:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : '特別案件申請に失敗しました'
+    }, 500);
+  }
+});
+
+/**
+ * PUT /api/purchase-criteria/special-case/:dealId/review
+ * 特別案件の承認/却下（管理者のみ）
+ */
+app.put('/special-case/:dealId/review', async (c) => {
+  try {
+    const { DB } = c.env;
+    const dealId = c.req.param('dealId');
+    const { status, reviewer_id } = await c.req.json();
+    
+    if (!status || !reviewer_id) {
+      return c.json({
+        success: false,
+        error: 'ステータスとレビュアーIDは必須です'
+      }, 400);
+    }
+    
+    if (!['APPROVED', 'REJECTED'].includes(status)) {
+      return c.json({
+        success: false,
+        error: '有効なステータスを指定してください（APPROVED, REJECTED）'
+      }, 400);
+    }
+    
+    // 案件の存在確認
+    const deal = await DB
+      .prepare('SELECT id, title, is_special_case FROM deals WHERE id = ?')
+      .bind(dealId)
+      .first();
+    
+    if (!deal) {
+      return c.json({
+        success: false,
+        error: '案件が見つかりません'
+      }, 404);
+    }
+    
+    if (!deal.is_special_case) {
+      return c.json({
+        success: false,
+        error: 'この案件は特別案件ではありません'
+      }, 400);
+    }
+    
+    // 特別案件ステータスを更新
+    await DB
+      .prepare(`
+        UPDATE deals 
+        SET special_case_status = ?,
+            special_case_reviewed_by = ?,
+            special_case_reviewed_at = datetime('now'),
+            updated_at = datetime('now')
+        WHERE id = ?
+      `)
+      .bind(status, reviewer_id, dealId)
+      .run();
+    
+    return c.json({
+      success: true,
+      message: status === 'APPROVED' ? '特別案件を承認しました' : '特別案件を却下しました'
+    });
+  } catch (error) {
+    console.error('特別案件レビューエラー:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : '特別案件レビューに失敗しました'
+    }, 500);
+  }
+});
+
+/**
+ * GET /api/purchase-criteria/special-cases
+ * 特別案件一覧取得（管理者用）
+ */
+app.get('/special-cases', async (c) => {
+  try {
+    const { DB } = c.env;
+    const status = c.req.query('status') || 'PENDING';
+    
+    let query = `
+      SELECT d.*, u.name as seller_name 
+      FROM deals d
+      LEFT JOIN users u ON d.seller_id = u.id
+      WHERE d.is_special_case = 1
+    `;
+    
+    const params: any[] = [];
+    
+    if (status && status !== 'ALL') {
+      query += ' AND d.special_case_status = ?';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY d.created_at DESC';
+    
+    const result = await DB.prepare(query).bind(...params).all();
+    
+    return c.json({
+      success: true,
+      data: result.results || [],
+      total: result.results?.length || 0
+    });
+  } catch (error) {
+    console.error('特別案件一覧取得エラー:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : '特別案件一覧の取得に失敗しました'
+    }, 500);
+  }
+});
+
 export default app;

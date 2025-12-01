@@ -33,6 +33,7 @@ import dealValidation from './routes/deal-validation';
 import propertyTemplates from './routes/property-templates';
 import storageQuota from './routes/storage-quota';
 import reinfolibApi from './routes/reinfolib-api';
+import buildingRegulations from './routes/building-regulations';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -144,6 +145,7 @@ app.route('/api/ocr-jobs', ocrJobs);
 app.route('/api/property-templates', propertyTemplates);
 app.route('/api/storage-quota', storageQuota);
 app.route('/api/reinfolib', reinfolibApi);
+app.route('/api/building-regulations', buildingRegulations);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {

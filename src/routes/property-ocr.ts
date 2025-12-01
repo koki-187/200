@@ -20,18 +20,32 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 /**
- * 物件情報抽出用の改良版システムプロンプト
+ * 物件情報抽出用の改良版システムプロンプト（初回6情報重視版）
  */
 const PROPERTY_EXTRACTION_PROMPT = `あなたは20年以上の経験を持つ不動産物件資料の情報抽出専門家です。
 登記簿謄本、物件概要書、仲介資料などから、物件情報を高精度で抽出してください。
 
+# ⚠️ 初回必須情報（最優先で抽出）
+
+以下の6つの情報は**必須項目**です。これらは高精度で抽出してください：
+
+1. **所在地（location）・最寄駅（station）**: 完全な住所と最寄り駅を必ず抽出
+2. **面積（land_area）**: 土地面積（実測／公簿）を単位込みで抽出
+3. **用途地域（zoning）・建蔽率（building_coverage）・容積率（floor_area_ratio）・防火地域（fire_zone）**: 都市計画情報を正確に抽出
+4. **接道（road_info）・間口（frontage）**: 接道状況（方位・幅員）と間口を詳細に抽出
+5. **現況（current_status）**: 物件の現在の状態を明確に抽出
+6. **希望価格（price）**: 価格情報を単位込みで正確に抽出
+
+これらの情報がない場合、案件受付ができません。最優先で抽出してください。
+
 # 重要な抽出ルール
 
 ## 文字認識の優先順位
-1. **明瞭な印字テキスト**を最優先で読み取る
-2. 手書き文字は文脈から推測して補完する
-3. 不鮮明な部分は null とし、確実な情報のみ抽出する
-4. 複数ページに情報が分散している場合は、最新または最も詳細な情報を採用する
+1. **初回6情報を最優先**で読み取る
+2. **明瞭な印字テキスト**を最優先で読み取る
+3. 手書き文字は文脈から推測して補完する
+4. 不鮮明な部分は null とし、確実な情報のみ抽出する
+5. 複数ページに情報が分散している場合は、最新または最も詳細な情報を採用する
 
 ## フィールド別の抽出ガイド
 
@@ -50,10 +64,12 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは20年以上の経験を持つ不
 - 「実測」「登記」の記載があれば含める
 - 例: "218.14㎡（実測）"
 
-### 用途地域・建蔽率・容積率（zoning, building_coverage, floor_area_ratio）
+### 用途地域・建蔽率・容積率・高度地区・防火地域（zoning, building_coverage, floor_area_ratio, height_district, fire_zone）【必須】
 - 正式名称で抽出（略称不可）
 - 建蔽率・容積率はパーセント記号を含める
-- 例: zoning: "第一種住居地域", building_coverage: "60%", floor_area_ratio: "200%"
+- 高度地区: "第1種高度地区"、"第2種高度地区"、"指定なし" など
+- 防火地域: "防火地域"、"準防火地域"、"指定なし" など
+- 例: zoning: "第一種住居地域", building_coverage: "60%", floor_area_ratio: "200%", height_district: "第2種高度地区", fire_zone: "準防火地域"
 
 ### 価格（price）
 - 単位を含めて正確に抽出（万円、億円、千万円など）
@@ -91,6 +107,8 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは20年以上の経験を持つ不
   "zoning": {"value": "用途地域（正式名称）", "confidence": 0.93},
   "building_coverage": {"value": "建蔽率（%込み）", "confidence": 0.90},
   "floor_area_ratio": {"value": "容積率（%込み）", "confidence": 0.91},
+  "height_district": {"value": "高度地区（正式名称）", "confidence": 0.88},
+  "fire_zone": {"value": "防火地域区分（正式名称）", "confidence": 0.90},
   "price": {"value": "価格（単位込み）", "confidence": 0.85},
   "structure": {"value": "構造（正式名称）", "confidence": 0.80},
   "built_year": {"value": "築年月", "confidence": 0.75},

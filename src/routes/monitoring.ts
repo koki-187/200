@@ -7,6 +7,8 @@ import { Hono } from 'hono'
 import { Bindings } from '../types'
 import { authMiddleware } from '../utils/auth'
 import { asyncHandler } from '../middleware/error-handler'
+import { getApiMetrics } from '../middleware/api-logger'
+import { getErrorStats } from '../utils/error-logger'
 
 const monitoring = new Hono<{ Bindings: Bindings }>()
 
@@ -69,6 +71,7 @@ monitoring.get('/health', asyncHandler(async (c) => {
 
 /**
  * メトリクス取得（管理者のみ）
+ * 時間範囲指定可能: hour, day, week
  */
 monitoring.get('/metrics', authMiddleware, asyncHandler(async (c) => {
   const user = c.get('user')
@@ -79,74 +82,50 @@ monitoring.get('/metrics', authMiddleware, asyncHandler(async (c) => {
   }
   
   const db = c.env.DB
-  const now = new Date()
-  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+  const timeRange = (c.req.query('timeRange') || 'day') as 'hour' | 'day' | 'week'
   
-  // APIコール統計を取得
-  const apiStats = await db
-    .prepare(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status_code < 400 THEN 1 ELSE 0 END) as successful,
-        SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as failed,
-        AVG(response_time) as avg_response_time
-      FROM api_logs
-      WHERE created_at >= ?
-    `)
-    .bind(oneHourAgo.toISOString())
-    .first<{
-      total: number
-      successful: number
-      failed: number
-      avg_response_time: number
-    }>()
+  // 新しいAPIメトリクス取得関数を使用
+  const apiMetrics = await getApiMetrics(db, timeRange)
   
-  // エラー統計を取得
-  const errorStats = await db
-    .prepare(`
-      SELECT 
-        error_code,
-        endpoint,
-        COUNT(*) as count
-      FROM error_logs
-      WHERE created_at >= ?
-      GROUP BY error_code, endpoint
-    `)
-    .bind(oneHourAgo.toISOString())
-    .all<{ error_code: string; endpoint: string; count: number }>()
-  
-  // エラーをコード別、エンドポイント別に集計
-  const errorsByCode: Record<string, number> = {}
-  const errorsByEndpoint: Record<string, number> = {}
-  let totalErrors = 0
-  
-  for (const row of errorStats.results || []) {
-    totalErrors += row.count
-    errorsByCode[row.error_code] = (errorsByCode[row.error_code] || 0) + row.count
-    errorsByEndpoint[row.endpoint] = (errorsByEndpoint[row.endpoint] || 0) + row.count
-  }
+  // 新しいエラー統計取得関数を使用
+  const errorStats = await getErrorStats(db, timeRange)
   
   const metrics: PerformanceMetrics = {
-    timestamp: now.toISOString(),
+    timestamp: new Date().toISOString(),
     apiCalls: {
-      total: apiStats?.total || 0,
-      successful: apiStats?.successful || 0,
-      failed: apiStats?.failed || 0,
-      averageResponseTime: Math.round(apiStats?.avg_response_time || 0),
+      total: apiMetrics.totalCalls,
+      successful: apiMetrics.successCalls,
+      failed: apiMetrics.errorCalls,
+      averageResponseTime: Math.round(apiMetrics.avgResponseTime),
     },
     errors: {
-      total: totalErrors,
-      byCode: errorsByCode,
-      byEndpoint: errorsByEndpoint,
+      total: errorStats.totalErrors,
+      byCode: errorStats.errorsByType.reduce((acc, item) => {
+        acc[item.type] = item.count
+        return acc
+      }, {} as Record<string, number>),
+      byEndpoint: apiMetrics.errorRates.reduce((acc, item) => {
+        acc[item.endpoint] = item.errorRate
+        return acc
+      }, {} as Record<string, number>),
     },
     database: {
-      queries: 0, // 実装予定
-      averageQueryTime: 0, // 実装予定
-      errors: 0, // 実装予定
+      queries: 0, // 将来的に実装
+      averageQueryTime: 0, // 将来的に実装
+      errors: 0, // 将来的に実装
     },
   }
   
-  return c.json(metrics)
+  return c.json({
+    ...metrics,
+    details: {
+      topEndpoints: apiMetrics.topEndpoints,
+      errorRates: apiMetrics.errorRates,
+      unresolvedErrors: errorStats.unresolvedErrors,
+      errorsBySeverity: errorStats.errorsBySeverity,
+      topErrors: errorStats.topErrors,
+    },
+  })
 }))
 
 /**

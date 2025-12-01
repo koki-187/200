@@ -41,6 +41,7 @@ import { rateLimitPresets } from './middleware/rate-limit';
 import { apiVersionMiddleware, getApiVersionInfo } from './middleware/api-version';
 import { errorTrackingMiddleware, initializeErrorTracker } from './middleware/error-tracking';
 import { errorHandler } from './middleware/error-handler';
+import { apiLogger } from './middleware/api-logger';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -107,6 +108,9 @@ app.use('/api/*', cors({
   allowHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
+
+// APIロギング（全APIルートに適用、最優先）
+app.use('/api/*', apiLogger());
 
 // エラートラッキング（全APIルートに適用）
 app.use('/api/*', errorTrackingMiddleware());

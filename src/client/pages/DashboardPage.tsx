@@ -9,9 +9,11 @@ import { exportDealsToExcel } from '../../utils/excel'
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuthStore()
-  const { deals, setDeals, filters, sortBy, sortOrder, viewMode, setViewMode } = useDealStore()
+  const { deals, setDeals, filters, sortBy, sortOrder, viewMode, setViewMode, setFilters, setSorting, resetFilters } = useDealStore()
   const { get, loading } = useGet<{ deals: Deal[] }>()
   const { success, error } = useToast()
+  const [showFilters, setShowFilters] = useState(false)
+  const [searchTerm, setSearchTerm] = useState(filters.searchTerm || '')
 
   useEffect(() => {
     loadDeals()
@@ -24,6 +26,19 @@ const DashboardPage: React.FC = () => {
     } else if (result.error) {
       error(result.error)
     }
+  }
+
+  const handleSearch = () => {
+    setFilters({ ...filters, searchTerm })
+  }
+
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters({ ...filters, [key]: value })
+  }
+
+  const handleResetFilters = () => {
+    resetFilters()
+    setSearchTerm('')
   }
 
   const handleExport = async () => {
@@ -150,6 +165,164 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-6 bg-white shadow rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="案件名、所在地、価格で検索..."
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSearch}
+                className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 min-h-[44px]"
+              >
+                🔍 検索
+              </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 min-h-[44px] ${
+                  showFilters ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                🎛️ フィルター
+              </button>
+              {Object.keys(filters).length > 0 && (
+                <button
+                  onClick={handleResetFilters}
+                  className="flex-1 sm:flex-none px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 min-h-[44px]"
+                >
+                  ✖ リセット
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Advanced Filters */}
+        {showFilters && (
+          <div className="mb-6 bg-white shadow rounded-lg p-4 sm:p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">詳細フィルター</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ステータス</label>
+                <select
+                  value={filters.status || ''}
+                  onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                >
+                  <option value="">すべて</option>
+                  <option value="NEW">新規</option>
+                  <option value="RESPONDING">回答中</option>
+                  <option value="NEGOTIATING">交渉中</option>
+                  <option value="CONTRACTED">契約済</option>
+                  <option value="DECLINED">辞退</option>
+                  <option value="CANCELLED">キャンセル</option>
+                </select>
+              </div>
+
+              {/* Deadline Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">回答期限</label>
+                <select
+                  value={filters.deadlineStatus || ''}
+                  onChange={(e) => handleFilterChange('deadlineStatus', e.target.value || undefined)}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                >
+                  <option value="">すべて</option>
+                  <option value="expired">期限切れ</option>
+                  <option value="24h">24時間以内</option>
+                  <option value="48h">48時間以内</option>
+                  <option value="upcoming">それ以降</option>
+                </select>
+              </div>
+
+              {/* Sort By */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">並び替え</label>
+                <select
+                  value={`${sortBy}_${sortOrder}`}
+                  onChange={(e) => {
+                    const [newSortBy, newSortOrder] = e.target.value.split('_') as [typeof sortBy, typeof sortOrder]
+                    setSorting(newSortBy, newSortOrder)
+                  }}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                >
+                  <option value="updated_at_desc">更新日時（新しい順）</option>
+                  <option value="updated_at_asc">更新日時（古い順）</option>
+                  <option value="created_at_desc">作成日時（新しい順）</option>
+                  <option value="created_at_asc">作成日時（古い順）</option>
+                  <option value="deadline_asc">回答期限（近い順）</option>
+                  <option value="deadline_desc">回答期限（遠い順）</option>
+                  <option value="title_asc">案件名（A-Z）</option>
+                  <option value="title_desc">案件名（Z-A）</option>
+                </select>
+              </div>
+
+              {/* Location Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">所在地</label>
+                <input
+                  type="text"
+                  value={filters.location || ''}
+                  onChange={(e) => handleFilterChange('location', e.target.value || undefined)}
+                  placeholder="東京都、港区など"
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                />
+              </div>
+
+              {/* Price Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">価格範囲（万円）</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={filters.priceMin || ''}
+                    onChange={(e) => handleFilterChange('priceMin', e.target.value ? Number(e.target.value) : undefined)}
+                    placeholder="最低"
+                    className="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                  />
+                  <input
+                    type="number"
+                    value={filters.priceMax || ''}
+                    onChange={(e) => handleFilterChange('priceMax', e.target.value ? Number(e.target.value) : undefined)}
+                    placeholder="最高"
+                    className="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                  />
+                </div>
+              </div>
+
+              {/* Area Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">土地面積範囲（㎡）</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={filters.areaMin || ''}
+                    onChange={(e) => handleFilterChange('areaMin', e.target.value ? Number(e.target.value) : undefined)}
+                    placeholder="最低"
+                    className="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                  />
+                  <input
+                    type="number"
+                    value={filters.areaMax || ''}
+                    onChange={(e) => handleFilterChange('areaMax', e.target.value ? Number(e.target.value) : undefined)}
+                    placeholder="最高"
+                    className="w-1/2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* View Toggle */}
         <div className="mb-4 flex justify-end">
           <div className="inline-flex rounded-md shadow-sm">
@@ -159,9 +332,9 @@ const DashboardPage: React.FC = () => {
                 viewMode === 'grid'
                   ? 'bg-indigo-600 text-white border-indigo-600'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              } rounded-l-md`}
+              } rounded-l-md min-h-[44px]`}
             >
-              グリッド
+              📊 グリッド
             </button>
             <button
               onClick={() => setViewMode('list')}
@@ -169,9 +342,9 @@ const DashboardPage: React.FC = () => {
                 viewMode === 'list'
                   ? 'bg-indigo-600 text-white border-indigo-600'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              } rounded-r-md`}
+              } rounded-r-md min-h-[44px]`}
             >
-              リスト
+              📋 リスト
             </button>
           </div>
         </div>

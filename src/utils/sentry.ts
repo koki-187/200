@@ -257,12 +257,29 @@ class SentryClient {
 
 /**
  * デフォルトSentryクライアント
+ * DSNは環境変数 SENTRY_DSN から取得
  */
 export const sentry = new SentryClient({
   environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   sampleRate: process.env.NODE_ENV === 'production' ? 1.0 : 0.1,
   enabled: process.env.NODE_ENV === 'production',
+  dsn: process.env.SENTRY_DSN,
 })
+
+/**
+ * Sentryクライアントを環境変数で初期化
+ * Honoコンテキストから環境変数を取得して設定
+ */
+export function initializeSentry(env: Record<string, any>) {
+  if (env.SENTRY_DSN) {
+    sentry.init({
+      dsn: env.SENTRY_DSN,
+      environment: env.ENVIRONMENT || 'production',
+      enabled: true,
+      sampleRate: 1.0,
+    })
+  }
+}
 
 /**
  * エラーコードから深刻度を取得

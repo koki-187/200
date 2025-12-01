@@ -158,6 +158,7 @@ app.route('/api/reinfolib', reinfolibApi);
 app.route('/api/building-regulations', buildingRegulations);
 app.route('/api/monitoring', monitoring);
 app.route('/api/reports', reports);
+app.route('/api/investment-simulator', investmentSimulator);
 
 // ヘルスチェック
 app.get('/api/health', (c) => {

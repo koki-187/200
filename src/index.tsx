@@ -5576,6 +5576,119 @@ app.get('/deals/new', (c) => {
       
       // 履歴に自動保存
       saveOCRHistory(extractedData);
+      
+      // 建築法規チェックを自動実行（構造と階数が取得できた場合）
+      checkBuildingRegulations(extractedData);
+    }
+    
+    // 建築法規チェック関数
+    async function checkBuildingRegulations(extractedData) {
+      try {
+        // 構造と階数を抽出
+        let structure = '';
+        let floors = 0;
+        
+        // 構造の取得（新形式・旧形式対応）
+        if (extractedData.structure) {
+          structure = typeof extractedData.structure === 'object' ? 
+                      extractedData.structure.value : 
+                      extractedData.structure;
+        }
+        
+        // 階数の推定（構造から抽出：「3階建て木造」「木造3階」等）
+        if (structure) {
+          const match = structure.match(/(\d+)階/);
+          if (match) {
+            floors = parseInt(match[1]);
+          }
+        }
+        
+        // 3階建て木造の場合のみ建築法規チェックを実行
+        if ((structure.includes('木造') || structure.includes('W造')) && floors === 3) {
+          const checkData = {
+            location: typeof extractedData.location === 'object' ? extractedData.location.value : extractedData.location,
+            zoning: typeof extractedData.zoning === 'object' ? extractedData.zoning.value : extractedData.zoning,
+            fire_zone: extractedData.fire_zone ? (typeof extractedData.fire_zone === 'object' ? extractedData.fire_zone.value : extractedData.fire_zone) : '',
+            current_status: typeof extractedData.current_status === 'object' ? extractedData.current_status.value : extractedData.current_status,
+            structure: structure,
+            floors: floors
+          };
+          
+          const response = await axios.post('/api/building-regulations/check', checkData, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          
+          if (response.data.success) {
+            displayBuildingRegulationsResult(response.data.data);
+          }
+        }
+      } catch (error) {
+        console.error('建築法規チェックエラー:', error);
+        // エラーは表示せず、チェック結果が表示されないだけ
+      }
+    }
+    
+    // 建築法規チェック結果の表示
+    function displayBuildingRegulationsResult(data) {
+      // 結果表示エリアを取得または作成
+      let regulationsSection = document.getElementById('building-regulations-section');
+      if (!regulationsSection) {
+        regulationsSection = document.createElement('div');
+        regulationsSection.id = 'building-regulations-section';
+        regulationsSection.className = 'mt-6 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg';
+        
+        // OCR結果セクションの後に挿入
+        const resultSection = document.getElementById('ocr-result-edit-section');
+        if (resultSection && resultSection.parentNode) {
+          resultSection.parentNode.insertBefore(regulationsSection, resultSection.nextSibling);
+        }
+      }
+      
+      regulationsSection.classList.remove('hidden');
+      
+      // 3階建て木造の警告バッジ
+      let html = '<div class="mb-4">';
+      if (data.is_three_story_wooden) {
+        html += '<div class="flex items-center mb-3"><i class="fas fa-exclamation-triangle text-yellow-600 text-xl mr-2"></i><h3 class="text-lg font-bold text-yellow-800">⚠️ 3階建て木造建築の特別規定が適用されます</h3></div>';
+        html += '<div class="mb-3 p-3 bg-white rounded border border-yellow-300"><p class="text-sm text-gray-700"><strong>構造:</strong> ' + (data.structure || '不明') + ' | <strong>階数:</strong> ' + (data.floors || '不明') + '階</p></div>';
+      } else {
+        html += '<h3 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-balance-scale mr-2"></i>適用される建築基準法・条例</h3>';
+      }
+      html += '</div>';
+      
+      // 該当する法規の一覧表示
+      if (data.applicable_regulations && data.applicable_regulations.length > 0) {
+        html += '<div class="space-y-3">';
+        data.applicable_regulations.forEach((reg, index) => {
+          const categoryColors = {
+            'BUILDING_CODE': 'bg-blue-50 border-blue-300 text-blue-800',
+            'LOCAL_ORDINANCE': 'bg-green-50 border-green-300 text-green-800',
+            'PARKING': 'bg-purple-50 border-purple-300 text-purple-800',
+            'ENVIRONMENT': 'bg-teal-50 border-teal-300 text-teal-800',
+            'OTHER': 'bg-gray-50 border-gray-300 text-gray-800'
+          };
+          const colorClass = categoryColors[reg.category] || categoryColors['OTHER'];
+          
+          html += '<div class="p-3 border rounded ' + colorClass + '">';
+          html += '<h4 class="font-bold text-sm mb-1">' + (index + 1) + '. ' + reg.title + '</h4>';
+          html += '<p class="text-xs mb-2">' + reg.description + '</p>';
+          html += '<p class="text-xs italic">📖 ' + reg.article + '</p>';
+          html += '</div>';
+        });
+        html += '</div>';
+      } else {
+        html += '<p class="text-sm text-gray-600">該当する建築基準法・条例が検出されませんでした。</p>';
+      }
+      
+      // 駐車場設置義務の表示
+      if (data.has_parking_requirement && data.parking_info) {
+        html += '<div class="mt-4 p-3 bg-purple-50 border border-purple-300 rounded">';
+        html += '<h4 class="font-bold text-sm text-purple-800 mb-2"><i class="fas fa-parking mr-1"></i>駐車場設置義務</h4>';
+        html += '<p class="text-xs text-purple-700">' + data.parking_info.prefecture + ': ' + data.parking_info.requirement.description + '</p>';
+        html += '</div>';
+      }
+      
+      regulationsSection.innerHTML = html;
     }
 
     // OCR履歴保存

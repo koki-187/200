@@ -14,21 +14,30 @@ app.get('/check', async (c) => {
     const fire_zone = c.req.query('fire_zone') || '';
     const height_district = c.req.query('height_district') || '';
     const current_status = c.req.query('current_status') || '';
+    const structure = c.req.query('structure') || '';
+    const floors = c.req.query('floors') ? parseInt(c.req.query('floors') || '0') : undefined;
     
     const dealData = {
       location,
       zoning,
       fire_zone,
       height_district,
-      current_status
+      current_status,
+      structure,
+      floors
     };
     
     const result = getComprehensiveBuildingInfo(dealData);
     
+    let message = `${result.applicable_regulations.length}件の建築基準法規定を検出しました`;
+    if (result.is_three_story_wooden) {
+      message += ' - 3階建て木造建築の特別規定が適用されます';
+    }
+    
     return c.json({
       success: true,
       data: result,
-      message: `${result.applicable_regulations.length}件の建築基準法規定を検出しました`
+      message
     });
   } catch (error) {
     console.error('建築基準法チェックエラー:', error);

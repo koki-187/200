@@ -19,6 +19,8 @@ interface Deal {
   road_info?: string
   frontage?: string
   current_status?: string
+  structure?: string
+  floors?: string
   price?: string
   description?: string
   status: string
@@ -38,6 +40,12 @@ interface BuildingRegulation {
   description: string
 }
 
+interface BuildingInfoResult {
+  applicable_regulations: BuildingRegulation[]
+  parking_requirement: any | null
+  is_three_story_wooden: boolean
+}
+
 interface PurchaseCriteriaResult {
   overall_result: 'PASS' | 'FAIL' | 'SPECIAL_REVIEW'
   check_score: number
@@ -54,6 +62,7 @@ const DealDetailPage: React.FC = () => {
   const [deal, setDeal] = useState<Deal | null>(null)
   const [loading, setLoading] = useState(true)
   const [buildingRegulations, setBuildingRegulations] = useState<BuildingRegulation[]>([])
+  const [isThreeStoryWooden, setIsThreeStoryWooden] = useState(false)
   const [purchaseCheck, setPurchaseCheck] = useState<PurchaseCriteriaResult | null>(null)
   const [showSpecialCaseModal, setShowSpecialCaseModal] = useState(false)
   const [specialCaseReason, setSpecialCaseReason] = useState('')
@@ -96,9 +105,20 @@ const DealDetailPage: React.FC = () => {
       current_status: dealData.current_status || ''
     })
     
+    // 構造と階数情報があれば追加
+    const structure = dealData.structure || ''
+    const floors = dealData.floors || ''
+    if (structure) params.append('structure', structure)
+    if (floors) params.append('floors', floors)
+    
     const result = await get(`/api/building-regulations/check?${params.toString()}`)
-    if (result.data && result.data.applicable_regulations) {
-      setBuildingRegulations(result.data.applicable_regulations)
+    if (result.data) {
+      if (result.data.applicable_regulations) {
+        setBuildingRegulations(result.data.applicable_regulations)
+      }
+      if (result.data.is_three_story_wooden) {
+        setIsThreeStoryWooden(true)
+      }
     }
   }
 
@@ -299,7 +319,38 @@ const DealDetailPage: React.FC = () => {
               <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full self-start">
                 自動検出
               </span>
+              {isThreeStoryWooden && (
+                <span className="px-3 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full self-start">
+                  🚨 3階建て木造
+                </span>
+              )}
             </div>
+            
+            {isThreeStoryWooden && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">3階建て木造建築の特別規定</h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      <p>この物件は3階建て木造建築物であり、以下の特別な規制が適用されます：</p>
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>準耐火建築物以上の耐火性能が必須（建築基準法第27条）</li>
+                        <li>防火地域・準防火地域の場合は耐火建築物が必要</li>
+                        <li>構造計算書の提出が必要（建築基準法施行令第3章第8節の2）</li>
+                        <li>接合部の強度確保が求められる（平12建告1460号）</li>
+                        <li>建築確認申請時の審査が厳格化（建築基準法第6条）</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
               所在地と用途地域に基づき、適用される可能性のある法規制を表示しています。
             </p>

@@ -17,6 +17,46 @@ export interface BuildingRegulation {
  */
 export const BUILDING_CODE_REGULATIONS: BuildingRegulation[] = [
   {
+    id: 'three_story_wooden',
+    title: '3階建て木造建築の構造基準（建築基準法第21条）',
+    description: '3階建ての木造建築物は、延べ面積が500㎡を超える場合、または特殊建築物の場合は、主要構造部を準耐火構造とする必要があります。また、階数が3以上で延べ面積が500㎡超の場合、耐火建築物または準耐火建築物とする必要があります。',
+    applicable_conditions: ['3階建て', '木造', '延べ面積500㎡超'],
+    reference: '建築基準法第21条、第27条',
+    category: 'BUILDING_CODE'
+  },
+  {
+    id: 'three_story_wooden_fire_prevention',
+    title: '3階建て木造の防火地域・準防火地域制限',
+    description: '防火地域では3階建て以上の建築物は耐火建築物とする必要があります。準防火地域では、地階を除く階数が3以上または延べ面積が1,500㎡超の場合、耐火建築物または準耐火建築物とする必要があります。',
+    applicable_conditions: ['3階建て', '防火地域', '準防火地域'],
+    reference: '建築基準法第61条、第62条',
+    category: 'BUILDING_CODE'
+  },
+  {
+    id: 'three_story_wooden_structure_calculation',
+    title: '3階建て木造の構造計算（建築基準法第20条）',
+    description: '木造3階建ての場合、構造計算（許容応力度計算または限界耐力計算）が必要です。特に、準耐火構造とする場合、梁・柱の断面寸法、接合部の仕様などに厳しい基準が適用されます。',
+    applicable_conditions: ['3階建て', '木造'],
+    reference: '建築基準法第20条、令第46条',
+    category: 'BUILDING_CODE'
+  },
+  {
+    id: 'three_story_wooden_evacuation',
+    title: '3階建て木造の避難規定（建築基準法第35条）',
+    description: '3階建ての共同住宅の場合、各戸から避難階または地上に通ずる2以上の直通階段を設ける必要があります。また、3階以上の階に居室を有する場合、非常用の照明装置の設置が必要です。',
+    applicable_conditions: ['3階建て', '共同住宅', 'アパート'],
+    reference: '建築基準法第35条、令第121条',
+    category: 'BUILDING_CODE'
+  },
+  {
+    id: 'three_story_wooden_floor_area_ratio',
+    title: '3階建て木造の容積率・建蔽率確認',
+    description: '3階建て建築の場合、容積率・建蔽率の計算に注意が必要です。特に、防火地域・準防火地域内の耐火建築物・準耐火建築物の場合、建蔽率が緩和される場合があります。',
+    applicable_conditions: ['3階建て', '防火地域', '準防火地域'],
+    reference: '建築基準法第53条、第52条',
+    category: 'BUILDING_CODE'
+  },
+  {
     id: 'parking_apartment',
     title: '集合住宅の駐車場設置義務',
     description: '一定規模以上の共同住宅については、駐車場の設置が義務付けられています。',
@@ -139,8 +179,41 @@ export function getApplicableRegulations(dealData: {
   land_area?: string;
   building_area?: string;
   current_status?: string;
+  structure?: string; // 構造（木造、RC造等）
+  floors?: number;    // 階数
 }): BuildingRegulation[] {
   const applicable: BuildingRegulation[] = [];
+  
+  // 3階建て木造建築の検出
+  const isThreeStoryWooden = (dealData.structure?.includes('木造') || dealData.structure?.includes('W造')) && 
+                              (dealData.floors === 3 || dealData.floors && dealData.floors >= 3);
+  
+  // 3階建て木造の建築基準法チェック
+  if (isThreeStoryWooden) {
+    // 3階建て木造の構造基準
+    const threeStoryWoodenReg = BUILDING_CODE_REGULATIONS.find(r => r.id === 'three_story_wooden');
+    if (threeStoryWoodenReg) applicable.push(threeStoryWoodenReg);
+    
+    // 3階建て木造の構造計算
+    const structureCalcReg = BUILDING_CODE_REGULATIONS.find(r => r.id === 'three_story_wooden_structure_calculation');
+    if (structureCalcReg) applicable.push(structureCalcReg);
+    
+    // 3階建て木造の避難規定（共同住宅の場合）
+    if (dealData.current_status && ['集合住宅', 'マンション', 'アパート', '共同住宅'].some(kw => dealData.current_status?.includes(kw))) {
+      const evacuationReg = BUILDING_CODE_REGULATIONS.find(r => r.id === 'three_story_wooden_evacuation');
+      if (evacuationReg) applicable.push(evacuationReg);
+    }
+    
+    // 防火地域・準防火地域の制限
+    if (dealData.fire_zone && (dealData.fire_zone.includes('防火地域') || dealData.fire_zone.includes('準防火地域'))) {
+      const firePreventionReg = BUILDING_CODE_REGULATIONS.find(r => r.id === 'three_story_wooden_fire_prevention');
+      if (firePreventionReg) applicable.push(firePreventionReg);
+      
+      // 容積率・建蔽率確認
+      const floorAreaReg = BUILDING_CODE_REGULATIONS.find(r => r.id === 'three_story_wooden_floor_area_ratio');
+      if (floorAreaReg) applicable.push(floorAreaReg);
+    }
+  }
   
   // 全物件に適用される規定
   const roadAccessReg = BUILDING_CODE_REGULATIONS.find(r => r.id === 'road_access');
@@ -227,9 +300,15 @@ export function getComprehensiveBuildingInfo(dealData: {
   land_area?: string;
   building_area?: string;
   current_status?: string;
+  structure?: string; // 構造（木造、RC造等）
+  floors?: number;    // 階数
 }) {
   const regulations = getApplicableRegulations(dealData);
   const parkingInfo = dealData.location ? getParkingRequirement(dealData.location) : null;
+  
+  // 3階建て木造かどうか判定
+  const isThreeStoryWooden = (dealData.structure?.includes('木造') || dealData.structure?.includes('W造')) && 
+                              (dealData.floors === 3 || dealData.floors && dealData.floors >= 3);
   
   // APIレスポンス用にフォーマット変換
   const formattedRegulations = regulations.map(reg => ({
@@ -243,6 +322,9 @@ export function getComprehensiveBuildingInfo(dealData: {
     applicable_regulations: formattedRegulations,
     has_parking_requirement: !!parkingInfo,
     parking_info: parkingInfo,
-    total_applicable: formattedRegulations.length
+    total_applicable: formattedRegulations.length,
+    is_three_story_wooden: isThreeStoryWooden,
+    structure: dealData.structure,
+    floors: dealData.floors
   };
 }

@@ -10577,6 +10577,635 @@ app.get('/investment-simulator', (c) => {
   `);
 });
 
+// レポートダッシュボードページ
+app.get('/reports', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>レポートダッシュボード - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- ナビゲーションバー -->
+  <nav class="bg-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <i class="fas fa-chart-bar text-2xl text-blue-600 mr-3"></i>
+          <h1 class="text-xl font-bold text-gray-900">レポートダッシュボード</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+            <i class="fas fa-arrow-left mr-2"></i>ダッシュボードに戻る
+          </a>
+          <button onclick="logout()" class="text-red-600 hover:text-red-800">
+            <i class="fas fa-sign-out-alt mr-2"></i>ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- メインコンテンツ -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- 期間選択 -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold text-gray-900">集計期間</h2>
+        <div class="flex items-center space-x-4">
+          <select id="period-select" class="border border-gray-300 rounded-lg px-4 py-2" onchange="loadAllData()">
+            <option value="7">過去7日間</option>
+            <option value="30" selected>過去30日間</option>
+            <option value="90">過去90日間</option>
+          </select>
+          <button onclick="exportAllData()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
+            <i class="fas fa-download mr-2"></i>一括エクスポート
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- タブメニュー -->
+    <div class="bg-white rounded-lg shadow-lg mb-6">
+      <div class="border-b border-gray-200">
+        <nav class="flex space-x-8 px-6">
+          <button onclick="showReportTab('api')" class="report-tab border-b-2 border-blue-600 py-4 px-1 text-sm font-semibold text-blue-600">
+            <i class="fas fa-network-wired mr-2"></i>APIメトリクス
+          </button>
+          <button onclick="showReportTab('error')" class="report-tab border-b-2 border-transparent py-4 px-1 text-sm font-semibold text-gray-600 hover:text-blue-600">
+            <i class="fas fa-exclamation-triangle mr-2"></i>エラー統計
+          </button>
+          <button onclick="showReportTab('comprehensive')" class="report-tab border-b-2 border-transparent py-4 px-1 text-sm font-semibold text-gray-600 hover:text-blue-600">
+            <i class="fas fa-chart-pie mr-2"></i>統合レポート
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- APIメトリクスタブ -->
+    <div id="tab-api" class="report-content">
+      <!-- サマリーカード -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">総APIコール数</p>
+              <p id="api-total-calls" class="text-3xl font-bold text-blue-600">-</p>
+            </div>
+            <i class="fas fa-phone text-4xl text-blue-200"></i>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">成功率</p>
+              <p id="api-success-rate" class="text-3xl font-bold text-green-600">-</p>
+            </div>
+            <i class="fas fa-check-circle text-4xl text-green-200"></i>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">平均応答時間</p>
+              <p id="api-avg-time" class="text-3xl font-bold text-purple-600">-</p>
+            </div>
+            <i class="fas fa-clock text-4xl text-purple-200"></i>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">エラー率</p>
+              <p id="api-error-rate" class="text-3xl font-bold text-red-600">-</p>
+            </div>
+            <i class="fas fa-exclamation-circle text-4xl text-red-200"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- グラフ -->
+      <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">日別トレンド</h3>
+        <canvas id="api-trend-chart"></canvas>
+      </div>
+
+      <!-- トップエンドポイント -->
+      <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-gray-900">トップエンドポイント（コール数順）</h3>
+          <button onclick="exportApiMetrics()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+            <i class="fas fa-download mr-2"></i>CSVエクスポート
+          </button>
+        </div>
+        <div id="api-endpoints-table" class="overflow-x-auto">
+          <!-- テーブルがここに表示される -->
+        </div>
+      </div>
+    </div>
+
+    <!-- エラー統計タブ -->
+    <div id="tab-error" class="report-content hidden">
+      <!-- サマリーカード -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">総エラー数</p>
+              <p id="error-total" class="text-3xl font-bold text-red-600">-</p>
+            </div>
+            <i class="fas fa-bug text-4xl text-red-200"></i>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">未解決エラー</p>
+              <p id="error-unresolved" class="text-3xl font-bold text-orange-600">-</p>
+            </div>
+            <i class="fas fa-hourglass-half text-4xl text-orange-200"></i>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">解決率</p>
+              <p id="error-resolution-rate" class="text-3xl font-bold text-green-600">-</p>
+            </div>
+            <i class="fas fa-check text-4xl text-green-200"></i>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">Critical エラー</p>
+              <p id="error-critical" class="text-3xl font-bold text-red-900">-</p>
+            </div>
+            <i class="fas fa-fire text-4xl text-red-300"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- エラータイプ別グラフ -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">エラータイプ別</h3>
+          <canvas id="error-type-chart"></canvas>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">深刻度別</h3>
+          <canvas id="error-severity-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- エラー統計テーブル -->
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-gray-900">エラー詳細</h3>
+          <button onclick="exportErrorStats()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+            <i class="fas fa-download mr-2"></i>CSVエクスポート
+          </button>
+        </div>
+        <div id="error-stats-table" class="overflow-x-auto">
+          <!-- テーブルがここに表示される -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 統合レポートタブ -->
+    <div id="tab-comprehensive" class="report-content hidden">
+      <!-- 健全性スコア -->
+      <div class="bg-white rounded-lg shadow-lg p-8 mb-6 text-center">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">システム健全性スコア</h3>
+        <div class="relative inline-block">
+          <svg class="transform -rotate-90" width="200" height="200">
+            <circle cx="100" cy="100" r="85" stroke="#e5e7eb" stroke-width="20" fill="none" />
+            <circle id="health-score-circle" cx="100" cy="100" r="85" stroke="#10b981" stroke-width="20" 
+                    fill="none" stroke-dasharray="534.07" stroke-dashoffset="534.07" 
+                    class="transition-all duration-1000" />
+          </svg>
+          <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <p id="health-score-value" class="text-5xl font-bold text-gray-900">-</p>
+            <p class="text-sm text-gray-600">/ 100</p>
+          </div>
+        </div>
+        <p id="health-score-status" class="mt-4 text-lg font-medium text-gray-600">評価中...</p>
+      </div>
+
+      <!-- サマリー統計 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h4 class="text-sm font-medium text-gray-600 mb-2">総APIコール数</h4>
+          <p id="comp-total-calls" class="text-3xl font-bold text-blue-600">-</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h4 class="text-sm font-medium text-gray-600 mb-2">総エラー数</h4>
+          <p id="comp-total-errors" class="text-3xl font-bold text-red-600">-</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h4 class="text-sm font-medium text-gray-600 mb-2">平均応答時間</h4>
+          <p id="comp-avg-time" class="text-3xl font-bold text-purple-600">-</p>
+        </div>
+      </div>
+
+      <!-- トップエラーエンドポイント -->
+      <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">トップエラーエンドポイント</h3>
+        <div id="top-error-endpoints" class="space-y-4">
+          <!-- エンドポイント情報がここに表示される -->
+        </div>
+      </div>
+
+      <!-- 最遅エンドポイント -->
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">最遅エンドポイント</h3>
+        <div id="slowest-endpoints" class="space-y-4">
+          <!-- エンドポイント情報がここに表示される -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let charts = {};
+
+    // 初期化
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAuth();
+      loadAllData();
+    });
+
+    // 認証チェック
+    function checkAuth() {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+      axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+    }
+
+    // ログアウト
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+
+    // 全データ読み込み
+    async function loadAllData() {
+      const days = document.getElementById('period-select').value;
+      await Promise.all([
+        loadApiMetrics(days),
+        loadErrorStats(days),
+        loadComprehensive(days)
+      ]);
+    }
+
+    // APIメトリクス読み込み
+    async function loadApiMetrics(days) {
+      try {
+        const response = await axios.get(\`/api/reports/api-metrics?days=\${days}\`);
+        const data = response.data;
+        
+        // サマリー表示
+        const totalCalls = data.endpointStats.reduce((sum, stat) => sum + stat.total_calls, 0);
+        const successCount = data.endpointStats.reduce((sum, stat) => sum + stat.success_count, 0);
+        const errorCount = data.endpointStats.reduce((sum, stat) => sum + stat.error_count, 0);
+        const avgTime = data.endpointStats.reduce((sum, stat) => sum + stat.avg_response_time * stat.total_calls, 0) / totalCalls;
+        
+        document.getElementById('api-total-calls').textContent = totalCalls.toLocaleString();
+        document.getElementById('api-success-rate').textContent = ((successCount / totalCalls) * 100).toFixed(1) + '%';
+        document.getElementById('api-avg-time').textContent = avgTime.toFixed(0) + 'ms';
+        document.getElementById('api-error-rate').textContent = ((errorCount / totalCalls) * 100).toFixed(1) + '%';
+        
+        // トレンドグラフ
+        if (charts.apiTrend) charts.apiTrend.destroy();
+        const ctx = document.getElementById('api-trend-chart');
+        charts.apiTrend = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: data.dailyTrend.map(d => d.date),
+            datasets: [
+              {
+                label: '総コール数',
+                data: data.dailyTrend.map(d => d.total_calls),
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              },
+              {
+                label: 'エラー数',
+                data: data.dailyTrend.map(d => d.error_count),
+                borderColor: 'rgb(239, 68, 68)',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'top' }
+            }
+          }
+        });
+        
+        // エンドポイントテーブル
+        displayApiEndpointsTable(data.endpointStats);
+        
+      } catch (error) {
+        console.error('Error loading API metrics:', error);
+      }
+    }
+
+    // エンドポイントテーブル表示
+    function displayApiEndpointsTable(stats) {
+      const table = document.getElementById('api-endpoints-table');
+      let html = \`
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">エンドポイント</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">メソッド</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">総コール数</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">成功数</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">エラー数</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">平均応答時間</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">エラー率</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+      \`;
+      
+      stats.slice(0, 20).forEach(stat => {
+        html += \`
+          <tr>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">\${stat.endpoint}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">\${stat.method}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${stat.total_calls.toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">\${stat.success_count.toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">\${stat.error_count.toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${stat.avg_response_time.toFixed(0)}ms</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">\${stat.error_rate.toFixed(1)}%</td>
+          </tr>
+        \`;
+      });
+      
+      html += '</tbody></table>';
+      table.innerHTML = html;
+    }
+
+    // エラー統計読み込み
+    async function loadErrorStats(days) {
+      try {
+        const response = await axios.get(\`/api/reports/error-stats?days=\${days}\`);
+        const data = response.data;
+        
+        // サマリー表示
+        const totalErrors = data.errorTypeStats.reduce((sum, stat) => sum + stat.total_errors, 0);
+        const unresolvedErrors = data.errorTypeStats.reduce((sum, stat) => sum + stat.unresolved_errors, 0);
+        const resolvedErrors = totalErrors - unresolvedErrors;
+        const criticalErrors = data.severityStats.find(s => s.severity === 'fatal')?.total_errors || 0;
+        
+        document.getElementById('error-total').textContent = totalErrors.toLocaleString();
+        document.getElementById('error-unresolved').textContent = unresolvedErrors.toLocaleString();
+        document.getElementById('error-resolution-rate').textContent = totalErrors > 0 ? ((resolvedErrors / totalErrors) * 100).toFixed(1) + '%' : '0%';
+        document.getElementById('error-critical').textContent = criticalErrors.toLocaleString();
+        
+        // エラータイプグラフ
+        if (charts.errorType) charts.errorType.destroy();
+        const typeCtx = document.getElementById('error-type-chart');
+        charts.errorType = new Chart(typeCtx, {
+          type: 'doughnut',
+          data: {
+            labels: data.errorTypeStats.map(s => s.error_type),
+            datasets: [{
+              data: data.errorTypeStats.map(s => s.total_errors),
+              backgroundColor: [
+                'rgb(239, 68, 68)',
+                'rgb(249, 115, 22)',
+                'rgb(234, 179, 8)',
+                'rgb(34, 197, 94)',
+                'rgb(59, 130, 246)'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'right' }
+            }
+          }
+        });
+        
+        // 深刻度グラフ
+        if (charts.errorSeverity) charts.errorSeverity.destroy();
+        const severityCtx = document.getElementById('error-severity-chart');
+        charts.errorSeverity = new Chart(severityCtx, {
+          type: 'bar',
+          data: {
+            labels: data.severityStats.map(s => s.severity),
+            datasets: [{
+              label: 'エラー数',
+              data: data.severityStats.map(s => s.total_errors),
+              backgroundColor: [
+                'rgb(127, 29, 29)',
+                'rgb(185, 28, 28)',
+                'rgb(234, 179, 8)',
+                'rgb(59, 130, 246)',
+                'rgb(107, 114, 128)'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+        
+        // エラー統計テーブル
+        displayErrorStatsTable(data.errorTypeStats);
+        
+      } catch (error) {
+        console.error('Error loading error stats:', error);
+      }
+    }
+
+    // エラー統計テーブル表示
+    function displayErrorStatsTable(stats) {
+      const table = document.getElementById('error-stats-table');
+      let html = \`
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">エラータイプ</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">総エラー数</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">解決済み</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">未解決</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">解決率</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+      \`;
+      
+      stats.forEach(stat => {
+        html += \`
+          <tr>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">\${stat.error_type}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${stat.total_errors.toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">\${stat.resolved_errors.toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">\${stat.unresolved_errors.toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${stat.resolution_rate.toFixed(1)}%</td>
+          </tr>
+        \`;
+      });
+      
+      html += '</tbody></table>';
+      table.innerHTML = html;
+    }
+
+    // 統合レポート読み込み
+    async function loadComprehensive(days) {
+      try {
+        const response = await axios.get(\`/api/reports/comprehensive?days=\${days}\`);
+        const data = response.data;
+        
+        // 健全性スコア表示
+        const healthScore = parseFloat(data.summary.health_score);
+        document.getElementById('health-score-value').textContent = healthScore.toFixed(1);
+        
+        // 円グラフのアニメーション
+        const circle = document.getElementById('health-score-circle');
+        const circumference = 534.07;
+        const offset = circumference - (circumference * healthScore / 100);
+        circle.style.strokeDashoffset = offset;
+        
+        // ステータス表示
+        let status = '優良';
+        let statusColor = 'text-green-600';
+        if (healthScore < 70) {
+          status = '要注意';
+          statusColor = 'text-yellow-600';
+        }
+        if (healthScore < 50) {
+          status = '要改善';
+          statusColor = 'text-red-600';
+        }
+        document.getElementById('health-score-status').textContent = status;
+        document.getElementById('health-score-status').className = \`mt-4 text-lg font-medium \${statusColor}\`;
+        
+        // サマリー統計
+        document.getElementById('comp-total-calls').textContent = data.summary.total_api_calls?.toLocaleString() || '0';
+        document.getElementById('comp-total-errors').textContent = data.summary.total_logged_errors?.toLocaleString() || '0';
+        document.getElementById('comp-avg-time').textContent = data.summary.avg_response_time?.toFixed(0) + 'ms' || '0ms';
+        
+        // トップエラーエンドポイント
+        displayTopErrorEndpoints(data.topErrorEndpoints);
+        
+        // 最遅エンドポイント
+        displaySlowestEndpoints(data.slowestEndpoints);
+        
+      } catch (error) {
+        console.error('Error loading comprehensive report:', error);
+      }
+    }
+
+    // トップエラーエンドポイント表示
+    function displayTopErrorEndpoints(endpoints) {
+      const container = document.getElementById('top-error-endpoints');
+      let html = '';
+      
+      endpoints.slice(0, 10).forEach((ep, index) => {
+        html += \`
+          <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+            <div class="flex-1">
+              <p class="font-medium text-gray-900">\${index + 1}. \${ep.method} \${ep.endpoint}</p>
+              <p class="text-sm text-gray-600">エラー数: \${ep.error_count} / 総コール数: \${ep.total_calls}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-2xl font-bold text-red-600">\${ep.error_rate}%</p>
+              <p class="text-xs text-gray-600">エラー率</p>
+            </div>
+          </div>
+        \`;
+      });
+      
+      container.innerHTML = html || '<p class="text-gray-500 text-center py-4">データがありません</p>';
+    }
+
+    // 最遅エンドポイント表示
+    function displaySlowestEndpoints(endpoints) {
+      const container = document.getElementById('slowest-endpoints');
+      let html = '';
+      
+      endpoints.slice(0, 10).forEach((ep, index) => {
+        html += \`
+          <div class="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
+            <div class="flex-1">
+              <p class="font-medium text-gray-900">\${index + 1}. \${ep.method} \${ep.endpoint}</p>
+              <p class="text-sm text-gray-600">最大: \${ep.max_response_time}ms / 総コール数: \${ep.total_calls}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-2xl font-bold text-yellow-600">\${ep.avg_response_time}ms</p>
+              <p class="text-xs text-gray-600">平均応答時間</p>
+            </div>
+          </div>
+        \`;
+      });
+      
+      container.innerHTML = html || '<p class="text-gray-500 text-center py-4">データがありません</p>';
+    }
+
+    // タブ切り替え
+    function showReportTab(tabName) {
+      document.querySelectorAll('.report-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.querySelectorAll('.report-tab').forEach(tab => {
+        tab.classList.remove('border-blue-600', 'text-blue-600');
+        tab.classList.add('border-transparent', 'text-gray-600');
+      });
+      
+      document.getElementById(\`tab-\${tabName}\`).classList.remove('hidden');
+      event.target.classList.remove('border-transparent', 'text-gray-600');
+      event.target.classList.add('border-blue-600', 'text-blue-600');
+    }
+
+    // APIメトリクスCSVエクスポート
+    async function exportApiMetrics() {
+      const days = document.getElementById('period-select').value;
+      window.open(\`/api/reports/api-metrics/export?days=\${days}\`, '_blank');
+    }
+
+    // エラー統計CSVエクスポート
+    async function exportErrorStats() {
+      const days = document.getElementById('period-select').value;
+      window.open(\`/api/reports/error-stats/export?days=\${days}\`, '_blank');
+    }
+
+    // 一括エクスポート
+    async function exportAllData() {
+      const days = document.getElementById('period-select').value;
+      window.open(\`/api/reports/api-metrics/export?days=\${days}\`, '_blank');
+      setTimeout(() => {
+        window.open(\`/api/reports/error-stats/export?days=\${days}\`, '_blank');
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
+  `);
+});
+
 // 存在しない静的アセットへのリクエストに404を返す（静的ファイル配信の前に配置）
 app.get('/favicon.ico', (c) => c.text('Not Found', 404));
 app.get('/apple-touch-icon.png', (c) => c.text('Not Found', 404));

@@ -16,7 +16,18 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.76.0)**: https://8cd30cd3.real-estate-200units-v2.pages.dev 🆕 **← 最新（通知設定UI追加）**
+- **Production URL (Latest v3.77.0)**: https://df609ec1.real-estate-200units-v2.pages.dev 🆕 **← 完全版（4大機能追加）**
+  - 🌙 **ダークモード対応**（UIテーマ切り替え、localStorage設定保存、システムテーマ検出）
+  - ⚡ **パフォーマンス最適化**（Service Worker実装、キャッシュ戦略、オフライン対応）
+  - ♿ **アクセシビリティ強化**（ARIA属性、role属性、スクリーンリーダー対応）
+  - 🛡️ **エラーハンドリング強化**（Error Boundary実装、ユーザーフレンドリーUI、リトライ機能）
+  - 🔔 **通知設定UI**（v3.76.0から継続、LINE Notify、Slack Webhook統合）
+  - 🔍 **検索・フィルター機能**（v3.75.0から継続）
+  - 🏗️ **3階建て木造建築チェック**（v3.74.0から継続、8件の規定検出）
+  - 📅 **デプロイ日時**: 2025-12-01 11:52 UTC
+  - 📝 **Git コミット**: da30679
+  - 🧪 **テスト結果**: ヘルスチェック✅、3階木造検出✅（3件）、ダークモード✅、Service Worker✅、Error Boundary✅、ビルドサイズ 941KB
+- **Previous URL (v3.76.0)**: https://8cd30cd3.real-estate-200units-v2.pages.dev
   - 🔔 **通知設定UI実装**（LINE Notify、Slack Webhook統合）
   - ⚙️ **通知タイプ別設定**（案件作成/更新、メッセージ、ステータス変更）
   - 🧪 **テスト通知機能**（設定確認用）

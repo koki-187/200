@@ -16,7 +16,15 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.69.0)**: https://40aa2396.real-estate-200units-v2.pages.dev 🆕 **← 最新（PWA Manifest修正・投資シミュレーター統合完了）**
+- **Production URL (Latest v3.70.0)**: https://8be9a11f.real-estate-200units-v2.pages.dev 🆕 **← 最新（モバイルレスポンシブ対応完了）**
+  - 📱 **モバイルレスポンシブ完全対応**（投資シミュレーター、案件作成フォーム、案件一覧）
+  - ✨ **タッチ操作最適化**（全入力要素min-height 44px）
+  - 🎨 **レスポンシブレイアウト**（sm/md/lgブレークポイント対応）
+  - 📊 **可読性向上**（モバイルでのフォントサイズ・余白調整）
+  - 📅 **デプロイ日時**: 2025-12-01 10:11 UTC
+  - 📝 **Git コミット**: fe70507
+  - 🧪 **テスト結果**: ヘルスチェック✅、ログイン✅、案件取得✅ (20件)、ビルドサイズ 909K
+- **Previous URL (v3.69.0)**: https://40aa2396.real-estate-200units-v2.pages.dev
   - 💰 **投資シミュレーター統合**（案件詳細ページからワンクリックアクセス）
   - 📱 **PWA Manifest修正**（vite.config.ts publicDir設定追加）
   - 🔧 **レスポンシブ改善**（flex-wrapでモバイル対応強化）

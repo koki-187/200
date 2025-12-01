@@ -11583,6 +11583,300 @@ app.onError((err, c) => {
   return c.json(errorResponse, 500);
 });
 
+// 通知履歴ページ
+app.get('/notifications-history', (c) => {
+  return c.html(\`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>通知履歴 - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .notification-card {
+      transition: all 0.3s ease;
+    }
+    .notification-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+    .notification-unread {
+      border-left: 4px solid #3b82f6;
+      background-color: #eff6ff;
+    }
+    .notification-read {
+      border-left: 4px solid #e5e7eb;
+      background-color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-4">
+        <a href="/dashboard" class="flex items-center space-x-3 hover:opacity-80 transition">
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
+            <img src="/logo-3d.png" alt="Logo" class="w-6 h-6" />
+          </div>
+          <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
+        </a>
+        <div class="flex items-center space-x-4">
+          <span id="user-name" class="text-gray-200"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+            <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- ページヘッダー -->
+    <div class="mb-6 flex justify-between items-center">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+          <i class="fas fa-bell mr-3 text-blue-600"></i>通知履歴
+        </h2>
+        <p class="text-gray-600 mt-1">受信した全ての通知を確認できます</p>
+      </div>
+      <div class="flex space-x-3">
+        <button onclick="markAllAsRead()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition shadow-lg">
+          <i class="fas fa-check-double mr-2"></i>すべて既読にする
+        </button>
+        <button onclick="clearReadNotifications()" class="bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition shadow-lg">
+          <i class="fas fa-trash mr-2"></i>既読を削除
+        </button>
+      </div>
+    </div>
+
+    <!-- 統計サマリー -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div class="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">総通知数</p>
+            <p id="stat-total" class="text-2xl font-bold text-gray-900">0</p>
+          </div>
+          <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-bell text-blue-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">未読</p>
+            <p id="stat-unread" class="text-2xl font-bold text-blue-600">0</p>
+          </div>
+          <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-envelope text-blue-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">期限通知</p>
+            <p id="stat-deadline" class="text-2xl font-bold text-red-600">0</p>
+          </div>
+          <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-clock text-red-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">今日の通知</p>
+            <p id="stat-today" class="text-2xl font-bold text-green-600">0</p>
+          </div>
+          <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-calendar-day text-green-600 text-xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 通知リスト -->
+    <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+      <div id="notifications-container" class="divide-y">
+        <div class="p-8 text-center text-gray-500">
+          <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+          <p>読み込み中...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    const token = localStorage.getItem('auth_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!token) {
+      window.location.href = '/';
+    }
+
+    let allNotifications = [];
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+
+    async function loadNotifications() {
+      try {
+        const response = await axios.get('/api/notifications', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        allNotifications = response.data.data || [];
+        
+        updateStatistics();
+        displayNotifications();
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+        document.getElementById('notifications-container').innerHTML = 
+          '<div class="p-8 text-center text-red-600"><p>通知の読み込みに失敗しました</p></div>';
+      }
+    }
+
+    function updateStatistics() {
+      const total = allNotifications.length;
+      const unread = allNotifications.filter(n => !n.is_read).length;
+      const deadline = allNotifications.filter(n => n.type === 'DEADLINE').length;
+      
+      const today = new Date().toDateString();
+      const todayNotifications = allNotifications.filter(n => 
+        new Date(n.created_at).toDateString() === today
+      ).length;
+      
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-unread').textContent = unread;
+      document.getElementById('stat-deadline').textContent = deadline;
+      document.getElementById('stat-today').textContent = todayNotifications;
+    }
+
+    function displayNotifications() {
+      const container = document.getElementById('notifications-container');
+
+      if (allNotifications.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center text-gray-500"><p>通知がありません</p></div>';
+        return;
+      }
+
+      const typeIcons = {
+        'DEADLINE': 'fa-clock text-red-600',
+        'STATUS_CHANGE': 'fa-exchange-alt text-blue-600',
+        'MESSAGE': 'fa-comment text-green-600',
+        'SYSTEM': 'fa-cog text-gray-600'
+      };
+
+      const typeLabels = {
+        'DEADLINE': '期限通知',
+        'STATUS_CHANGE': 'ステータス変更',
+        'MESSAGE': 'メッセージ',
+        'SYSTEM': 'システム通知'
+      };
+
+      container.innerHTML = allNotifications.map(notification => {
+        const readClass = notification.is_read ? 'notification-read' : 'notification-unread';
+        const icon = typeIcons[notification.type] || 'fa-bell text-gray-600';
+        const typeLabel = typeLabels[notification.type] || notification.type;
+        
+        return \\\`
+          <div class="\\\${readClass} notification-card p-6">
+            <div class="flex items-start">
+              <div class="flex-shrink-0">
+                <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                  <i class="fas \\\${icon} text-xl"></i>
+                </div>
+              </div>
+              <div class="ml-4 flex-1">
+                <div class="flex items-center justify-between mb-1">
+                  <h3 class="text-lg font-semibold text-gray-900">\\\${notification.title}</h3>
+                  <span class="text-xs text-gray-500">\\\${new Date(notification.created_at).toLocaleString('ja-JP')}</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">\\\${notification.message}</p>
+                <div class="flex items-center space-x-3 text-xs">
+                  <span class="px-2 py-1 rounded bg-gray-100 text-gray-700">\\\${typeLabel}</span>
+                  \\\${!notification.is_read ? '<span class="px-2 py-1 rounded bg-blue-100 text-blue-700 font-medium">未読</span>' : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        \\\`;
+      }).join('');
+    }
+
+    async function markAllAsRead() {
+      try {
+        await axios.post('/api/notifications/mark-all-read', {}, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        allNotifications.forEach(n => n.is_read = true);
+        updateStatistics();
+        displayNotifications();
+        
+        alert('すべての通知を既読にしました');
+      } catch (error) {
+        console.error('Error marking all as read:', error);
+        alert('操作に失敗しました');
+      }
+    }
+
+    async function clearReadNotifications() {
+      if (!confirm('既読の通知をすべて削除しますか？')) return;
+      
+      try {
+        await axios.delete('/api/notifications/clear-read', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        allNotifications = allNotifications.filter(n => !n.is_read);
+        
+        updateStatistics();
+        displayNotifications();
+        
+        alert('既読の通知を削除しました');
+      } catch (error) {
+        console.error('Error clearing read notifications:', error);
+        alert('削除に失敗しました');
+      }
+    }
+
+    // ページ読み込み後に初期化
+    window.addEventListener('load', function() {
+      if (user.name) {
+        document.getElementById('user-name').textContent = user.name;
+      }
+      
+      if (typeof axios !== 'undefined') {
+        loadNotifications();
+      } else {
+        console.error('axios not loaded');
+        document.getElementById('notifications-container').innerHTML = 
+          '<div class="p-8 text-center text-red-600"><p>ライブラリの読み込みに失敗しました。ページを再読み込みしてください。</p></div>';
+      }
+    });
+  </script>
+</body>
+</html>
+  \`)
+})
+
 // 静的ファイルの配信（最後に配置してAPIルートより優先度を下げる）
 // Cloudflare Pagesでは静的ファイルは自動的に配信されるため、
 // Workers専用のserveStaticは使用しない

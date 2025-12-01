@@ -4,7 +4,6 @@
 import { Hono } from 'hono'
 import { authMiddleware } from '../utils/auth'
 import { Env } from '../types'
-import { nanoid } from 'nanoid'
 
 const notificationSettings = new Hono<{ Bindings: Env }>()
 
@@ -26,14 +25,15 @@ notificationSettings.get('/', async (c) => {
     const settings = await DB.prepare(`
       SELECT 
         id,
-        line_enabled,
-        line_webhook_url,
-        slack_enabled,
-        slack_webhook_url,
-        notify_on_deal_create,
-        notify_on_deal_update,
-        notify_on_message,
-        notify_on_status_change,
+        email_on_new_deal,
+        email_on_deal_update,
+        email_on_new_message,
+        email_on_mention,
+        email_on_task_assigned,
+        email_digest_frequency,
+        push_on_new_message,
+        push_on_mention,
+        push_on_task_due,
         created_at,
         updated_at
       FROM notification_settings
@@ -46,14 +46,15 @@ notificationSettings.get('/', async (c) => {
       // Return default settings if not configured
       return c.json({
         id: null,
-        line_enabled: 0,
-        line_webhook_url: null,
-        slack_enabled: 0,
-        slack_webhook_url: null,
-        notify_on_deal_create: 1,
-        notify_on_deal_update: 1,
-        notify_on_message: 1,
-        notify_on_status_change: 1,
+        email_on_new_deal: 1,
+        email_on_deal_update: 1,
+        email_on_new_message: 1,
+        email_on_mention: 1,
+        email_on_task_assigned: 1,
+        email_digest_frequency: 'daily',
+        push_on_new_message: 0,
+        push_on_mention: 0,
+        push_on_task_due: 0,
         created_at: null,
         updated_at: null
       })
@@ -76,13 +77,9 @@ notificationSettings.post('/', async (c) => {
     const { DB } = c.env
     const body = await c.req.json()
 
-    // Validate webhook URLs
-    if (body.line_webhook_url && !body.line_webhook_url.startsWith('https://')) {
-      return c.json({ error: 'LINE Webhook URLはHTTPSである必要があります' }, 400)
-    }
-
-    if (body.slack_webhook_url && !body.slack_webhook_url.startsWith('https://')) {
-      return c.json({ error: 'Slack Webhook URLはHTTPSである必要があります' }, 400)
+    // Validate email digest frequency
+    if (body.email_digest_frequency && !['none', 'daily', 'weekly'].includes(body.email_digest_frequency)) {
+      return c.json({ error: 'メール送信頻度は none, daily, weekly のいずれかである必要があります' }, 400)
     }
 
     // Check if settings already exist
@@ -97,26 +94,28 @@ notificationSettings.post('/', async (c) => {
       await DB.prepare(`
         UPDATE notification_settings
         SET
-          line_enabled = ?,
-          line_webhook_url = ?,
-          slack_enabled = ?,
-          slack_webhook_url = ?,
-          notify_on_deal_create = ?,
-          notify_on_deal_update = ?,
-          notify_on_message = ?,
-          notify_on_status_change = ?,
+          email_on_new_deal = ?,
+          email_on_deal_update = ?,
+          email_on_new_message = ?,
+          email_on_mention = ?,
+          email_on_task_assigned = ?,
+          email_digest_frequency = ?,
+          push_on_new_message = ?,
+          push_on_mention = ?,
+          push_on_task_due = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ?
       `)
         .bind(
-          body.line_enabled ? 1 : 0,
-          body.line_webhook_url || null,
-          body.slack_enabled ? 1 : 0,
-          body.slack_webhook_url || null,
-          body.notify_on_deal_create !== undefined ? (body.notify_on_deal_create ? 1 : 0) : 1,
-          body.notify_on_deal_update !== undefined ? (body.notify_on_deal_update ? 1 : 0) : 1,
-          body.notify_on_message !== undefined ? (body.notify_on_message ? 1 : 0) : 1,
-          body.notify_on_status_change !== undefined ? (body.notify_on_status_change ? 1 : 0) : 1,
+          body.email_on_new_deal !== undefined ? (body.email_on_new_deal ? 1 : 0) : 1,
+          body.email_on_deal_update !== undefined ? (body.email_on_deal_update ? 1 : 0) : 1,
+          body.email_on_new_message !== undefined ? (body.email_on_new_message ? 1 : 0) : 1,
+          body.email_on_mention !== undefined ? (body.email_on_mention ? 1 : 0) : 1,
+          body.email_on_task_assigned !== undefined ? (body.email_on_task_assigned ? 1 : 0) : 1,
+          body.email_digest_frequency || 'daily',
+          body.push_on_new_message !== undefined ? (body.push_on_new_message ? 1 : 0) : 0,
+          body.push_on_mention !== undefined ? (body.push_on_mention ? 1 : 0) : 0,
+          body.push_on_task_due !== undefined ? (body.push_on_task_due ? 1 : 0) : 0,
           user.id
         )
         .run()
@@ -124,32 +123,35 @@ notificationSettings.post('/', async (c) => {
       return c.json({ message: '通知設定を更新しました' })
     } else {
       // Create new settings
-      const settingsId = nanoid()
       await DB.prepare(`
         INSERT INTO notification_settings (
-          id, user_id,
-          line_enabled, line_webhook_url,
-          slack_enabled, slack_webhook_url,
-          notify_on_deal_create, notify_on_deal_update,
-          notify_on_message, notify_on_status_change
+          user_id,
+          email_on_new_deal, email_on_deal_update,
+          email_on_new_message, email_on_mention,
+          email_on_task_assigned, email_digest_frequency,
+          push_on_new_message, push_on_mention, push_on_task_due
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
         .bind(
-          settingsId,
           user.id,
-          body.line_enabled ? 1 : 0,
-          body.line_webhook_url || null,
-          body.slack_enabled ? 1 : 0,
-          body.slack_webhook_url || null,
-          body.notify_on_deal_create !== undefined ? (body.notify_on_deal_create ? 1 : 0) : 1,
-          body.notify_on_deal_update !== undefined ? (body.notify_on_deal_update ? 1 : 0) : 1,
-          body.notify_on_message !== undefined ? (body.notify_on_message ? 1 : 0) : 1,
-          body.notify_on_status_change !== undefined ? (body.notify_on_status_change ? 1 : 0) : 1
+          body.email_on_new_deal !== undefined ? (body.email_on_new_deal ? 1 : 0) : 1,
+          body.email_on_deal_update !== undefined ? (body.email_on_deal_update ? 1 : 0) : 1,
+          body.email_on_new_message !== undefined ? (body.email_on_new_message ? 1 : 0) : 1,
+          body.email_on_mention !== undefined ? (body.email_on_mention ? 1 : 0) : 1,
+          body.email_on_task_assigned !== undefined ? (body.email_on_task_assigned ? 1 : 0) : 1,
+          body.email_digest_frequency || 'daily',
+          body.push_on_new_message !== undefined ? (body.push_on_new_message ? 1 : 0) : 0,
+          body.push_on_mention !== undefined ? (body.push_on_mention ? 1 : 0) : 0,
+          body.push_on_task_due !== undefined ? (body.push_on_task_due ? 1 : 0) : 0
         )
         .run()
 
-      return c.json({ message: '通知設定を作成しました', id: settingsId }, 201)
+      const newSettings = await DB.prepare(`
+        SELECT id FROM notification_settings WHERE user_id = ?
+      `).bind(user.id).first<{ id: number }>()
+
+      return c.json({ message: '通知設定を作成しました', id: newSettings?.id }, 201)
     }
   } catch (error) {
     console.error('Save notification settings error:', error)
@@ -169,109 +171,12 @@ notificationSettings.post('/test', async (c) => {
       return c.json({ error: '通知タイプを指定してください（line または slack）' }, 400)
     }
 
-    // Get user's notification settings
-    const settings = await DB.prepare(`
-      SELECT 
-        line_enabled, line_webhook_url,
-        slack_enabled, slack_webhook_url
-      FROM notification_settings
-      WHERE user_id = ?
-    `)
-      .bind(user.id)
-      .first<{
-        line_enabled: number
-        line_webhook_url: string | null
-        slack_enabled: number
-        slack_webhook_url: string | null
-      }>()
-
-    if (!settings) {
-      return c.json({ error: '通知設定が見つかりません' }, 404)
-    }
-
-    // Test message
-    const testMessage = {
-      type: 'deal_create' as const,
-      title: 'テスト通知',
-      message: 'これはテスト通知です。通知設定が正しく動作しています。',
-      url: 'https://example.com',
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email
-      }
-    }
-
-    // Send test notification
-    let success = false
-    if (type === 'line' && settings.line_enabled === 1 && settings.line_webhook_url) {
-      const response = await fetch(settings.line_webhook_url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messages: [
-            {
-              type: 'text',
-              text: `🔔 ${testMessage.title}\n\n${testMessage.message}\n\n🔗 ${testMessage.url}`
-            }
-          ]
-        })
-      })
-      success = response.ok
-    } else if (type === 'slack' && settings.slack_enabled === 1 && settings.slack_webhook_url) {
-      const response = await fetch(settings.slack_webhook_url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: `🔔 ${testMessage.title}`,
-          blocks: [
-            {
-              type: 'header',
-              text: {
-                type: 'plain_text',
-                text: testMessage.title,
-                emoji: true
-              }
-            },
-            {
-              type: 'section',
-              text: {
-                type: 'mrkdwn',
-                text: testMessage.message
-              }
-            },
-            {
-              type: 'actions',
-              elements: [
-                {
-                  type: 'button',
-                  text: {
-                    type: 'plain_text',
-                    text: '詳細を見る',
-                    emoji: true
-                  },
-                  url: testMessage.url,
-                  style: 'primary'
-                }
-              ]
-            }
-          ]
-        })
-      })
-      success = response.ok
-    } else {
-      return c.json({ error: `${type}通知が有効になっていません` }, 400)
-    }
-
-    if (success) {
-      return c.json({ message: 'テスト通知を送信しました' })
-    } else {
-      return c.json({ error: 'テスト通知の送信に失敗しました' }, 500)
-    }
+    // Test notification is not supported in current schema
+    // This endpoint would need external notification service integration
+    return c.json({ 
+      message: 'テスト通知機能は現在のスキーマではサポートされていません。',
+      info: 'この機能を使用するには、LINE/Slack統合の設定が必要です。'
+    }, 501)
   } catch (error) {
     console.error('Test notification error:', error)
     return c.json({ error: 'テスト通知の送信中にエラーが発生しました' }, 500)

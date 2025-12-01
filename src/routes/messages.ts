@@ -168,64 +168,77 @@ messages.post('/deals/:dealId', async (c) => {
     }
 
     // 新着メッセージ通知（受信者へ）
+    // NOTE: 通知処理でエラーが発生してもメッセージ作成は成功させる
     try {
       const sender = await db.getUserById(userId);
       
       // 送信者以外の関係者に通知
       const recipientId = role === 'ADMIN' ? deal.seller_id : deal.buyer_id;
-      const recipient = await db.getUserById(recipientId);
       
-      // D1通知システムへの通知作成
-      if (recipient) {
-        const { createNotification } = await import('./notifications');
-        await createNotification(
-          c.env.DB,
-          recipient.id,
-          'MESSAGE',
-          `新着メッセージ: ${deal.title}`,
-          `${sender?.name || 'Unknown'}からメッセージが届きました。\n${sanitizedContent.substring(0, 100)}${sanitizedContent.length > 100 ? '...' : ''}`,
-          `/deals/${dealId}`
-        );
-        console.log(`D1 notification created for user ${recipient.id}`);
+      if (recipientId) {
+        const recipient = await db.getUserById(recipientId);
         
-        // LINE/Slack通知を送信
-        try {
-          const { sendNotificationToUser } = await import('../services/notification-service');
-          await sendNotificationToUser(c.env, recipient.id, {
-            type: 'message',
-            title: '新着メッセージ',
-            message: `案件「${deal.title}」に${sender?.name || 'Unknown'}からメッセージが届きました。\n\n${sanitizedContent.substring(0, 100)}${sanitizedContent.length > 100 ? '...' : ''}`,
-            url: `${c.req.url.replace(/\/api\/.*/, '')}/deals/${dealId}`,
-            user: {
-              id: sender?.id || userId,
-              name: sender?.name || 'Unknown',
-              email: sender?.email || 'unknown@example.com'
-            },
-            deal: {
-              id: dealId,
-              title: deal.title
+        // D1通知システムへの通知作成
+        if (recipient) {
+          try {
+            const { createNotification } = await import('./notifications');
+            await createNotification(
+              c.env.DB,
+              recipient.id,
+              'MESSAGE',
+              `新着メッセージ: ${deal.title}`,
+              `${sender?.name || 'Unknown'}からメッセージが届きました。\n${sanitizedContent.substring(0, 100)}${sanitizedContent.length > 100 ? '...' : ''}`,
+              `/deals/${dealId}`
+            );
+            console.log(`✅ D1 notification created for user ${recipient.id}`);
+          } catch (d1Error) {
+            console.error('D1 notification error:', d1Error);
+          }
+          
+          // LINE/Slack通知を送信
+          try {
+            const { sendNotificationToUser } = await import('../services/notification-service');
+            await sendNotificationToUser(c.env, recipient.id, {
+              type: 'message',
+              title: '新着メッセージ',
+              message: `案件「${deal.title}」に${sender?.name || 'Unknown'}からメッセージが届きました。\n\n${sanitizedContent.substring(0, 100)}${sanitizedContent.length > 100 ? '...' : ''}`,
+              url: `${c.req.url.replace(/\/api\/.*/, '')}/deals/${dealId}`,
+              user: {
+                id: sender?.id || userId,
+                name: sender?.name || 'Unknown',
+                email: sender?.email || 'unknown@example.com'
+              },
+              deal: {
+                id: dealId,
+                title: deal.title
+              }
+            });
+            console.log(`✅ LINE/Slack notification sent to user ${recipient.id}`);
+          } catch (slackError) {
+            console.error('LINE/Slack notification error:', slackError);
+          }
+          
+          // メール通知（オプショナル）
+          try {
+            const resendApiKey = c.env.RESEND_API_KEY;
+            if (resendApiKey && recipient?.email) {
+              const emailService = createEmailService(resendApiKey);
+              await emailService.sendNewMessageNotification(
+                recipient.email,
+                deal.title,
+                sender?.name || 'Unknown',
+                sanitizedContent
+              );
+              console.log(`✅ Email notification sent to ${recipient.email}`);
             }
-          });
-          console.log(`✅ LINE/Slack notification sent to user ${recipient.id}`);
-        } catch (slackError) {
-          console.error('LINE/Slack notification error:', slackError);
+          } catch (emailError) {
+            console.error('Email notification error:', emailError);
+          }
         }
-      }
-      
-      // メール通知（オプショナル）
-      const resendApiKey = c.env.RESEND_API_KEY;
-      if (resendApiKey && recipient?.email) {
-        const emailService = createEmailService(resendApiKey);
-        await emailService.sendNewMessageNotification(
-          recipient.email,
-          deal.title,
-          sender?.name || 'Unknown',
-          sanitizedContent
-        );
-        console.log(`Email notification sent to ${recipient.email}`);
       }
     } catch (notifError) {
       console.error('Failed to send new message notification:', notifError);
+      // 通知エラーでもメッセージ作成は成功させる
     }
 
     return c.json({ message: newMessage }, 201);

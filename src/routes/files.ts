@@ -9,8 +9,8 @@ const files = new Hono<{ Bindings: Bindings }>();
 // 全てのルートに認証必須
 files.use('*', authMiddleware);
 
-// ファイル検索（全案件横断）
-files.get('/search', async (c) => {
+// ファイル一覧取得ハンドラー（共通処理）
+const getFilesHandler = async (c: any) => {
   try {
     const userId = c.get('userId') as string;
     const role = c.get('userRole') as 'ADMIN' | 'AGENT';
@@ -157,10 +157,19 @@ files.get('/search', async (c) => {
       }
     });
   } catch (error) {
-    console.error('Search files error:', error);
-    return c.json({ error: 'Internal server error' }, 500);
+    console.error('Get files error:', error);
+    return c.json({ 
+      error: 'ファイル一覧の取得に失敗しました',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500);
   }
-});
+}
+
+// ルートルート: ファイル一覧取得
+files.get('/', getFilesHandler);
+
+// 検索エンドポイント: ファイル検索（後方互換性のため維持）
+files.get('/search', getFilesHandler);
 
 // ファイル一覧取得（特定案件）
 files.get('/deals/:dealId', async (c) => {

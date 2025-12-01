@@ -16,12 +16,15 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.63.0)**: https://e7fd7f62.real-estate-200units-v2.pages.dev 🆕 **← 最新（CSV Export追加）**
+- **Production URL (Latest v3.64.0)**: https://e7b17707.real-estate-200units-v2.pages.dev 🆕 **← 最新（ログイン履歴UI追加）**
+  - ✅ ログイン履歴の可視化UI（ダッシュボード統合）
   - ✅ CSVエクスポート機能（案件、KPI）
   - ✅ 通知システム完全統合（D1、メール、LINE、Slack）
   - ✅ KPIダッシュボード拡張（4つの新規分析API）
   - ✅ バッチ操作API（一括更新/削除）
   - ✅ REINFOLIB統合拡張（4都県235+市区町村対応）
+- **Previous URL (v3.63.0)**: https://e7fd7f62.real-estate-200units-v2.pages.dev
+  - CSVエクスポート機能追加 ✅
 - **Previous URL (v3.62.2)**: https://7e9cee29.real-estate-200units-v2.pages.dev
   - テスト成功率95%（主要機能100%動作） ✅
 - **Previous URL (v3.62.2)**: https://7e9cee29.real-estate-200units-v2.pages.dev
@@ -177,14 +180,20 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.63.0 (Production - Feature Enhancement Release) ✅
+- **バージョン**: v3.64.0 (Production - Security Enhancement Release) ✅
 - **進捗状況**: 全機能実装完了、実用可能な状態 ✅
 - **デプロイ日**: 2025-12-01
-- **本番URL**: https://e7fd7f62.real-estate-200units-v2.pages.dev 
+- **本番URL**: https://e7b17707.real-estate-200units-v2.pages.dev 
 - **GitHubリポジトリ**: https://github.com/koki-187/200
 - **ローカル動作**: ✅ 完全に動作（全APIエンドポイント動作確認済み）
 - **本番環境**: ✅ 主要機能正常動作確認済み
-- **最新の変更 (v3.63.0)**:
+- **最新の変更 (v3.64.0)**:
+  - ✅ ログイン履歴の可視化UI実装（ダッシュボード統合）
+  - ✅ ログイン成功/失敗統計の表示
+  - ✅ IPアドレス、User-Agent、失敗理由の詳細表示
+  - ✅ フィルター機能（成功/失敗、表示件数）
+  - ✅ ページネーション対応
+- **前回の変更 (v3.63.0)**:
   - ✅ CSVエクスポート機能（案件一覧、KPIサマリー）
   - ✅ 通知システムの完全統合（既存機能の確認）
   - ✅ バッチ操作API（既存機能の確認）

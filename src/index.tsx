@@ -11585,7 +11585,7 @@ app.onError((err, c) => {
 
 // 通知履歴ページ
 app.get('/notifications-history', (c) => {
-  return c.html(\`
+  return c.html(`
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -11874,7 +11874,7 @@ app.get('/notifications-history', (c) => {
   </script>
 </body>
 </html>
-  \`)
+  `)
 })
 
 // 静的ファイルの配信（最後に配置してAPIルートより優先度を下げる）

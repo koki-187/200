@@ -1191,6 +1191,61 @@ app.get('/dashboard', (c) => {
       </div>
     </div>
 
+    <!-- クイックアクセスカード -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- 投資シミュレーター -->
+      <a href="/investment-simulator" class="bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl shadow-lg hover:shadow-2xl transition p-6 text-white hover:scale-105">
+        <div class="flex items-center space-x-4">
+          <div class="bg-white bg-opacity-20 rounded-full p-3">
+            <i class="fas fa-calculator text-3xl"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold">投資シミュレーター</h3>
+            <p class="text-sm text-purple-100 mt-1">収益性を詳細分析</p>
+          </div>
+        </div>
+      </a>
+
+      <!-- レポート機能 -->
+      <a href="/reports" class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg hover:shadow-2xl transition p-6 text-white hover:scale-105">
+        <div class="flex items-center space-x-4">
+          <div class="bg-white bg-opacity-20 rounded-full p-3">
+            <i class="fas fa-chart-line text-3xl"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold">レポート</h3>
+            <p class="text-sm text-blue-100 mt-1">パフォーマンス分析</p>
+          </div>
+        </div>
+      </a>
+
+      <!-- 新規案件作成 -->
+      <a href="/deals/new" class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg hover:shadow-2xl transition p-6 text-white hover:scale-105">
+        <div class="flex items-center space-x-4">
+          <div class="bg-white bg-opacity-20 rounded-full p-3">
+            <i class="fas fa-plus-circle text-3xl"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold">新規案件</h3>
+            <p class="text-sm text-green-100 mt-1">OCR自動入力対応</p>
+          </div>
+        </div>
+      </a>
+
+      <!-- 建築基準法チェック -->
+      <a href="/building-regulations" class="bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl shadow-lg hover:shadow-2xl transition p-6 text-white hover:scale-105">
+        <div class="flex items-center space-x-4">
+          <div class="bg-white bg-opacity-20 rounded-full p-3">
+            <i class="fas fa-building text-3xl"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold">建築基準法</h3>
+            <p class="text-sm text-orange-100 mt-1">規制チェック</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
     <!-- ナビゲーションタブ -->
     <div class="bg-white rounded-xl shadow-lg mb-6 border border-slate-200">
       <div class="border-b border-slate-200">

@@ -9911,6 +9911,672 @@ self.addEventListener('pushsubscriptionchange', (event) => {
   });
 });
 
+// 投資シミュレーターページ
+app.get('/investment-simulator', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>投資シミュレーター - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- ナビゲーションバー -->
+  <nav class="bg-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <i class="fas fa-calculator text-2xl text-blue-600 mr-3"></i>
+          <h1 class="text-xl font-bold text-gray-900">投資シミュレーター</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+            <i class="fas fa-arrow-left mr-2"></i>ダッシュボードに戻る
+          </a>
+          <button onclick="logout()" class="text-red-600 hover:text-red-800">
+            <i class="fas fa-sign-out-alt mr-2"></i>ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- メインコンテンツ -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- アクションボタン -->
+    <div class="mb-6 flex justify-between items-center">
+      <h2 class="text-2xl font-bold text-gray-900">シナリオ一覧</h2>
+      <button onclick="showCreateModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-all">
+        <i class="fas fa-plus mr-2"></i>新規シナリオ作成
+      </button>
+    </div>
+
+    <!-- シナリオ一覧 -->
+    <div id="scenarios-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- シナリオカードがここに表示される -->
+    </div>
+
+    <!-- ローディング表示 -->
+    <div id="loading" class="text-center py-12 hidden">
+      <i class="fas fa-spinner fa-spin text-4xl text-blue-600"></i>
+      <p class="mt-4 text-gray-600">読み込み中...</p>
+    </div>
+
+    <!-- 空状態表示 -->
+    <div id="empty-state" class="text-center py-12 hidden">
+      <i class="fas fa-inbox text-6xl text-gray-400 mb-4"></i>
+      <p class="text-xl text-gray-600 mb-6">シナリオがまだありません</p>
+      <button onclick="showCreateModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg">
+        最初のシナリオを作成
+      </button>
+    </div>
+  </div>
+
+  <!-- 新規作成モーダル -->
+  <div id="create-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50 overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+      <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        <h3 class="text-2xl font-bold text-gray-900">新規シナリオ作成</h3>
+        <button onclick="hideCreateModal()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+      
+      <form id="create-form" class="p-6 space-y-6">
+        <!-- 基本情報 -->
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <h4 class="font-bold text-lg mb-4 text-blue-900">基本情報</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">シナリオ名 *</label>
+              <input type="text" name="name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="例: 都心マンション投資">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">説明</label>
+              <input type="text" name="description" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="シナリオの説明">
+            </div>
+          </div>
+        </div>
+
+        <!-- 物件情報 -->
+        <div class="bg-green-50 p-4 rounded-lg">
+          <h4 class="font-bold text-lg mb-4 text-green-900">物件情報</h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">物件価格 (万円) *</label>
+              <input type="number" name="property_price" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="5000">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">土地価格 (万円)</label>
+              <input type="number" name="land_price" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="3000">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">建物価格 (万円)</label>
+              <input type="number" name="building_price" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="2000">
+            </div>
+          </div>
+        </div>
+
+        <!-- ローン情報 -->
+        <div class="bg-purple-50 p-4 rounded-lg">
+          <h4 class="font-bold text-lg mb-4 text-purple-900">ローン情報</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">頭金 (万円)</label>
+              <input type="number" name="down_payment" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="1000">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">ローン金額 (万円)</label>
+              <input type="number" name="loan_amount" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="4000">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">金利 (%)</label>
+              <input type="number" step="0.01" name="loan_interest_rate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="2.5">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">期間 (年)</label>
+              <input type="number" name="loan_period" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="30">
+            </div>
+          </div>
+          <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">初期費用 (万円)</label>
+            <input type="number" name="initial_costs" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="100">
+          </div>
+        </div>
+
+        <!-- 収入情報 -->
+        <div class="bg-yellow-50 p-4 rounded-lg">
+          <h4 class="font-bold text-lg mb-4 text-yellow-900">収入情報</h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">年間賃料 (万円)</label>
+              <input type="number" name="annual_rent" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="300">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">稼働率 (%)</label>
+              <input type="number" step="0.1" name="occupancy_rate" value="95" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">その他収入 (万円)</label>
+              <input type="number" name="other_income" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="0">
+            </div>
+          </div>
+        </div>
+
+        <!-- 支出情報 -->
+        <div class="bg-red-50 p-4 rounded-lg">
+          <h4 class="font-bold text-lg mb-4 text-red-900">支出情報</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">管理費 (万円/年)</label>
+              <input type="number" name="annual_management_fee" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="30">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">修繕費 (万円/年)</label>
+              <input type="number" name="annual_repair_cost" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="20">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">固定資産税 (万円/年)</label>
+              <input type="number" name="annual_property_tax" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="50">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">保険 (万円/年)</label>
+              <input type="number" name="annual_insurance" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="10">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">その他 (万円/年)</label>
+              <input type="number" name="other_expenses" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="0">
+            </div>
+          </div>
+        </div>
+
+        <!-- ボタン -->
+        <div class="flex justify-end space-x-4">
+          <button type="button" onclick="hideCreateModal()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+            キャンセル
+          </button>
+          <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+            <i class="fas fa-save mr-2"></i>作成
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 詳細表示モーダル -->
+  <div id="detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50 overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+      <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        <h3 id="detail-title" class="text-2xl font-bold text-gray-900"></h3>
+        <button onclick="hideDetailModal()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+      
+      <div class="p-6">
+        <!-- タブメニュー -->
+        <div class="border-b border-gray-200 mb-6">
+          <nav class="flex space-x-8">
+            <button onclick="showTab('summary')" class="tab-button border-b-2 border-blue-600 pb-2 px-1 text-blue-600 font-medium">
+              サマリー
+            </button>
+            <button onclick="showTab('charts')" class="tab-button border-b-2 border-transparent pb-2 px-1 text-gray-500 hover:text-gray-700">
+              グラフ
+            </button>
+            <button onclick="showTab('cashflow')" class="tab-button border-b-2 border-transparent pb-2 px-1 text-gray-500 hover:text-gray-700">
+              キャッシュフロー
+            </button>
+          </nav>
+        </div>
+
+        <!-- サマリータブ -->
+        <div id="tab-summary" class="tab-content">
+          <div id="detail-summary" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- サマリー情報がここに表示される -->
+          </div>
+        </div>
+
+        <!-- グラフタブ -->
+        <div id="tab-charts" class="tab-content hidden">
+          <div class="space-y-8">
+            <div class="bg-white p-6 rounded-lg shadow">
+              <h4 class="text-lg font-bold mb-4">キャッシュフロー推移</h4>
+              <canvas id="cashflow-chart"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+              <h4 class="text-lg font-bold mb-4">累積キャッシュフロー</h4>
+              <canvas id="cumulative-chart"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+              <h4 class="text-lg font-bold mb-4">資産価値推移</h4>
+              <canvas id="equity-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- キャッシュフロータブ -->
+        <div id="tab-cashflow" class="tab-content hidden">
+          <div id="cashflow-table" class="overflow-x-auto">
+            <!-- テーブルがここに表示される -->
+          </div>
+        </div>
+
+        <!-- アクションボタン -->
+        <div class="mt-6 flex justify-between items-center">
+          <button onclick="exportPDF()" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+            <i class="fas fa-file-pdf mr-2"></i>PDFエクスポート
+          </button>
+          <div class="space-x-4">
+            <button onclick="deleteScenario()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg">
+              <i class="fas fa-trash mr-2"></i>削除
+            </button>
+            <button onclick="hideDetailModal()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+              閉じる
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentScenarioId = null;
+    let charts = {};
+
+    // 初期化
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAuth();
+      loadScenarios();
+    });
+
+    // 認証チェック
+    function checkAuth() {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+      axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+    }
+
+    // ログアウト
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+
+    // シナリオ一覧読み込み
+    async function loadScenarios() {
+      const loading = document.getElementById('loading');
+      const emptyState = document.getElementById('empty-state');
+      const list = document.getElementById('scenarios-list');
+      
+      loading.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+      list.innerHTML = '';
+
+      try {
+        const response = await axios.get('/api/investment-simulator');
+        const scenarios = response.data.scenarios;
+
+        if (scenarios.length === 0) {
+          emptyState.classList.remove('hidden');
+        } else {
+          scenarios.forEach(scenario => {
+            const card = createScenarioCard(scenario);
+            list.appendChild(card);
+          });
+        }
+      } catch (error) {
+        console.error('Error loading scenarios:', error);
+        alert('シナリオの読み込みに失敗しました');
+      } finally {
+        loading.classList.add('hidden');
+      }
+    }
+
+    // シナリオカード作成
+    function createScenarioCard(scenario) {
+      const div = document.createElement('div');
+      div.className = 'bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all cursor-pointer';
+      div.onclick = () => showDetail(scenario.id);
+
+      const isFavorite = scenario.is_favorite === 1;
+      
+      div.innerHTML = \`
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-xl font-bold text-gray-900">\${scenario.name}</h3>
+          \${isFavorite ? '<i class="fas fa-star text-yellow-500"></i>' : ''}
+        </div>
+        
+        \${scenario.description ? \`<p class="text-gray-600 text-sm mb-4">\${scenario.description}</p>\` : ''}
+        
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="text-center p-3 bg-blue-50 rounded-lg">
+            <p class="text-xs text-gray-600 mb-1">ROI</p>
+            <p class="text-lg font-bold text-blue-600">\${Number(scenario.roi).toFixed(2)}%</p>
+          </div>
+          <div class="text-center p-3 bg-green-50 rounded-lg">
+            <p class="text-xs text-gray-600 mb-1">Cap Rate</p>
+            <p class="text-lg font-bold text-green-600">\${Number(scenario.cap_rate).toFixed(2)}%</p>
+          </div>
+        </div>
+        
+        <div class="space-y-2 text-sm text-gray-600">
+          <div class="flex justify-between">
+            <span>物件価格:</span>
+            <span class="font-medium">\${Number(scenario.property_price).toLocaleString()}万円</span>
+          </div>
+          <div class="flex justify-between">
+            <span>年間CF:</span>
+            <span class="font-medium text-green-600">\${Number(scenario.annual_cash_flow).toLocaleString()}万円</span>
+          </div>
+        </div>
+      \`;
+      
+      return div;
+    }
+
+    // 新規作成モーダル表示
+    function showCreateModal() {
+      document.getElementById('create-modal').classList.remove('hidden');
+    }
+
+    // 新規作成モーダル非表示
+    function hideCreateModal() {
+      document.getElementById('create-modal').classList.add('hidden');
+      document.getElementById('create-form').reset();
+    }
+
+    // フォーム送信
+    document.getElementById('create-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const data = {};
+      
+      for (let [key, value] of formData.entries()) {
+        data[key] = value === '' ? 0 : Number(value);
+      }
+      
+      // name は文字列のまま
+      data.name = formData.get('name');
+      data.description = formData.get('description');
+      
+      try {
+        await axios.post('/api/investment-simulator', data);
+        hideCreateModal();
+        loadScenarios();
+        alert('シナリオを作成しました');
+      } catch (error) {
+        console.error('Error creating scenario:', error);
+        alert('シナリオの作成に失敗しました');
+      }
+    });
+
+    // 詳細表示
+    async function showDetail(id) {
+      currentScenarioId = id;
+      const modal = document.getElementById('detail-modal');
+      modal.classList.remove('hidden');
+      
+      try {
+        const response = await axios.get(\`/api/investment-simulator/\${id}\`);
+        const scenario = response.data.scenario;
+        const cashFlows = response.data.cashFlows;
+        
+        document.getElementById('detail-title').textContent = scenario.name;
+        displaySummary(scenario);
+        loadCharts(id);
+        displayCashFlowTable(cashFlows);
+      } catch (error) {
+        console.error('Error loading detail:', error);
+        alert('詳細の読み込みに失敗しました');
+      }
+    }
+
+    // サマリー表示
+    function displaySummary(scenario) {
+      const summary = document.getElementById('detail-summary');
+      summary.innerHTML = \`
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <h4 class="font-bold text-blue-900 mb-2">ROI</h4>
+          <p class="text-3xl font-bold text-blue-600">\${Number(scenario.roi).toFixed(2)}%</p>
+        </div>
+        <div class="bg-green-50 p-4 rounded-lg">
+          <h4 class="font-bold text-green-900 mb-2">Cap Rate</h4>
+          <p class="text-3xl font-bold text-green-600">\${Number(scenario.cap_rate).toFixed(2)}%</p>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-lg">
+          <h4 class="font-bold text-purple-900 mb-2">DCR</h4>
+          <p class="text-3xl font-bold text-purple-600">\${Number(scenario.debt_coverage_ratio).toFixed(2)}</p>
+        </div>
+        <div class="bg-yellow-50 p-4 rounded-lg">
+          <h4 class="font-bold text-yellow-900 mb-2">損益分岐点稼働率</h4>
+          <p class="text-3xl font-bold text-yellow-600">\${Number(scenario.break_even_occupancy).toFixed(1)}%</p>
+        </div>
+        <div class="bg-red-50 p-4 rounded-lg">
+          <h4 class="font-bold text-red-900 mb-2">年間CF</h4>
+          <p class="text-3xl font-bold text-red-600">\${Number(scenario.annual_cash_flow).toLocaleString()}万円</p>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h4 class="font-bold text-gray-900 mb-2">NOI</h4>
+          <p class="text-3xl font-bold text-gray-600">\${Number(scenario.net_operating_income).toLocaleString()}万円</p>
+        </div>
+      \`;
+    }
+
+    // グラフ読み込み
+    async function loadCharts(id) {
+      try {
+        const response = await axios.get(\`/api/investment-simulator/\${id}/chart-data\`);
+        const data = response.data;
+        
+        // 既存のチャートを破棄
+        Object.values(charts).forEach(chart => chart.destroy());
+        charts = {};
+        
+        // キャッシュフローチャート
+        const cfCtx = document.getElementById('cashflow-chart');
+        charts.cashflow = new Chart(cfCtx, {
+          type: 'line',
+          data: data.cashFlow,
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'top' },
+              title: { display: false }
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+        
+        // 累積キャッシュフローチャート
+        const cumCtx = document.getElementById('cumulative-chart');
+        charts.cumulative = new Chart(cumCtx, {
+          type: 'line',
+          data: data.cumulativeCashFlow,
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'top' },
+              title: { display: false }
+            }
+          }
+        });
+        
+        // 資産価値チャート
+        const eqCtx = document.getElementById('equity-chart');
+        charts.equity = new Chart(eqCtx, {
+          type: 'line',
+          data: data.equity,
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'top' },
+              title: { display: false }
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error loading charts:', error);
+      }
+    }
+
+    // キャッシュフローテーブル表示
+    function displayCashFlowTable(cashFlows) {
+      const table = document.getElementById('cashflow-table');
+      let html = \`
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">年</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">収入</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">支出</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CF</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">累積CF</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">物件価値</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ローン残高</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">純資産</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+      \`;
+      
+      cashFlows.forEach(cf => {
+        html += \`
+          <tr>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">\${cf.year}年</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">\${Number(cf.total_income).toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">\${Number(cf.total_expenses).toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">\${Number(cf.net_cash_flow).toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-purple-600">\${Number(cf.cumulative_cash_flow).toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${Number(cf.property_value).toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">\${Number(cf.loan_balance).toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">\${Number(cf.equity).toLocaleString()}</td>
+          </tr>
+        \`;
+      });
+      
+      html += \`
+          </tbody>
+        </table>
+      \`;
+      
+      table.innerHTML = html;
+    }
+
+    // 詳細モーダル非表示
+    function hideDetailModal() {
+      document.getElementById('detail-modal').classList.add('hidden');
+      currentScenarioId = null;
+    }
+
+    // タブ切り替え
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+      });
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('border-blue-600', 'text-blue-600');
+        btn.classList.add('border-transparent', 'text-gray-500');
+      });
+      
+      document.getElementById(\`tab-\${tabName}\`).classList.remove('hidden');
+      event.target.classList.remove('border-transparent', 'text-gray-500');
+      event.target.classList.add('border-blue-600', 'text-blue-600');
+    }
+
+    // PDFエクスポート
+    async function exportPDF() {
+      if (!currentScenarioId) return;
+      
+      try {
+        const response = await axios.get(\`/api/investment-simulator/\${currentScenarioId}/report\`);
+        const report = response.data;
+        
+        // 簡易的なPDF生成（実際はライブラリを使用）
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(\`
+          <html>
+          <head>
+            <title>投資シミュレーションレポート</title>
+            <style>
+              body { font-family: sans-serif; padding: 20px; }
+              h1 { color: #1e40af; }
+              table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f3f4f6; }
+            </style>
+          </head>
+          <body>
+            <h1>投資シミュレーションレポート</h1>
+            <h2>\${report.scenario.name}</h2>
+            <p>生成日時: \${new Date(report.generated_at).toLocaleString('ja-JP')}</p>
+            
+            <h3>投資指標</h3>
+            <table>
+              <tr><th>指標</th><th>値</th></tr>
+              <tr><td>ROI</td><td>\${report.metrics.roi.toFixed(2)}%</td></tr>
+              <tr><td>Cap Rate</td><td>\${report.metrics.cap_rate.toFixed(2)}%</td></tr>
+              <tr><td>DCR</td><td>\${report.metrics.debt_coverage_ratio.toFixed(2)}</td></tr>
+              <tr><td>損益分岐点稼働率</td><td>\${report.metrics.break_even_occupancy.toFixed(1)}%</td></tr>
+            </table>
+            
+            <h3>30年間のサマリー</h3>
+            <table>
+              <tr><th>項目</th><th>金額</th></tr>
+              <tr><td>総投資額</td><td>\${report.summary.total_investment.toLocaleString()}万円</td></tr>
+              <tr><td>総収入</td><td>\${report.summary.total_income_30y.toLocaleString()}万円</td></tr>
+              <tr><td>総支出</td><td>\${report.summary.total_expenses_30y.toLocaleString()}万円</td></tr>
+              <tr><td>純利益</td><td>\${report.summary.net_profit_30y.toLocaleString()}万円</td></tr>
+              <tr><td>最終純資産</td><td>\${report.summary.final_equity.toLocaleString()}万円</td></tr>
+              <tr><td>総リターン</td><td>\${report.summary.total_return.toLocaleString()}万円</td></tr>
+            </table>
+          </body>
+          </html>
+        \`);
+        printWindow.document.close();
+        printWindow.print();
+      } catch (error) {
+        console.error('Error exporting PDF:', error);
+        alert('PDFエクスポートに失敗しました');
+      }
+    }
+
+    // 削除
+    async function deleteScenario() {
+      if (!currentScenarioId) return;
+      
+      if (!confirm('このシナリオを削除しますか？')) return;
+      
+      try {
+        await axios.delete(\`/api/investment-simulator/\${currentScenarioId}\`);
+        hideDetailModal();
+        loadScenarios();
+        alert('シナリオを削除しました');
+      } catch (error) {
+        console.error('Error deleting scenario:', error);
+        alert('シナリオの削除に失敗しました');
+      }
+    }
+  </script>
+</body>
+</html>
+  `);
+});
+
 // 存在しない静的アセットへのリクエストに404を返す（静的ファイル配信の前に配置）
 app.get('/favicon.ico', (c) => c.text('Not Found', 404));
 app.get('/apple-touch-icon.png', (c) => c.text('Not Found', 404));

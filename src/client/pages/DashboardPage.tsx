@@ -12,7 +12,6 @@ const DashboardPage: React.FC = () => {
   const { deals, setDeals, filters, sortBy, sortOrder, viewMode, setViewMode } = useDealStore()
   const { get, loading } = useGet<{ deals: Deal[] }>()
   const { success, error } = useToast()
-  const [showNewDealModal, setShowNewDealModal] = useState(false)
 
   useEffect(() => {
     loadDeals()
@@ -137,16 +136,16 @@ const DashboardPage: React.FC = () => {
               Excelエクスポート
             </button>
             
-            {user?.role === 'AGENT' && (
-              <button
-                onClick={() => setShowNewDealModal(true)}
+            {(user?.role === 'AGENT' || user?.role === 'ADMIN') && (
+              <a
+                href="/deals/create"
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 新規案件作成
-              </button>
+              </a>
             )}
           </div>
         </div>

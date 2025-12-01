@@ -1,7 +1,9 @@
 import React from 'react'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
-import GalleryPage from './pages/GalleryPage'
+import DealCreatePage from './pages/DealCreatePage'
+import DealDetailPage from './pages/DealDetailPage'
+import SpecialCasesPage from './pages/SpecialCasesPage'
 import Toast from './components/Toast'
 import { useAuthStore } from './store/authStore'
 
@@ -21,12 +23,21 @@ const App: React.FC = () => {
       return null
     }
 
+    // Deal detail page (must come before switch)
+    if (pathname.startsWith('/deals/') && pathname.split('/').length === 3) {
+      return <DealDetailPage />
+    }
+
     switch (pathname) {
       case '/login':
         return <LoginPage />
       case '/dashboard':
       case '/':
         return <DashboardPage />
+      case '/deals/create':
+        return <DealCreatePage />
+      case '/special-cases':
+        return <SpecialCasesPage />
       default:
         return (
           <div className="min-h-screen flex items-center justify-center">

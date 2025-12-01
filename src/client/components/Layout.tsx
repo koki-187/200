@@ -37,17 +37,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <a
                   href="/dashboard"
-                  className="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  className={`${
+                    window.location.pathname === '/dashboard' || window.location.pathname === '/'
+                      ? 'border-indigo-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
                 >
                   ダッシュボード
                 </a>
                 {user.role === 'ADMIN' && (
-                  <a
-                    href="/users"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    ユーザー管理
-                  </a>
+                  <>
+                    <a
+                      href="/special-cases"
+                      className={`${
+                        window.location.pathname === '/special-cases'
+                          ? 'border-indigo-500 text-gray-900'
+                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                    >
+                      特別案件承認
+                    </a>
+                    <a
+                      href="/users"
+                      className={`${
+                        window.location.pathname === '/users'
+                          ? 'border-indigo-500 text-gray-900'
+                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                    >
+                      ユーザー管理
+                    </a>
+                  </>
                 )}
               </div>
             </div>
@@ -104,21 +124,45 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="pt-2 pb-3 space-y-1">
               <a
                 href="/dashboard"
-                className="bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
+                className={`${
+                  window.location.pathname === '/dashboard' || window.location.pathname === '/'
+                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
               >
                 ダッシュボード
               </a>
               {user.role === 'ADMIN' && (
-                <a
-                  href="/users"
-                  className="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-                >
-                  ユーザー管理
-                </a>
+                <>
+                  <a
+                    href="/special-cases"
+                    className={`${
+                      window.location.pathname === '/special-cases'
+                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                        : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                    } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+                  >
+                    特別案件承認
+                  </a>
+                  <a
+                    href="/users"
+                    className={`${
+                      window.location.pathname === '/users'
+                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                        : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                    } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+                  >
+                    ユーザー管理
+                  </a>
+                </>
               )}
               <a
                 href="/notifications"
-                className="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
+                className={`${
+                  window.location.pathname === '/notifications'
+                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
               >
                 通知 {unreadCount > 0 && `(${unreadCount})`}
               </a>

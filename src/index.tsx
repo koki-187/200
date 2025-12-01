@@ -39,8 +39,12 @@ import buildingRegulations from './routes/building-regulations';
 import { rateLimitPresets } from './middleware/rate-limit';
 import { apiVersionMiddleware, getApiVersionInfo } from './middleware/api-version';
 import { errorTrackingMiddleware, initializeErrorTracker } from './middleware/error-tracking';
+import { errorHandler } from './middleware/error-handler';
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+// グローバルエラーハンドリング（最優先）
+app.use('*', errorHandler);
 
 // セキュリティヘッダー設定（全リクエストに適用）
 app.use('*', async (c, next) => {

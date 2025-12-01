@@ -1,216 +1,418 @@
-import { z } from 'zod';
-
 /**
- * Zodバリデーションスキーマ定義
+ * 入力バリデーションユーティリティ
+ * フロントエンド・バックエンド共通で使用可能
  */
 
-// ユーザー認証スキーマ
-export const loginSchema = z.object({
-  email: z.string().email('有効なメールアドレスを入力してください'),
-  password: z.string().min(6, 'パスワードは6文字以上で入力してください'),
-  rememberMe: z.boolean().optional()
-});
-
-export const registerSchema = z.object({
-  email: z.string().email('有効なメールアドレスを入力してください'),
-  password: z.string().min(8, 'パスワードは8文字以上で入力してください')
-    .regex(/[A-Z]/, 'パスワードには大文字を含めてください')
-    .regex(/[a-z]/, 'パスワードには小文字を含めてください')
-    .regex(/[0-9]/, 'パスワードには数字を含めてください'),
-  name: z.string().min(1, '名前を入力してください').max(100, '名前は100文字以内で入力してください'),
-  role: z.enum(['ADMIN', 'AGENT'], { errorMap: () => ({ message: '有効な役割を選択してください' }) }),
-  company_name: z.string().max(200, '会社名は200文字以内で入力してください').optional(),
-  company_address: z.string().max(500, '会社住所は500文字以内で入力してください').optional(),
-  position: z.string().max(100, '役職は100文字以内で入力してください').optional(),
-  mobile_phone: z.string().max(20, '携帯電話番号は20文字以内で入力してください').optional(),
-  company_phone: z.string().max(20, '会社電話番号は20文字以内で入力してください').optional(),
-  company_fax: z.string().max(20, 'FAX番号は20文字以内で入力してください').optional()
-});
-
-// 案件関連スキーマ
-export const dealSchema = z.object({
-  title: z.string().min(1, '案件名を入力してください').max(200, '案件名は200文字以内で入力してください'),
-  seller_id: z.string().min(1, '売主担当者を選択してください'),
-  status: z.enum(['NEW', 'IN_REVIEW', 'REVIEWING', 'REPLIED', 'NEGOTIATING', 'CONTRACTED', 'REJECTED', 'CLOSED'], { 
-    errorMap: () => ({ message: '有効なステータスを選択してください' }) 
-  }).optional(),
-  location: z.string().max(500, '所在地は500文字以内で入力してください').optional(),
-  land_area: z.string().max(100, '面積は100文字以内で入力してください').optional(),
-  zoning: z.string().max(100, '用途地域は100文字以内で入力してください').optional(),
-  building_coverage: z.string().max(50, '建蔽率は50文字以内で入力してください').optional(),
-  floor_area_ratio: z.string().max(50, '容積率は50文字以内で入力してください').optional(),
-  height_district: z.string().max(100, '高度地区は100文字以内で入力してください').optional(),
-  fire_zone: z.string().max(100, '防火地域は100文字以内で入力してください').optional(),
-  road_info: z.string().max(500, '接道状況は500文字以内で入力してください').optional(),
-  frontage: z.string().max(50, '間口は50文字以内で入力してください').optional(),
-  building_area: z.string().max(100, '建物面積は100文字以内で入力してください').optional(),
-  structure: z.string().max(100, '構造は100文字以内で入力してください').optional(),
-  built_year: z.string().max(50, '築年月は50文字以内で入力してください').optional(),
-  yield_rate: z.string().max(50, '利回りは50文字以内で入力してください').optional(),
-  occupancy_status: z.string().max(100, '賃貸状況は100文字以内で入力してください').optional(),
-  current_status: z.string().max(200, '現況は200文字以内で入力してください').optional(),
-  current_use: z.string().max(200, '現況は200文字以内で入力してください').optional(),
-  station: z.string().max(200, '最寄駅は200文字以内で入力してください').optional(),
-  walk_minutes: z.union([z.number().int().min(0).max(999), z.string()]).optional().transform(val => {
-    if (typeof val === 'string') {
-      const num = parseInt(val);
-      return isNaN(num) ? undefined : num;
-    }
-    return val;
-  }),
-  desired_price: z.string().max(100, '希望価格は100文字以内で入力してください').optional(),
-  remarks: z.string().max(2000, '備考は2000文字以内で入力してください').optional()
-});
-
-// 初回6情報の必須チェック用スキーマ
-// 1. 所在地（住居表示／地番）・最寄駅
-// 2. 面積（実測／公簿）
-// 3. 用途・建蔽・容積・高度・防火
-// 4. 接道（方位・幅員・間口）
-// 5. 現況
-// 6. 希望価格
-export const requiredInitialInfoSchema = z.object({
-  // 1. 所在地・最寄駅
-  location: z.string().min(1, '【必須】所在地を入力してください').max(500, '所在地は500文字以内で入力してください'),
-  station: z.string().min(1, '【必須】最寄駅を入力してください').max(200, '最寄駅は200文字以内で入力してください'),
-  
-  // 2. 面積（実測／公簿）
-  land_area: z.string().min(1, '【必須】土地面積を入力してください').max(100, '面積は100文字以内で入力してください'),
-  
-  // 3. 用途・建蔽・容積・高度・防火
-  zoning: z.string().min(1, '【必須】用途地域を入力してください').max(100, '用途地域は100文字以内で入力してください'),
-  building_coverage: z.string().min(1, '【必須】建蔽率を入力してください').max(50, '建蔽率は50文字以内で入力してください'),
-  floor_area_ratio: z.string().min(1, '【必須】容積率を入力してください').max(50, '容積率は50文字以内で入力してください'),
-  height_district: z.string().max(100, '高度地区は100文字以内で入力してください').optional(),
-  fire_zone: z.string().min(1, '【必須】防火地域区分を入力してください').max(100, '防火地域は100文字以内で入力してください'),
-  
-  // 4. 接道（方位・幅員・間口）
-  road_info: z.string().min(1, '【必須】接道状況（方位・幅員）を入力してください').max(500, '接道状況は500文字以内で入力してください'),
-  frontage: z.string().min(1, '【必須】間口を入力してください').max(50, '間口は50文字以内で入力してください'),
-  
-  // 5. 現況
-  current_status: z.string().min(1, '【必須】現況を入力してください').max(200, '現況は200文字以内で入力してください'),
-  
-  // 6. 希望価格
-  desired_price: z.string().min(1, '【必須】希望価格を入力してください').max(100, '希望価格は100文字以内で入力してください')
-});
-
-// 通常の案件作成スキーマに初回6情報の必須チェックを統合
-export const dealCreateSchema = dealSchema.merge(requiredInitialInfoSchema);
-
-export const dealUpdateSchema = dealSchema.partial().extend({
-  id: z.string().min(1, '案件IDが必要です')
-});
-
-// メッセージスキーマ
-export const messageSchema = z.object({
-  deal_id: z.string().min(1, '案件IDが必要です'),
-  content: z.string().min(1, 'メッセージを入力してください').max(5000, 'メッセージは5000文字以内で入力してください')
-});
-
-// ファイルアップロードスキーマ（メタデータ検証）
-export const fileMetadataSchema = z.object({
-  filename: z.string().min(1).max(255),
-  size: z.number().int().positive().max(10 * 1024 * 1024), // 10MB
-  type: z.string().regex(/^(application\/pdf|image\/(jpeg|jpg|png|gif)|application\/(vnd\.ms-excel|vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document)|application\/zip|text\/plain)$/, 
-    '許可されていないファイル形式です')
-});
-
-// 設定スキーマ
-export const businessDaysSchema = z.object({
-  business_days: z.array(z.number().int().min(0).max(6)).min(1, '最低1つの営業日を選択してください')
-});
-
-export const holidaySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '有効な日付形式（YYYY-MM-DD）で入力してください'),
-  description: z.string().min(1, '説明を入力してください').max(200, '説明は200文字以内で入力してください')
-});
-
-export const storageLimitSchema = z.object({
-  storage_limit_mb: z.number().int().min(10).max(1000)
-});
-
-// Proposal スキーマ
-export const proposalSchema = z.object({
-  deal_id: z.string().min(1, '案件IDが必要です'),
-  buyer_profile: z.object({
-    budget: z.string().optional(),
-    preferences: z.string().optional(),
-    timeline: z.string().optional()
-  }).optional()
-});
-
-// OCR スキーマ
-export const ocrSchema = z.object({
-  file_type: z.enum(['image', 'pdf']),
-  file_size: z.number().int().positive().max(10 * 1024 * 1024)
-});
-
-// 通知スキーマ
-export const notificationFilterSchema = z.object({
-  type: z.enum(['ALL', 'NEW_DEAL', 'NEW_MESSAGE', 'DEADLINE', 'MISSING_INFO']).optional(),
-  is_read: z.boolean().optional()
-});
+import { z } from 'zod'
+import { ValidationError } from '../types/api'
 
 /**
- * バリデーションヘルパー関数
+ * Zodスキーマのバリデーション結果
  */
+export interface ZodValidationResult<T> {
+  success: boolean
+  data?: T
+  errors?: Array<{
+    path: string
+    message: string
+  }>
+}
 
-export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): { 
-  success: boolean; 
-  data?: T; 
-  errors?: string[] 
-} {
+/**
+ * Zodスキーマを使ったバリデーション
+ */
+export function validateData<T>(
+  schema: z.ZodSchema<T>,
+  data: unknown
+): ZodValidationResult<T> {
   try {
-    const validData = schema.parse(data);
-    return { success: true, data: validData };
+    const result = schema.parse(data)
+    return {
+      success: true,
+      data: result,
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.issues.map(err => {
-        const path = err.path.join('.');
-        return `${path}: ${err.message}`;
-      });
-      return { success: false, errors };
+      return {
+        success: false,
+        errors: error.errors.map(err => ({
+          path: err.path.join('.'),
+          message: err.message,
+        })),
+      }
     }
-    return { success: false, errors: ['バリデーションエラーが発生しました'] };
+    return {
+      success: false,
+      errors: [{ path: '', message: 'バリデーションエラー' }],
+    }
   }
 }
 
 /**
- * XSS対策: HTMLエスケープ
+ * ログインスキーマ
  */
-export function escapeHtml(text: string): string {
-  const map: { [key: string]: string } = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, (char) => map[char]);
+export const loginSchema = z.object({
+  email: z.string().email('正しいメールアドレスを入力してください'),
+  password: z.string().min(6, 'パスワードは6文字以上である必要があります'),
+  rememberMe: z.boolean().optional(),
+})
+
+/**
+ * ユーザー登録スキーマ
+ */
+export const registerSchema = z.object({
+  email: z.string().email('正しいメールアドレスを入力してください'),
+  password: z.string().min(8, 'パスワードは8文字以上である必要があります'),
+  name: z.string().min(2, '名前は2文字以上である必要があります').max(100, '名前は100文字以下である必要があります'),
+  role: z.enum(['ADMIN', 'AGENT']).optional(),
+  company_name: z.string().optional(),
+  company_address: z.string().optional(),
+  position: z.string().optional(),
+  mobile_phone: z.string().optional(),
+  company_phone: z.string().optional(),
+  company_fax: z.string().optional(),
+})
+
+/**
+ * 物件作成スキーマ
+ */
+export const dealCreateSchema = z.object({
+  title: z.string().min(1, 'タイトルは必須です').max(200, 'タイトルは200文字以下である必要があります'),
+  buyer_id: z.string().optional(),
+  seller_id: z.string(),
+  location: z.string().optional(),
+  station: z.string().optional(),
+  walk_minutes: z.number().optional(),
+  land_area: z.number().positive('土地面積は正の数である必要があります').optional(),
+  building_area: z.number().positive('建物面積は正の数である必要があります').optional(),
+  zoning: z.string().optional(),
+  building_coverage: z.number().min(0).max(100).optional(),
+  floor_area_ratio: z.number().min(0).max(1000).optional(),
+  height_district: z.string().optional(),
+  fire_zone: z.string().optional(),
+  road_info: z.string().optional(),
+  frontage: z.number().optional(),
+  structure: z.string().optional(),
+  built_year: z.number().optional(),
+  yield_rate: z.number().optional(),
+  occupancy_status: z.string().optional(),
+  current_status: z.string().optional(),
+  desired_price: z.number().optional(),
+  remarks: z.string().optional(),
+  missing_fields: z.string().optional(),
+  reply_deadline: z.string().optional(),
+})
+
+/**
+ * 物件スキーマ（完全版）
+ */
+export const dealSchema = dealCreateSchema.extend({
+  id: z.string(),
+  status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED']),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+})
+
+/**
+ * 物件更新スキーマ
+ */
+export const dealUpdateSchema = dealCreateSchema.partial()
+
+/**
+ * メッセージスキーマ
+ */
+export const messageSchema = z.object({
+  deal_id: z.string(),
+  sender_id: z.string(),
+  content: z.string().min(1, 'メッセージは必須です'),
+  file_url: z.string().optional(),
+  file_name: z.string().optional(),
+  file_size: z.number().optional(),
+  file_type: z.string().optional(),
+})
+
+/**
+ * HTMLエスケープ関数
+ */
+export function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
 }
 
 /**
- * SQLインジェクション対策: パラメータ化クエリを強制
- * （注意: D1では自動的にパラメータ化されますが、明示的にチェック）
+ * バリデーション結果型
  */
-export function sanitizeSqlInput(input: string): string {
-  // D1はパラメータ化クエリを使用するため、ここではログ用のサニタイズのみ
-  return input.replace(/[';\-\-]/g, '');
+export interface ValidationResult {
+  valid: boolean
+  errors: ValidationError[]
 }
 
 /**
- * ファイル名のサニタイズ
+ * バリデーションルール型
  */
-export function sanitizeFilename(filename: string): string {
-  // 危険な文字を削除
-  return filename.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_');
+export type ValidationRule<T = unknown> = (value: T) => string | null
+
+/**
+ * 共通バリデーションルール
+ */
+export const ValidationRules = {
+  /**
+   * 必須チェック
+   */
+  required: (fieldName: string): ValidationRule<unknown> => {
+    return (value: unknown) => {
+      if (value === null || value === undefined || value === '') {
+        return `${fieldName}は必須です`
+      }
+      return null
+    }
+  },
+  
+  /**
+   * 最小文字数チェック
+   */
+  minLength: (fieldName: string, min: number): ValidationRule<string> => {
+    return (value: string) => {
+      if (value && value.length < min) {
+        return `${fieldName}は${min}文字以上である必要があります`
+      }
+      return null
+    }
+  },
+  
+  /**
+   * 最大文字数チェック
+   */
+  maxLength: (fieldName: string, max: number): ValidationRule<string> => {
+    return (value: string) => {
+      if (value && value.length > max) {
+        return `${fieldName}は${max}文字以下である必要があります`
+      }
+      return null
+    }
+  },
+  
+  /**
+   * メールアドレス形式チェック
+   */
+  email: (fieldName: string): ValidationRule<string> => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return (value: string) => {
+      if (value && !emailRegex.test(value)) {
+        return `${fieldName}の形式が正しくありません`
+      }
+      return null
+    }
+  },
+  
+  /**
+   * 数値範囲チェック
+   */
+  range: (fieldName: string, min: number, max: number): ValidationRule<number> => {
+    return (value: number) => {
+      if (value !== undefined && value !== null) {
+        if (value < min || value > max) {
+          return `${fieldName}は${min}から${max}の範囲である必要があります`
+        }
+      }
+      return null
+    }
+  },
+  
+  /**
+   * 正の数チェック
+   */
+  positive: (fieldName: string): ValidationRule<number> => {
+    return (value: number) => {
+      if (value !== undefined && value !== null && value <= 0) {
+        return `${fieldName}は正の数である必要があります`
+      }
+      return null
+    }
+  },
+  
+  /**
+   * URLフォーマットチェック
+   */
+  url: (fieldName: string): ValidationRule<string> => {
+    return (value: string) => {
+      if (value) {
+        try {
+          new URL(value)
+        } catch {
+          return `${fieldName}の形式が正しくありません`
+        }
+      }
+      return null
+    }
+  },
+  
+  /**
+   * パターンマッチチェック
+   */
+  pattern: (fieldName: string, pattern: RegExp, message?: string): ValidationRule<string> => {
+    return (value: string) => {
+      if (value && !pattern.test(value)) {
+        return message || `${fieldName}の形式が正しくありません`
+      }
+      return null
+    }
+  },
+  
+  /**
+   * カスタムバリデーション
+   */
+  custom: <T>(validator: (value: T) => string | null): ValidationRule<T> => {
+    return validator
+  },
 }
 
 /**
- * パス・トラバーサル対策
+ * バリデーションスキーマ型
  */
-export function isValidPath(path: string): boolean {
-  // ../ や .\ を含まないことを確認
-  return !/\.\.[/\\]/.test(path);
+export type ValidationSchema<T> = {
+  [K in keyof T]?: ValidationRule<T[K]>[]
+}
+
+/**
+ * オブジェクトをバリデーション
+ */
+export function validate<T extends Record<string, unknown>>(
+  data: T,
+  schema: ValidationSchema<T>
+): ValidationResult {
+  const errors: ValidationError[] = []
+  
+  for (const [field, rules] of Object.entries(schema)) {
+    const value = data[field]
+    const fieldRules = rules as ValidationRule[]
+    
+    for (const rule of fieldRules) {
+      const error = rule(value)
+      if (error) {
+        errors.push({
+          field,
+          message: error,
+          code: 'VALIDATION_ERROR',
+        })
+      }
+    }
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors,
+  }
+}
+
+/**
+ * フォームバリデーション用ヘルパー
+ */
+export class FormValidator<T extends Record<string, unknown>> {
+  private schema: ValidationSchema<T>
+  
+  constructor(schema: ValidationSchema<T>) {
+    this.schema = schema
+  }
+  
+  /**
+   * 全フィールドをバリデーション
+   */
+  validate(data: T): ValidationResult {
+    return validate(data, this.schema)
+  }
+  
+  /**
+   * 単一フィールドをバリデーション
+   */
+  validateField(field: keyof T, value: T[keyof T]): string | null {
+    const rules = this.schema[field]
+    if (!rules) return null
+    
+    for (const rule of rules) {
+      const error = rule(value)
+      if (error) return error
+    }
+    
+    return null
+  }
+  
+  /**
+   * エラーメッセージをフィールドごとに取得
+   */
+  getFieldErrors(result: ValidationResult): Record<string, string> {
+    const fieldErrors: Record<string, string> = {}
+    
+    for (const error of result.errors) {
+      if (!fieldErrors[error.field]) {
+        fieldErrors[error.field] = error.message
+      }
+    }
+    
+    return fieldErrors
+  }
+}
+
+/**
+ * よく使うバリデーションスキーマ
+ */
+export const CommonSchemas = {
+  /**
+   * ログインフォーム
+   */
+  login: {
+    email: [
+      ValidationRules.required('メールアドレス'),
+      ValidationRules.email('メールアドレス'),
+    ],
+    password: [
+      ValidationRules.required('パスワード'),
+      ValidationRules.minLength('パスワード', 6),
+    ],
+  },
+  
+  /**
+   * ユーザー登録フォーム
+   */
+  register: {
+    email: [
+      ValidationRules.required('メールアドレス'),
+      ValidationRules.email('メールアドレス'),
+    ],
+    password: [
+      ValidationRules.required('パスワード'),
+      ValidationRules.minLength('パスワード', 8),
+    ],
+    name: [
+      ValidationRules.required('名前'),
+      ValidationRules.minLength('名前', 2),
+      ValidationRules.maxLength('名前', 100),
+    ],
+  },
+  
+  /**
+   * 物件情報フォーム
+   */
+  deal: {
+    property_name: [
+      ValidationRules.required('物件名'),
+      ValidationRules.maxLength('物件名', 200),
+    ],
+    location: [
+      ValidationRules.required('所在地'),
+      ValidationRules.maxLength('所在地', 500),
+    ],
+    land_area: [
+      ValidationRules.required('土地面積'),
+      ValidationRules.positive('土地面積'),
+    ],
+    price: [
+      ValidationRules.required('価格'),
+      ValidationRules.positive('価格'),
+    ],
+  },
 }

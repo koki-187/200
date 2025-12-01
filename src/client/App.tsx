@@ -9,6 +9,7 @@ import DealProposalPage from './pages/DealProposalPage'
 import InvestmentSimulatorPage from './pages/InvestmentSimulatorPage'
 import NotificationSettingsPage from './pages/NotificationSettingsPage'
 import Toast from './components/Toast'
+import ErrorBoundary from './components/ErrorBoundary'
 import { useAuthStore } from './store/authStore'
 
 const App: React.FC = () => {
@@ -72,10 +73,10 @@ const App: React.FC = () => {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       {renderPage()}
       <Toast />
-    </>
+    </ErrorBoundary>
   )
 }
 

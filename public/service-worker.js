@@ -1,15 +1,78 @@
 /**
- * Service Worker for Push Notifications
+ * Service Worker for Push Notifications & Performance Optimization
  */
+
+const CACHE_NAME = 'real-estate-v3.77.0';
+const STATIC_CACHE = [
+  '/',
+  '/static/dark-mode.css',
+  '/static/dark-mode.js',
+  'https://cdn.tailwindcss.com',
+  'https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js'
+];
 
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('Caching static assets');
+      return cache.addAll(STATIC_CACHE).catch((err) => {
+        console.error('Cache addAll failed:', err);
+      });
+    }).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activated');
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => clients.claim())
+  );
+});
+
+// Fetch strategy: Network first, fallback to cache
+self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+  
+  // Skip Chrome extensions
+  if (event.request.url.startsWith('chrome-extension://')) return;
+  
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // Cache successful responses
+        if (response.ok) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // Fallback to cache on network error
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // Return offline page for navigation requests
+          if (event.request.mode === 'navigate') {
+            return caches.match('/');
+          }
+          return new Response('Offline', { status: 503 });
+        });
+      })
+  );
 });
 
 // プッシュ通知受信時

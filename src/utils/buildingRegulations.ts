@@ -231,9 +231,18 @@ export function getComprehensiveBuildingInfo(dealData: {
   const regulations = getApplicableRegulations(dealData);
   const parkingInfo = dealData.location ? getParkingRequirement(dealData.location) : null;
   
+  // APIレスポンス用にフォーマット変換
+  const formattedRegulations = regulations.map(reg => ({
+    category: reg.category,
+    title: reg.title,
+    article: reg.reference,
+    description: reg.description
+  }));
+  
   return {
-    regulations,
-    parking_requirement: parkingInfo,
-    total_applicable: regulations.length
+    applicable_regulations: formattedRegulations,
+    has_parking_requirement: !!parkingInfo,
+    parking_info: parkingInfo,
+    total_applicable: formattedRegulations.length
   };
 }

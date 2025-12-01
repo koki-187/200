@@ -417,14 +417,22 @@ const DealDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* 戻るボタン */}
-        <div className="mt-6">
+        {/* アクションボタン */}
+        <div className="mt-6 flex gap-3">
           <button
             onClick={() => window.history.back()}
             className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             ← 一覧に戻る
           </button>
+          {(user?.role === 'ADMIN' || user?.role === 'AGENT') && (
+            <a
+              href={`/deals/${dealId}/proposal`}
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              📧 買主へ打診する
+            </a>
+          )}
         </div>
       </div>
 

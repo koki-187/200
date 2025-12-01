@@ -4,6 +4,8 @@ import DashboardPage from './pages/DashboardPage'
 import DealCreatePage from './pages/DealCreatePage'
 import DealDetailPage from './pages/DealDetailPage'
 import SpecialCasesPage from './pages/SpecialCasesPage'
+import HelpPage from './pages/HelpPage'
+import DealProposalPage from './pages/DealProposalPage'
 import Toast from './components/Toast'
 import { useAuthStore } from './store/authStore'
 
@@ -23,6 +25,11 @@ const App: React.FC = () => {
       return null
     }
 
+    // Deal proposal page (must come before detail page)
+    if (pathname.match(/^\/deals\/[^\/]+\/proposal$/)) {
+      return <DealProposalPage />
+    }
+
     // Deal detail page (must come before switch)
     if (pathname.startsWith('/deals/') && pathname.split('/').length === 3) {
       return <DealDetailPage />
@@ -38,6 +45,8 @@ const App: React.FC = () => {
         return <DealCreatePage />
       case '/special-cases':
         return <SpecialCasesPage />
+      case '/help':
+        return <HelpPage />
       default:
         return (
           <div className="min-h-screen flex items-center justify-center">

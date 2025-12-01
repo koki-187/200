@@ -10756,57 +10756,154 @@ app.get('/investment-simulator', (c) => {
       event.target.classList.add('border-blue-600', 'text-blue-600');
     }
 
-    // PDFエクスポート
+    // PDFエクスポート（jsPDF + Chart.js画像）
     async function exportPDF() {
       if (!currentScenarioId) return;
       
       try {
+        // jsPDFとjspdf-autotableを動的ロード
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+          const script1 = document.createElement('script');
+          script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+          document.head.appendChild(script1);
+          
+          const script2 = document.createElement('script');
+          script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+          document.head.appendChild(script2);
+          
+          await new Promise((resolve) => {
+            script2.onload = resolve;
+          });
+        }
+        
         const response = await axios.get(\`/api/investment-simulator/\${currentScenarioId}/report\`);
         const report = response.data;
         
-        // 簡易的なPDF生成（実際はライブラリを使用）
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(\`
-          <html>
-          <head>
-            <title>投資シミュレーションレポート</title>
-            <style>
-              body { font-family: sans-serif; padding: 20px; }
-              h1 { color: #1e40af; }
-              table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-              th { background-color: #f3f4f6; }
-            </style>
-          </head>
-          <body>
-            <h1>投資シミュレーションレポート</h1>
-            <h2>\${report.scenario.name}</h2>
-            <p>生成日時: \${new Date(report.generated_at).toLocaleString('ja-JP')}</p>
-            
-            <h3>投資指標</h3>
-            <table>
-              <tr><th>指標</th><th>値</th></tr>
-              <tr><td>ROI</td><td>\${report.metrics.roi.toFixed(2)}%</td></tr>
-              <tr><td>Cap Rate</td><td>\${report.metrics.cap_rate.toFixed(2)}%</td></tr>
-              <tr><td>DCR</td><td>\${report.metrics.debt_coverage_ratio.toFixed(2)}</td></tr>
-              <tr><td>損益分岐点稼働率</td><td>\${report.metrics.break_even_occupancy.toFixed(1)}%</td></tr>
-            </table>
-            
-            <h3>30年間のサマリー</h3>
-            <table>
-              <tr><th>項目</th><th>金額</th></tr>
-              <tr><td>総投資額</td><td>\${report.summary.total_investment.toLocaleString()}万円</td></tr>
-              <tr><td>総収入</td><td>\${report.summary.total_income_30y.toLocaleString()}万円</td></tr>
-              <tr><td>総支出</td><td>\${report.summary.total_expenses_30y.toLocaleString()}万円</td></tr>
-              <tr><td>純利益</td><td>\${report.summary.net_profit_30y.toLocaleString()}万円</td></tr>
-              <tr><td>最終純資産</td><td>\${report.summary.final_equity.toLocaleString()}万円</td></tr>
-              <tr><td>総リターン</td><td>\${report.summary.total_return.toLocaleString()}万円</td></tr>
-            </table>
-          </body>
-          </html>
-        \`);
-        printWindow.document.close();
-        printWindow.print();
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        
+        // タイトル
+        doc.setFontSize(20);
+        doc.text('投資シミュレーションレポート', 20, 20);
+        
+        doc.setFontSize(14);
+        doc.text(report.scenario.name, 20, 30);
+        
+        doc.setFontSize(10);
+        doc.text(\`生成日時: \${new Date(report.generated_at).toLocaleString('ja-JP')}\`, 20, 38);
+        
+        // 投資指標
+        doc.setFontSize(12);
+        doc.text('投資指標', 20, 50);
+        
+        doc.autoTable({
+          startY: 55,
+          head: [['指標', '値']],
+          body: [
+            ['ROI', \`\${report.metrics.roi.toFixed(2)}%\`],
+            ['Cap Rate', \`\${report.metrics.cap_rate.toFixed(2)}%\`],
+            ['DCR', \`\${report.metrics.debt_coverage_ratio.toFixed(2)}\`],
+            ['損益分岐点稼働率', \`\${report.metrics.break_even_occupancy.toFixed(1)}%\`],
+            ['年間キャッシュフロー', \`\${report.metrics.annual_cash_flow.toLocaleString()}万円\`],
+            ['NOI', \`\${report.metrics.noi.toLocaleString()}万円\`]
+          ],
+          theme: 'grid',
+          headStyles: { fillColor: [30, 64, 175] }
+        });
+        
+        // 30年間のサマリー
+        const finalY1 = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(12);
+        doc.text('30年間のサマリー', 20, finalY1);
+        
+        doc.autoTable({
+          startY: finalY1 + 5,
+          head: [['項目', '金額']],
+          body: [
+            ['総投資額', \`\${report.summary.total_investment.toLocaleString()}万円\`],
+            ['総収入', \`\${report.summary.total_income_30y.toLocaleString()}万円\`],
+            ['総支出', \`\${report.summary.total_expenses_30y.toLocaleString()}万円\`],
+            ['純利益', \`\${report.summary.net_profit_30y.toLocaleString()}万円\`],
+            ['最終純資産', \`\${report.summary.final_equity.toLocaleString()}万円\`],
+            ['総リターン', \`\${report.summary.total_return.toLocaleString()}万円\`]
+          ],
+          theme: 'grid',
+          headStyles: { fillColor: [30, 64, 175] }
+        });
+        
+        // グラフをPDFに追加
+        if (cashflowChart) {
+          const finalY2 = doc.lastAutoTable.finalY + 10;
+          doc.addPage();
+          doc.setFontSize(12);
+          doc.text('年間キャッシュフロー推移', 20, 20);
+          
+          const chartImage = cashflowChart.toBase64Image();
+          doc.addImage(chartImage, 'PNG', 20, 25, 170, 90);
+        }
+        
+        if (assetChart) {
+          const finalY3 = doc.lastAutoTable.finalY || 120;
+          doc.setFontSize(12);
+          doc.text('資産価値推移', 20, finalY3 + 10);
+          
+          const chartImage = assetChart.toBase64Image();
+          doc.addImage(chartImage, 'PNG', 20, finalY3 + 15, 170, 90);
+        }
+        
+        // 新規ページにキャッシュフローテーブル（抜粋：1-10年、20年、30年）
+        doc.addPage();
+        doc.setFontSize(12);
+        doc.text('年間キャッシュフロー詳細（抜粋）', 20, 20);
+        
+        const cashflowRows = [];
+        for (let i = 0; i < 10; i++) {
+          const cf = report.cash_flows[i];
+          cashflowRows.push([
+            \`\${cf.year}年目\`,
+            \`\${cf.rental_income.toLocaleString()}\`,
+            \`\${cf.total_expenses.toLocaleString()}\`,
+            \`\${cf.net_income.toLocaleString()}\`,
+            \`\${cf.annual_cash_flow.toLocaleString()}\`
+          ]);
+        }
+        
+        // 20年目と30年目を追加
+        if (report.cash_flows[19]) {
+          const cf20 = report.cash_flows[19];
+          cashflowRows.push([
+            '20年目',
+            \`\${cf20.rental_income.toLocaleString()}\`,
+            \`\${cf20.total_expenses.toLocaleString()}\`,
+            \`\${cf20.net_income.toLocaleString()}\`,
+            \`\${cf20.annual_cash_flow.toLocaleString()}\`
+          ]);
+        }
+        
+        if (report.cash_flows[29]) {
+          const cf30 = report.cash_flows[29];
+          cashflowRows.push([
+            '30年目',
+            \`\${cf30.rental_income.toLocaleString()}\`,
+            \`\${cf30.total_expenses.toLocaleString()}\`,
+            \`\${cf30.net_income.toLocaleString()}\`,
+            \`\${cf30.annual_cash_flow.toLocaleString()}\`
+          ]);
+        }
+        
+        doc.autoTable({
+          startY: 25,
+          head: [['年', '賃料収入', '総支出', '純利益', 'CF']],
+          body: cashflowRows,
+          theme: 'grid',
+          headStyles: { fillColor: [30, 64, 175] },
+          styles: { fontSize: 8 }
+        });
+        
+        // PDFを保存
+        doc.save(\`\${report.scenario.name}_\${new Date().toISOString().split('T')[0]}.pdf\`);
+        
+        alert('PDFレポートを生成しました');
       } catch (error) {
         console.error('Error exporting PDF:', error);
         alert('PDFエクスポートに失敗しました');

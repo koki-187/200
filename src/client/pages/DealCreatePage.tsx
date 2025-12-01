@@ -185,13 +185,13 @@ const DealCreatePage: React.FC = () => {
     const hasError = getFieldError(fieldName)
     
     return (
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
         {label}
         {isRequired && (
           <span className="text-red-600 ml-1" title="必須項目">*</span>
         )}
         {hasError && (
-          <span className="text-red-600 text-xs ml-2">{hasError}</span>
+          <span className="text-red-600 text-xs sm:text-sm ml-2">{hasError}</span>
         )}
       </label>
     )
@@ -215,7 +215,7 @@ const DealCreatePage: React.FC = () => {
           onChange={handleChange}
           onBlur={handleBlur}
           placeholder={placeholder}
-          className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
+          className={`mt-1 block w-full rounded-md shadow-sm text-base min-h-[44px] px-3 py-2 ${
             hasError
               ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
               : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
@@ -240,7 +240,7 @@ const DealCreatePage: React.FC = () => {
           value={formData[fieldName]}
           onChange={handleChange}
           onBlur={handleBlur}
-          className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
+          className={`mt-1 block w-full rounded-md shadow-sm text-base min-h-[44px] px-3 py-2 ${
             hasError
               ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
               : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
@@ -269,21 +269,21 @@ const DealCreatePage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">新規案件作成</h1>
-          <p className="mt-2 text-sm text-gray-600">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">新規案件作成</h1>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">
             <span className="text-red-600">*</span> は必須項目です（初回6情報）
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 lg:space-y-8">
           {/* 基本情報 */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">基本情報</h2>
-            <div className="grid grid-cols-1 gap-6">
+          <div className="bg-white shadow rounded-lg p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">基本情報</h2>
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   案件タイトル
                 </label>
                 <input
@@ -292,13 +292,13 @@ const DealCreatePage: React.FC = () => {
                   value={formData.title}
                   onChange={handleChange}
                   placeholder="例: 渋谷区神宮前 投資用アパート用地"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base min-h-[44px] px-3 py-2"
                 />
               </div>
               
               {renderInput('location', '所在地', 'text', '例: 東京都渋谷区神宮前1-1-1')}
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {renderInput('nearest_station', '最寄駅', 'text', '例: 渋谷')}
                 {renderInput('walk_minutes', '徒歩分数', 'number', '例: 5')}
               </div>
@@ -306,16 +306,16 @@ const DealCreatePage: React.FC = () => {
           </div>
 
           {/* 物件情報（初回6情報） */}
-          <div className="bg-white shadow rounded-lg p-6 border-2 border-indigo-200">
-            <div className="flex items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">物件情報</h2>
-              <span className="ml-3 px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-semibold rounded-full">
+          <div className="bg-white shadow rounded-lg p-4 sm:p-6 border-2 border-indigo-200">
+            <div className="flex flex-col sm:flex-row sm:items-center mb-3 sm:mb-4 gap-2">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">物件情報</h2>
+              <span className="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-semibold rounded-full self-start">
                 初回6情報
               </span>
             </div>
             
-            <div className="grid grid-cols-1 gap-6">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {renderInput('land_area', '土地面積', 'text', '例: 150㎡ または 45坪')}
                 {renderInput('building_area', '建物面積', 'text', '例: 200㎡')}
               </div>
@@ -337,7 +337,7 @@ const DealCreatePage: React.FC = () => {
                 { value: '工業専用地域', label: '工業専用地域' }
               ])}
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {renderInput('building_coverage', '建蔽率', 'text', '例: 60% または 60')}
                 {renderInput('floor_area_ratio', '容積率', 'text', '例: 200% または 200')}
               </div>
@@ -365,12 +365,12 @@ const DealCreatePage: React.FC = () => {
           </div>
 
           {/* 追加情報 */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">追加情報（任意）</h2>
-            <div className="grid grid-cols-1 gap-6">
-              <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white shadow rounded-lg p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">追加情報（任意）</h2>
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                     築年数
                   </label>
                   <input
@@ -379,12 +379,12 @@ const DealCreatePage: React.FC = () => {
                     value={formData.built_year}
                     onChange={handleChange}
                     placeholder="例: 1995年 または 築28年"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base min-h-[44px] px-3 py-2"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                     構造
                   </label>
                   <input
@@ -393,14 +393,14 @@ const DealCreatePage: React.FC = () => {
                     value={formData.structure}
                     onChange={handleChange}
                     placeholder="例: 木造2階建"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base min-h-[44px] px-3 py-2"
                   />
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                     利回り
                   </label>
                   <input
@@ -409,19 +409,19 @@ const DealCreatePage: React.FC = () => {
                     value={formData.yield_rate}
                     onChange={handleChange}
                     placeholder="例: 5.5%"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base min-h-[44px] px-3 py-2"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                     入居状況
                   </label>
                   <select
                     name="occupancy_status"
                     value={formData.occupancy_status}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base min-h-[44px] px-3 py-2"
                   >
                     <option value="">選択してください</option>
                     <option value="満室">満室</option>
@@ -433,7 +433,7 @@ const DealCreatePage: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   備考
                 </label>
                 <textarea
@@ -442,7 +442,7 @@ const DealCreatePage: React.FC = () => {
                   onChange={handleChange}
                   rows={4}
                   placeholder="物件の特徴や注意事項などを入力してください"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base px-3 py-2"
                 />
               </div>
             </div>
@@ -450,8 +450,8 @@ const DealCreatePage: React.FC = () => {
 
           {/* エラーサマリー */}
           {validationErrors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-red-800 mb-2">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+              <h3 className="text-sm sm:text-base font-medium text-red-800 mb-2">
                 入力エラーがあります（{validationErrors.length}件）
               </h3>
               <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
@@ -463,18 +463,18 @@ const DealCreatePage: React.FC = () => {
           )}
 
           {/* 送信ボタン */}
-          <div className="flex justify-end gap-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
             <button
               type="button"
               onClick={() => window.history.back()}
-              className="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-full sm:w-auto px-6 py-3 sm:py-2 border border-gray-300 rounded-md shadow-sm text-base sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 min-h-[44px]"
             >
               キャンセル
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-6 py-3 sm:py-2 border border-transparent rounded-md shadow-sm text-base sm:text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[44px]"
             >
               {loading ? '作成中...' : '案件を作成'}
             </button>

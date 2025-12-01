@@ -204,124 +204,124 @@ const InvestmentSimulatorPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* ヘッダー */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <button
             onClick={() => navigate(`/deals/${id}`)}
-            className="text-blue-600 hover:text-blue-800 mb-4 flex items-center"
+            className="text-blue-600 hover:text-blue-800 mb-3 sm:mb-4 flex items-center text-sm sm:text-base min-h-[44px] sm:min-h-0"
           >
             ← 案件詳細に戻る
           </button>
-          <h1 className="text-3xl font-bold text-gray-800">📊 投資シミュレーター</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">📊 投資シミュレーター</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-2">
             {deal.title} - {deal.location}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* 左側：パラメータ入力 */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">シミュレーションパラメータ</h2>
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">シミュレーションパラメータ</h2>
             
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {/* 建築費 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   建築費（円/㎡）
                 </label>
                 <input
                   type="number"
                   value={constructionCostPerSqm}
                   onChange={(e) => setConstructionCostPerSqm(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
                 />
               </div>
 
               {/* 想定賃料 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   想定賃料（円/㎡/月）
                 </label>
                 <input
                   type="number"
                   value={rentalPerSqm}
                   onChange={(e) => setRentalPerSqm(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
                 />
               </div>
 
               {/* 管理費率 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   管理費率（%）
                 </label>
                 <input
                   type="number"
                   value={managementFeeRate}
                   onChange={(e) => setManagementFeeRate(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
                 />
               </div>
 
               {/* 固定資産税率 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   固定資産税率（%）
                 </label>
                 <input
                   type="number"
                   value={propertyTaxRate}
                   onChange={(e) => setPropertyTaxRate(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
                 />
               </div>
 
               {/* 修繕積立率 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   修繕積立率（%）
                 </label>
                 <input
                   type="number"
                   value={repairReserveRate}
                   onChange={(e) => setRepairReserveRate(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
                 />
               </div>
 
               {/* 保険料率 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   保険料率（%）
                 </label>
                 <input
                   type="number"
                   value={insuranceRate}
                   onChange={(e) => setInsuranceRate(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
                 />
               </div>
 
-              <hr className="my-4" />
+              <hr className="my-3 sm:my-4" />
 
               {/* 借入条件 */}
-              <h3 className="font-bold text-gray-800">借入条件</h3>
+              <h3 className="font-bold text-gray-800 text-base sm:text-lg">借入条件</h3>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   借入比率（LTV %）
                 </label>
                 <input
                   type="number"
                   value={loanRatio}
                   onChange={(e) => setLoanRatio(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   金利（%）
                 </label>
                 <input
@@ -329,60 +329,60 @@ const InvestmentSimulatorPage: React.FC = () => {
                   step="0.1"
                   value={interestRate}
                   onChange={(e) => setInterestRate(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
                   借入期間（年）
                 </label>
                 <input
                   type="number"
                   value={loanYears}
                   onChange={(e) => setLoanYears(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
                 />
               </div>
             </div>
           </div>
 
           {/* 右側：シミュレーション結果 */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {result && (
               <>
                 {/* 投資概要 */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">💰 投資概要</h2>
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">💰 投資概要</h2>
                   <div className="space-y-2">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">土地代</span>
                       <span className="font-semibold">{formatCurrency(result.land_price)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">建築費</span>
                       <span className="font-semibold">{formatCurrency(result.construction_cost)}</span>
                     </div>
-                    <div className="flex justify-between border-t pt-2">
+                    <div className="flex justify-between border-t pt-2 text-sm sm:text-base">
                       <span className="text-gray-800 font-bold">総投資額</span>
-                      <span className="font-bold text-lg">{formatCurrency(result.total_investment)}</span>
+                      <span className="font-bold text-base sm:text-lg">{formatCurrency(result.total_investment)}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* 建築可能面積 */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">🏗️ 建築可能面積</h2>
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">🏗️ 建築可能面積</h2>
                   <div className="space-y-2">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">建築面積</span>
                       <span className="font-semibold">{result.buildable_area.toFixed(2)} ㎡</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">延床面積</span>
                       <span className="font-semibold">{result.total_floor_area.toFixed(2)} ㎡</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">想定戸数</span>
                       <span className="font-semibold">{result.total_units} 戸</span>
                     </div>
@@ -390,30 +390,30 @@ const InvestmentSimulatorPage: React.FC = () => {
                 </div>
 
                 {/* 収益性 */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">📈 収益性</h2>
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">📈 収益性</h2>
                   <div className="space-y-2">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">年間家賃収入</span>
-                      <span className="font-semibold">{formatCurrency(result.annual_rental_income)}</span>
+                      <span className="font-semibold break-all">{formatCurrency(result.annual_rental_income)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">年間経費</span>
-                      <span className="font-semibold text-red-600">-{formatCurrency(result.total_annual_expenses)}</span>
+                      <span className="font-semibold text-red-600 break-all">-{formatCurrency(result.total_annual_expenses)}</span>
                     </div>
-                    <div className="flex justify-between border-t pt-2">
+                    <div className="flex justify-between border-t pt-2 text-sm sm:text-base">
                       <span className="text-gray-800 font-bold">年間純収益（NOI）</span>
-                      <span className="font-bold text-lg text-green-600">{formatCurrency(result.annual_net_income)}</span>
+                      <span className="font-bold text-base sm:text-lg text-green-600 break-all">{formatCurrency(result.annual_net_income)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">表面利回り</span>
                       <span className="font-semibold">{formatPercent(result.gross_yield)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">実質利回り（NCF）</span>
                       <span className="font-semibold text-blue-600">{formatPercent(result.net_yield)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">投資回収期間</span>
                       <span className="font-semibold">{result.payback_period.toFixed(1)} 年</span>
                     </div>
@@ -421,31 +421,31 @@ const InvestmentSimulatorPage: React.FC = () => {
                 </div>
 
                 {/* キャッシュフロー */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">💵 キャッシュフロー</h2>
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">💵 キャッシュフロー</h2>
                   <div className="space-y-2">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">借入額（LTV {result.loan_ratio}%）</span>
-                      <span className="font-semibold">{formatCurrency(result.loan_amount)}</span>
+                      <span className="font-semibold break-all">{formatCurrency(result.loan_amount)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">月間返済額</span>
-                      <span className="font-semibold">{formatCurrency(result.monthly_payment)}</span>
+                      <span className="font-semibold break-all">{formatCurrency(result.monthly_payment)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span className="text-gray-600">年間返済額</span>
-                      <span className="font-semibold text-red-600">-{formatCurrency(result.annual_loan_payment)}</span>
+                      <span className="font-semibold text-red-600 break-all">-{formatCurrency(result.annual_loan_payment)}</span>
                     </div>
-                    <div className="flex justify-between border-t pt-2">
+                    <div className="flex justify-between border-t pt-2 text-sm sm:text-base">
                       <span className="text-gray-800 font-bold">年間CF</span>
-                      <span className={`font-bold text-lg ${result.cash_flow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className={`font-bold text-base sm:text-lg break-all ${result.cash_flow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(result.cash_flow)}
                       </span>
                     </div>
                   </div>
                   
                   {result.cash_flow < 0 && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <div className="mt-3 sm:mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
                       <p className="text-sm text-red-800">
                         ⚠️ キャッシュフローがマイナスです。借入条件または想定賃料を見直してください。
                       </p>

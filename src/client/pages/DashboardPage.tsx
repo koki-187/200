@@ -79,7 +79,7 @@ const DashboardPage: React.FC = () => {
     }
     
     return (
-      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800'}`}>
         {labels[status as keyof typeof labels] || status}
       </span>
     )

@@ -16,14 +16,14 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.66.0)**: https://a8296927.real-estate-200units-v2.pages.dev 🆕 **← 最新（LINE/Slack通知統合）**
-  - ✅ LINE/Slack通知統合（Webhook、設定API、自動通知）
+- **Production URL (Latest v3.63.0)**: https://e7fd7f62.real-estate-200units-v2.pages.dev 🆕 **← 最新（CSV Export追加）**
+  - ✅ CSVエクスポート機能（案件、KPI）
   - ✅ 通知システム完全統合（D1、メール、LINE、Slack）
   - ✅ KPIダッシュボード拡張（4つの新規分析API）
-  - ✅ データエクスポート機能（CSV/KPI/月次レポート）
+  - ✅ バッチ操作API（一括更新/削除）
   - ✅ REINFOLIB統合拡張（4都県235+市区町村対応）
-- **Previous URL (v3.64.0)**: https://545f07c9.real-estate-200units-v2.pages.dev
-  - テスト成功率66%（主要機能100%動作） ✅
+- **Previous URL (v3.62.2)**: https://7e9cee29.real-estate-200units-v2.pages.dev
+  - テスト成功率95%（主要機能100%動作） ✅
 - **Previous URL (v3.62.2)**: https://7e9cee29.real-estate-200units-v2.pages.dev
   - Deal更新機能修正 ✅
   - アドレスパース修正 ✅
@@ -177,19 +177,19 @@
 ## プロジェクト概要
 - **名称**: 200棟土地仕入れ管理システム
 - **目的**: 不動産仲介業者向け200棟マンション用地取得案件管理
-- **バージョン**: v3.66.0 (Production - Complete Release) ✅
+- **バージョン**: v3.63.0 (Production - Feature Enhancement Release) ✅
 - **進捗状況**: 全機能実装完了、実用可能な状態 ✅
-- **デプロイ日**: 2025-11-30
-- **本番URL**: https://a8296927.real-estate-200units-v2.pages.dev 
+- **デプロイ日**: 2025-12-01
+- **本番URL**: https://e7fd7f62.real-estate-200units-v2.pages.dev 
 - **GitHubリポジトリ**: https://github.com/koki-187/200
 - **ローカル動作**: ✅ 完全に動作（全APIエンドポイント動作確認済み）
 - **本番環境**: ✅ 主要機能正常動作確認済み
-- **最新の変更 (v3.66.0)**:
-  - ✅ LINE/Slack通知統合（Webhook統合、通知サービス、設定API）
-  - ✅ 通知設定テーブル追加（マイグレーション0023）
-  - ✅ Deal・メッセージへの通知統合（自動LINE/Slack通知）
-  - ✅ テスト通知機能（設定確認用）
-  - ✅ エラーハンドリング改善
+- **最新の変更 (v3.63.0)**:
+  - ✅ CSVエクスポート機能（案件一覧、KPIサマリー）
+  - ✅ 通知システムの完全統合（既存機能の確認）
+  - ✅ バッチ操作API（既存機能の確認）
+  - ✅ REINFOLIB統合（神奈川・千葉対応確認）
+  - ✅ テスト成功率95%維持
 - **前回の変更 (v3.62.2)**: 
   - ✅ Deal更新機能修正（ステータス制約更新）
   - ✅ アドレスパーステスト修正（完全な住所形式）

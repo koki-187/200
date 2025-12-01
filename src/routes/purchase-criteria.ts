@@ -246,6 +246,36 @@ app.put('/special-case/:dealId/review', async (c) => {
       .bind(status, reviewer_id, dealId)
       .run();
     
+    // 通知を送信（申請者に承認/却下を通知）
+    try {
+      const { sendNotificationToUser } = await import('../services/notification-service');
+      
+      // 案件作成者を取得
+      const dealData = await DB
+        .prepare('SELECT created_by FROM deals WHERE id = ?')
+        .bind(dealId)
+        .first<{ created_by: string }>();
+      
+      if (dealData?.created_by) {
+        const notificationMessage = {
+          type: 'status_change' as const,
+          title: status === 'APPROVED' ? '特別案件が承認されました' : '特別案件が却下されました',
+          message: `案件「${deal.title}」の特別案件申請が${status === 'APPROVED' ? '承認' : '却下'}されました。`,
+          url: `https://real-estate-200units-v2.pages.dev/deals/${dealId}`,
+          deal: {
+            id: dealId,
+            title: String(deal.title),
+            status: status
+          }
+        };
+        
+        await sendNotificationToUser(c.env, dealData.created_by, notificationMessage);
+      }
+    } catch (notifError) {
+      console.error('通知送信エラー:', notifError);
+      // 通知エラーは無視して処理を続行
+    }
+    
     return c.json({
       success: true,
       message: status === 'APPROVED' ? '特別案件を承認しました' : '特別案件を却下しました'

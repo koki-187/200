@@ -52,6 +52,17 @@ interface SimulationResult {
   monthly_payment: number
   annual_loan_payment: number
   cash_flow: number // 年間キャッシュフロー
+  
+  // 減価償却
+  annual_depreciation: number // 年間減価償却費
+  depreciation_period: number // 償却期間（年）
+  
+  // 税金シミュレーション
+  taxable_income: number // 課税所得
+  income_tax: number // 所得税
+  resident_tax: number // 住民税
+  total_tax: number // 合計税額
+  after_tax_cash_flow: number // 税引後キャッシュフロー
 }
 
 const InvestmentSimulatorPage: React.FC = () => {
@@ -74,6 +85,8 @@ const InvestmentSimulatorPage: React.FC = () => {
   const [loanRatio, setLoanRatio] = useState<number>(80) // LTV %
   const [interestRate, setInterestRate] = useState<number>(2.5) // %
   const [loanYears, setLoanYears] = useState<number>(30) // 年
+  const [buildingStructure, setBuildingStructure] = useState<'RC' | 'SRC' | 'Steel' | 'Wood'>('RC') // 構造
+  const [taxRate, setTaxRate] = useState<number>(33) // 所得税率（%）
 
   useEffect(() => {
     loadDeal()
@@ -93,7 +106,9 @@ const InvestmentSimulatorPage: React.FC = () => {
     insuranceRate,
     loanRatio,
     interestRate,
-    loanYears
+    loanYears,
+    buildingStructure,
+    taxRate
   ])
 
   const loadDeal = async () => {
@@ -154,6 +169,28 @@ const InvestmentSimulatorPage: React.FC = () => {
     const annualLoanPayment = monthlyPayment * 12
     const cashFlow = annualNetIncome - annualLoanPayment
     
+    // 減価償却計算（建物のみ、土地は対象外）
+    const depreciationPeriodMap = {
+      'RC': 47,    // 鉄筋コンクリート造：47年
+      'SRC': 47,   // 鉄骨鉄筋コンクリート造：47年
+      'Steel': 34, // 鉄骨造：34年
+      'Wood': 22   // 木造：22年
+    }
+    const depreciationPeriod = depreciationPeriodMap[buildingStructure]
+    const annualDepreciation = constructionCost / depreciationPeriod
+    
+    // 税金シミュレーション
+    // 課税所得 = 家賃収入 - 経費 - ローン利息 - 減価償却費
+    // 簡易計算: ローン利息は初年度想定（元利均等返済の初年度利息）
+    const firstYearInterest = loanAmount * (interestRate / 100)
+    const taxableIncome = annualRentalIncome - totalAnnualExpenses - firstYearInterest - annualDepreciation
+    
+    // 所得税と住民税の計算（累進課税を簡易化）
+    const incomeTax = Math.max(0, taxableIncome * (taxRate / 100))
+    const residentTax = Math.max(0, taxableIncome * 0.1) // 住民税10%
+    const totalTax = incomeTax + residentTax
+    const afterTaxCashFlow = cashFlow - totalTax
+    
     setResult({
       land_price: landPrice,
       construction_cost: constructionCost,
@@ -176,7 +213,14 @@ const InvestmentSimulatorPage: React.FC = () => {
       loan_ratio: loanRatio,
       monthly_payment: monthlyPayment,
       annual_loan_payment: annualLoanPayment,
-      cash_flow: cashFlow
+      cash_flow: cashFlow,
+      annual_depreciation: annualDepreciation,
+      depreciation_period: depreciationPeriod,
+      taxable_income: taxableIncome,
+      income_tax: incomeTax,
+      resident_tax: residentTax,
+      total_tax: totalTax,
+      after_tax_cash_flow: afterTaxCashFlow
     })
   }
 
@@ -344,6 +388,43 @@ const InvestmentSimulatorPage: React.FC = () => {
                   className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
                 />
               </div>
+
+              {/* 建物構造 */}
+              <div>
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
+                  建物構造（減価償却）
+                </label>
+                <select
+                  value={buildingStructure}
+                  onChange={(e) => setBuildingStructure(e.target.value as 'RC' | 'SRC' | 'Steel' | 'Wood')}
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
+                >
+                  <option value="RC">RC造（鉄筋コンクリート造）- 47年</option>
+                  <option value="SRC">SRC造（鉄骨鉄筋コンクリート造）- 47年</option>
+                  <option value="Steel">鉄骨造 - 34年</option>
+                  <option value="Wood">木造 - 22年</option>
+                </select>
+              </div>
+
+              {/* 税率 */}
+              <div>
+                <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
+                  所得税率（%）
+                </label>
+                <select
+                  value={taxRate}
+                  onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 sm:py-3 text-base border border-gray-300 rounded-md min-h-[44px]"
+                >
+                  <option value="5">5% (195万円以下)</option>
+                  <option value="10">10% (330万円以下)</option>
+                  <option value="20">20% (695万円以下)</option>
+                  <option value="23">23% (900万円以下)</option>
+                  <option value="33">33% (1,800万円以下)</option>
+                  <option value="40">40% (4,000万円以下)</option>
+                  <option value="45">45% (4,000万円超)</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -451,6 +532,80 @@ const InvestmentSimulatorPage: React.FC = () => {
                       </p>
                     </div>
                   )}
+                </div>
+
+                {/* 減価償却 */}
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">📉 減価償却</h2>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm sm:text-base">
+                      <span className="text-gray-600">償却対象額（建物のみ）</span>
+                      <span className="font-semibold break-all">{formatCurrency(result.construction_cost)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm sm:text-base">
+                      <span className="text-gray-600">償却期間</span>
+                      <span className="font-semibold">{result.depreciation_period} 年</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2 text-sm sm:text-base">
+                      <span className="text-gray-800 font-bold">年間減価償却費</span>
+                      <span className="font-bold text-base sm:text-lg text-blue-600 break-all">
+                        {formatCurrency(result.annual_depreciation)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-3 sm:mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-xs sm:text-sm text-blue-800">
+                      💡 減価償却費は実際の現金支出を伴わない費用ですが、税務上の経費として計上できます。
+                    </p>
+                  </div>
+                </div>
+
+                {/* 税金シミュレーション */}
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">💰 税金シミュレーション</h2>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm sm:text-base">
+                      <span className="text-gray-600">家賃収入</span>
+                      <span className="font-semibold break-all">{formatCurrency(result.annual_rental_income)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm sm:text-base">
+                      <span className="text-gray-600">経費・ローン利息・減価償却</span>
+                      <span className="font-semibold text-red-600 break-all">
+                        -{formatCurrency(result.annual_rental_income - result.taxable_income)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2 text-sm sm:text-base">
+                      <span className="text-gray-800 font-bold">課税所得</span>
+                      <span className="font-bold text-base sm:text-lg break-all">
+                        {formatCurrency(result.taxable_income)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm sm:text-base">
+                      <span className="text-gray-600">所得税</span>
+                      <span className="font-semibold text-red-600 break-all">-{formatCurrency(result.income_tax)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm sm:text-base">
+                      <span className="text-gray-600">住民税（10%）</span>
+                      <span className="font-semibold text-red-600 break-all">-{formatCurrency(result.resident_tax)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2 text-sm sm:text-base">
+                      <span className="text-gray-800 font-bold">合計税額</span>
+                      <span className="font-bold text-base sm:text-lg text-red-600 break-all">
+                        -{formatCurrency(result.total_tax)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2 text-sm sm:text-base">
+                      <span className="text-gray-800 font-bold">税引後CF</span>
+                      <span className={`font-bold text-base sm:text-lg break-all ${result.after_tax_cash_flow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(result.after_tax_cash_flow)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-3 sm:mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-xs sm:text-sm text-yellow-800">
+                      ⚠️ 税金シミュレーションは簡易計算です。実際の税額は個人の所得状況により異なります。
+                    </p>
+                  </div>
                 </div>
               </>
             )}

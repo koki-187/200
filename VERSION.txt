@@ -1,8 +1,9 @@
-Version: v3.93.0 (Stable Release)
+Version: v3.93.0 (Complete Production Release)
 Date: 2025-12-02
-Production URL: https://96a4227a.real-estate-200units-v2.pages.dev
+Production URL: https://4d428030.real-estate-200units-v2.pages.dev
 
 Major Updates:
+- ✅ OpenAI API Key configured and operational (OCR fully functional)
 - Detailed parking obligation standards with station proximity and zoning-specific requirements
 - parking_details interface: base_requirement, station_proximity_relaxation, zoning_specific, commercial_area_exemption
 - Enhanced major cities: 渋谷区, 横浜市, 川崎市, さいたま市, 千葉市, 名古屋市
@@ -40,6 +41,12 @@ Database Maintenance (2025-12-02):
 - Cleaned production database: 29 test deals removed
 - Backup created: production-deals-backup-2025-12-02.json
 - Fresh start for production use
+
+API Configuration (2025-12-02):
+- OpenAI API Key: Configured and verified (OCR functional)
+- Local environment (.dev.vars): Updated with actual API key
+- Production environment: Verified via wrangler secret list
+- OCR endpoints: /api/property-ocr/extract, /api/property-ocr/extract-multiple
 
 Previous Version: v3.92.0
 - Expanded municipal building regulations database to all 23 Tokyo wards

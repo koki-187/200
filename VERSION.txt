@@ -1,20 +1,24 @@
-Version: v3.90.0
+Version: v3.92.0
 Date: 2025-12-02
-Production URL: https://a0217557.real-estate-200units-v2.pages.dev
+Production URL: https://06235a07.real-estate-200units-v2.pages.dev
 
 Major Updates:
-- Municipal building regulations database for 1都3県+愛知+長野
-- API endpoints: /api/building-regulations/municipal, /three-story-wooden
-- UI updated to display both national and municipal regulations
-- Fixed duplicate initialization issue in deals page
-- Comprehensive test coverage for 4 properties
-
-Test Results (Local):
-- 千葉市美浜区: 3 national + 1 municipal ✓
-- 川崎市幸区: 3 national + 3 municipal ✓
-- 埼玉県幸手市: 3 national + 2 municipal ✓
-- 東京都渋谷区: 3 national + 2 municipal ✓
+- Expanded municipal building regulations database to include ALL 23 Tokyo wards
+- Added 19 new Tokyo wards (中央区, 港区, 文京区, 台東区, 墨田区, 江東区, 品川区, 目黒区, 大田区, 中野区, 杉並区, 豊島区, 北区, 荒川区, 板橋区, 練馬区, 足立区, 葛飾区, 江戸川区)
+- Each ward includes DISPUTE_PREVENTION and PARKING regulations
+- Updated city pattern matching for comprehensive coverage
+- Total regulations: 71 entries covering 1都3県+愛知+長野
 
 Test Results (Production):
-- Kawasaki API: 3 national + 3 municipal ✓
+- 港区: 2 regulations (DISPUTE_PREVENTION + PARKING) ✓
+- 江戸川区: 2 regulations ✓
+- 足立区: 2 regulations ✓
+- 中央区: 2 regulations ✓
+- All 23 Tokyo wards: Working ✓
+- Building regulations API with municipal data: ✓
 - URL encoding for Japanese parameters: ✓
+
+Previous Version: v3.91.0
+- Integrated building regulations check into deal creation form
+- Real-time auto-checking with OCR integration
+- Floor number auto-extraction from structure field

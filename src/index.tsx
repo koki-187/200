@@ -1287,7 +1287,8 @@ app.get('/building-regulations', (c) => {
       document.getElementById('results').classList.remove('hidden');
       
       // Summary
-      document.getElementById('regulation-count').textContent = data.applicable_regulations.length;
+      const totalCount = data.applicable_regulations.length + (data.municipal_regulations ? data.municipal_regulations.length : 0);
+      document.getElementById('regulation-count').textContent = totalCount;
       
       if (data.is_three_story_wooden) {
         document.getElementById('three-story-warning').classList.remove('hidden');
@@ -1297,10 +1298,11 @@ app.get('/building-regulations', (c) => {
         document.getElementById('fire-zone-info').classList.remove('hidden');
       }
       
-      // Regulations list
+      // Regulations list - 建築基準法
       const regulationsList = document.getElementById('regulations-list');
-      regulationsList.innerHTML = data.applicable_regulations.map(reg => \`
-        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+      let html = '<h3 class="text-lg font-bold text-gray-900 mb-4"><i class="fas fa-book-open mr-2 text-blue-600"></i>建築基準法</h3>';
+      html += data.applicable_regulations.map(reg => \`
+        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition mb-3">
           <div class="flex items-start">
             <div class="flex-shrink-0">
               <i class="fas fa-gavel text-orange-600 mt-1"></i>
@@ -1315,6 +1317,47 @@ app.get('/building-regulations', (c) => {
           </div>
         </div>
       \`).join('');
+      
+      // 自治体条例情報を追加
+      if (data.municipal_regulations && data.municipal_regulations.length > 0) {
+        html += '<h3 class="text-lg font-bold text-gray-900 mb-4 mt-6"><i class="fas fa-landmark mr-2 text-green-600"></i>自治体条例・規則</h3>';
+        html += data.municipal_regulations.map(reg => {
+          const categoryIcons = {
+            'PARKING': 'fa-parking',
+            'THREE_STORY_WOODEN': 'fa-building',
+            'DISPUTE_PREVENTION': 'fa-handshake',
+            'LANDSCAPE': 'fa-tree',
+            'FIRE_PREVENTION': 'fa-fire-extinguisher',
+            'HEIGHT_DISTRICT': 'fa-ruler-vertical',
+            'OTHER': 'fa-file-alt'
+          };
+          const icon = categoryIcons[reg.category] || 'fa-file-alt';
+          return \`
+            <div class="border border-green-200 rounded-lg p-4 hover:bg-green-50 transition mb-3">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <i class="fas \${icon} text-green-600 mt-1"></i>
+                </div>
+                <div class="ml-3 flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h4 class="font-semibold text-gray-900">\${reg.title}</h4>
+                    <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">\${reg.city}</span>
+                  </div>
+                  <p class="text-sm text-gray-600 mt-1">\${reg.description}</p>
+                  <div class="mt-2 text-xs text-gray-500 space-y-1">
+                    <div><i class="fas fa-check-circle mr-1"></i>適用条件: \${reg.applicable_conditions}</div>
+                    <div><i class="fas fa-clipboard-list mr-1"></i>要件: \${reg.requirements}</div>
+                    <div><i class="fas fa-book mr-1"></i>\${reg.ordinance_name || ''}</div>
+                    \${reg.reference_url ? \`<div><i class="fas fa-external-link-alt mr-1"></i><a href="\${reg.reference_url}" target="_blank" class="text-blue-600 hover:underline">詳細情報</a></div>\` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          \`;
+        }).join('');
+      }
+      
+      regulationsList.innerHTML = html;
       
       // Warnings
       if (data.warnings && data.warnings.length > 0) {

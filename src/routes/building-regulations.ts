@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { getComprehensiveBuildingInfo, getApplicableRegulations, getParkingRequirement } from '../utils/buildingRegulations';
+import { getMunicipalRegulations, getThreeStoryWoodenRegulations } from '../data/municipalRegulations';
 
 const app = new Hono();
 
@@ -29,14 +30,23 @@ app.get('/check', async (c) => {
     
     const result = getComprehensiveBuildingInfo(dealData);
     
+    // 自治体条例情報を追加
+    const municipalRegs = location ? getMunicipalRegulations(location) : [];
+    
     let message = `${result.applicable_regulations.length}件の建築基準法規定を検出しました`;
     if (result.is_three_story_wooden) {
       message += ' - 3階建て木造建築の特別規定が適用されます';
     }
+    if (municipalRegs.length > 0) {
+      message += ` / ${municipalRegs.length}件の自治体条例が該当します`;
+    }
     
     return c.json({
       success: true,
-      data: result,
+      data: {
+        ...result,
+        municipal_regulations: municipalRegs
+      },
       message
     });
   } catch (error) {
@@ -58,9 +68,15 @@ app.post('/check', async (c) => {
     
     const result = getComprehensiveBuildingInfo(dealData);
     
+    // 自治体条例情報を追加
+    const municipalRegs = dealData.location ? getMunicipalRegulations(dealData.location) : [];
+    
     return c.json({
       success: true,
-      data: result
+      data: {
+        ...result,
+        municipal_regulations: municipalRegs
+      }
     });
   } catch (error) {
     console.error('建築基準法チェックエラー:', error);
@@ -97,6 +113,76 @@ app.get('/parking/:prefecture', async (c) => {
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : '駐車場基準の取得に失敗しました'
+    }, 500);
+  }
+});
+
+/**
+ * GET /api/building-regulations/municipal
+ * 自治体条例を取得
+ */
+app.get('/municipal', async (c) => {
+  try {
+    const location = c.req.query('location') || '';
+    const category = c.req.query('category') as any;
+    
+    if (!location) {
+      return c.json({
+        success: false,
+        error: '所在地(location)パラメータが必要です'
+      }, 400);
+    }
+    
+    const regulations = getMunicipalRegulations(location, category);
+    
+    return c.json({
+      success: true,
+      data: {
+        location,
+        regulations,
+        count: regulations.length
+      }
+    });
+  } catch (error) {
+    console.error('自治体条例取得エラー:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : '自治体条例の取得に失敗しました'
+    }, 500);
+  }
+});
+
+/**
+ * GET /api/building-regulations/three-story-wooden
+ * 3階建て木造集合住宅に特化した条例・規則を取得
+ */
+app.get('/three-story-wooden', async (c) => {
+  try {
+    const location = c.req.query('location') || '';
+    
+    if (!location) {
+      return c.json({
+        success: false,
+        error: '所在地(location)パラメータが必要です'
+      }, 400);
+    }
+    
+    const regulations = getThreeStoryWoodenRegulations(location);
+    
+    return c.json({
+      success: true,
+      data: {
+        location,
+        regulations,
+        count: regulations.length,
+        message: '3階建て木造集合住宅に関連する条例・規則を抽出しました'
+      }
+    });
+  } catch (error) {
+    console.error('3階建て木造条例取得エラー:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : '3階建て木造条例の取得に失敗しました'
     }, 500);
   }
 });

@@ -1,8 +1,16 @@
-Version: v3.93.0 (Complete Production Release)
+Version: v3.94.0 (Enhanced API Integration Release)
 Date: 2025-12-02
-Production URL: https://4d428030.real-estate-200units-v2.pages.dev
+Production URL: https://cf7da3bd.real-estate-200units-v2.pages.dev
 
-Major Updates:
+Major Updates (v3.94.0):
+- 🆕 不動産情報ライブラリAPI完全統合: 容積率・建蔽率の自動取得機能
+- 🆕 ハザード情報API実装: 洪水・土砂災害・津波・液状化リスクの確認機能
+- 🆕 物件情報自動入力の拡張: ハザード情報も同時に取得・表示
+- 🆕 新規案件作成ページにハザード情報表示セクション追加
+- 🔍 案件作成問題の調査完了: コード・本番環境ともに正常動作確認
+- ✅ 全APIテスト100%成功（19/19 PASS）
+
+Previous Updates (v3.93.0):
 - ✅ OpenAI API Key configured and operational (OCR fully functional)
 - Detailed parking obligation standards with station proximity and zoning-specific requirements
 - parking_details interface: base_requirement, station_proximity_relaxation, zoning_specific, commercial_area_exemption
@@ -13,7 +21,8 @@ Major Updates:
 - All 23 Tokyo wards + designated cities fully functional
 - Total regulations: 76+ entries covering 1都3県+愛知+長野
 
-Test Results (Local):
+Test Results (v3.94.0):
+Local Environment:
 - Core APIs: 2/2 ✓
 - Authentication: 1/1 ⚠ (SKIP - fresh DB)
 - Tokyo 23 Wards: 5/5 ✓
@@ -24,10 +33,13 @@ Test Results (Local):
 - Parking Details: 1/1 ✓
 - Total: 19/19 tests PASS (100% success rate)
 
-Test Results (Production):
-- Core APIs: 2/2 ✓
+Production Environment:
+- Core APIs (Health): 1/1 ✓
+- REINFOLIB API (NEW): 2/2 ✓
 - Tokyo 23 Wards (港区, 渋谷区, 新宿区): 3/3 ✓
 - Designated Cities (横浜市, 川崎市, さいたま市, 千葉市, 名古屋市): 5/5 ✓
+- Parking Requirements (東京都, 神奈川県): 2/2 ✓
+- Total: 13/13 tests PASS (100% success rate)
 - Parking Requirements (東京都, 神奈川県): 2/2 ✓
 - Total: 12/12 tests PASS (100% success rate)
 

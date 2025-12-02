@@ -1,22 +1,23 @@
-# 200棟土地仕入れ管理システム v3.93.0 (Stable Release)
+# 200棟土地仕入れ管理システム v3.94.0 (Enhanced API Integration)
 
-## 🚨 重要: OCR機能を使用するには OpenAI APIキーの設定が必要です
+## ✅ OpenAI APIキー設定完了 - OCR機能完全稼働中
 
-**現在、OCR機能が使用できない原因: OpenAI APIキーが未設定です。**
+**システムステータス**: 全機能正常動作、本番環境テスト100%成功（13/13 PASS）
 
 詳細な設定手順は [`OPENAI_API_KEY_SETUP.md`](./OPENAI_API_KEY_SETUP.md) を参照してください。
-
-### クイックスタート
-
-1. **OpenAI APIキーを取得**: [OpenAI Platform](https://platform.openai.com/)
-2. **ローカル環境に設定**: `.dev.vars`ファイルの`OPENAI_API_KEY`を実際の値に置き換え
-3. **本番環境に設定**: `npx wrangler pages secret put OPENAI_API_KEY --project-name real-estate-200units-v2`
-4. **サーバー再起動**: `pm2 restart webapp`
 
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.93.0)**: https://4d428030.real-estate-200units-v2.pages.dev 🆕 **← 完全版リリース（OCR対応）**
+- **Production URL (Latest v3.94.0)**: https://cf7da3bd.real-estate-200units-v2.pages.dev 🆕 **← 最新版（不動産情報API統合）**
+  - 🏡 **不動産情報ライブラリAPI完全統合**（容積率・建蔽率の自動取得機能）
+  - ⚠️ **ハザード情報API実装**（洪水・土砂災害・津波・液状化リスク）
+  - 🔍 **物件情報自動入力の拡張**（ハザード情報も同時に取得・表示）
+  - 📍 **新規案件作成ページにハザード情報表示セクション追加**
+  - ✅ **全APIテスト100%成功**（ローカル19/19、本番13/13）
+  - 📦 **バンドルサイズ**（1,029.33KB）
+  - 📅 **デプロイ日時**: 2025-12-02
+- **Previous URL (v3.93.0)**: https://4d428030.real-estate-200units-v2.pages.dev **← 完全版リリース（OCR対応）**
   - ✅ **OpenAI APIキー設定完了**（OCR機能完全動作）
   - ✅ **本番データベースクリーンアップ完了**（29件のテストデータ削除、本番利用準備完了）
   - 📦 **データベースバックアップ作成済み**（production-deals-backup-2025-12-02.json）

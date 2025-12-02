@@ -336,6 +336,104 @@ app.get('/property-info', async (c) => {
 });
 
 /**
+ * ハザード情報取得API
+ * GET /api/reinfolib/hazard-info
+ * 
+ * クエリパラメータ:
+ * - address: 住所
+ * - latitude: 緯度（オプション）
+ * - longitude: 経度（オプション）
+ * 
+ * ハザード情報:
+ * - 洪水浸水想定区域
+ * - 土砂災害警戒区域
+ * - 津波浸水想定区域
+ * - 液状化リスク
+ */
+app.get('/hazard-info', async (c) => {
+  try {
+    const address = c.req.query('address');
+    const lat = c.req.query('latitude');
+    const lon = c.req.query('longitude');
+
+    if (!address && (!lat || !lon)) {
+      return c.json({ error: '住所または座標が必要です' }, 400);
+    }
+
+    // 住所から都道府県・市区町村を抽出
+    const locationCodes = address ? parseAddress(address) : null;
+    
+    // ハザード情報の簡易判定（実際のAPIが利用可能になるまでの代替実装）
+    // 現時点では、住所ベースの一般的なハザード情報を返す
+    const hazardInfo = {
+      address: address || `緯度${lat}, 経度${lon}`,
+      prefecture: locationCodes?.prefectureName || '不明',
+      city: locationCodes?.cityName || '不明',
+      hazards: [
+        {
+          type: 'flood_risk',
+          name: '洪水浸水想定区域',
+          risk_level: '調査中',
+          description: 'ハザードマップポータルサイトで詳細をご確認ください',
+          url: 'https://disaportal.gsi.go.jp/'
+        },
+        {
+          type: 'landslide_risk',
+          name: '土砂災害警戒区域',
+          risk_level: '調査中',
+          description: 'ハザードマップポータルサイトで詳細をご確認ください',
+          url: 'https://disaportal.gsi.go.jp/'
+        },
+        {
+          type: 'tsunami_risk',
+          name: '津波浸水想定区域',
+          risk_level: '調査中',
+          description: 'ハザードマップポータルサイトで詳細をご確認ください',
+          url: 'https://disaportal.gsi.go.jp/'
+        },
+        {
+          type: 'liquefaction_risk',
+          name: '液状化リスク',
+          risk_level: '調査中',
+          description: 'ハザードマップポータルサイトで詳細をご確認ください',
+          url: 'https://disaportal.gsi.go.jp/'
+        }
+      ],
+      note: '詳細な情報は国土交通省ハザードマップポータルサイトをご確認ください',
+      external_links: [
+        {
+          name: '国土交通省ハザードマップポータルサイト',
+          url: 'https://disaportal.gsi.go.jp/'
+        },
+        {
+          name: '重ねるハザードマップ',
+          url: `https://disaportal.gsi.go.jp/maps/?ll=${lat || '35.6812'},${lon || '139.7671'}&z=15&base=pale&vs=c1j0l0u0`
+        }
+      ],
+      timestamp: new Date().toISOString()
+    };
+
+    return c.json({
+      success: true,
+      data: hazardInfo,
+      metadata: {
+        address,
+        latitude: lat,
+        longitude: lon,
+        locationCodes
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error fetching hazard info:', error);
+    return c.json({ 
+      error: 'ハザード情報の取得に失敗しました',
+      message: error.message 
+    }, 500);
+  }
+});
+
+/**
  * 不動産情報ライブラリAPI - 用途地域情報を取得（GIS API）
  * GET /api/reinfolib/zoning-info
  * 

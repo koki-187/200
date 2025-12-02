@@ -4522,6 +4522,34 @@ app.get('/deals/new', (c) => {
         </div>
       </div>
 
+      <!-- ハザード情報セクション -->
+      <div id="hazard-info-container" class="mt-6 hidden">
+        <div class="border-t border-gray-200 pt-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+            ハザード情報（災害リスク）
+          </h3>
+          
+          <!-- 説明 -->
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <div class="flex items-start">
+              <i class="fas fa-info-circle text-yellow-600 mt-0.5 mr-3"></i>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-yellow-900 mb-1">自動取得機能</p>
+                <p class="text-xs text-yellow-700">
+                  「物件情報を自動入力」ボタンで住所から災害リスク情報を取得します。詳細は国土交通省ハザードマップポータルサイトで確認してください。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ハザード情報結果 -->
+          <div id="hazard-info-result" class="space-y-3">
+            <!-- ハザード情報がここに動的に表示されます -->
+          </div>
+        </div>
+      </div>
+
       <!-- ファイルアップロードセクション -->
       <div class="border-t pt-6 mt-6" id="deal-files-section" style="display: none;">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -7593,8 +7621,23 @@ app.get('/deals/new', (c) => {
           }
         });
         
+        // ハザード情報も取得
+        try {
+          const hazardResponse = await axios.get(\`/api/reinfolib/hazard-info\`, {
+            params: { address },
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          
+          if (hazardResponse.data.success) {
+            displayHazardInfo(hazardResponse.data.data);
+          }
+        } catch (hazardError) {
+          console.error('Hazard info fetch error:', hazardError);
+          // ハザード情報取得失敗は無視（メイン機能に影響しない）
+        }
+        
         if (filledCount > 0) {
-          alert(\`✅ \${filledCount}項目を自動入力しました\\n\\n入力項目: \${filledFields.join(', ')}\\n\\nデータ元: 不動産情報ライブラリ（\${metadata.year}年第\${metadata.quarter}四半期）\`);
+          alert(\`✅ \${filledCount}項目を自動入力しました\\n\\n入力項目: \${filledFields.join(', ')}\\n\\nデータ元: 不動産情報ライブラリ（\${metadata.year}年第\${metadata.quarter}四半期）\\n\\n※ハザード情報も取得しました（下部に表示）\`);
         } else {
           alert('入力可能な項目が見つかりませんでした（既に入力済みの可能性があります）');
         }
@@ -7626,6 +7669,79 @@ app.get('/deals/new', (c) => {
         btn.disabled = false;
         btn.innerHTML = originalHTML;
       }
+    }
+    
+    /**
+     * ハザード情報を表示
+     */
+    function displayHazardInfo(hazardData) {
+      const container = document.getElementById('hazard-info-container');
+      const resultDiv = document.getElementById('hazard-info-result');
+      
+      if (!hazardData || !hazardData.hazards) {
+        container.classList.add('hidden');
+        return;
+      }
+      
+      // コンテナを表示
+      container.classList.remove('hidden');
+      
+      // リスクレベルに応じた色クラス
+      const getRiskClass = (level) => {
+        if (level.includes('高')) return 'bg-red-100 text-red-800 border-red-200';
+        if (level.includes('中')) return 'bg-orange-100 text-orange-800 border-orange-200';
+        if (level.includes('低')) return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      };
+      
+      // ハザード情報カードを生成
+      let html = '';
+      
+      hazardData.hazards.forEach((hazard, index) => {
+        html += \`
+          <div class="border \${getRiskClass(hazard.risk_level)} rounded-lg p-4">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <h4 class="font-medium mb-1">\${hazard.name}</h4>
+                <p class="text-sm mb-2">\${hazard.description}</p>
+                <p class="text-xs">リスクレベル: <span class="font-semibold">\${hazard.risk_level}</span></p>
+              </div>
+              <a href="\${hazard.url}" target="_blank" 
+                class="ml-4 px-3 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 transition whitespace-nowrap">
+                詳細確認 <i class="fas fa-external-link-alt ml-1"></i>
+              </a>
+            </div>
+          </div>
+        \`;
+      });
+      
+      // 外部リンク
+      if (hazardData.external_links && hazardData.external_links.length > 0) {
+        html += \`
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+            <h4 class="font-medium text-blue-900 mb-2 text-sm">
+              <i class="fas fa-link mr-1"></i>詳細情報
+            </h4>
+            <div class="space-y-1">
+        \`;
+        
+        hazardData.external_links.forEach(link => {
+          html += \`
+            <a href="\${link.url}" target="_blank" 
+              class="text-sm text-blue-700 hover:text-blue-900 hover:underline block">
+              <i class="fas fa-external-link-alt mr-1"></i>\${link.name}
+            </a>
+          \`;
+        });
+        
+        html += \`
+            </div>
+            <p class="text-xs text-blue-600 mt-2">\${hazardData.note}</p>
+          </div>
+        \`;
+      }
+      
+      resultDiv.innerHTML = html;
     }
     
     // ============================================================

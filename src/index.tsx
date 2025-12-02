@@ -3805,15 +3805,38 @@ app.get('/deals/new', (c) => {
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="200Units">
+  <link rel="apple-touch-icon" href="/logo-3d-new.png">
+  <link rel="manifest" href="/manifest.json">
   <title>案件作成 - 200棟土地仕入れ管理システム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <!-- イベント委譲パターンスクリプトは</body>直前に移動 -->
   <style>
+    /* iOS Safari対応: Safe Area Insets */
+    :root {
+      --safe-area-inset-top: env(safe-area-inset-top, 0px);
+      --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-area-inset-left: env(safe-area-inset-left, 0px);
+      --safe-area-inset-right: env(safe-area-inset-right, 0px);
+    }
+    
     body {
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      /* iOS Safari: タップ時のハイライトを無効化 */
+      -webkit-tap-highlight-color: transparent;
+      /* iOS Safari: テキスト選択を改善 */
+      -webkit-touch-callout: none;
+      /* iOS Safari: Safe Areaに対応 */
+      padding-top: var(--safe-area-inset-top);
+      padding-bottom: var(--safe-area-inset-bottom);
+      padding-left: var(--safe-area-inset-left);
+      padding-right: var(--safe-area-inset-right);
     }
+    
     .header-logo {
       width: 40px;
       height: 40px;
@@ -3824,15 +3847,56 @@ app.get('/deals/new', (c) => {
       justify-content: center;
       box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
     }
+    
     .ocr-drop-zone {
       border: 3px dashed #c4b5fd;
       background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
       transition: all 0.3s ease;
+      /* iOS Safari: タップ時のスムーズなアニメーション */
+      touch-action: manipulation;
     }
+    
     .ocr-drop-zone.dragover {
       border-color: #9333ea;
       background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
       transform: scale(1.02);
+    }
+    
+    /* iOS Safari: ファイル選択ボタンのタップ領域を改善 */
+    .touch-manipulation {
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      /* iOS Safari: タップハイライト色 */
+      -webkit-tap-highlight-color: rgba(147, 51, 234, 0.3);
+      /* iOS Safari: 最小タップターゲットサイズ（44x44px推奨） */
+      min-height: 44px;
+      min-width: 44px;
+    }
+    /* iOS Safari: アクティブ状態のフィードバック */
+    .touch-manipulation:active {
+      transform: scale(0.96);
+      opacity: 0.9;
+    }
+    /* iOS Safari: body全体のタッチ最適化 */
+    body {
+      -webkit-text-size-adjust: 100%;
+      touch-action: pan-x pan-y;
+    }
+    /* iOS Safari: すべてのボタン要素のタッチ最適化 */
+    button {
+      -webkit-tap-highlight-color: rgba(59, 130, 246, 0.3);
+      touch-action: manipulation;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    button:active {
+      transform: scale(0.96);
+      opacity: 0.8;
+    }
+    /* iOS Safari: input要素のタッチ最適化 */
+    input[type=\"file\"] {
+      -webkit-tap-highlight-color: transparent;
     }
     .ocr-preview {
       max-width: 400px;
@@ -3925,10 +3989,10 @@ app.get('/deals/new', (c) => {
         <p class="text-gray-700 font-medium mb-2">登記簿謄本や物件資料を複数まとめてアップロード</p>
         <p class="text-sm text-gray-500 mb-2">PNG、JPG、WEBP、PDF形式に対応</p>
         <p class="text-sm text-gray-500 mb-4">画像とPDFを混在してアップロードできます（最大10ファイル）</p>
-        <label for="ocr-file-input" class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 cursor-pointer inline-block transition font-medium shadow-lg">
+        <label for="ocr-file-input" class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 cursor-pointer inline-block transition font-medium shadow-lg touch-manipulation">
           <i class="fas fa-folder-open mr-2"></i>ファイルを選択またはドラッグ＆ドロップ
         </label>
-        <input type="file" id="ocr-file-input" accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf" class="hidden" multiple>
+        <input type="file" id="ocr-file-input" accept="image/*,application/pdf" class="hidden" multiple>
         <p class="text-sm text-gray-600 mt-2">
           <i class="fas fa-info-circle mr-1"></i>
           対応形式: PNG, JPG, JPEG, WEBP, PDF
@@ -5565,11 +5629,71 @@ app.get('/deals/new', (c) => {
           if (!fileInput.dataset.changeAttached) {
             fileInput.dataset.changeAttached = 'true';
             fileInput.addEventListener('change', (e) => {
-              console.log('[OCR Elements] File input change event');
-              const files = Array.from(e.target.files);
-              console.log('[OCR Elements] Files selected:', files.length);
+              console.log('[OCR Elements] ========================================');
+              console.log('[OCR Elements] File input change event TRIGGERED');
+              console.log('[OCR Elements] User agent:', navigator.userAgent);
+              console.log('[OCR Elements] iOS detection:', /iPhone|iPad|iPod/.test(navigator.userAgent));
+              console.log('[OCR Elements] Event object:', e);
+              console.log('[OCR Elements] Event target:', e.target);
+              console.log('[OCR Elements] Event target tagName:', e.target?.tagName);
+              console.log('[OCR Elements] Event target type:', e.target?.type);
+              console.log('[OCR Elements] ========================================');
+              
+              // iOS Safari対応: 複数の方法でファイルを取得
+              const target = e.target;
+              let files = [];
+              
+              // Method 1: e.target.files (標準的な方法)
+              if (target && target.files && target.files.length > 0) {
+                console.log('[OCR Elements] ✅ Method 1: e.target.files - SUCCESS');
+                console.log('[OCR Elements] Files count:', target.files.length);
+                files = Array.from(target.files);
+              }
+              // Method 2: fileInput.files (DOM要素から直接取得)
+              else if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                console.log('[OCR Elements] ✅ Method 2: fileInput.files - SUCCESS');
+                console.log('[OCR Elements] Files count:', fileInput.files.length);
+                files = Array.from(fileInput.files);
+              }
+              // Method 3: document.getElementById経由で取得
+              else {
+                const inputElement = document.getElementById('ocr-file-input');
+                if (inputElement && inputElement.files && inputElement.files.length > 0) {
+                  console.log('[OCR Elements] ✅ Method 3: document.getElementById - SUCCESS');
+                  console.log('[OCR Elements] Files count:', inputElement.files.length);
+                  files = Array.from(inputElement.files);
+                } else {
+                  console.error('[OCR Elements] ❌ ALL METHODS FAILED - No files found');
+                  console.error('[OCR Elements] target:', target);
+                  console.error('[OCR Elements] target.files:', target?.files);
+                  console.error('[OCR Elements] fileInput:', fileInput);
+                  console.error('[OCR Elements] fileInput.files:', fileInput?.files);
+                  alert('ファイルの取得に失敗しました（iOS環境での互換性問題の可能性があります）。\n\n解決方法：\n1. ファイルを再度選択してください\n2. ブラウザをリロードしてから再試行してください\n3. 問題が解決しない場合は、管理者に連絡してください');
+                  return;
+                }
+              }
+              
+              console.log('[OCR Elements] ========================================');
+              console.log('[OCR Elements] Final files array length:', files.length);
+              console.log('[OCR Elements] File details:', files.map(f => ({
+                name: f.name,
+                type: f.type,
+                size: f.size,
+                lastModified: f.lastModified
+              })));
+              console.log('[OCR Elements] ========================================');
+              
               if (files.length > 0) {
-                processMultipleOCR(files);
+                // iOS Safari: わずかな遅延を入れることで処理の安定性を向上
+                // また、ファイルデータを事前にチェック
+                console.log('[OCR Elements] ✅ Files validated, starting OCR processing in 150ms...');
+                setTimeout(() => {
+                  console.log('[OCR Elements] Calling processMultipleOCR with', files.length, 'files');
+                  processMultipleOCR(files);
+                }, 150);
+              } else {
+                console.error('[OCR Elements] ❌ Files array is empty after all methods');
+                alert('ファイルが選択されていません。もう一度お試しください。');
               }
             });
           }
@@ -5606,6 +5730,21 @@ app.get('/deals/new', (c) => {
     
     // リトライ用のファイル保存
     let lastUploadedFiles = [];
+    
+    // iOS Safari対応: PDF.jsを事前に読み込み（初回実行時の失敗を防ぐ）
+    let pdfjsLibPreloaded = null;
+    (async function preloadPdfJs() {
+      try {
+        console.log('[PDF.js Preload] Starting PDF.js preload for iOS compatibility...');
+        const pdfjsLib = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
+        pdfjsLibPreloaded = pdfjsLib;
+        console.log('[PDF.js Preload] ✅ PDF.js preloaded successfully');
+      } catch (error) {
+        console.error('[PDF.js Preload] ❌ Failed to preload PDF.js:', error);
+        console.error('[PDF.js Preload] This may cause PDF conversion failures on iOS');
+      }
+    })();
 
     /**
      * Convert PDF to images using PDF.js
@@ -5614,11 +5753,19 @@ app.get('/deals/new', (c) => {
      */
     async function convertPdfToImages(pdfFile) {
       try {
-        // Dynamically import PDF.js
-        const pdfjsLib = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs');
+        // iOS Safari対応: 事前読み込み済みのPDF.jsを優先的に使用
+        let pdfjsLib = pdfjsLibPreloaded;
         
-        // Set worker source
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
+        if (!pdfjsLib) {
+          console.log('[PDF Conversion] Preloaded PDF.js not available, importing dynamically...');
+          // Fallback: Dynamically import PDF.js
+          pdfjsLib = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs');
+          
+          // Set worker source
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
+        } else {
+          console.log('[PDF Conversion] ✅ Using preloaded PDF.js (iOS optimized)');
+        }
         
         // Read PDF file as ArrayBuffer
         const arrayBuffer = await pdfFile.arrayBuffer();
@@ -5674,6 +5821,14 @@ app.get('/deals/new', (c) => {
     }
 
     async function processMultipleOCR(files) {
+      console.log('[OCR] ========================================');
+      console.log('[OCR] processMultipleOCR CALLED');
+      console.log('[OCR] Arguments received:', arguments);
+      console.log('[OCR] Files parameter type:', typeof files);
+      console.log('[OCR] Files parameter is Array:', Array.isArray(files));
+      console.log('[OCR] Files parameter length:', files?.length);
+      console.log('[OCR] ========================================');
+      
       // トークンを取得（必須）
       const token = localStorage.getItem('auth_token');
       
@@ -5681,6 +5836,8 @@ app.get('/deals/new', (c) => {
       console.log('[OCR] OCR処理開始');
       console.log('[OCR] ファイル数:', files.length);
       console.log('[OCR] 認証トークン存在:', !!token);
+      console.log('[OCR] User Agent:', navigator.userAgent);
+      console.log('[OCR] iOS Detection:', /iPhone|iPad|iPod/.test(navigator.userAgent));
       console.log('[OCR] ========================================');
       
       if (!token) {

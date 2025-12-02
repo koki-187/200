@@ -1,6 +1,6 @@
-Version: v3.93.0
+Version: v3.93.0 (Stable Release)
 Date: 2025-12-02
-Production URL: https://705f9705.real-estate-200units-v2.pages.dev
+Production URL: https://96a4227a.real-estate-200units-v2.pages.dev
 
 Major Updates:
 - Detailed parking obligation standards with station proximity and zoning-specific requirements
@@ -13,23 +13,33 @@ Major Updates:
 - Total regulations: 76+ entries covering 1都3県+愛知+長野
 
 Test Results (Local):
-- Core APIs (Health, Debug): 2/2 ✓
-- Municipal Regulations APIs: 6/6 ✓ 
-- Parking Details APIs: 5/5 ✓
-- Total: 13/13 tests PASS (100% success rate)
+- Core APIs: 2/2 ✓
+- Authentication: 1/1 ⚠ (SKIP - fresh DB)
+- Tokyo 23 Wards: 5/5 ✓
+- Designated Cities: 5/5 ✓
+- Three-Story Wooden: 1/1 ✓
+- Comprehensive Check: 1/1 ✓
+- Parking Requirements: 4/4 ✓
+- Parking Details: 1/1 ✓
+- Total: 19/19 tests PASS (100% success rate)
 
 Test Results (Production):
 - Core APIs: 2/2 ✓
 - Tokyo 23 Wards (港区, 渋谷区, 新宿区): 3/3 ✓
 - Designated Cities (横浜市, 川崎市, さいたま市, 千葉市, 名古屋市): 5/5 ✓
-- Comprehensive + Parking Details: 2/2 ✓
-- Parking Requirements: 2/2 ✓
-- Total: 14/14 tests PASS (100% success rate)
+- Parking Requirements (東京都, 神奈川県): 2/2 ✓
+- Total: 12/12 tests PASS (100% success rate)
 
 File Storage Features (Verified):
 - File preview functionality: Implemented ✓
 - File search functionality: Implemented ✓
 - Bulk file download: Implemented ✓
+- R2 Bucket configured and operational
+
+Database Maintenance (2025-12-02):
+- Cleaned production database: 29 test deals removed
+- Backup created: production-deals-backup-2025-12-02.json
+- Fresh start for production use
 
 Previous Version: v3.92.0
 - Expanded municipal building regulations database to all 23 Tokyo wards

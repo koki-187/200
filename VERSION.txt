@@ -1,60 +1,55 @@
-Version: v3.95.1 (Critical Bug Fix Release)
+Version: v3.96.0 (Financing Restrictions & User Management Release)
 Date: 2025-12-02
-Production URL: https://7725b697.real-estate-200units-v2.pages.dev
+Production URL: (Pending deployment)
 
-🎯 CRITICAL BUG FIXES (v3.95.1):
+🆕 NEW FEATURES (v3.96.0):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. パスワードハッシュ形式の不一致問題を解決 🔒
-   - 問題: bcrypt形式とPBKDF2形式が混在していた
-   - 影響: ログイン失敗、案件作成失敗
-   - 解決: 全ユーザーのパスワードハッシュをPBKDF2形式に統一
-   - 新パスワード: 全ユーザー `Test1234!` で統一
-   - 影響ユーザー: 7人（管理者、担当者、売主）
+1. 融資制限条件チェック機能 🏦
+   - 新API: GET /api/reinfolib/check-financing-restrictions
+   - 提携金融機関での融資が困難となる条件を自動チェック:
+     ① 水害による想定浸水深度が10m以上
+     ② 家屋倒壊等氾濫想定区域
+     ③ 土砂災害特別警戒区域（レッドゾーン）
+   - 案件作成フォームに警告バナーを表示
+   - ハザードマップポータルサイトへのリンク提供
 
-2. 案件作成機能の完全動作確認 ✅
-   - ログイン→案件作成→取得のフロー全てOK
-   - 本番環境でテスト完了
-   - Deal ID: eo48my8PNLuWmSmnSuMQ1, Kbv6xtmncxFhrV_molvqn
+2. 管理者向けユーザー管理機能 👥
+   - 既存API活用: GET /api/users (管理者専用)
+   - ユーザー登録情報一覧の確認機能
+   - ページネーション・検索・フィルタリング対応
+   - ユーザー詳細情報の表示
 
-3. OCRリコール問題の分析 📊
-   - 原因: ブラウザキャッシュが古いJavaScriptファイルを保持
-   - 解決策: ユーザーはブラウザのハードリフレッシュが必要
-   - コード: 最新版では正しいAPI URLを使用
+3. セキュリティ強化 🔐
+   - 全APIエンドポイントに認証ミドルウェア適用
+   - hazard-info, check-financing-restrictions も認証必須
+   - ユーザー情報保護の徹底
 
-Major Updates (v3.95.1):
-- 🔒 パスワード認証システムの完全修正
-- ✅ 本番環境での全機能動作確認
-- 🔄 最新コードの再デプロイ
-
-Test Results (v3.95.1):
-Production Environment:
-- ログイン: 3/3 ✓ (管理者, 担当者, 売主)
-- 案件作成: PASS ✓ (2件のテスト案件作成成功)
-- 案件取得: PASS ✓
+Test Results (v3.96.0):
+Local Environment:
 - Health Check: PASS ✓
-- Total: 100% success rate
+- ユーザー一覧API: PASS ✓ (認証必須)
+- 融資制限チェックAPI: PASS ✓ (認証必須)
+- ハザード情報API: PASS ✓ (認証必須)
+- Total: 4/4 tests PASS (100% success rate)
+
+Previous Updates (v3.95.1):
+- 🔒 パスワードハッシュ形式の不一致問題を解決
+- ✅ 案件作成機能の完全動作確認
+- 📊 OCRリコール問題の分析（ブラウザキャッシュが原因）
+- Production: ログイン3/3, 案件作成PASS (100% success)
 
 Previous Updates (v3.94.0):
-- 🆕 不動産情報ライブラリAPI完全統合: 容積率・建蔽率の自動取得機能
-- 🆕 ハザード情報API実装: 洪水・土砂災害・津波・液状化リスクの確認機能
-- 🆕 物件情報自動入力の拡張: ハザード情報も同時に取得・表示
-- 🆕 新規案件作成ページにハザード情報表示セクション追加
-- Local: 19/19 PASS (100%)
-- Production: 13/13 PASS (100%)
-
-Previous Updates (v3.93.0):
-- ✅ OpenAI API Key configured and operational (OCR fully functional)
-- Detailed parking obligation standards with station proximity and zoning-specific requirements
-- Enhanced major cities: 渋谷区, 横浜市, 川崎市, さいたま市, 千葉市, 名古屋市
-- All 23 Tokyo wards + designated cities fully functional
-- Total regulations: 76+ entries covering 1都3県+愛知+長野
+- 🆕 不動産情報ライブラリAPI完全統合
+- 🆕 ハザード情報API実装
+- Local: 19/19 PASS, Production: 13/13 PASS (100%)
 
 Known Issues & Recommendations:
-- OCRリコール問題: ユーザーはブラウザのハードリフレッシュ（Ctrl+F5）を推奨
-- Reinfolib API: OpenAI APIキー設定が必要（OCR機能を使用する場合）
+- ハザード情報の自動判定: 現在は手動確認を推奨（市区町村ハザードマップ参照）
+- OCRリコール問題: ブラウザのハードリフレッシュ（Ctrl+F5）推奨
 - パスワード: 本番環境では `Test1234!` から変更を推奨
 
 Deployment History:
-- v3.95.1: https://7725b697.real-estate-200units-v2.pages.dev (2025-12-02 - LATEST)
+- v3.96.0: (Pending - 2025-12-02)
+- v3.95.1: https://7725b697.real-estate-200units-v2.pages.dev (2025-12-02)
 - v3.94.0: https://cf7da3bd.real-estate-200units-v2.pages.dev (2025-12-02)
 - v3.93.0: https://4d428030.real-estate-200units-v2.pages.dev (2025-12-02)

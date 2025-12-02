@@ -7631,6 +7631,22 @@ app.get('/deals/new', (c) => {
           if (hazardResponse.data.success) {
             displayHazardInfo(hazardResponse.data.data);
           }
+          
+          // 融資制限条件もチェック
+          try {
+            const restrictionResponse = await axios.get(\`/api/reinfolib/check-financing-restrictions\`, {
+              params: { address },
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            
+            if (restrictionResponse.data.success && restrictionResponse.data.summary) {
+              console.log('融資制限条件チェック結果:', restrictionResponse.data);
+              // 融資制限警告はハザード情報表示内に含まれるため、ここでは追加処理なし
+            }
+          } catch (restrictionError) {
+            console.error('Financing restriction check error:', restrictionError);
+            // 融資制限チェック失敗は無視（メイン機能に影響しない）
+          }
         } catch (hazardError) {
           console.error('Hazard info fetch error:', hazardError);
           // ハザード情報取得失敗は無視（メイン機能に影響しない）
@@ -7696,6 +7712,38 @@ app.get('/deals/new', (c) => {
       
       // ハザード情報カードを生成
       let html = '';
+      
+      // 融資制限警告バナーを追加
+      html += \`
+        <div class="bg-red-50 border-2 border-red-400 rounded-lg p-4 mb-4">
+          <div class="flex items-start">
+            <i class="fas fa-exclamation-triangle text-red-600 text-xl mr-3 mt-1"></i>
+            <div class="flex-1">
+              <h4 class="font-bold text-red-900 mb-2">⚠️ 融資制限条件の確認が必要です</h4>
+              <p class="text-sm text-red-800 mb-3">
+                以下に位置する物件は提携金融機関での融資が困難となります：
+              </p>
+              <ul class="text-sm text-red-800 space-y-1 mb-3 pl-4">
+                <li class="flex items-start">
+                  <span class="mr-2">•</span>
+                  <span><strong>水害による想定浸水深度が10m以上</strong>の区域</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="mr-2">•</span>
+                  <span><strong>家屋倒壊等氾濫想定区域</strong>に該当</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="mr-2">•</span>
+                  <span><strong>土砂災害特別警戒区域（レッドゾーン）</strong>に該当</span>
+                </li>
+              </ul>
+              <p class="text-sm text-red-800 font-semibold">
+                📍 必ず市区町村作成のハザードマップで上記項目を確認してください
+              </p>
+            </div>
+          </div>
+        </div>
+      \`;
       
       hazardData.hazards.forEach((hazard, index) => {
         html += \`

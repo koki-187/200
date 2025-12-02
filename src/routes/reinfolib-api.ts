@@ -19,6 +19,8 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 // 認証必須（テストエンドポイントを除く）
 app.use('/property-info', authMiddleware);
 app.use('/zoning-info', authMiddleware);
+app.use('/hazard-info', authMiddleware);
+app.use('/check-financing-restrictions', authMiddleware);
 // テストエンドポイントは認証不要
 
 /**
@@ -428,6 +430,108 @@ app.get('/hazard-info', async (c) => {
     console.error('❌ Error fetching hazard info:', error);
     return c.json({ 
       error: 'ハザード情報の取得に失敗しました',
+      message: error.message 
+    }, 500);
+  }
+});
+
+/**
+ * 融資制限条件チェックAPI
+ * GET /api/reinfolib/check-financing-restrictions
+ * 
+ * クエリパラメータ:
+ * - address: 住所
+ * - latitude: 緯度（オプション）
+ * - longitude: 経度（オプション）
+ * 
+ * 融資制限条件:
+ * 1. 水害による想定浸水深度が10m以上
+ * 2. 家屋倒壊等氾濫想定区域
+ * 3. 土砂災害特別警戒区域(レッドゾーン)
+ * 
+ * これらの条件に該当する場合、提携金融機関での融資が困難
+ */
+app.get('/check-financing-restrictions', async (c) => {
+  try {
+    const address = c.req.query('address');
+    const lat = c.req.query('latitude');
+    const lon = c.req.query('longitude');
+
+    if (!address && (!lat || !lon)) {
+      return c.json({ error: '住所または座標が必要です' }, 400);
+    }
+
+    // 住所から都道府県・市区町村を抽出
+    const locationCodes = address ? parseAddress(address) : null;
+    
+    // 融資制限条件のチェック結果
+    // 実際のハザードマップAPIが利用可能になるまでは、ユーザーに手動確認を促す
+    const restrictions = [
+      {
+        type: 'flood_depth',
+        name: '水害による想定浸水深度',
+        threshold: '10m以上',
+        status: 'manual_check_required',
+        result: null,
+        warning: '市区町村作成のハザードマップで確認が必要です',
+        check_url: 'https://disaportal.gsi.go.jp/',
+        severity: 'high'
+      },
+      {
+        type: 'house_collapse_zone',
+        name: '家屋倒壊等氾濫想定区域',
+        threshold: '該当区域内',
+        status: 'manual_check_required',
+        result: null,
+        warning: '市区町村作成のハザードマップで確認が必要です',
+        check_url: 'https://disaportal.gsi.go.jp/',
+        severity: 'high'
+      },
+      {
+        type: 'landslide_red_zone',
+        name: '土砂災害特別警戒区域（レッドゾーン）',
+        threshold: '該当区域内',
+        status: 'manual_check_required',
+        result: null,
+        warning: '市区町村作成のハザードマップで確認が必要です',
+        check_url: 'https://disaportal.gsi.go.jp/',
+        severity: 'high'
+      }
+    ];
+
+    // 総合判定
+    const hasRestrictions = false; // 自動判定は現時点では不可
+    const requiresManualCheck = true;
+
+    return c.json({
+      success: true,
+      financing_available: null, // 自動判定不可のためnull
+      requires_manual_check: requiresManualCheck,
+      restrictions: restrictions,
+      summary: {
+        address: address || `緯度${lat}, 経度${lon}`,
+        prefecture: locationCodes?.prefectureName || '不明',
+        city: locationCodes?.cityName || '不明',
+        warning_message: '⚠️ 融資制限条件の確認が必要です',
+        action_required: '市区町村作成の水害・土砂災害ハザードマップで以下の項目を確認してください：\n1. 水害による想定浸水深度が10m以上でないこと\n2. 家屋倒壊等氾濫想定区域に該当しないこと\n3. 土砂災害特別警戒区域(レッドゾーン)に該当しないこと',
+        check_urls: [
+          {
+            name: '国土交通省ハザードマップポータルサイト',
+            url: 'https://disaportal.gsi.go.jp/'
+          },
+          {
+            name: '重ねるハザードマップ（該当地点）',
+            url: `https://disaportal.gsi.go.jp/maps/?ll=${lat || '35.6812'},${lon || '139.7671'}&z=15&base=pale&vs=c1j0l0u0`
+          }
+        ]
+      },
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error checking financing restrictions:', error);
+    return c.json({ 
+      error: '融資制限条件のチェックに失敗しました',
       message: error.message 
     }, 500);
   }

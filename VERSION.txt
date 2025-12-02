@@ -1,24 +1,37 @@
-Version: v3.92.0
+Version: v3.93.0
 Date: 2025-12-02
-Production URL: https://06235a07.real-estate-200units-v2.pages.dev
+Production URL: https://705f9705.real-estate-200units-v2.pages.dev
 
 Major Updates:
-- Expanded municipal building regulations database to include ALL 23 Tokyo wards
-- Added 19 new Tokyo wards (中央区, 港区, 文京区, 台東区, 墨田区, 江東区, 品川区, 目黒区, 大田区, 中野区, 杉並区, 豊島区, 北区, 荒川区, 板橋区, 練馬区, 足立区, 葛飾区, 江戸川区)
-- Each ward includes DISPUTE_PREVENTION and PARKING regulations
-- Updated city pattern matching for comprehensive coverage
-- Total regulations: 71 entries covering 1都3県+愛知+長野
+- Detailed parking obligation standards with station proximity and zoning-specific requirements
+- parking_details interface: base_requirement, station_proximity_relaxation, zoning_specific, commercial_area_exemption
+- Enhanced major cities: 渋谷区, 横浜市, 川崎市, さいたま市, 千葉市, 名古屋市
+- Station proximity relaxation: 5min walk = reduced parking requirement
+- Zoning-specific standards: 商業地域, 近隣商業地域, 住居系地域
+- Commercial area exemption for stations within 3min walk
+- All 23 Tokyo wards + designated cities fully functional
+- Total regulations: 76+ entries covering 1都3県+愛知+長野
+
+Test Results (Local):
+- Core APIs (Health, Debug): 2/2 ✓
+- Municipal Regulations APIs: 6/6 ✓ 
+- Parking Details APIs: 5/5 ✓
+- Total: 13/13 tests PASS (100% success rate)
 
 Test Results (Production):
-- 港区: 2 regulations (DISPUTE_PREVENTION + PARKING) ✓
-- 江戸川区: 2 regulations ✓
-- 足立区: 2 regulations ✓
-- 中央区: 2 regulations ✓
-- All 23 Tokyo wards: Working ✓
-- Building regulations API with municipal data: ✓
-- URL encoding for Japanese parameters: ✓
+- Core APIs: 2/2 ✓
+- Tokyo 23 Wards (港区, 渋谷区, 新宿区): 3/3 ✓
+- Designated Cities (横浜市, 川崎市, さいたま市, 千葉市, 名古屋市): 5/5 ✓
+- Comprehensive + Parking Details: 2/2 ✓
+- Parking Requirements: 2/2 ✓
+- Total: 14/14 tests PASS (100% success rate)
 
-Previous Version: v3.91.0
-- Integrated building regulations check into deal creation form
-- Real-time auto-checking with OCR integration
-- Floor number auto-extraction from structure field
+File Storage Features (Verified):
+- File preview functionality: Implemented ✓
+- File search functionality: Implemented ✓
+- Bulk file download: Implemented ✓
+
+Previous Version: v3.92.0
+- Expanded municipal building regulations database to all 23 Tokyo wards
+- Added 19 new Tokyo wards with comprehensive regulations
+- Total 71 regulations → 76+ regulations

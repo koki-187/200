@@ -1,0 +1,20 @@
+Version: v3.90.0
+Date: 2025-12-02
+Production URL: https://a0217557.real-estate-200units-v2.pages.dev
+
+Major Updates:
+- Municipal building regulations database for 1都3県+愛知+長野
+- API endpoints: /api/building-regulations/municipal, /three-story-wooden
+- UI updated to display both national and municipal regulations
+- Fixed duplicate initialization issue in deals page
+- Comprehensive test coverage for 4 properties
+
+Test Results (Local):
+- 千葉市美浜区: 3 national + 1 municipal ✓
+- 川崎市幸区: 3 national + 3 municipal ✓
+- 埼玉県幸手市: 3 national + 2 municipal ✓
+- 東京都渋谷区: 3 national + 2 municipal ✓
+
+Test Results (Production):
+- Kawasaki API: 3 national + 3 municipal ✓
+- URL encoding for Japanese parameters: ✓

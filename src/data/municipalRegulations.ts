@@ -584,8 +584,29 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     title: '駐車場設置基準',
     description: '共同住宅は延べ面積500㎡以上で駐車場設置義務',
     applicable_conditions: '共同住宅、延べ面積500㎡以上',
-    requirements: '2戸に1台以上（市街化区域内）',
+    requirements: '2戸に1台以上（市街化区域内）、駅徒歩5分以内は緩和あり',
     ordinance_name: '横浜市駐車場条例'
+  },
+  {
+    city: '横浜市',
+    prefecture: '神奈川県',
+    category: 'THREE_STORY_WOODEN',
+    title: '3階建て木造共同住宅の構造基準',
+    description: '3階建て木造共同住宅は準耐火建築物以上とし、構造計算が必要',
+    applicable_conditions: '3階建て木造共同住宅',
+    requirements: '準耐火建築物以上、許容応力度計算、防火区画の設置',
+    ordinance_name: '横浜市建築基準法施行細則'
+  },
+  {
+    city: '横浜市',
+    prefecture: '神奈川県',
+    category: 'LANDSCAPE',
+    title: '景観計画区域における届出',
+    description: '高さ15m超または延べ面積1000㎡超の建築物は景観届出が必要',
+    applicable_conditions: '高さ15m超または延べ面積1000㎡超',
+    requirements: '建築確認申請前に景観法に基づく届出を提出（30日前）',
+    reference_url: 'https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/keikan/',
+    ordinance_name: '横浜市景観計画'
   },
   
   // 川崎市（川崎区幸町の物件該当）
@@ -644,7 +665,7 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     title: '中高層建築物の建築に係る紛争の予防と調整に関する条例',
     description: '高さ10m超または3階建て以上の建築物について近隣説明義務',
     applicable_conditions: '高さ10m超または3階建て以上',
-    requirements: '標識設置、近隣説明、市への届出',
+    requirements: '標識設置、近隣説明、市への届出（工事着手30日前）',
     reference_url: 'https://www.city.saitama.jp/',
     ordinance_name: 'さいたま市中高層建築物の建築に係る紛争の予防と調整に関する条例'
   },
@@ -655,8 +676,18 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     title: '駐車場設置基準',
     description: '共同住宅は延べ面積500㎡以上で駐車場設置義務',
     applicable_conditions: '共同住宅、延べ面積500㎡以上',
-    requirements: '2戸に1台以上',
+    requirements: '2戸に1台以上、駅徒歩5分以内は緩和措置あり',
     ordinance_name: 'さいたま市駐車場条例'
+  },
+  {
+    city: 'さいたま市',
+    prefecture: '埼玉県',
+    category: 'THREE_STORY_WOODEN',
+    title: '3階建て木造共同住宅の構造基準',
+    description: '3階建て木造共同住宅は準耐火建築物以上とし、構造計算が必要',
+    applicable_conditions: '3階建て木造共同住宅',
+    requirements: '準耐火建築物以上、許容応力度計算、防火区画の設置',
+    ordinance_name: 'さいたま市建築基準法施行細則'
   },
   
   // 幸手市（埼玉県幸手市北2丁目の物件該当）
@@ -716,8 +747,18 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     title: '駐車場設置基準',
     description: '共同住宅は延べ面積500㎡以上で駐車場設置義務',
     applicable_conditions: '共同住宅、延べ面積500㎡以上',
-    requirements: '3戸に1台以上',
+    requirements: '3戸に1台以上、駅徒歩5分以内は2戸に1台に緩和',
     ordinance_name: '千葉市駐車場条例'
+  },
+  {
+    city: '千葉市',
+    prefecture: '千葉県',
+    category: 'THREE_STORY_WOODEN',
+    title: '3階建て木造共同住宅の構造基準',
+    description: '3階建て木造共同住宅は準耐火建築物以上とし、構造計算が必要',
+    applicable_conditions: '3階建て木造共同住宅',
+    requirements: '準耐火建築物以上、許容応力度計算、防火区画の設置',
+    ordinance_name: '千葉市建築基準法施行細則'
   },
   {
     city: '千葉市美浜区',
@@ -798,6 +839,17 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     applicable_conditions: '3階建て木造共同住宅',
     requirements: '準耐火建築物以上、許容応力度計算、防火区画の設置',
     ordinance_name: '名古屋市建築基準法施行細則'
+  },
+  {
+    city: '名古屋市',
+    prefecture: '愛知県',
+    category: 'LANDSCAPE',
+    title: '景観計画区域における届出',
+    description: '高さ15m超または延べ面積1000㎡超の建築物は景観届出が必要',
+    applicable_conditions: '高さ15m超または延べ面積1000㎡超',
+    requirements: '建築確認申請前に景観法に基づく届出を提出（30日前）',
+    reference_url: 'https://www.city.nagoya.jp/jutakutoshi/page/0000004584.html',
+    ordinance_name: '名古屋市景観計画'
   },
   
   // 豊田市

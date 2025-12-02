@@ -4464,6 +4464,64 @@ app.get('/deals/new', (c) => {
         </div>
       </div>
 
+      <!-- 建築基準法チェック結果 -->
+      <div id="building-regulations-container" class="mt-6 hidden">
+        <div class="border-t border-gray-200 pt-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-gavel text-orange-600 mr-2"></i>
+            建築基準法・自治体条例チェック
+          </h3>
+          
+          <!-- 自動チェック説明 -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div class="flex items-start">
+              <i class="fas fa-magic text-blue-600 mt-0.5 mr-3"></i>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-blue-900 mb-1">自動チェック機能</p>
+                <p class="text-xs text-blue-700">
+                  所在地、用途地域、防火地域、高度地区、構造などの入力に応じて、該当する建築基準法・自治体条例を自動表示します
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 検出された規定のサマリー -->
+          <div id="building-regulations-summary" class="mb-4 hidden">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div class="text-xs text-orange-600 mb-1">建築基準法</div>
+                <div class="text-2xl font-bold text-orange-900">
+                  <span id="national-reg-count">0</span>件
+                </div>
+              </div>
+              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="text-xs text-green-600 mb-1">自治体条例</div>
+                <div class="text-2xl font-bold text-green-900">
+                  <span id="municipal-reg-count">0</span>件
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 規定リスト -->
+          <div id="building-regulations-result" class="space-y-3">
+            <!-- 結果がここに動的に表示されます -->
+          </div>
+
+          <!-- 手動チェックボタン -->
+          <div class="mt-4 flex items-center justify-between">
+            <div class="text-sm text-gray-600">
+              <i class="fas fa-info-circle mr-1"></i>
+              必要項目を入力すると自動的にチェックされます
+            </div>
+            <button type="button" id="manual-check-btn" onclick="manualBuildingCheck()"
+              class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm">
+              <i class="fas fa-sync mr-1"></i>今すぐチェック
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- ファイルアップロードセクション -->
       <div class="border-t pt-6 mt-6" id="deal-files-section" style="display: none;">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -7131,6 +7189,181 @@ app.get('/deals/new', (c) => {
     addDebouncedListener('floor_area_ratio');
     addDebouncedListener('road_info');
 
+    // ========================================
+    // 建築基準法・自治体条例チェック機能
+    // ========================================
+    let buildingCheckTimeout = null;
+
+    // 建築基準法チェック実行
+    async function checkBuildingRegulations() {
+      const location = document.getElementById('location').value;
+      const zoning = document.getElementById('zoning').value;
+      const fireZone = document.getElementById('fire_zone').value;
+      const heightDistrict = document.getElementById('height_district').value;
+      const structure = document.getElementById('structure')?.value;
+      const currentStatus = document.getElementById('current_status')?.value;
+
+      // 最低限必要なデータが入力されているかチェック
+      if (!location) {
+        document.getElementById('building-regulations-container').classList.add('hidden');
+        return;
+      }
+
+      // 階数を構造から抽出（例: "木造3階建" → 3）
+      let floors = null;
+      if (structure) {
+        const floorMatch = structure.match(/(\d+)階/);
+        if (floorMatch) {
+          floors = parseInt(floorMatch[1]);
+        }
+      }
+
+      // APIリクエストデータ準備
+      const params = new URLSearchParams({
+        location: location,
+        ...(zoning && { zoning }),
+        ...(fireZone && { fire_zone: fireZone }),
+        ...(heightDistrict && { height_district: heightDistrict }),
+        ...(structure && { structure }),
+        ...(currentStatus && { current_status: currentStatus }),
+        ...(floors && { floors: floors.toString() })
+      });
+
+      try {
+        const response = await axios.get('/api/building-regulations/check?' + params.toString(), {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        const data = response.data.data;
+        
+        if (data.applicable_regulations || data.municipal_regulations) {
+          displayBuildingRegulations(data);
+          document.getElementById('building-regulations-container').classList.remove('hidden');
+        } else {
+          document.getElementById('building-regulations-container').classList.add('hidden');
+        }
+      } catch (error) {
+        console.error('Building regulations check error:', error);
+        document.getElementById('building-regulations-container').classList.add('hidden');
+      }
+    }
+
+    // 建築基準法チェック結果表示
+    function displayBuildingRegulations(data) {
+      const container = document.getElementById('building-regulations-result');
+      const summary = document.getElementById('building-regulations-summary');
+      
+      const nationalRegs = data.applicable_regulations || [];
+      const municipalRegs = data.municipal_regulations || [];
+      
+      // サマリー更新
+      document.getElementById('national-reg-count').textContent = nationalRegs.length;
+      document.getElementById('municipal-reg-count').textContent = municipalRegs.length;
+      summary.classList.remove('hidden');
+
+      let html = '';
+
+      // 建築基準法
+      if (nationalRegs.length > 0) {
+        html += '<div class="mb-6">';
+        html += '<h4 class="text-md font-bold text-gray-900 mb-3 flex items-center">';
+        html += '<i class="fas fa-book-open text-orange-600 mr-2"></i>建築基準法';
+        html += '</h4>';
+        
+        nationalRegs.forEach(reg => {
+          html += '<div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition mb-3">';
+          html += '<div class="flex items-start">';
+          html += '<div class="flex-shrink-0"><i class="fas fa-gavel text-orange-600 mt-1"></i></div>';
+          html += '<div class="ml-3 flex-1">';
+          html += '<h5 class="font-semibold text-gray-900">' + (reg.title || '規定') + '</h5>';
+          html += '<p class="text-sm text-gray-600 mt-1">' + (reg.description || '') + '</p>';
+          html += '<div class="mt-2 text-xs text-gray-500">';
+          html += '<i class="fas fa-book mr-1"></i>' + (reg.article || '');
+          html += '</div></div></div></div>';
+        });
+        
+        html += '</div>';
+      }
+
+      // 自治体条例
+      if (municipalRegs.length > 0) {
+        html += '<div class="mb-6">';
+        html += '<h4 class="text-md font-bold text-gray-900 mb-3 flex items-center">';
+        html += '<i class="fas fa-landmark text-green-600 mr-2"></i>自治体条例・規則';
+        html += '</h4>';
+        
+        municipalRegs.forEach(reg => {
+          const categoryIcons = {
+            'PARKING': 'fa-parking',
+            'THREE_STORY_WOODEN': 'fa-building',
+            'DISPUTE_PREVENTION': 'fa-handshake',
+            'LANDSCAPE': 'fa-tree',
+            'FIRE_PREVENTION': 'fa-fire-extinguisher',
+            'HEIGHT_DISTRICT': 'fa-ruler-vertical',
+            'OTHER': 'fa-file-alt'
+          };
+          const icon = categoryIcons[reg.category] || 'fa-file-alt';
+          
+          html += '<div class="border border-green-200 rounded-lg p-4 hover:bg-green-50 transition mb-3">';
+          html += '<div class="flex items-start">';
+          html += '<div class="flex-shrink-0"><i class="fas ' + icon + ' text-green-600 mt-1"></i></div>';
+          html += '<div class="ml-3 flex-1">';
+          html += '<div class="flex items-center gap-2 mb-1">';
+          html += '<h5 class="font-semibold text-gray-900">' + reg.title + '</h5>';
+          html += '<span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">' + reg.city + '</span>';
+          html += '</div>';
+          html += '<p class="text-sm text-gray-600 mt-1">' + reg.description + '</p>';
+          html += '<div class="mt-2 text-xs text-gray-500 space-y-1">';
+          html += '<div><i class="fas fa-check-circle mr-1"></i>適用条件: ' + reg.applicable_conditions + '</div>';
+          html += '<div><i class="fas fa-clipboard-list mr-1"></i>要件: ' + reg.requirements + '</div>';
+          html += '<div><i class="fas fa-book mr-1"></i>' + (reg.ordinance_name || '') + '</div>';
+          if (reg.reference_url) {
+            html += '<div><i class="fas fa-external-link-alt mr-1"></i><a href="' + reg.reference_url + '" target="_blank" class="text-blue-600 hover:underline">詳細情報</a></div>';
+          }
+          html += '</div></div></div></div>';
+        });
+        
+        html += '</div>';
+      }
+
+      // 3階建て木造の警告
+      if (data.is_three_story_wooden) {
+        html += '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">';
+        html += '<div class="flex items-start">';
+        html += '<i class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-3"></i>';
+        html += '<div class="flex-1">';
+        html += '<p class="text-sm font-medium text-yellow-900">3階建て木造建築の特別規定が適用されます</p>';
+        html += '<p class="text-xs text-yellow-700 mt-1">構造計算、防火対策、避難規定などの厳格な基準が適用されます。詳細は建築基準法第21条・第27条等を確認してください。</p>';
+        html += '</div></div></div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    // 手動チェック関数（グローバルスコープ）
+    window.manualBuildingCheck = function() {
+      checkBuildingRegulations();
+    };
+
+    // 建築基準法チェック用デバウンス付きイベントリスナー追加
+    function addBuildingCheckListener(elementId) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.addEventListener('input', () => {
+          clearTimeout(buildingCheckTimeout);
+          buildingCheckTimeout = setTimeout(checkBuildingRegulations, 1000);
+        });
+      }
+    }
+
+    // 建築基準法チェック対象フィールドにイベントリスナー追加
+    addBuildingCheckListener('location');
+    addBuildingCheckListener('zoning');
+    addBuildingCheckListener('fire_zone');
+    addBuildingCheckListener('height_district');
+    addBuildingCheckListener('structure');
+    addBuildingCheckListener('current_status');
+
     // OCR抽出データの自動入力
     function loadOCRExtractedData() {
       const ocrData = localStorage.getItem('ocr_extracted_data');
@@ -7154,9 +7387,10 @@ app.get('/deals/new', (c) => {
           // localStorageからデータを削除（再利用を防ぐ）
           localStorage.removeItem('ocr_extracted_data');
           
-          // 買取条件チェックを実行
+          // 買取条件チェックと建築基準法チェックを実行
           setTimeout(() => {
             checkPurchaseCriteria();
+            checkBuildingRegulations();
           }, 500);
           
           // 通知表示

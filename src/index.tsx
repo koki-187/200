@@ -1259,7 +1259,8 @@ app.get('/building-regulations', (c) => {
           return;
         }
         
-        const params = new URLSearchParams({
+        // URLパラメータを明示的にエンコード（Cloudflare Worker対応）
+        const params = {
           location,
           zoning,
           fire_zone: fire_zone || '',
@@ -1267,9 +1268,9 @@ app.get('/building-regulations', (c) => {
           current_status: current_status || '',
           structure: structure || '',
           floors: floors || ''
-        });
+        };
         
-        const response = await axios.get(\`/api/building-regulations/check?\${params.toString()}\`);
+        const response = await axios.get('/api/building-regulations/check', { params });
         
         if (response.data.success) {
           displayResults(response.data.data);

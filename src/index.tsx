@@ -3716,8 +3716,16 @@ app.get('/deals', (c) => {
       window.location.href = '/deals/' + dealId;
     }
 
-    // ページ読み込み後に初期化
+    // ページ読み込み後に初期化（重複実行を防止）
+    let isInitialized = false;
+    
     function initializePage() {
+      if (isInitialized) {
+        console.log('[initializePage] Already initialized, skipping...');
+        return;
+      }
+      
+      isInitialized = true;
       console.log('[initializePage] Initializing page...');
       
       // ユーザー名表示
@@ -3736,14 +3744,7 @@ app.get('/deals', (c) => {
       }
     }
     
-    // DOMContentLoaded と window.load の両方で初期化を試行
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializePage);
-    } else {
-      // すでにDOMは読み込み済み
-      console.log('[Page] DOM already loaded, initializing immediately');
-      initializePage();
-    }
+    // ページ読み込み後に初期化（window.loadのみ使用）
     window.addEventListener('load', initializePage);
   </script>
 </body>

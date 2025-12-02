@@ -108,10 +108,12 @@ app.get('/property-info', async (c) => {
     // MLIT API Key確認
     const apiKey = c.env.MLIT_API_KEY;
     if (!apiKey) {
+      console.error('❌ MLIT_API_KEY is not configured');
       return c.json({ 
-        error: 'MLIT API Keyが設定されていません',
-        message: 'wrangler secret put MLIT_API_KEY でAPIキーを設定してください'
-      }, 500);
+        error: 'MLIT_API_KEYが設定されていません',
+        message: 'Cloudflare Pagesの環境変数でMLIT_API_KEYを設定してください。設定方法: wrangler secret put MLIT_API_KEY',
+        configRequired: true
+      }, 401);
     }
 
     // 住所から都道府県コード・市区町村コードを抽出

@@ -7090,20 +7090,41 @@ app.get('/deals/new', (c) => {
         }, 1000);
       } catch (error) {
         console.error('Create deal error:', error);
-        console.error('Error details:', {
-          message: error?.message,
-          response: error?.response,
-          responseData: error?.response?.data,
-          responseStatus: error?.response?.status,
-          stack: error?.stack
-        });
+        
+        // エラーの詳細を個別にログ出力
+        if (error) {
+          console.error('[Error] message:', error.message || 'No message');
+          console.error('[Error] name:', error.name || 'No name');
+          
+          if (error.response) {
+            console.error('[Error] response.status:', error.response.status);
+            console.error('[Error] response.statusText:', error.response.statusText);
+            console.error('[Error] response.data:', JSON.stringify(error.response.data));
+            console.error('[Error] response.headers:', JSON.stringify(error.response.headers));
+          } else {
+            console.error('[Error] No response object');
+          }
+          
+          if (error.request) {
+            console.error('[Error] Request was made but no response:', error.request);
+          }
+          
+          console.error('[Error] Stack trace:', error.stack || 'No stack');
+        }
         
         // エラーメッセージ表示
         let errorMsg = '案件作成に失敗しました';
         if (error?.response?.data?.error) {
           errorMsg += ': ' + error.response.data.error;
+        } else if (error?.response?.data?.details) {
+          errorMsg += ': ' + error.response.data.details;
         } else if (error?.message) {
           errorMsg += ': ' + error.message;
+        }
+        
+        // ステータスコードも表示
+        if (error?.response?.status) {
+          errorMsg += ' (HTTP ' + error.response.status + ')';
         }
         
         // showMessage関数が存在するか確認

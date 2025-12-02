@@ -1,26 +1,23 @@
 # ログイン情報
 
+**最終更新**: 2025-12-02 v3.96.0 パスワードリセット実施
+
 ## 本番環境URL
 **Production URL**: https://a2b11148.real-estate-200units-v2.pages.dev
 
 ## ユーザーアカウント一覧
 
-### テスト用アカウント（パスワード: Test1234!）
+### ✅ 全ユーザーログイン確認済み（2025-12-02）
 
-| ユーザーID | メールアドレス | パスワード | ロール | 備考 |
-|-----------|--------------|----------|--------|------|
-| e3e7b2cb-3e3e-4b99-840f-7287a4c45b86 | admin@200units.com | Test1234! | ADMIN | テスト管理者 |
-| 1805f040-561f-4fae-8f22-792cc852d941 | agent@200units.com | Test1234! | AGENT | テスト担当者 |
-| seller-001 | seller1@example.com | Test1234! | AGENT | テスト売主1 |
-| seller-002 | seller2@example.com | Test1234! | AGENT | テスト売主2 |
-| user-aN7DwjL7fR | prod-test-agent@example.com | Test1234! | AGENT | 本番テスト担当者 |
-| test-admin-001 | admin@test.com | Test1234! | ADMIN | テスト管理者2 |
-
-### 実ユーザーアカウント（独自パスワード）
-
-| ユーザーID | メールアドレス | パスワード | ロール | 備考 |
-|-----------|--------------|----------|--------|------|
-| admin-001 | navigator-187@docomo.ne.jp | （独自パスワード） | ADMIN | 実ユーザー |
+| メールアドレス | パスワード | ロール | 備考 | ログインステータス |
+|--------------|----------|--------|------|--------------------|
+| navigator-187@docomo.ne.jp | **kouki187** | ADMIN | 実ユーザー（管理者） | ✅ 確認済み |
+| admin@test.com | **admin123** | ADMIN | テスト管理者 | ✅ 確認済み |
+| admin@200units.com | **Test1234!** | ADMIN | テスト管理者2 | ✅ 確認済み |
+| agent@200units.com | **Test1234!** | AGENT | テスト担当者 | ✅ 確認済み |
+| prod-test-agent@example.com | **Test1234!** | AGENT | 本番テスト担当者 | ✅ 確認済み |
+| seller1@example.com | **Test1234!** | AGENT | 田中太郎（売主1） | ✅ 確認済み |
+| seller2@example.com | **Test1234!** | AGENT | 佐藤花子（売主2） | ✅ 確認済み |
 
 ## ログイン手順
 

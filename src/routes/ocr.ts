@@ -167,7 +167,8 @@ ocr.post('/extract', async (c) => {
                   {
                     type: 'image_url',
                     image_url: {
-                      url: `data:${mimeType};base64,${base64}`
+                      url: `data:${mimeType};base64,${base64}`,
+                      detail: 'high'
                     }
                   }
                 ]

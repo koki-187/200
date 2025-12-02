@@ -1078,6 +1078,276 @@ app.get('/purchase-criteria', (c) => {
   `);
 });
 
+// 建築基準法ページ
+app.get('/building-regulations', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>建築基準法チェック - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Header -->
+  <header class="bg-gradient-to-br from-orange-600 via-orange-700 to-orange-800 text-white shadow-2xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <i class="fas fa-building text-4xl"></i>
+            建築基準法チェック
+          </h1>
+          <p class="mt-2 text-orange-100">3階建て木造建築の規制自動判定</p>
+        </div>
+        <a href="/dashboard" class="bg-white text-orange-700 px-6 py-3 rounded-lg font-semibold hover:bg-orange-50 transition shadow-lg">
+          <i class="fas fa-arrow-left mr-2"></i>戻る
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Input Form -->
+    <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        <i class="fas fa-edit text-orange-600 mr-2"></i>物件情報入力
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">所在地</label>
+          <input type="text" id="location" placeholder="東京都渋谷区" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">用途地域</label>
+          <select id="zoning" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            <option value="">選択してください</option>
+            <option value="第一種低層住居専用地域">第一種低層住居専用地域</option>
+            <option value="第二種低層住居専用地域">第二種低層住居専用地域</option>
+            <option value="第一種中高層住居専用地域">第一種中高層住居専用地域</option>
+            <option value="第二種中高層住居専用地域">第二種中高層住居専用地域</option>
+            <option value="第一種住居地域">第一種住居地域</option>
+            <option value="第二種住居地域">第二種住居地域</option>
+            <option value="準住居地域">準住居地域</option>
+            <option value="近隣商業地域">近隣商業地域</option>
+            <option value="商業地域">商業地域</option>
+            <option value="準工業地域">準工業地域</option>
+            <option value="工業地域">工業地域</option>
+            <option value="工業専用地域">工業専用地域</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">防火地域</label>
+          <select id="fire_zone" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            <option value="">なし</option>
+            <option value="防火地域">防火地域</option>
+            <option value="準防火地域">準防火地域</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">高度地区</label>
+          <input type="text" id="height_district" placeholder="第1種高度地区" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">現況</label>
+          <input type="text" id="current_status" placeholder="木造2階建て" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">構造</label>
+          <select id="structure" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            <option value="">選択してください</option>
+            <option value="木造">木造</option>
+            <option value="鉄骨造">鉄骨造</option>
+            <option value="RC造">RC造</option>
+            <option value="SRC造">SRC造</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">階数</label>
+          <input type="number" id="floors" placeholder="3" min="1" max="10" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+        </div>
+      </div>
+      
+      <div class="mt-8">
+        <button onclick="checkBuildingRegulations()" class="w-full bg-gradient-to-r from-orange-600 to-orange-700 text-white font-bold py-4 rounded-lg hover:from-orange-700 hover:to-orange-800 transition shadow-lg">
+          <i class="fas fa-search mr-2"></i>建築基準法をチェック
+        </button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="results" class="hidden">
+      <!-- Summary -->
+      <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+          <i class="fas fa-clipboard-check text-green-600 mr-2"></i>チェック結果
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-blue-50 rounded-lg p-6">
+            <div class="text-sm text-blue-600 font-medium">適用規定数</div>
+            <div id="regulation-count" class="text-3xl font-bold text-blue-900 mt-2">-</div>
+          </div>
+          
+          <div id="three-story-warning" class="hidden bg-orange-50 rounded-lg p-6">
+            <div class="text-sm text-orange-600 font-medium">3階建て木造</div>
+            <div class="text-lg font-bold text-orange-900 mt-2">特別規定適用</div>
+          </div>
+          
+          <div id="fire-zone-info" class="hidden bg-red-50 rounded-lg p-6">
+            <div class="text-sm text-red-600 font-medium">防火規制</div>
+            <div class="text-lg font-bold text-red-900 mt-2">準耐火以上必須</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Applicable Regulations -->
+      <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">
+          <i class="fas fa-list-ul text-orange-600 mr-2"></i>適用される建築基準法・条例
+        </h3>
+        <div id="regulations-list" class="space-y-4"></div>
+      </div>
+
+      <!-- Warnings -->
+      <div id="warnings-section" class="hidden bg-white rounded-xl shadow-lg p-8 mb-8">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">
+          <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>注意事項
+        </h3>
+        <div id="warnings-list" class="space-y-4"></div>
+      </div>
+
+      <!-- Special Requirements -->
+      <div id="special-requirements-section" class="hidden bg-white rounded-xl shadow-lg p-8">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">
+          <i class="fas fa-star text-yellow-600 mr-2"></i>特別な要件
+        </h3>
+        <div id="special-requirements-list" class="space-y-4"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function checkBuildingRegulations() {
+      try {
+        const location = document.getElementById('location').value;
+        const zoning = document.getElementById('zoning').value;
+        const fire_zone = document.getElementById('fire_zone').value;
+        const height_district = document.getElementById('height_district').value;
+        const current_status = document.getElementById('current_status').value;
+        const structure = document.getElementById('structure').value;
+        const floors = document.getElementById('floors').value;
+        
+        if (!location || !zoning) {
+          alert('所在地と用途地域を入力してください');
+          return;
+        }
+        
+        const params = new URLSearchParams({
+          location,
+          zoning,
+          fire_zone: fire_zone || '',
+          height_district: height_district || '',
+          current_status: current_status || '',
+          structure: structure || '',
+          floors: floors || ''
+        });
+        
+        const response = await axios.get(\`/api/building-regulations/check?\${params.toString()}\`);
+        
+        if (response.data.success) {
+          displayResults(response.data.data);
+        } else {
+          alert('エラー: ' + response.data.error);
+        }
+      } catch (error) {
+        console.error('Building regulations check error:', error);
+        alert('建築基準法チェックに失敗しました');
+      }
+    }
+    
+    function displayResults(data) {
+      document.getElementById('results').classList.remove('hidden');
+      
+      // Summary
+      document.getElementById('regulation-count').textContent = data.applicable_regulations.length;
+      
+      if (data.is_three_story_wooden) {
+        document.getElementById('three-story-warning').classList.remove('hidden');
+      }
+      
+      if (data.fire_resistance_required) {
+        document.getElementById('fire-zone-info').classList.remove('hidden');
+      }
+      
+      // Regulations list
+      const regulationsList = document.getElementById('regulations-list');
+      regulationsList.innerHTML = data.applicable_regulations.map(reg => \`
+        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <i class="fas fa-gavel text-orange-600 mt-1"></i>
+            </div>
+            <div class="ml-3 flex-1">
+              <h4 class="font-semibold text-gray-900">\${reg.law_name}</h4>
+              <p class="text-sm text-gray-600 mt-1">\${reg.description}</p>
+              <div class="mt-2 text-xs text-gray-500">
+                <i class="fas fa-book mr-1"></i>\${reg.article}
+              </div>
+            </div>
+          </div>
+        </div>
+      \`).join('');
+      
+      // Warnings
+      if (data.warnings && data.warnings.length > 0) {
+        document.getElementById('warnings-section').classList.remove('hidden');
+        const warningsList = document.getElementById('warnings-list');
+        warningsList.innerHTML = data.warnings.map(warning => \`
+          <div class="flex items-start bg-red-50 border border-red-200 rounded-lg p-4">
+            <i class="fas fa-exclamation-circle text-red-600 mt-1"></i>
+            <p class="ml-3 text-red-800">\${warning}</p>
+          </div>
+        \`).join('');
+      }
+      
+      // Special requirements
+      if (data.special_requirements && data.special_requirements.length > 0) {
+        document.getElementById('special-requirements-section').classList.remove('hidden');
+        const specialList = document.getElementById('special-requirements-list');
+        specialList.innerHTML = data.special_requirements.map(req => \`
+          <div class="flex items-start bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <i class="fas fa-star text-yellow-600 mt-1"></i>
+            <p class="ml-3 text-yellow-800">\${req}</p>
+          </div>
+        \`).join('');
+      }
+      
+      // Scroll to results
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
+  `);
+});
+
 // ダッシュボードページ
 app.get('/dashboard', (c) => {
   return c.html(`

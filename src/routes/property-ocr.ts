@@ -222,7 +222,8 @@ propertyOCR.post('/extract-multiple', async (c) => {
                   {
                     type: 'image_url',
                     image_url: {
-                      url: `data:${mimeType};base64,${base64Data}`
+                      url: `data:${mimeType};base64,${base64Data}`,
+                      detail: 'high'
                     }
                   }
                 ]

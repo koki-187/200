@@ -22,25 +22,57 @@ export class OCRService {
           'Authorization': `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4o',
           messages: [
+            {
+              role: 'system',
+              content: `あなたは不動産物件資料のOCR専門家です。画像から以下の情報を漏れなく抽出してください：
+
+【必須情報】
+- 所在地（住所）
+- 最寄駅・徒歩分数
+- 土地面積（㎡・坪・単位含む）
+- 用途地域
+- 建蔽率・容積率
+- 接道状況（方位・幅員・間口）
+- 現況（更地・古家あり等）
+- 価格（希望価格・想定価格）
+
+【追加情報】
+- 高度地区
+- 防火地域・準防火地域
+- 都市計画区域
+- 地目
+- 構造・階数
+- 建築年月
+- 設備
+- 備考・特記事項
+
+【注意事項】
+- 数値は単位と共に正確に記録
+- 曖昧な情報は「不明」と明記
+- 複数の価格がある場合は全て記録
+- 略語は展開して記録（例：「準防」→「準防火地域」）`
+            },
             {
               role: 'user',
               content: [
                 {
                   type: 'text',
-                  text: 'この不動産物件資料の画像から、すべてのテキストを抽出してください。特に以下の情報に注目してください：所在地、最寄駅、徒歩分数、土地面積、用途地域、建蔽率、容積率、高度地区、防火地域、接道状況、現況、価格。'
+                  text: '上記の不動産物件資料から情報を抽出してください。見つからない項目は省略してください。'
                 },
                 {
                   type: 'image_url',
                   image_url: {
-                    url: `data:image/jpeg;base64,${imageBase64}`
+                    url: `data:image/jpeg;base64,${imageBase64}`,
+                    detail: 'high'
                   }
                 }
               ]
             }
           ],
-          max_tokens: 1000
+          max_tokens: 2000,
+          temperature: 0.1
         })
       });
 
@@ -68,37 +100,61 @@ export class OCRService {
           'Authorization': `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4o',
           messages: [
             {
               role: 'system',
               content: `あなたは不動産物件情報の構造化エキスパートです。
 与えられたテキストから以下のフィールドを抽出し、JSON形式で返してください。
-抽出できない項目は省略してください。
 
-出力形式：
+【抽出ルール】
+1. 数値フィールドは数値のみ（単位除外）
+2. テキストフィールドは正確に記録（単位含む）
+3. 複数候補がある場合は最も信頼性の高い値を選択
+4. 見つからない項目は省略（nullや空文字は不要）
+5. 曖昧な情報は最も妥当な解釈を選択
+
+【フィールド定義】
 {
-  "location": "所在地（住所）",
-  "station": "最寄駅名",
-  "walk_minutes": 徒歩分数（数値のみ）,
-  "land_area": "土地面積（単位含む）",
-  "zoning": "用途地域",
-  "building_coverage": "建蔽率",
-  "floor_area_ratio": "容積率",
-  "height_district": "高度地区",
-  "fire_zone": "防火・準防火地域",
-  "road_info": "接道状況（方位・幅員・間口など）",
-  "current_status": "現況（更地・古家ありなど）",
-  "desired_price": "希望価格"
+  "location": "所在地（完全な住所）",
+  "station": "最寄駅名（駅名のみ）",
+  "walk_minutes": 徒歩分数（数値のみ、例：5）,
+  "land_area": "土地面積（単位含む、例：100.00㎡）",
+  "zoning": "用途地域（正式名称、例：第一種低層住居専用地域）",
+  "building_coverage": "建蔽率（%含む、例：50%）",
+  "floor_area_ratio": "容積率（%含む、例：100%）",
+  "height_district": "高度地区（例：第1種高度地区）",
+  "fire_zone": "防火地域（防火地域・準防火地域・なし）",
+  "road_info": "接道状況（詳細、例：南側公道 幅員4.0m 間口8.5m）",
+  "current_status": "現況（例：古家あり・更地・空地）",
+  "desired_price": "価格（単位含む、例：2,800万円）"
+}
+
+【例】
+入力：「所在地：東京都渋谷区〇〇1-2-3、最寄駅：渋谷駅徒歩8分、土地面積：100.00㎡（約30.25坪）、用途地域：第一種住居、建蔽率：60%、容積率：200%、接道：南側公道4m、現況：古家あり、価格：5,000万円」
+
+出力：
+{
+  "location": "東京都渋谷区〇〇1-2-3",
+  "station": "渋谷駅",
+  "walk_minutes": 8,
+  "land_area": "100.00㎡",
+  "zoning": "第一種住居地域",
+  "building_coverage": "60%",
+  "floor_area_ratio": "200%",
+  "road_info": "南側公道 幅員4m",
+  "current_status": "古家あり",
+  "desired_price": "5,000万円"
 }`
             },
             {
               role: 'user',
-              content: rawText
+              content: `以下のテキストから不動産物件情報を抽出してください：\n\n${rawText}`
             }
           ],
           response_format: { type: 'json_object' },
-          max_tokens: 500
+          max_tokens: 1000,
+          temperature: 0.1
         })
       });
 

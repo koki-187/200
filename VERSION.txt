@@ -1,17 +1,71 @@
-v3.100.0 (Token Undefined Critical Fix)
+v3.101.0 (iOS Safari Compatibility & PWA Enhancement)
 
-🔥 CRITICAL ROOT CAUSE IDENTIFIED AND RESOLVED
-================================================
+リリース日: 2025-12-02
+本番環境URL: https://59ca2448.real-estate-200units-v2.pages.dev
 
-Both user-reported issues stemmed from a single critical bug:
-undefined 'token' variable in OCR and deal creation functions.
+## 🎯 iOS Safari互換性の大幅改善
 
-✅ RESOLVED ISSUES (100%):
-1. OCR読み込み時のリコール現象 → FIXED
-2. 案件を作成ボタンのエラー → FIXED
+### ✅ 実装完了した機能
 
-🎯 PRODUCTION VERIFICATION:
-All tests passed with 100% success rate.
+#### 1. OCRファイル入力の最適化（iOS Safari対応）
+- **3つのフォールバック方式でファイル取得**:
+  1. `e.target.files`（標準的な方法）
+  2. `fileInput.files`（DOM要素から直接取得）
+  3. `document.getElementById('ocr-file-input').files`（最終フォールバック）
+- **詳細なiOS環境デバッグログ追加**:
+  - User Agent、iOS検出、ファイル詳細（name, type, size, lastModified）
+  - すべてのメソッドでの取得試行ログ
+- **iOS安定性向上のための処理遅延**: 100ms → 150ms
+- **`capture="environment"`属性を削除**: iOS互換性を向上
 
-📅 Release Date: 2025-12-02
-🚀 Production URL: https://b2758436.real-estate-200units-v2.pages.dev
+#### 2. PDF.js事前読み込み（iOS Safari最適化）
+- **ページ読み込み時にPDF.jsを事前読み込み**: 初回実行時の失敗を防止
+- **動的インポートのフォールバック**: 事前読み込み失敗時でも処理可能
+- **専用変数`pdfjsLibPreloaded`**: 読み込み済みライブラリを保持
+
+#### 3. iOSタッチ操作の最適化
+- **`-webkit-tap-highlight-color`追加**: タップ時の視覚的フィードバック（紫色）
+- **最小タップターゲットサイズ**: 44x44px（iOS Human Interface Guidelines準拠）
+- **`touch-action: manipulation`**: すべてのボタンと対話要素に適用
+- **アクティブ状態のフィードバック**: タップ時にscale(0.96)とopacity減少
+
+#### 4. PWA機能の強化（既存機能を検証）
+- **iOS専用メタタグ**:
+  - `apple-mobile-web-app-capable="yes"`
+  - `apple-mobile-web-app-status-bar-style="black-translucent"`
+  - `apple-mobile-web-app-title="200Units"`
+- **Safe Area Insets対応**: ノッチ付きデバイスのレイアウト調整
+- **manifest.json**: iOS用アイコン設定完備
+
+### 🧪 テスト必要項目
+
+#### iOS実機での検証が必要:
+1. **OCRファイルアップロード**:
+   - ファイル選択後、1回目で処理が開始されるか
+   - ブラウザコンソールで詳細ログが表示されるか
+   - PDFファイルが正常に画像変換されるか
+2. **タッチ操作の快適性**:
+   - ボタンタップ時の視覚的フィードバック
+   - 最小タップターゲットサイズの有効性
+3. **PWA機能**:
+   - ホーム画面に追加できるか
+   - スタンドアロンモードで起動できるか
+   - Safe Area Insetsが正しく適用されるか
+
+### 📝 技術的な詳細
+
+#### 修正ファイル:
+- `/home/user/webapp/src/index.tsx`: OCRイベントハンドラ、PDF.js読み込み、iOS CSS
+
+#### デプロイメント:
+- **Cloudflare Pages**: real-estate-200units-v2
+- **Git Commit**: 6bf9fa4
+
+### 🚀 次のステップ
+
+1. **iOS実機でのテスト実施** → ユーザーに依頼
+2. **Console.logの確認** → iOS Safariの開発者ツールで詳細ログを確認
+3. **問題があれば追加修正** → ログを基にさらなる最適化
+
+---
+過去バージョン: v3.100.0 (Token Undefined Critical Fix)

@@ -15,6 +15,19 @@ export interface MunicipalRegulation {
   reference_url?: string;
   ordinance_name?: string;
   article?: string;
+  // 駐車場詳細基準（オプショナル）
+  parking_details?: {
+    base_requirement: string; // 基本要件（例: "3戸に1台"）
+    station_proximity_relaxation?: {
+      distance_minutes: number; // 駅からの徒歩分数
+      relaxed_requirement: string; // 緩和後の要件
+    };
+    zoning_specific?: {
+      zoning: string; // 用途地域
+      requirement: string; // 特定要件
+    }[];
+    commercial_area_exemption?: boolean; // 商業地域の免除
+  };
 }
 
 /**
@@ -64,10 +77,28 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     prefecture: '東京都',
     category: 'PARKING',
     title: '駐車場附置義務',
-    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務',
+    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務、駅近では緩和措置あり',
     applicable_conditions: '共同住宅、延べ面積500㎡以上',
-    requirements: '3戸に1台以上',
-    ordinance_name: '渋谷区駐車場条例'
+    requirements: '3戸に1台以上（基本）、駅徒歩5分以内は4戸に1台、商業地域は設置不要の場合あり',
+    ordinance_name: '渋谷区駐車場条例',
+    parking_details: {
+      base_requirement: '3戸に1台以上',
+      station_proximity_relaxation: {
+        distance_minutes: 5,
+        relaxed_requirement: '4戸に1台以上'
+      },
+      zoning_specific: [
+        {
+          zoning: '商業地域',
+          requirement: '延べ面積1000㎡超のみ義務（駅徒歩3分以内は不要）'
+        },
+        {
+          zoning: '近隣商業地域',
+          requirement: '延べ面積500㎡以上で2戸に1台'
+        }
+      ],
+      commercial_area_exemption: true
+    }
   },
   
   // 新宿区
@@ -582,10 +613,32 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     prefecture: '神奈川県',
     category: 'PARKING',
     title: '駐車場設置基準',
-    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務',
+    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務、駅近・用途地域により緩和あり',
     applicable_conditions: '共同住宅、延べ面積500㎡以上',
-    requirements: '2戸に1台以上（市街化区域内）、駅徒歩5分以内は緩和あり',
-    ordinance_name: '横浜市駐車場条例'
+    requirements: '2戸に1台以上（基本）、駅徒歩5分以内は3戸に1台、商業地域は更に緩和',
+    ordinance_name: '横浜市駐車場条例',
+    parking_details: {
+      base_requirement: '2戸に1台以上（市街化区域内）',
+      station_proximity_relaxation: {
+        distance_minutes: 5,
+        relaxed_requirement: '3戸に1台以上'
+      },
+      zoning_specific: [
+        {
+          zoning: '商業地域',
+          requirement: '駅徒歩3分以内は4戸に1台（延べ面積1000㎡未満は不要）'
+        },
+        {
+          zoning: '近隣商業地域',
+          requirement: '駅徒歩5分以内は3戸に1台'
+        },
+        {
+          zoning: '住居系地域',
+          requirement: '2戸に1台（駅徒歩10分超は1戸に1台の場合あり）'
+        }
+      ],
+      commercial_area_exemption: true
+    }
   },
   {
     city: '横浜市',
@@ -626,10 +679,28 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     prefecture: '神奈川県',
     category: 'PARKING',
     title: '駐車場設置基準',
-    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務',
+    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務、駅近・用途地域により緩和あり',
     applicable_conditions: '共同住宅、延べ面積500㎡以上',
-    requirements: '2戸に1台以上',
-    ordinance_name: '川崎市駐車場条例'
+    requirements: '2戸に1台以上（基本）、駅徒歩5分以内は3戸に1台、商業地域は緩和',
+    ordinance_name: '川崎市駐車場条例',
+    parking_details: {
+      base_requirement: '2戸に1台以上',
+      station_proximity_relaxation: {
+        distance_minutes: 5,
+        relaxed_requirement: '3戸に1台以上'
+      },
+      zoning_specific: [
+        {
+          zoning: '商業地域',
+          requirement: '駅徒歩3分以内は設置不要（延べ面積1000㎡未満）'
+        },
+        {
+          zoning: '近隣商業地域',
+          requirement: '駅徒歩5分以内は3戸に1台'
+        }
+      ],
+      commercial_area_exemption: true
+    }
   },
   {
     city: '川崎市',
@@ -674,10 +745,28 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     prefecture: '埼玉県',
     category: 'PARKING',
     title: '駐車場設置基準',
-    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務',
+    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務、駅近・用途地域により緩和あり',
     applicable_conditions: '共同住宅、延べ面積500㎡以上',
-    requirements: '2戸に1台以上、駅徒歩5分以内は緩和措置あり',
-    ordinance_name: 'さいたま市駐車場条例'
+    requirements: '2戸に1台以上（基本）、駅徒歩5分以内は3戸に1台、商業地域は設置不要の場合あり',
+    ordinance_name: 'さいたま市駐車場条例',
+    parking_details: {
+      base_requirement: '2戸に1台以上',
+      station_proximity_relaxation: {
+        distance_minutes: 5,
+        relaxed_requirement: '3戸に1台以上'
+      },
+      zoning_specific: [
+        {
+          zoning: '商業地域',
+          requirement: '駅徒歩3分以内、延べ面積1000㎡未満は設置不要'
+        },
+        {
+          zoning: '近隣商業地域',
+          requirement: '駅徒歩5分以内は3戸に1台'
+        }
+      ],
+      commercial_area_exemption: true
+    }
   },
   {
     city: 'さいたま市',
@@ -745,10 +834,28 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     prefecture: '千葉県',
     category: 'PARKING',
     title: '駐車場設置基準',
-    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務',
+    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務、駅近では大幅緩和',
     applicable_conditions: '共同住宅、延べ面積500㎡以上',
-    requirements: '3戸に1台以上、駅徒歩5分以内は2戸に1台に緩和',
-    ordinance_name: '千葉市駐車場条例'
+    requirements: '3戸に1台以上（基本）、駅徒歩5分以内は4戸に1台、商業地域は更に緩和',
+    ordinance_name: '千葉市駐車場条例',
+    parking_details: {
+      base_requirement: '3戸に1台以上',
+      station_proximity_relaxation: {
+        distance_minutes: 5,
+        relaxed_requirement: '4戸に1台以上'
+      },
+      zoning_specific: [
+        {
+          zoning: '商業地域',
+          requirement: '駅徒歩3分以内、延べ面積1000㎡未満は設置不要'
+        },
+        {
+          zoning: '近隣商業地域',
+          requirement: '駅徒歩5分以内は4戸に1台'
+        }
+      ],
+      commercial_area_exemption: true
+    }
   },
   {
     city: '千葉市',
@@ -825,10 +932,28 @@ export const MUNICIPAL_REGULATIONS: MunicipalRegulation[] = [
     prefecture: '愛知県',
     category: 'PARKING',
     title: '駐車場設置基準',
-    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務',
+    description: '共同住宅は延べ面積500㎡以上で駐車場設置義務、駅近・用途地域により緩和あり',
     applicable_conditions: '共同住宅、延べ面積500㎡以上',
-    requirements: '2戸に1台以上',
-    ordinance_name: '名古屋市駐車場条例'
+    requirements: '2戸に1台以上（基本）、駅徒歩5分以内は3戸に1台、地下鉄駅は更に緩和',
+    ordinance_name: '名古屋市駐車場条例',
+    parking_details: {
+      base_requirement: '2戸に1台以上',
+      station_proximity_relaxation: {
+        distance_minutes: 5,
+        relaxed_requirement: '3戸に1台以上（地下鉄駅は4戸に1台）'
+      },
+      zoning_specific: [
+        {
+          zoning: '商業地域',
+          requirement: '地下鉄駅徒歩3分以内、延べ面積1000㎡未満は設置不要'
+        },
+        {
+          zoning: '近隣商業地域',
+          requirement: '駅徒歩5分以内は3戸に1台'
+        }
+      ],
+      commercial_area_exemption: true
+    }
   },
   {
     city: '名古屋市',

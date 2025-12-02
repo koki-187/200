@@ -27,7 +27,7 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.96.0)**: (Pending deployment) 🆕 **← 最新版（融資制限チェック機能追加）**
+- **Production URL (Latest v3.96.0)**: https://a2b11148.real-estate-200units-v2.pages.dev 🆕 **← 最新版（融資制限チェック機能追加）**
   - 🏦 **融資制限条件チェック機能**（水害・家屋倒壊・土砂災害レッドゾーン）
   - 👥 **管理者向けユーザー管理機能強化**
   - 🔐 **セキュリティ強化**（全API認証必須）

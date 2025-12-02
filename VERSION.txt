@@ -1,6 +1,6 @@
 Version: v3.96.0 (Financing Restrictions & User Management Release)
 Date: 2025-12-02
-Production URL: (Pending deployment)
+Production URL: https://a2b11148.real-estate-200units-v2.pages.dev
 
 🆕 NEW FEATURES (v3.96.0):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -32,6 +32,15 @@ Local Environment:
 - ハザード情報API: PASS ✓ (認証必須)
 - Total: 4/4 tests PASS (100% success rate)
 
+Production Environment:
+- Health Check: PASS ✓
+- 管理者ログイン: PASS ✓
+- ユーザー一覧API: PASS ✓ (7ユーザー確認)
+- 融資制限チェックAPI: PASS ✓
+- ハザード情報API: PASS ✓
+- 案件作成: PASS ✓ (Deal ID: qCYFTx5-VBhfF-HEUDeOg)
+- Total: 6/6 tests PASS (100% success rate)
+
 Previous Updates (v3.95.1):
 - 🔒 パスワードハッシュ形式の不一致問題を解決
 - ✅ 案件作成機能の完全動作確認
@@ -49,7 +58,7 @@ Known Issues & Recommendations:
 - パスワード: 本番環境では `Test1234!` から変更を推奨
 
 Deployment History:
-- v3.96.0: (Pending - 2025-12-02)
-- v3.95.1: https://7725b697.real-estate-200units-v2.pages.dev (2025-12-02)
-- v3.94.0: https://cf7da3bd.real-estate-200units-v2.pages.dev (2025-12-02)
+- v3.96.0: https://a2b11148.real-estate-200units-v2.pages.dev (2025-12-02 11:15 UTC - LATEST)
+- v3.95.1: https://7725b697.real-estate-200units-v2.pages.dev (2025-12-02 11:00 UTC)
+- v3.94.0: https://cf7da3bd.real-estate-200units-v2.pages.dev (2025-12-02 10:00 UTC)
 - v3.93.0: https://4d428030.real-estate-200units-v2.pages.dev (2025-12-02)

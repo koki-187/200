@@ -1305,10 +1305,10 @@ app.get('/building-regulations', (c) => {
               <i class="fas fa-gavel text-orange-600 mt-1"></i>
             </div>
             <div class="ml-3 flex-1">
-              <h4 class="font-semibold text-gray-900">\${reg.law_name}</h4>
-              <p class="text-sm text-gray-600 mt-1">\${reg.description}</p>
+              <h4 class="font-semibold text-gray-900">\${reg.title || reg.law_name || '規定'}</h4>
+              <p class="text-sm text-gray-600 mt-1">\${reg.description || ''}</p>
               <div class="mt-2 text-xs text-gray-500">
-                <i class="fas fa-book mr-1"></i>\${reg.article}
+                <i class="fas fa-book mr-1"></i>\${reg.article || ''}
               </div>
             </div>
           </div>
@@ -3537,33 +3537,41 @@ app.get('/deals', (c) => {
     }
 
     async function loadDeals() {
+      const container = document.getElementById('deals-container');
       try {
-        console.log('Loading deals...');
+        console.log('[loadDeals] Starting to load deals...');
+        console.log('[loadDeals] Token:', token ? 'exists' : 'missing');
+        
         const response = await axios.get('/api/deals', {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         
-        console.log('Deals loaded:', response.data);
+        console.log('[loadDeals] Response received:', response);
+        console.log('[loadDeals] Response data:', response.data);
+        console.log('[loadDeals] Deals count:', response.data.deals ? response.data.deals.length : 0);
+        
         allDeals = response.data.deals || [];
         filteredDeals = [...allDeals];
+        console.log('[loadDeals] Calling displayDeals with', filteredDeals.length, 'deals');
         displayDeals();
       } catch (error) {
-        console.error('Failed to load deals:', error);
+        console.error('[loadDeals] Error occurred:', error);
         if (error.response) {
-          console.error('Response data:', error.response.data);
-          console.error('Response status:', error.response.status);
+          console.error('[loadDeals] Response data:', error.response.data);
+          console.error('[loadDeals] Response status:', error.response.status);
         }
         
         if (error.response && error.response.status === 401) {
-          document.getElementById('deals-container').innerHTML = 
+          container.innerHTML = 
             '<div class="p-8 text-center text-red-600"><p>認証エラー: ログインし直してください</p></div>';
           setTimeout(() => logout(), 2000);
         } else {
           const errorMsg = error.response?.data?.error || error.message || '不明なエラー';
-          document.getElementById('deals-container').innerHTML = 
+          container.innerHTML = 
             \`<div class="p-8 text-center text-red-600">
               <p>案件の読み込みに失敗しました</p>
               <p class="text-sm mt-2">エラー: \${errorMsg}</p>
+              <p class="text-xs mt-2 text-gray-500">\${error.stack || 'スタックトレースなし'}</p>
               <button onclick="loadDeals()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                 再試行
               </button>
@@ -3614,11 +3622,15 @@ app.get('/deals', (c) => {
 
     function displayDeals() {
       const container = document.getElementById('deals-container');
+      console.log('[displayDeals] Called with', filteredDeals.length, 'deals');
 
       if (filteredDeals.length === 0) {
+        console.log('[displayDeals] No deals to display');
         container.innerHTML = '<div class="p-8 text-center text-gray-500"><p>案件がありません</p></div>';
         return;
       }
+      
+      console.log('[displayDeals] Rendering deals...');
 
       const statusColors = {
         'NEW': 'bg-blue-100 text-blue-800',
@@ -3703,9 +3715,10 @@ app.get('/deals', (c) => {
       window.location.href = '/deals/' + dealId;
     }
 
-    // Wait for axios to load before calling loadDeals
-    // ページ読み込み後に初期化(window.load で確実に実行)
-    window.addEventListener('load', function() {
+    // ページ読み込み後に初期化
+    function initializePage() {
+      console.log('[initializePage] Initializing page...');
+      
       // ユーザー名表示
       if (user.name) {
         document.getElementById('user-name').textContent = user.name;
@@ -3713,13 +3726,24 @@ app.get('/deals', (c) => {
 
       // 案件データ読み込み
       if (typeof axios !== 'undefined') {
+        console.log('[initializePage] axios loaded, calling loadDeals');
         loadDeals();
       } else {
-        console.error('axios not loaded');
+        console.error('[initializePage] axios not loaded');
         document.getElementById('deals-container').innerHTML = 
           '<div class="p-8 text-center text-red-600"><p>ライブラリの読み込みに失敗しました。ページを再読み込みしてください。</p></div>';
       }
-    });
+    }
+    
+    // DOMContentLoaded と window.load の両方で初期化を試行
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      // すでにDOMは読み込み済み
+      console.log('[Page] DOM already loaded, initializing immediately');
+      initializePage();
+    }
+    window.addEventListener('load', initializePage);
   </script>
 </body>
 </html>

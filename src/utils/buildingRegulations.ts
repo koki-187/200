@@ -116,32 +116,285 @@ export const BUILDING_CODE_REGULATIONS: BuildingRegulation[] = [
 
 /**
  * 駐車場設置義務の詳細（都道府県・市区町村別）
+ * ※市区町村により基準が異なる場合があります。詳細は各自治体の条例をご確認ください。
  */
-export const PARKING_REQUIREMENTS: Record<string, { units_per_parking: number; min_area_sqm: number; description: string }> = {
+export const PARKING_REQUIREMENTS: Record<string, { units_per_parking: number; min_area_sqm: number; description: string; note?: string }> = {
+  // 関東
   '東京都': {
     units_per_parking: 3,
     min_area_sqm: 500,
-    description: '延べ面積500㎡以上の集合住宅：住戸3戸につき1台以上'
+    description: '延べ面積500㎡以上の集合住宅：住戸3戸につき1台以上',
+    note: '23区内は各区の条例により異なる場合あり'
   },
   '埼玉県': {
     units_per_parking: 2,
     min_area_sqm: 500,
-    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上（地域により異なる）'
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: 'さいたま市・川口市等で独自基準あり'
   },
   '千葉県': {
     units_per_parking: 2,
     min_area_sqm: 500,
-    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上（市区町村により異なる）'
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '千葉市・船橋市等で独自基準あり'
   },
   '神奈川県': {
     units_per_parking: 2,
     min_area_sqm: 500,
-    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上（横浜市・川崎市等で異なる）'
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '横浜市・川崎市・相模原市で独自基準あり'
   },
+  '茨城県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '水戸市等で独自基準あり'
+  },
+  '栃木県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '宇都宮市で独自基準あり'
+  },
+  '群馬県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '前橋市・高崎市で独自基準あり'
+  },
+  
+  // 中部
   '愛知県': {
     units_per_parking: 2,
     min_area_sqm: 500,
-    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上（名古屋市等で異なる）'
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '名古屋市で独自基準あり（市街化区域で厳格化）'
+  },
+  '静岡県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '静岡市・浜松市で独自基準あり'
+  },
+  '岐阜県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '岐阜市で独自基準あり'
+  },
+  '三重県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '四日市市で独自基準あり'
+  },
+  '新潟県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '新潟市で独自基準あり'
+  },
+  '長野県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '長野市・松本市で独自基準あり'
+  },
+  '山梨県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '富山県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '石川県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '金沢市で独自基準あり'
+  },
+  '福井県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  
+  // 関西
+  '大阪府': {
+    units_per_parking: 3,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸3戸につき1台以上',
+    note: '大阪市・堺市等で独自基準あり（駅近では緩和措置あり）'
+  },
+  '京都府': {
+    units_per_parking: 3,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸3戸につき1台以上',
+    note: '京都市で独自基準あり（景観条例との調整必要）'
+  },
+  '兵庫県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '神戸市・姫路市で独自基準あり'
+  },
+  '奈良県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '奈良市で独自基準あり'
+  },
+  '滋賀県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '大津市で独自基準あり'
+  },
+  '和歌山県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  
+  // 北海道・東北
+  '北海道': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '札幌市等で独自基準あり（積雪対策含む）'
+  },
+  '青森県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '岩手県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '宮城県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '仙台市で独自基準あり'
+  },
+  '秋田県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '山形県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '福島県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '福島市・郡山市・いわき市で独自基準あり'
+  },
+  
+  // 中国・四国
+  '広島県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '広島市で独自基準あり'
+  },
+  '岡山県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '岡山市で独自基準あり'
+  },
+  '山口県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '鳥取県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '島根県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '香川県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '高松市で独自基準あり'
+  },
+  '徳島県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '愛媛県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '松山市で独自基準あり'
+  },
+  '高知県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  
+  // 九州・沖縄
+  '福岡県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '福岡市・北九州市で独自基準あり'
+  },
+  '佐賀県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '長崎県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '長崎市で独自基準あり'
+  },
+  '熊本県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '熊本市で独自基準あり'
+  },
+  '大分県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '宮崎県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上'
+  },
+  '鹿児島県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '鹿児島市で独自基準あり'
+  },
+  '沖縄県': {
+    units_per_parking: 2,
+    min_area_sqm: 500,
+    description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上',
+    note: '那覇市で独自基準あり'
   }
 };
 
@@ -280,7 +533,16 @@ export function getParkingRequirement(location: string): { prefecture: string; r
   const prefecture = extractPrefecture(location);
   
   if (!prefecture || !PARKING_REQUIREMENTS[prefecture]) {
-    return null;
+    // 都道府県が特定できない場合は一般的な基準を返す
+    return {
+      prefecture: '全国（一般）',
+      requirement: {
+        units_per_parking: 2,
+        min_area_sqm: 500,
+        description: '延べ面積500㎡以上の集合住宅：住戸2戸につき1台以上（目安）',
+        note: '詳細は各自治体の条例をご確認ください'
+      }
+    };
   }
   
   return {

@@ -5521,52 +5521,60 @@ app.get('/deals/new', (c) => {
         console.log('[OCR Elements] dropZone:', dropZone);
         console.log('[OCR Elements] fileInput:', fileInput);
         
-        // ⚠️ イベント委譲パターン（deals-new-events.js）で処理するためコメントアウト
-        // 重複イベントリスナーがOCR再起動問題の原因だった
-        /*
+        // OCRイベントリスナー（重複防止: dataset.listenerAttached）
         if (dropZone && fileInput) {
-          // ドラッグ&ドロップ
-          dropZone.addEventListener('dragover', (e) => {
-            console.log('[OCR Elements] Dragover event');
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-          });
+          // ドラッグ&ドロップ（重複防止）
+          if (!dropZone.dataset.dragoverAttached) {
+            dropZone.dataset.dragoverAttached = 'true';
+            dropZone.addEventListener('dragover', (e) => {
+              console.log('[OCR Elements] Dragover event');
+              e.preventDefault();
+              dropZone.classList.add('dragover');
+            });
+          }
 
-          dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-          });
+          if (!dropZone.dataset.dragleaveAttached) {
+            dropZone.dataset.dragleaveAttached = 'true';
+            dropZone.addEventListener('dragleave', () => {
+              dropZone.classList.remove('dragover');
+            });
+          }
 
-          dropZone.addEventListener('drop', (e) => {
-            console.log('[OCR Elements] Drop event');
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            const files = Array.from(e.dataTransfer.files).filter(f => 
-              f.type.startsWith('image/') || f.type === 'application/pdf'
-            );
-            console.log('[OCR Elements] Files dropped:', files.length);
-            if (files.length > 0) {
-              processMultipleOCR(files);
-            } else {
-              // 非対応ファイルの場合
-              displayOCRError(
-                'ファイル形式が対応していません',
-                '画像ファイル（PNG, JPG, JPEG, WEBP）またはPDFファイルをドロップしてください。'
+          if (!dropZone.dataset.dropAttached) {
+            dropZone.dataset.dropAttached = 'true';
+            dropZone.addEventListener('drop', (e) => {
+              console.log('[OCR Elements] Drop event');
+              e.preventDefault();
+              dropZone.classList.remove('dragover');
+              const files = Array.from(e.dataTransfer.files).filter(f => 
+                f.type.startsWith('image/') || f.type === 'application/pdf'
               );
-            }
-          });
+              console.log('[OCR Elements] Files dropped:', files.length);
+              if (files.length > 0) {
+                processMultipleOCR(files);
+              } else {
+                // 非対応ファイルの場合
+                displayOCRError(
+                  'ファイル形式が対応していません',
+                  '画像ファイル（PNG, JPG, JPEG, WEBP）またはPDFファイルをドロップしてください。'
+                );
+              }
+            });
+          }
 
-          fileInput.addEventListener('change', (e) => {
-            console.log('[OCR Elements] File input change event');
-            const files = Array.from(e.target.files);
-            console.log('[OCR Elements] Files selected:', files.length);
-            if (files.length > 0) {
-              processMultipleOCR(files);
-            }
-          });
-          console.log('[OCR Elements] Event listeners attached successfully');
+          if (!fileInput.dataset.changeAttached) {
+            fileInput.dataset.changeAttached = 'true';
+            fileInput.addEventListener('change', (e) => {
+              console.log('[OCR Elements] File input change event');
+              const files = Array.from(e.target.files);
+              console.log('[OCR Elements] Files selected:', files.length);
+              if (files.length > 0) {
+                processMultipleOCR(files);
+              }
+            });
+          }
+          console.log('[OCR Elements] Event listeners attached successfully (with duplication prevention)');
         }
-        */
-        console.log('[OCR Elements] OCR file upload event delegation enabled (processed by deals-new-events.js)');
       }
     }
     
@@ -7026,7 +7034,14 @@ app.get('/deals/new', (c) => {
       // seller_idのバリデーション
       const sellerIdInput = document.getElementById('seller_id');
       if (!sellerIdInput || !sellerIdInput.value) {
-        showMessage('売主を選択してください', 'error');
+        const errorMsg = '売主を選択してください';
+        if (typeof showMessage === 'function') {
+          showMessage(errorMsg, 'error');
+        } else if (typeof window.showMessage === 'function') {
+          window.showMessage(errorMsg, 'error');
+        } else {
+          alert(errorMsg);
+        }
         return;
       }
 
@@ -7075,15 +7090,30 @@ app.get('/deals/new', (c) => {
         }, 1000);
       } catch (error) {
         console.error('Create deal error:', error);
+        console.error('Error details:', {
+          message: error?.message,
+          response: error?.response,
+          responseData: error?.response?.data,
+          responseStatus: error?.response?.status,
+          stack: error?.stack
+        });
         
         // エラーメッセージ表示
         let errorMsg = '案件作成に失敗しました';
-        if (error.response?.data?.error) {
+        if (error?.response?.data?.error) {
           errorMsg += ': ' + error.response.data.error;
-        } else if (error.message) {
+        } else if (error?.message) {
           errorMsg += ': ' + error.message;
         }
-        showMessage(errorMsg, 'error');
+        
+        // showMessage関数が存在するか確認
+        if (typeof showMessage === 'function') {
+          showMessage(errorMsg, 'error');
+        } else if (typeof window.showMessage === 'function') {
+          window.showMessage(errorMsg, 'error');
+        } else {
+          alert(errorMsg);
+        }
         
         // ボタンを再有効化
         submitBtn.disabled = false;

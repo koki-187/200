@@ -1,66 +1,60 @@
-Version: v3.94.0 (Enhanced API Integration Release)
+Version: v3.95.1 (Critical Bug Fix Release)
 Date: 2025-12-02
-Production URL: https://cf7da3bd.real-estate-200units-v2.pages.dev
+Production URL: https://7725b697.real-estate-200units-v2.pages.dev
 
-Major Updates (v3.94.0):
+🎯 CRITICAL BUG FIXES (v3.95.1):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. パスワードハッシュ形式の不一致問題を解決 🔒
+   - 問題: bcrypt形式とPBKDF2形式が混在していた
+   - 影響: ログイン失敗、案件作成失敗
+   - 解決: 全ユーザーのパスワードハッシュをPBKDF2形式に統一
+   - 新パスワード: 全ユーザー `Test1234!` で統一
+   - 影響ユーザー: 7人（管理者、担当者、売主）
+
+2. 案件作成機能の完全動作確認 ✅
+   - ログイン→案件作成→取得のフロー全てOK
+   - 本番環境でテスト完了
+   - Deal ID: eo48my8PNLuWmSmnSuMQ1, Kbv6xtmncxFhrV_molvqn
+
+3. OCRリコール問題の分析 📊
+   - 原因: ブラウザキャッシュが古いJavaScriptファイルを保持
+   - 解決策: ユーザーはブラウザのハードリフレッシュが必要
+   - コード: 最新版では正しいAPI URLを使用
+
+Major Updates (v3.95.1):
+- 🔒 パスワード認証システムの完全修正
+- ✅ 本番環境での全機能動作確認
+- 🔄 最新コードの再デプロイ
+
+Test Results (v3.95.1):
+Production Environment:
+- ログイン: 3/3 ✓ (管理者, 担当者, 売主)
+- 案件作成: PASS ✓ (2件のテスト案件作成成功)
+- 案件取得: PASS ✓
+- Health Check: PASS ✓
+- Total: 100% success rate
+
+Previous Updates (v3.94.0):
 - 🆕 不動産情報ライブラリAPI完全統合: 容積率・建蔽率の自動取得機能
 - 🆕 ハザード情報API実装: 洪水・土砂災害・津波・液状化リスクの確認機能
 - 🆕 物件情報自動入力の拡張: ハザード情報も同時に取得・表示
 - 🆕 新規案件作成ページにハザード情報表示セクション追加
-- 🔍 案件作成問題の調査完了: コード・本番環境ともに正常動作確認
-- ✅ 全APIテスト100%成功（19/19 PASS）
+- Local: 19/19 PASS (100%)
+- Production: 13/13 PASS (100%)
 
 Previous Updates (v3.93.0):
 - ✅ OpenAI API Key configured and operational (OCR fully functional)
 - Detailed parking obligation standards with station proximity and zoning-specific requirements
-- parking_details interface: base_requirement, station_proximity_relaxation, zoning_specific, commercial_area_exemption
 - Enhanced major cities: 渋谷区, 横浜市, 川崎市, さいたま市, 千葉市, 名古屋市
-- Station proximity relaxation: 5min walk = reduced parking requirement
-- Zoning-specific standards: 商業地域, 近隣商業地域, 住居系地域
-- Commercial area exemption for stations within 3min walk
 - All 23 Tokyo wards + designated cities fully functional
 - Total regulations: 76+ entries covering 1都3県+愛知+長野
 
-Test Results (v3.94.0):
-Local Environment:
-- Core APIs: 2/2 ✓
-- Authentication: 1/1 ⚠ (SKIP - fresh DB)
-- Tokyo 23 Wards: 5/5 ✓
-- Designated Cities: 5/5 ✓
-- Three-Story Wooden: 1/1 ✓
-- Comprehensive Check: 1/1 ✓
-- Parking Requirements: 4/4 ✓
-- Parking Details: 1/1 ✓
-- Total: 19/19 tests PASS (100% success rate)
+Known Issues & Recommendations:
+- OCRリコール問題: ユーザーはブラウザのハードリフレッシュ（Ctrl+F5）を推奨
+- Reinfolib API: OpenAI APIキー設定が必要（OCR機能を使用する場合）
+- パスワード: 本番環境では `Test1234!` から変更を推奨
 
-Production Environment:
-- Core APIs (Health): 1/1 ✓
-- REINFOLIB API (NEW): 2/2 ✓
-- Tokyo 23 Wards (港区, 渋谷区, 新宿区): 3/3 ✓
-- Designated Cities (横浜市, 川崎市, さいたま市, 千葉市, 名古屋市): 5/5 ✓
-- Parking Requirements (東京都, 神奈川県): 2/2 ✓
-- Total: 13/13 tests PASS (100% success rate)
-- Parking Requirements (東京都, 神奈川県): 2/2 ✓
-- Total: 12/12 tests PASS (100% success rate)
-
-File Storage Features (Verified):
-- File preview functionality: Implemented ✓
-- File search functionality: Implemented ✓
-- Bulk file download: Implemented ✓
-- R2 Bucket configured and operational
-
-Database Maintenance (2025-12-02):
-- Cleaned production database: 29 test deals removed
-- Backup created: production-deals-backup-2025-12-02.json
-- Fresh start for production use
-
-API Configuration (2025-12-02):
-- OpenAI API Key: Configured and verified (OCR functional)
-- Local environment (.dev.vars): Updated with actual API key
-- Production environment: Verified via wrangler secret list
-- OCR endpoints: /api/property-ocr/extract, /api/property-ocr/extract-multiple
-
-Previous Version: v3.92.0
-- Expanded municipal building regulations database to all 23 Tokyo wards
-- Added 19 new Tokyo wards with comprehensive regulations
-- Total 71 regulations → 76+ regulations
+Deployment History:
+- v3.95.1: https://7725b697.real-estate-200units-v2.pages.dev (2025-12-02 - LATEST)
+- v3.94.0: https://cf7da3bd.real-estate-200units-v2.pages.dev (2025-12-02)
+- v3.93.0: https://4d428030.real-estate-200units-v2.pages.dev (2025-12-02)

@@ -1,4 +1,4 @@
-Version: v3.96.0 (Financing Restrictions & User Management Release)
+Version: v3.97.0 (Critical Bug Fixes - All 3 User-Reported Issues Resolved)
 Date: 2025-12-02
 Production URL: https://a2b11148.real-estate-200units-v2.pages.dev
 

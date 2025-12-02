@@ -5674,11 +5674,20 @@ app.get('/deals/new', (c) => {
     }
 
     async function processMultipleOCR(files) {
+      // トークンを取得（必須）
+      const token = localStorage.getItem('auth_token');
+      
       console.log('[OCR] ========================================');
       console.log('[OCR] OCR処理開始');
       console.log('[OCR] ファイル数:', files.length);
       console.log('[OCR] 認証トークン存在:', !!token);
       console.log('[OCR] ========================================');
+      
+      if (!token) {
+        console.error('[OCR] ❌ 認証トークンが見つかりません');
+        displayOCRError('認証エラー', '認証トークンが見つかりません。ページを再読み込みしてログインし直してください。');
+        return;
+      }
       
       // ファイルを保存（リトライ用）
       lastUploadedFiles = Array.from(files);
@@ -7030,6 +7039,21 @@ app.get('/deals/new', (c) => {
       dealForm.dataset.listenerAttached = 'true';
       dealForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      // トークンを取得（必須）
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        const errorMsg = '認証エラーが発生しました。ページを再読み込みしてログインし直してください。';
+        console.error('[Deal Form] 認証トークンが見つかりません');
+        if (typeof showMessage === 'function') {
+          showMessage(errorMsg, 'error');
+        } else if (typeof window.showMessage === 'function') {
+          window.showMessage(errorMsg, 'error');
+        } else {
+          alert(errorMsg);
+        }
+        return;
+      }
 
       // seller_idのバリデーション
       const sellerIdInput = document.getElementById('seller_id');

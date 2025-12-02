@@ -79,7 +79,7 @@ export const registerSchema = z.object({
 export const dealCreateSchema = z.object({
   title: z.string().min(1, 'タイトルは必須です').max(200, 'タイトルは200文字以下である必要があります'),
   buyer_id: z.string().optional(),
-  seller_id: z.string(),
+  seller_id: z.string().min(1, '売主を選択してください'),
   location: z.string().optional(),
   station: z.string().optional(),
   walk_minutes: z.union([z.string(), z.number()]).optional(),

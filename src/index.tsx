@@ -2677,8 +2677,10 @@ app.get('/property-ocr-legacy', (c) => {
       updateFilePreview();
     });
 
-    // OCR処理開始
-    processBtn.addEventListener('click', async () => {
+    // OCR処理開始（once:trueで1回のみ実行）
+    if (processBtn && !processBtn.dataset.listenerAttached) {
+      processBtn.dataset.listenerAttached = 'true';
+      processBtn.addEventListener('click', async () => {
       if (selectedFiles.length === 0) {
         alert('ファイルを選択してください');
         return;
@@ -2722,6 +2724,7 @@ app.get('/property-ocr-legacy', (c) => {
         updateStep(1);
       }
     });
+    }
 
     // 抽出データ表示
     function displayExtractedData(data) {
@@ -6430,10 +6433,11 @@ app.get('/deals/new', (c) => {
       }
     });
 
-    // フォームへの適用 - 安全に初期化
+    // フォームへの適用 - 安全に初期化（once:true で1回のみ実行）
     function initOCRButtons() {
       const ocrApplyBtn = document.getElementById('ocr-apply-btn');
-      if (ocrApplyBtn) {
+      if (ocrApplyBtn && !ocrApplyBtn.dataset.listenerAttached) {
+        ocrApplyBtn.dataset.listenerAttached = 'true';
         ocrApplyBtn.addEventListener('click', () => {
       if (!currentOCRData) return;
       
@@ -6475,7 +6479,8 @@ app.get('/deals/new', (c) => {
       
       // 再抽出
       const ocrReextractBtn = document.getElementById('ocr-reextract-btn');
-      if (ocrReextractBtn) {
+      if (ocrReextractBtn && !ocrReextractBtn.dataset.listenerAttached) {
+        ocrReextractBtn.dataset.listenerAttached = 'true';
         ocrReextractBtn.addEventListener('click', () => {
           const fileInput = document.getElementById('ocr-file-input');
           if (fileInput) fileInput.click();
@@ -7012,8 +7017,18 @@ app.get('/deals/new', (c) => {
     }
 
     // フォーム送信
-    document.getElementById('deal-form').addEventListener('submit', async (e) => {
+    const dealForm = document.getElementById('deal-form');
+    if (dealForm && !dealForm.dataset.listenerAttached) {
+      dealForm.dataset.listenerAttached = 'true';
+      dealForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      // seller_idのバリデーション
+      const sellerIdInput = document.getElementById('seller_id');
+      if (!sellerIdInput || !sellerIdInput.value) {
+        showMessage('売主を選択してください', 'error');
+        return;
+      }
 
       const dealData = {
         title: document.getElementById('title').value,
@@ -7075,6 +7090,7 @@ app.get('/deals/new', (c) => {
         submitBtn.innerHTML = originalBtnText;
       }
     });
+    }
 
     // リアルタイム買取条件チェック
     let checkTimeout = null;

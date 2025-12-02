@@ -197,12 +197,21 @@ deals.post('/', adminOnly, async (c) => {
     const body = await c.req.json();
     const userId = c.get('userId') as string;
 
+    // seller_idの早期チェック
+    if (!body.seller_id || body.seller_id.trim() === '') {
+      return c.json({ 
+        error: '売主を選択してください',
+        details: [{ path: 'seller_id', message: '売主を選択してください' }]
+      }, 400);
+    }
+
     // 初回6情報の必須チェック（Zodバリデーション）
     const validation = validateData(dealCreateSchema, body);
+    
     if (!validation.success) {
       return c.json({ 
         error: '初回必須情報が不足しています。以下の項目を入力してください。', 
-        details: validation.errors 
+        details: validation.errors || []
       }, 400);
     }
 

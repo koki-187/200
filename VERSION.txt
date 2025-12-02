@@ -1,6 +1,6 @@
-Version: v3.99.0 (MLIT_API_KEY Configuration Fix & Enhanced Error Logging)
+Version: v3.100.0 (CRITICAL FIX - Token Undefined Errors Resolved)
 Date: 2025-12-02
-Production URL: https://a2b11148.real-estate-200units-v2.pages.dev
+Production URL: https://f732fb53.real-estate-200units-v2.pages.dev
 
 🆕 NEW FEATURES (v3.96.0):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

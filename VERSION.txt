@@ -1,3 +1,195 @@
+v3.108.0 (CRITICAL FIX: OCR File Input Change Handler Missing)
+
+リリース日: 2025-12-03
+本番環境URL: https://505e9238.real-estate-200units-v2.pages.dev
+
+## 🔧 根本原因特定と修正
+
+### ✅ 根本原因
+**v3.107.0までのOCR機能が動作しない問題の真の原因**
+
+**問題の本質**:
+- `deals-new-events.js`にドロップゾーンの**クリックハンドラー**はあったが、**ファイル入力のchangeハンドラー**が**完全に欠けていた**
+- `<label for="ocr-file-input">`がクリックされると、ブラウザが自動的にファイル選択ダイアログを開く
+- **しかし、ファイル選択後の`change`イベントを受け取るハンドラーがないため、何も起こらなかった**
+- これにより、OCRが「読込中...」のまま固まる状態が継続していた
+
+**検証結果**:
+- ✅ Playwrightログで「Drop zone click/touch handlers attached」は表示されていた
+- ❌ しかし「File input change handler attached」ログは存在しなかった
+- ✅ OCR API自体は完全に正常動作（ジョブ作成、ステータス確認、処理すべて成功）
+- ✅ `index.tsx`に`change`ハンドラーの定義はあったが、JavaScriptエラーで実行されていなかった
+
+### ✅ 実施した修正
+
+#### 1. deals-new-events.js に file input change ハンドラー追加（Critical Fix）
+
+**修正内容**:
+```javascript
+// ✅ 追加: ファイル入力のchangeイベントハンドラー
+fileInput.addEventListener('change', function(e) {
+  console.log('[Event Delegation] ========================================');
+  console.log('[Event Delegation] File input CHANGE event triggered');
+  console.log('[Event Delegation] Files selected:', e.target.files?.length || 0);
+  console.log('[Event Delegation] ========================================');
+  
+  // ファイル種別フィルタリング（画像とPDFのみ）
+  const files = Array.from(e.target.files || []).filter(f => 
+    f.type.startsWith('image/') || f.type === 'application/pdf'
+  );
+  
+  if (files.length > 0) {
+    console.log('[Event Delegation] Valid files:', files.length);
+    console.log('[Event Delegation] Checking for processMultipleOCR function...');
+    
+    if (typeof processMultipleOCR === 'function') {
+      console.log('[Event Delegation] ✅ processMultipleOCR found, calling with', files.length, 'files');
+      // iOS安定性のため150ms遅延
+      setTimeout(() => {
+        processMultipleOCR(files);
+      }, 150);
+    } else {
+      console.error('[Event Delegation] ❌ processMultipleOCR function not found');
+      alert('OCR処理関数が見つかりません。ページを再読み込みしてください。');
+    }
+  } else {
+    console.warn('[Event Delegation] ⚠️ No valid image/PDF files selected');
+    alert('画像ファイル（PNG, JPG, JPEG, WEBP）またはPDFファイルを選択してください。');
+  }
+});
+```
+
+**効果**:
+- ファイル選択後、確実に`processMultipleOCR`が呼ばれる
+- iOS Safariでの安定性を考慮した150ms遅延処理
+- 適切なエラーハンドリングとユーザーフィードバック
+
+#### 2. OCR設定画面のバージョン更新
+
+**変更内容**:
+- 並列処理機能: `v3.106.0` → `v3.108.0`
+- 進捗永続化機能: `v3.106.0` → `v3.108.0`
+
+## 📋 Technical Implementation Details
+
+### 動作フロー（修正後）
+1. ユーザーが`<label for="ocr-file-input">`をクリック
+2. ブラウザが自動的に`#ocr-file-input`をクリック（ネイティブ動作）
+3. ファイル選択ダイアログが開く
+4. ユーザーがファイルを選択
+5. **`fileInput`の`change`イベントが発火** ← 🔧修正ポイント
+6. **`deals-new-events.js`の新しいハンドラーが実行される** ← ✅追加
+7. **`processMultipleOCR(files)`が呼ばれる**
+8. OCR処理が開始される
+
+### イベントハンドラーの配置
+```
+deals-new-events.js:
+├── Drop zone click handler ✅ (既存)
+├── Drop zone touch handler ✅ (既存)
+└── File input change handler ✅✅✅ (v3.108.0で追加 - CRITICAL FIX)
+
+index.tsx:
+├── processMultipleOCR() ✅ (正常動作確認済み)
+├── convertPdfToImages() ✅
+└── その他のOCR関連関数 ✅
+```
+
+## 🧪 Testing Results
+
+### ビルド
+- ✅ 成功
+- ビルド時間: 7.81s
+- ファイル数: 854 modules transformed
+- バンドルサイズ: 1,087.49 KB
+
+### デプロイ
+- ✅ 成功
+- デプロイ時間: 12.8s
+- 本番URL: https://505e9238.real-estate-200units-v2.pages.dev
+- アップロード: 1ファイル（35ファイルは既存）
+
+### Playwright検証（ブラウザ実行環境）
+```
+Console logs:
+✅ [Event Delegation] DOMContentLoaded event fired
+✅ [Event Delegation] Initializing event delegation
+✅ [Event Delegation] Event delegation setup complete
+✅ [Event Delegation] Drop zone element: JSHandle@node
+✅ [Event Delegation] fileInput element: JSHandle@node
+✅ [Event Delegation] ✅ Drop zone click/touch handlers attached
+✅ [Event Delegation] ✅ File input change handler attached  ← ✅✅✅ NEW!
+✅ [Event Delegation] Initialization complete
+```
+
+### OCR API テスト
+- ✅ 認証トークン取得成功
+- ✅ OCRジョブ作成成功（Job ID: xTKoL4Ze01CJ_uYQ）
+- ✅ ジョブステータス確認成功（completed）
+- ✅ ファイル処理成功（1ファイル処理完了）
+
+### コード反映確認
+- ✅ `deals-new-events.js`に`fileInput.addEventListener('change')`が存在
+- ✅ OCR設定画面のバージョンがv3.108.0に更新
+- ✅ すべての変更が本番環境に反映
+
+## 📱 iOS実機テスト項目（ユーザー確認依頼）
+
+### テスト環境
+- **本番URL**: https://505e9238.real-estate-200units-v2.pages.dev
+- **テストアカウント**:
+  - Email: `navigator-187@docomo.ne.jp`
+  - Password: `kouki187`
+
+### 🔍 重要な確認ポイント
+
+#### 1. **OCR機能のファイル選択とprocessing**（最重要）
+**テスト手順**:
+1. [ ] 案件作成ページ(`/deals/new`)にアクセス
+2. [ ] 「ファイルを選択またはドラッグ＆ドロップ」ボタンをタップ
+3. [ ] ファイル選択ダイアログが開くことを確認
+4. [ ] 画像ファイル（JPG/PNG）またはPDFを選択
+5. [ ] OCR処理が開始されることを確認（「読込中...」で固まらない）
+6. [ ] プログレスバーが表示され、進捗が更新される
+7. [ ] OCR処理が完了し、結果が表示される
+
+**期待される動作**:
+- ✅ ファイル選択ダイアログがすぐに開く
+- ✅ ファイル選択後、すぐにOCR処理が開始される
+- ✅ プログレスバーが表示され、「1/1ファイル処理中...」などと表示される
+- ✅ 処理完了後、抽出データが表示される
+
+#### 2. **Safari開発者ツールでのログ確認**（推奨）
+**手順**:
+1. iPhoneをMacに接続
+2. Safari > 開発 > [Your iPhone] > [Web Page]を選択
+3. コンソールタブを開く
+4. ファイルを選択する操作を実行
+5. 以下のログを確認:
+   ```
+   [Event Delegation] File input CHANGE event triggered
+   [Event Delegation] Files selected: 1
+   [Event Delegation] Valid files: 1
+   [Event Delegation] ✅ processMultipleOCR found, calling with 1 files
+   ```
+
+#### 3. **ドラッグ&ドロップテスト**（可能であれば）
+- [ ] 画像ファイルをドロップゾーンにドラッグ&ドロップ
+- [ ] OCR処理が正常に開始される
+
+#### 4. **エラーハンドリングテスト**
+- [ ] テキストファイル（.txt）を選択した場合、「画像ファイル（PNG, JPG, JPEG, WEBP）またはPDFファイルを選択してください」というアラートが表示される
+
+## 🚨 もし問題が続く場合
+
+### 以下の情報を共有してください:
+1. **スクリーンショット**: エラー画面やOCR画面の状態
+2. **Safari開発者ツールのコンソールログ**: 上記手順で取得
+3. **具体的な動作**: どこまで進んでどこで止まったか
+4. **デバイス情報**: iOSバージョン、Safariバージョン
+
+---
+
 v3.107.0 (Fix OCR Event Listener Conflicts & iOS UI Improvements)
 
 リリース日: 2025-12-03

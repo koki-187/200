@@ -4803,31 +4803,46 @@ app.get('/deals/new', (c) => {
 
     <!-- OCRセクション -->
     <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-          <i class="fas fa-magic text-purple-600 mr-2"></i>
-          OCR自動入力（複数ファイル対応）
-        </h3>
-        <div class="flex items-center space-x-2">
-          <button id="ocr-history-btn" type="button" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition">
-            <i class="fas fa-history mr-1"></i>履歴
-          </button>
-          <button id="ocr-settings-btn" type="button" class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition">
-            <i class="fas fa-cog mr-1"></i>設定
-          </button>
-          <div id="storage-quota-display" class="text-sm bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-medium border border-blue-200">
-            <div class="flex items-center space-x-2 mb-1">
+      <!-- OCRセクションヘッダー（iOS最適化：縦並びレイアウト） -->
+      <div class="mb-4">
+        <!-- タイトル行 -->
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base md:text-lg font-semibold text-gray-900 flex items-center">
+            <i class="fas fa-magic text-purple-600 mr-2"></i>
+            <span class="hidden sm:inline">OCR自動入力（複数ファイル対応）</span>
+            <span class="inline sm:hidden">OCR自動入力</span>
+          </h3>
+          <!-- アクションボタン（iOS：44x44px以上のタップターゲット） -->
+          <div class="flex items-center space-x-2">
+            <button id="ocr-history-btn" type="button" 
+                    class="text-xs md:text-sm bg-gray-100 text-gray-700 px-3 py-2 md:py-1 rounded-full font-medium hover:bg-gray-200 transition"
+                    style="min-height: 44px; min-width: 44px;">
+              <i class="fas fa-history mr-1"></i><span class="hidden sm:inline">履歴</span>
+            </button>
+            <button id="ocr-settings-btn" type="button" 
+                    class="text-xs md:text-sm bg-gray-100 text-gray-700 px-3 py-2 md:py-1 rounded-full font-medium hover:bg-gray-200 transition"
+                    style="min-height: 44px; min-width: 44px;">
+              <i class="fas fa-cog mr-1"></i><span class="hidden sm:inline">設定</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- ステータス情報行（iOS：スタック表示） -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2 sm:space-x-2">
+          <div id="storage-quota-display" class="text-xs md:text-sm bg-blue-50 text-blue-700 px-3 py-2 rounded-lg font-medium border border-blue-200 w-full sm:w-auto">
+            <div class="flex items-center space-x-2">
               <i class="fas fa-database"></i>
               <span id="storage-usage-text">読込中...</span>
             </div>
-            <div class="w-48 bg-gray-200 rounded-full h-2 hidden" id="storage-progress-container">
+            <div class="w-full sm:w-48 bg-gray-200 rounded-full h-2 hidden mt-1" id="storage-progress-container">
               <div id="storage-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
             </div>
           </div>
-          <span class="text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
-            画像・PDF混在OK
+          <span class="text-xs md:text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
+            <i class="fas fa-check-circle mr-1"></i>画像・PDF混在OK
           </span>
         </div>
+      </div>
         
         <!-- ストレージ警告メッセージ -->
         <div id="storage-warning-alert" class="hidden mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
@@ -5103,13 +5118,13 @@ app.get('/deals/new', (c) => {
               <p class="text-xs text-gray-500 mt-1">一度に処理できるファイルの最大数（1-50）</p>
             </div>
             
-            <!-- 並列処理設定 (v3.12.0で実装済み) -->
+            <!-- 並列処理設定 (v3.106.0で実装済み) -->
             <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div class="flex items-start">
                 <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-2"></i>
                 <div class="flex-1">
                   <p class="text-sm font-medium text-blue-900 mb-1">並列処理機能</p>
-                  <p class="text-xs text-blue-700 mb-2">v3.12.0で実装済み：複数ファイルを同時に処理して処理速度を向上させます</p>
+                  <p class="text-xs text-blue-700 mb-2">v3.106.0で実装済み：複数ファイルを同時に処理して処理速度を向上させます</p>
                   <ul class="text-xs text-blue-700 space-y-1 list-disc list-inside">
                     <li>最大3ファイルを同時処理（OpenAI APIレート制限対応）</li>
                     <li>Semaphoreパターンで並列度を自動制御</li>
@@ -5120,13 +5135,13 @@ app.get('/deals/new', (c) => {
               </div>
             </div>
             
-            <!-- 進捗永続化機能 (v3.12.0で実装済み) -->
+            <!-- 進捗永続化機能 (v3.106.0で実装済み) -->
             <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div class="flex items-start">
                 <i class="fas fa-check-circle text-green-600 mt-0.5 mr-2"></i>
                 <div class="flex-1">
                   <p class="text-sm font-medium text-green-900 mb-1">進捗永続化機能</p>
-                  <p class="text-xs text-green-700 mb-2">v3.12.0で実装済み：ブラウザをリロードしても処理進捗が復元されます</p>
+                  <p class="text-xs text-green-700 mb-2">v3.106.0で実装済み：ブラウザをリロードしても処理進捗が復元されます</p>
                   <ul class="text-xs text-green-700 space-y-1 list-disc list-inside">
                     <li>localStorage自動保存</li>
                     <li>ページリロード後の自動復元</li>
@@ -5183,18 +5198,22 @@ app.get('/deals/new', (c) => {
           <label class="block text-sm font-medium text-gray-700 mb-2">
             所在地 <span class="text-red-500">*</span>
           </label>
-          <div class="flex gap-2">
+          <!-- iOS最適化：縦並び+横並びのレスポンシブレイアウト -->
+          <div class="flex flex-col sm:flex-row gap-2">
             <input type="text" id="location" required
               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="例: 東京都板橋区蓮根三丁目17-7">
+              placeholder="例: 東京都板橋区蓮根三丁目17-7"
+              style="min-height: 44px;">
             <button type="button" id="auto-fill-btn" onclick="autoFillFromReinfolib()"
-              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 whitespace-nowrap">
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
+              style="min-height: 44px; -webkit-tap-highlight-color: rgba(0,0,0,0.1);">
               <i class="fas fa-magic"></i>
-              物件情報を自動入力
+              <span class="hidden sm:inline">物件情報を自動入力</span>
+              <span class="inline sm:hidden">自動入力</span>
             </button>
           </div>
           <p class="text-xs text-gray-500 mt-1">
-            住所を入力後、「物件情報を自動入力」ボタンをクリックすると、不動産情報ライブラリから物件情報を取得して自動入力します
+            <i class="fas fa-info-circle mr-1"></i>住所を入力後、「自動入力」ボタンをタップすると、不動産情報ライブラリから物件情報を取得します（国土交通省データ連携）
           </p>
         </div>
 
@@ -6436,39 +6455,48 @@ app.get('/deals/new', (c) => {
     
     // DOM要素を安全に取得する関数
     function initOCRElements() {
+      console.log('[OCR Elements] ========================================');
       console.log('[OCR Elements] initOCRElements called');
-      if (!dropZone) {
-        dropZone = document.getElementById('ocr-drop-zone');
-        fileInput = document.getElementById('ocr-file-input');
-        previewContainer = document.getElementById('ocr-preview-container');
-        previewImage = document.getElementById('ocr-preview-image');
-        ocrStatus = document.getElementById('ocr-status');
-        ocrResult = document.getElementById('ocr-result');
-        
-        console.log('[OCR Elements] dropZone:', dropZone);
-        console.log('[OCR Elements] fileInput:', fileInput);
-        
-        // OCRイベントリスナー（重複防止: dataset.listenerAttached）
-        if (dropZone && fileInput) {
+      console.log('[OCR Elements] Current dropZone:', dropZone);
+      console.log('[OCR Elements] Current fileInput:', fileInput);
+      console.log('[OCR Elements] ========================================');
+      
+      // 常に最新のDOM要素を取得（キャッシュされた参照を使わない）
+      dropZone = document.getElementById('ocr-drop-zone');
+      fileInput = document.getElementById('ocr-file-input');
+      previewContainer = document.getElementById('ocr-preview-container');
+      previewImage = document.getElementById('ocr-preview-image');
+      ocrStatus = document.getElementById('ocr-status');
+      ocrResult = document.getElementById('ocr-result');
+      
+      console.log('[OCR Elements] After re-fetch:');
+      console.log('[OCR Elements] dropZone:', dropZone);
+      console.log('[OCR Elements] fileInput:', fileInput);
+      console.log('[OCR Elements] previewContainer:', previewContainer);
+      
+      // OCRイベントリスナー（重複防止: dataset.listenerAttached）
+      if (dropZone && fileInput) {
           // ドラッグ&ドロップ（重複防止）
-          if (!dropZone.dataset.dragoverAttached) {
-            dropZone.dataset.dragoverAttached = 'true';
+          if (!dropZone.__dragoverAttached) {
+            dropZone.__dragoverAttached = true;
             dropZone.addEventListener('dragover', (e) => {
               console.log('[OCR Elements] Dragover event');
               e.preventDefault();
               dropZone.classList.add('dragover');
             });
+            console.log('[OCR Elements] ✅ Dragover handler attached');
           }
 
-          if (!dropZone.dataset.dragleaveAttached) {
-            dropZone.dataset.dragleaveAttached = 'true';
+          if (!dropZone.__dragleaveAttached) {
+            dropZone.__dragleaveAttached = true;
             dropZone.addEventListener('dragleave', () => {
               dropZone.classList.remove('dragover');
             });
+            console.log('[OCR Elements] ✅ Dragleave handler attached');
           }
 
-          if (!dropZone.dataset.dropAttached) {
-            dropZone.dataset.dropAttached = 'true';
+          if (!dropZone.__dropAttached) {
+            dropZone.__dropAttached = true;
             dropZone.addEventListener('drop', (e) => {
               console.log('[OCR Elements] Drop event');
               e.preventDefault();
@@ -6487,27 +6515,56 @@ app.get('/deals/new', (c) => {
                 );
               }
             });
+            console.log('[OCR Elements] ✅ Drop handler attached');
           }
 
           // ドロップゾーンのクリックでファイル選択ダイアログを開く
-          if (!dropZone.dataset.clickAttached) {
-            dropZone.dataset.clickAttached = 'true';
-            dropZone.addEventListener('click', (e) => {
+          // iOS Safari対応: datasetの代わりに直接プロパティをチェック
+          if (!dropZone.__clickHandlerAttached) {
+            dropZone.__clickHandlerAttached = true;
+            
+            // iOS Safari: タッチイベントも追加（クリックイベントが発火しない場合の対策）
+            const clickHandler = function(e) {
+              console.log('[OCR Elements] ========================================');
+              console.log('[OCR Elements] Drop zone clicked/touched');
+              console.log('[OCR Elements] Event type:', e.type);
+              console.log('[OCR Elements] Target:', e.target);
+              console.log('[OCR Elements] Target closest button:', e.target.closest('button'));
+              console.log('[OCR Elements] ========================================');
+              
               // ボタン要素のクリックは無視（ボタンの動作を優先）
               if (!e.target.closest('button')) {
-                console.log('[OCR Elements] ========================================');
-                console.log('[OCR Elements] Drop zone clicked - opening file dialog');
-                console.log('[OCR Elements] dropZone:', dropZone);
-                console.log('[OCR Elements] fileInput:', fileInput);
-                console.log('[OCR Elements] ========================================');
+                console.log('[OCR Elements] Opening file dialog...');
+                console.log('[OCR Elements] fileInput element:', fileInput);
+                console.log('[OCR Elements] fileInput.click function:', typeof fileInput.click);
+                
+                // iOS Safari対応: preventDefault()を呼んでデフォルト動作を防ぐ
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // ファイル入力をクリック
                 fileInput.click();
+                
+                console.log('[OCR Elements] fileInput.click() executed');
+              } else {
+                console.log('[OCR Elements] Button click detected, ignoring drop zone click');
               }
-            });
-            console.log('[OCR Elements] ✅ Drop zone click handler attached');
+            };
+            
+            // clickイベントとtouchendイベントの両方を登録（iOS対応）
+            dropZone.addEventListener('click', clickHandler);
+            dropZone.addEventListener('touchend', clickHandler);
+            
+            console.log('[OCR Elements] ========================================');
+            console.log('[OCR Elements] ✅ Drop zone click/touch handler attached');
+            console.log('[OCR Elements] Handler attached to:', dropZone);
+            console.log('[OCR Elements] ========================================');
+          } else {
+            console.log('[OCR Elements] ⚠️ Drop zone click handler already attached, skipping');
           }
 
-          if (!fileInput.dataset.changeAttached) {
-            fileInput.dataset.changeAttached = 'true';
+          if (!fileInput.__changeAttached) {
+            fileInput.__changeAttached = true;
             fileInput.addEventListener('change', (e) => {
               console.log('[OCR Elements] ========================================');
               console.log('[OCR Elements] File input change event TRIGGERED');
@@ -6576,10 +6633,25 @@ app.get('/deals/new', (c) => {
                 alert('ファイルが選択されていません。もう一度お試しください。');
               }
             });
+            console.log('[OCR Elements] ✅ File input change handler attached');
           }
-          console.log('[OCR Elements] Event listeners attached successfully (with duplication prevention)');
+          
+          console.log('[OCR Elements] ========================================');
+          console.log('[OCR Elements] ✅ All event listeners attached successfully');
+          console.log('[OCR Elements] - Dragover: ' + !!dropZone.__dragoverAttached);
+          console.log('[OCR Elements] - Dragleave: ' + !!dropZone.__dragleaveAttached);
+          console.log('[OCR Elements] - Drop: ' + !!dropZone.__dropAttached);
+          console.log('[OCR Elements] - Click/Touch: ' + !!dropZone.__clickHandlerAttached);
+          console.log('[OCR Elements] - File input change: ' + !!fileInput.__changeAttached);
+          console.log('[OCR Elements] ========================================');
+        } else {
+          console.error('[OCR Elements] ========================================');
+          console.error('[OCR Elements] ❌ OCR Elements NOT FOUND');
+          console.error('[OCR Elements] dropZone:', dropZone);
+          console.error('[OCR Elements] fileInput:', fileInput);
+          console.error('[OCR Elements] Please check if the elements exist in the DOM');
+          console.error('[OCR Elements] ========================================');
         }
-      }
     }
     
     // ページ読み込み後に初期化（複数のタイミングで試行）
@@ -7354,7 +7426,7 @@ app.get('/deals/new', (c) => {
       // エラー表示を非表示
       document.getElementById('ocr-error-section').classList.add('hidden');
       
-      // 再度OCR処理を実行（v3.12.0の非同期ジョブAPIを使用）
+      // 再度OCR処理を実行（v3.106.0の非同期ジョブAPIを使用）
       const formData = new FormData();
       lastUploadedFiles.forEach(file => {
         formData.append('files', file);

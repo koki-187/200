@@ -281,23 +281,12 @@ function initializeEventDelegation() {
   console.log('[Event Delegation] Event delegation setup complete');
 }
 
-// ドロップゾーンのクリックハンドラーを初期化
+// ドロップゾーンのクリックハンドラーは index.tsx で管理されるため、
+// ここでは初期化しない（重複を防ぐため）
 function initializeDropZone() {
-  const dropZone = document.getElementById('ocr-drop-zone');
-  const fileInput = document.getElementById('ocr-file-input');
-  
-  if (dropZone && fileInput) {
-    dropZone.addEventListener('click', function(event) {
-      // ボタン要素のクリックは無視（ボタンの動作を優先）
-      if (!event.target.closest('button')) {
-        console.log('[Event Delegation] Drop zone clicked - opening file dialog');
-        fileInput.click();
-      }
-    });
-    console.log('[Event Delegation] Drop zone initialized');
-  } else {
-    console.warn('[Event Delegation] Drop zone or file input not found');
-  }
+  console.log('[Event Delegation] Drop zone click handler is managed by index.tsx');
+  console.log('[Event Delegation] Skipping drop zone initialization to prevent conflicts');
+  // Note: Drop zone click event is handled in index.tsx's initOCRElements()
 }
 
 // ページロード時に初期化を実行

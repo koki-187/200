@@ -3536,14 +3536,108 @@ app.get('/deals', (c) => {
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     }
     .header-logo {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+    /* ハンバーガーメニューボタン */
+    .hamburger-btn {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
+      touch-action: manipulation;
+    }
+    .hamburger-btn span {
+      width: 24px;
+      height: 3px;
+      background-color: white;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+    .hamburger-btn.active span:nth-child(1) {
+      transform: rotate(45deg) translate(8px, 8px);
+    }
+    .hamburger-btn.active span:nth-child(2) {
+      opacity: 0;
+    }
+    .hamburger-btn.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -7px);
+    }
+    /* モバイルメニュー */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 80%;
+      max-width: 320px;
+      height: 100vh;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+      transition: right 0.3s ease;
+      z-index: 9999;
+      overflow-y: auto;
+      padding-top: env(safe-area-inset-top, 20px);
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+    .mobile-menu.open {
+      right: 0;
+    }
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-menu-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .mobile-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      color: #e2e8f0;
+      text-decoration: none;
+      font-size: 16px;
+      min-height: 56px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      transition: background 0.2s ease;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+      touch-action: manipulation;
+    }
+    .mobile-menu-item:active {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(0.98);
+    }
+    .mobile-menu-item i {
+      width: 24px;
+      font-size: 18px;
+    }
+    /* デスクトップではハンバーガーメニューを非表示 */
+    @media (min-width: 768px) {
+      .hamburger-btn {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -3554,19 +3648,66 @@ app.get('/deals', (c) => {
       <div class="flex justify-between items-center py-4">
         <a href="/dashboard" class="flex items-center space-x-3 hover:opacity-80 transition">
           <div class="header-logo">
-            <img src="/logo-3d.png" alt="Logo" class="w-6 h-6" />
+            <img src="/logo-3d.png" alt="Logo" class="w-7 h-7" />
           </div>
           <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
         </a>
-        <div class="flex items-center space-x-4">
+        <!-- デスクトップナビゲーション -->
+        <div class="hidden md:flex items-center space-x-4">
           <span id="user-name" class="text-gray-200"></span>
           <button onclick="logout()" class="text-gray-300 hover:text-white transition">
             <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
           </button>
         </div>
+        <!-- ハンバーガーメニューボタン（モバイルのみ） -->
+        <button class="hamburger-btn md:hidden" onclick="toggleMobileMenu()" aria-label="メニューを開く">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
       </div>
     </div>
   </header>
+  
+  <!-- モバイルメニュー -->
+  <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+  <div class="mobile-menu">
+    <div class="p-6 border-b border-slate-600">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="header-logo">
+          <img src="/logo-3d.png" alt="Logo" class="w-7 h-7" />
+        </div>
+        <h2 class="text-white font-bold text-lg">メニュー</h2>
+      </div>
+      <div id="mobile-user-name" class="text-gray-300 text-sm"></div>
+    </div>
+    <nav class="py-2">
+      <a href="/dashboard" class="mobile-menu-item">
+        <i class="fas fa-home"></i>
+        <span>ダッシュボード</span>
+      </a>
+      <a href="/purchase-criteria" class="mobile-menu-item">
+        <i class="fas fa-clipboard-check"></i>
+        <span>買取条件</span>
+      </a>
+      <a href="/showcase" class="mobile-menu-item">
+        <i class="fas fa-images"></i>
+        <span>ショーケース</span>
+      </a>
+      <a href="/deals" class="mobile-menu-item">
+        <i class="fas fa-folder"></i>
+        <span>案件一覧</span>
+      </a>
+      <a href="/deals/new" class="mobile-menu-item">
+        <i class="fas fa-plus-circle"></i>
+        <span>新規案件作成</span>
+      </a>
+      <button onclick="logout()" class="mobile-menu-item w-full text-left">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>ログアウト</span>
+      </button>
+    </nav>
+  </div>
 
   <!-- メインコンテンツ -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -3682,6 +3823,35 @@ app.get('/deals', (c) => {
 
     // 管理者権限チェック
     const isAdmin = user.role === 'ADMIN';
+
+    // モバイルメニューの開閉
+    function toggleMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const hamburger = document.querySelector('.hamburger-btn');
+      
+      menu.classList.toggle('open');
+      overlay.classList.toggle('open');
+      hamburger.classList.toggle('active');
+      
+      // メニュー開閉時にスクロールを制御
+      if (menu.classList.contains('open')) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+    
+    function closeMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const hamburger = document.querySelector('.hamburger-btn');
+      
+      menu.classList.remove('open');
+      overlay.classList.remove('open');
+      hamburger.classList.remove('active');
+      document.body.style.overflow = '';
+    }
 
     function logout() {
       // 認証トークンとユーザー情報のみ削除（Remember Me情報は保持）

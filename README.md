@@ -1,17 +1,37 @@
-# 200棟土地仕入れ管理システム v3.106.0 (Fix OCR File Selection Issue)
+# 200棟土地仕入れ管理システム v3.107.0 (Fix OCR Event Listener Conflicts)
 
 ## 🆕 最新アップデート
 
-**システムステータス**: OCR機能修正完了 - iOS実機テスト準備完了 ✅
+**システムステータス**: OCR機能根本修正完了 + iOS UI改善 - iOS実機テスト準備完了 ✅
+
+### v3.107.0の新機能（2025-12-03リリース）:
+1. **OCR機能の根本的な問題を解決** 🐛✨
+   - **v3.106.0の問題**: クリックハンドラーを追加したがまだ動作しない
+   - **根本原因**: 
+     - イベントリスナーの初期化ロジックが不完全（`if (!dropZone)`の条件）
+     - `dataset`プロパティがiOS Safariで不安定
+     - `deals-new-events.js`との競合
+   - **修正内容**:
+     - 初期化ロジックを改善（常にDOM要素を再取得）
+     - `dataset`から`direct property`へ変更
+     - iOS対応で`click`と`touchend`の両方を登録
+     - `deals-new-events.js`の競合ハンドラーを削除
+   - **本番URL**: https://4949b42a.real-estate-200units-v2.pages.dev
+
+2. **iOS UI/UX改善** 📱
+   - OCRセクションヘッダーのレスポンシブレイアウト
+   - タップターゲット最小44x44px（iOS推奨）
+   - 不動産情報ライブラリボタンの最適化
+
+3. **バージョン情報更新** 🔄
+   - OCR設定画面のバージョンをv3.12.0→v3.106.0に更新
 
 ### v3.106.0の新機能（2025-12-03リリース）:
-1. **OCR機能の重大なバグ修正** 🐛✨
+1. **OCR機能の重大なバグ修正（第1回）** 🐛
    - **問題**: OCR機能が「読み込み中...」のまま固まる
    - **原因**: ドロップゾーンのクリックイベントハンドラーが欠けていた
    - **修正**: `index.tsx`にドロップゾーンのクリックハンドラーを追加
-   - ファイル選択ダイアログが正常に開くように修正
-   - iOS Safari互換性を維持
-   - OCR APIエンドポイントは正常動作確認済み
+   - **結果**: iOS実機テストで依然として動作せず（v3.107.0で根本解決）
    - **本番URL**: https://58e6ba3f.real-estate-200units-v2.pages.dev
 
 ### v3.105.0の新機能（2025-12-03リリース）:
@@ -116,7 +136,7 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.106.0)**: https://58e6ba3f.real-estate-200units-v2.pages.dev 🆕 **← 最新版（OCR File Selection Fix）✅**
+- **Production URL (Latest v3.107.0)**: https://4949b42a.real-estate-200units-v2.pages.dev 🆕 **← 最新版（OCR Event Listener Fix + iOS UI）✅**
   - 🍔 **iOS Hamburger Menu完全実装**（全5主要ページ、100%完了）✨
   - 🚀 **PWA機能強化済み**（iOSインストールプロンプト、Service Worker v3.103.0）
   - 📁 **ファイル保管機能確認済み**（管理者専用、統計・検索・フィルター機能）

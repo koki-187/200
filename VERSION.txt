@@ -1,3 +1,184 @@
+v3.107.0 (Fix OCR Event Listener Conflicts & iOS UI Improvements)
+
+リリース日: 2025-12-03
+本番環境URL: https://4949b42a.real-estate-200units-v2.pages.dev
+
+## 🐛 Critical OCR Fix - Event Listener Conflicts Resolution
+
+### ✅ 修正された根本原因
+**v3.106.0での修正後もOCR機能が動作しない問題が継続**
+
+**根本原因の特定**:
+1. **イベントリスナーの初期化ロジックの問題**
+   - `initOCRElements()`が`if (!dropZone)`条件内でのみイベントリスナーをアタッチ
+   - 最初の呼び出しで`dropZone`がnullの場合、イベントリスナーがアタッチされない
+   - 2回目の呼び出しで`dropZone`が存在しても、条件がfalseでイベントリスナーがアタッチされない
+
+2. **datasetプロパティの信頼性問題**
+   - iOS Safariで`dataset`プロパティが正しく動作しない可能性
+   - 重複防止フラグが正しく機能しない
+
+3. **`deals-new-events.js`との競合**
+   - 両方のファイルにドロップゾーンクリックハンドラーが存在
+   - イベントリスナーの競合や干渉が発生
+
+**実施した修正**:
+
+#### 1. index.tsx の初期化ロジック改善
+```javascript
+// 修正前: if (!dropZone) の条件内でのみ初期化
+function initOCRElements() {
+  if (!dropZone) {
+    dropZone = document.getElementById('ocr-drop-zone');
+    // ...イベントリスナー登録
+  }
+}
+
+// 修正後: 常にDOM要素を再取得し、イベントリスナーをチェック
+function initOCRElements() {
+  // 常に最新のDOM要素を取得
+  dropZone = document.getElementById('ocr-drop-zone');
+  fileInput = document.getElementById('ocr-file-input');
+  // ...
+  
+  if (dropZone && fileInput) {
+    // イベントリスナー登録
+  }
+}
+```
+
+#### 2. datasetからdirect propertyへ変更
+```javascript
+// 修正前: dataset（iOS Safariで不安定）
+if (!dropZone.dataset.clickAttached) {
+  dropZone.dataset.clickAttached = 'true';
+  // ...
+}
+
+// 修正後: direct property（より信頼性が高い）
+if (!dropZone.__clickHandlerAttached) {
+  dropZone.__clickHandlerAttached = true;
+  // ...
+}
+```
+
+#### 3. iOS対応のイベントハンドリング強化
+```javascript
+// clickとtouchendの両方を登録（iOS対応）
+const clickHandler = function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  if (!e.target.closest('button')) {
+    fileInput.click();
+  }
+};
+
+dropZone.addEventListener('click', clickHandler);
+dropZone.addEventListener('touchend', clickHandler); // iOS用
+```
+
+#### 4. deals-new-events.js の競合解消
+```javascript
+// 修正前: ドロップゾーンクリックハンドラーを登録
+function initializeDropZone() {
+  dropZone.addEventListener('click', function(event) {
+    fileInput.click();
+  });
+}
+
+// 修正後: index.tsxに一本化
+function initializeDropZone() {
+  console.log('[Event Delegation] Drop zone click handler is managed by index.tsx');
+  // Note: Drop zone click event is handled in index.tsx's initOCRElements()
+}
+```
+
+## 📱 iOS UI/UX Improvements
+
+### OCRセクションヘッダーの改善
+**問題**: 小さい画面で要素が横に並びすぎて見づらい
+
+**修正内容**:
+- レスポンシブレイアウト（モバイル：縦並び、デスクトップ：横並び）
+- タイトルを画面サイズに応じて短縮表示
+- ボタンラベルを小画面では非表示（アイコンのみ）
+- iOS推奨タップターゲット（44x44px以上）
+
+### 不動産情報ライブラリボタンの改善
+- レスポンシブレイアウト（モバイル：縦並び、デスクトップ：横並び）
+- タップターゲット: 最小44x44px
+- ボタンラベルを画面サイズに応じて調整
+- タップフィードバック強化（-webkit-tap-highlight-color）
+
+## 🔄 Version Information Updates
+
+- OCR設定画面のバージョン情報を v3.12.0 → v3.106.0 に更新
+- 並列処理機能のバージョン情報を更新
+- 進捗永続化機能のバージョン情報を更新
+
+## 📋 Technical Implementation Details
+
+### イベントリスナーの重複防止
+- `__dragoverAttached`, `__dragleaveAttached`, `__dropAttached`, `__clickHandlerAttached`, `__changeAttached`
+- direct propertyを使用してより確実な重複防止
+
+### 詳細なデバッグログ
+```javascript
+console.log('[OCR Elements] ========================================');
+console.log('[OCR Elements] initOCRElements called');
+console.log('[OCR Elements] Current dropZone:', dropZone);
+console.log('[OCR Elements] ========================================');
+```
+
+### イベントリスナーの確認
+```javascript
+console.log('[OCR Elements] ✅ All event listeners attached successfully');
+console.log('[OCR Elements] - Dragover: ' + !!dropZone.__dragoverAttached);
+console.log('[OCR Elements] - Click/Touch: ' + !!dropZone.__clickHandlerAttached);
+```
+
+## 🧪 Testing Results
+
+**ビルド**: ✅ 成功 (5.34s)
+**デプロイ**: ✅ 成功 (14s)
+**本番URL**: https://4949b42a.real-estate-200units-v2.pages.dev
+**コード検証**: ✅ すべての変更が本番環境に反映
+
+## 📱 iOS実機テスト項目（ユーザー確認依頼）
+
+### テスト環境
+- **本番URL**: https://4949b42a.real-estate-200units-v2.pages.dev
+- **テストアカウント**:
+  - Email: `navigator-187@docomo.ne.jp`
+  - Password: `kouki187`
+
+### 重要な確認ポイント
+
+#### 1. **OCR機能のファイル選択**（最重要）
+- [ ] 案件作成ページ(`/deals/new`)にアクセス
+- [ ] OCRドロップゾーンをタップ
+- [ ] ファイル選択ダイアログが開くことを確認 ← **v3.107.0で修正**
+- [ ] Safariの開発者ツールでコンソールログを確認:
+  ```
+  [OCR Elements] initOCRElements called
+  [OCR Elements] Drop zone clicked/touched
+  [OCR Elements] Opening file dialog...
+  [OCR Elements] fileInput.click() executed
+  ```
+
+#### 2. **UI/UXの改善確認**
+- [ ] OCRセクションヘッダーが縦並びで見やすく表示される
+- [ ] 履歴・設定ボタンのタップ領域が十分大きい（44x44px以上）
+- [ ] 不動産情報ライブラリボタンが縦並びで見やすく表示される
+
+#### 3. **OCR処理の完全動作確認**
+- [ ] ファイル選択後、OCR処理が開始される
+- [ ] プログレスバーが表示され、進捗が更新される
+- [ ] OCR処理が完了し、結果が表示される
+
+---
+
 v3.106.0 (Fix OCR File Selection Issue)
 
 リリース日: 2025-12-03

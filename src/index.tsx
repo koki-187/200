@@ -691,8 +691,8 @@ app.get('/purchase-criteria', (c) => {
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     }
     .header-logo {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
       border-radius: 10px;
       display: flex;
@@ -706,6 +706,100 @@ app.get('/purchase-criteria', (c) => {
     .criteria-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    }
+    /* ハンバーガーメニューボタン */
+    .hamburger-btn {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
+      touch-action: manipulation;
+    }
+    .hamburger-btn span {
+      width: 24px;
+      height: 3px;
+      background-color: white;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+    .hamburger-btn.active span:nth-child(1) {
+      transform: rotate(45deg) translate(8px, 8px);
+    }
+    .hamburger-btn.active span:nth-child(2) {
+      opacity: 0;
+    }
+    .hamburger-btn.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -7px);
+    }
+    /* モバイルメニュー */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 80%;
+      max-width: 320px;
+      height: 100vh;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+      transition: right 0.3s ease;
+      z-index: 9999;
+      overflow-y: auto;
+      padding-top: env(safe-area-inset-top, 20px);
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+    .mobile-menu.open {
+      right: 0;
+    }
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-menu-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .mobile-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      color: #e2e8f0;
+      text-decoration: none;
+      font-size: 16px;
+      min-height: 56px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      transition: background 0.2s ease;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+      touch-action: manipulation;
+    }
+    .mobile-menu-item:active {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(0.98);
+    }
+    .mobile-menu-item i {
+      width: 24px;
+      font-size: 18px;
+    }
+    /* デスクトップではハンバーガーメニューを非表示 */
+    @media (min-width: 768px) {
+      .hamburger-btn {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -721,20 +815,61 @@ app.get('/purchase-criteria', (c) => {
           <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
         </a>
         <div class="flex items-center space-x-4">
-          <a href="/purchase-criteria" class="text-white border-b-2 border-blue-400 pb-1 transition">
+          <a href="/purchase-criteria" class="text-white border-b-2 border-blue-400 pb-1 transition hidden md:inline">
             買取条件
           </a>
-          <a href="/deals" class="text-gray-300 hover:text-white transition">
+          <a href="/deals" class="text-gray-300 hover:text-white transition hidden md:inline">
             案件一覧
           </a>
-          <span id="user-name" class="text-gray-200"></span>
-          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+          <span id="user-name" class="text-gray-200 hidden md:inline"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition hidden md:inline-block">
             <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
+          </button>
+          <!-- ハンバーガーメニューボタン (モバイルのみ) -->
+          <button class="hamburger-btn md:hidden" onclick="toggleMobileMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
           </button>
         </div>
       </div>
     </div>
   </header>
+
+  <!-- モバイルメニューオーバーレイ -->
+  <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+  
+  <!-- モバイルメニュー -->
+  <nav class="mobile-menu">
+    <div style="padding: 24px 24px 16px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+      <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">ログインユーザー</div>
+      <div id="mobile-user-name" style="color: #f1f5f9; font-size: 16px; font-weight: 600;"></div>
+    </div>
+    <a href="/dashboard" class="mobile-menu-item">
+      <i class="fas fa-home"></i>
+      <span>ダッシュボード</span>
+    </a>
+    <a href="/purchase-criteria" class="mobile-menu-item" style="background: rgba(59, 130, 246, 0.15);">
+      <i class="fas fa-clipboard-check"></i>
+      <span>買取条件</span>
+    </a>
+    <a href="/showcase" class="mobile-menu-item">
+      <i class="fas fa-star"></i>
+      <span>ショーケース</span>
+    </a>
+    <a href="/deals" class="mobile-menu-item">
+      <i class="fas fa-folder-open"></i>
+      <span>案件一覧</span>
+    </a>
+    <a href="/deals/new" class="mobile-menu-item">
+      <i class="fas fa-plus-circle"></i>
+      <span>新規案件作成</span>
+    </a>
+    <a href="#" onclick="logout(); return false;" class="mobile-menu-item" style="margin-top: auto; border-top: 1px solid rgba(255, 255, 255, 0.1); color: #f87171;">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>ログアウト</span>
+    </a>
+  </nav>
 
   <!-- メインコンテンツ -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1070,6 +1205,46 @@ app.get('/purchase-criteria', (c) => {
       } catch (error) {
         console.error('Check error:', error);
         alert('チェック実行に失敗しました: ' + (error.response?.data?.error || error.message));
+      }
+    });
+
+    // ハンバーガーメニュー制御
+    function toggleMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const btn = document.querySelector('.hamburger-btn');
+      
+      menu.classList.toggle('open');
+      overlay.classList.toggle('open');
+      btn.classList.toggle('active');
+      
+      // メニューが開いているときはbodyのスクロールを無効化
+      if (menu.classList.contains('open')) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+
+    function closeMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const btn = document.querySelector('.hamburger-btn');
+      
+      menu.classList.remove('open');
+      overlay.classList.remove('open');
+      btn.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // ユーザー名を表示
+    window.addEventListener('DOMContentLoaded', function() {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.name) {
+        const mobileUserName = document.getElementById('mobile-user-name');
+        if (mobileUserName) {
+          mobileUserName.textContent = user.name;
+        }
       }
     });
   </script>
@@ -3017,8 +3192,8 @@ app.get('/showcase', (c) => {
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     }
     .header-logo {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
       border-radius: 10px;
       display: flex;
@@ -3045,6 +3220,100 @@ app.get('/showcase', (c) => {
       overflow: hidden;
       border-radius: 1rem;
     }
+    /* ハンバーガーメニューボタン */
+    .hamburger-btn {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
+      touch-action: manipulation;
+    }
+    .hamburger-btn span {
+      width: 24px;
+      height: 3px;
+      background-color: white;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+    .hamburger-btn.active span:nth-child(1) {
+      transform: rotate(45deg) translate(8px, 8px);
+    }
+    .hamburger-btn.active span:nth-child(2) {
+      opacity: 0;
+    }
+    .hamburger-btn.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -7px);
+    }
+    /* モバイルメニュー */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 80%;
+      max-width: 320px;
+      height: 100vh;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+      transition: right 0.3s ease;
+      z-index: 9999;
+      overflow-y: auto;
+      padding-top: env(safe-area-inset-top, 20px);
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+    .mobile-menu.open {
+      right: 0;
+    }
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-menu-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .mobile-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      color: #e2e8f0;
+      text-decoration: none;
+      font-size: 16px;
+      min-height: 56px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      transition: background 0.2s ease;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+      touch-action: manipulation;
+    }
+    .mobile-menu-item:active {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(0.98);
+    }
+    .mobile-menu-item i {
+      width: 24px;
+      font-size: 18px;
+    }
+    /* デスクトップではハンバーガーメニューを非表示 */
+    @media (min-width: 768px) {
+      .hamburger-btn {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -3061,23 +3330,64 @@ app.get('/showcase', (c) => {
           </a>
         </div>
         <div class="flex items-center space-x-6">
-          <a href="/purchase-criteria" class="text-gray-300 hover:text-white transition">
+          <a href="/purchase-criteria" class="text-gray-300 hover:text-white transition hidden md:inline">
             <i class="fas fa-clipboard-check mr-2"></i>買取条件
           </a>
-          <a href="/showcase" class="text-gray-300 hover:text-white transition">
+          <a href="/showcase" class="text-gray-300 hover:text-white transition hidden md:inline">
             <i class="fas fa-images mr-2"></i>ショーケース
           </a>
-          <a href="/deals" class="text-gray-300 hover:text-white transition">
+          <a href="/deals" class="text-gray-300 hover:text-white transition hidden md:inline">
             <i class="fas fa-folder mr-2"></i>案件一覧
           </a>
-          <span id="user-name" class="text-gray-200"></span>
-          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+          <span id="user-name" class="text-gray-200 hidden md:inline"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition hidden md:inline-block">
             <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
+          </button>
+          <!-- ハンバーガーメニューボタン (モバイルのみ) -->
+          <button class="hamburger-btn md:hidden" onclick="toggleMobileMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
           </button>
         </div>
       </div>
     </div>
   </header>
+
+  <!-- モバイルメニューオーバーレイ -->
+  <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+  
+  <!-- モバイルメニュー -->
+  <nav class="mobile-menu">
+    <div style="padding: 24px 24px 16px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+      <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">ログインユーザー</div>
+      <div id="mobile-user-name" style="color: #f1f5f9; font-size: 16px; font-weight: 600;"></div>
+    </div>
+    <a href="/dashboard" class="mobile-menu-item">
+      <i class="fas fa-home"></i>
+      <span>ダッシュボード</span>
+    </a>
+    <a href="/purchase-criteria" class="mobile-menu-item">
+      <i class="fas fa-clipboard-check"></i>
+      <span>買取条件</span>
+    </a>
+    <a href="/showcase" class="mobile-menu-item" style="background: rgba(59, 130, 246, 0.15);">
+      <i class="fas fa-star"></i>
+      <span>ショーケース</span>
+    </a>
+    <a href="/deals" class="mobile-menu-item">
+      <i class="fas fa-folder-open"></i>
+      <span>案件一覧</span>
+    </a>
+    <a href="/deals/new" class="mobile-menu-item">
+      <i class="fas fa-plus-circle"></i>
+      <span>新規案件作成</span>
+    </a>
+    <a href="#" onclick="logout(); return false;" class="mobile-menu-item" style="margin-top: auto; border-top: 1px solid rgba(255, 255, 255, 0.1); color: #f87171;">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>ログアウト</span>
+    </a>
+  </nav>
 
   <!-- メインコンテンツ -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -3512,8 +3822,42 @@ app.get('/showcase', (c) => {
       // ユーザー名表示
       if (user.name) {
         document.getElementById('user-name').textContent = user.name;
+        // モバイルメニューのユーザー名も表示
+        const mobileUserName = document.getElementById('mobile-user-name');
+        if (mobileUserName) {
+          mobileUserName.textContent = user.name;
+        }
       }
     });
+
+    // ハンバーガーメニュー制御
+    function toggleMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const btn = document.querySelector('.hamburger-btn');
+      
+      menu.classList.toggle('open');
+      overlay.classList.toggle('open');
+      btn.classList.toggle('active');
+      
+      // メニューが開いているときはbodyのスクロールを無効化
+      if (menu.classList.contains('open')) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+
+    function closeMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const btn = document.querySelector('.hamburger-btn');
+      
+      menu.classList.remove('open');
+      overlay.classList.remove('open');
+      btn.classList.remove('active');
+      document.body.style.overflow = '';
+    }
   </script>
 </body>
 </html>
@@ -4222,14 +4566,108 @@ app.get('/deals/new', (c) => {
     }
     
     .header-logo {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+    /* ハンバーガーメニューボタン */
+    .hamburger-btn {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
+      touch-action: manipulation;
+    }
+    .hamburger-btn span {
+      width: 24px;
+      height: 3px;
+      background-color: white;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+    .hamburger-btn.active span:nth-child(1) {
+      transform: rotate(45deg) translate(8px, 8px);
+    }
+    .hamburger-btn.active span:nth-child(2) {
+      opacity: 0;
+    }
+    .hamburger-btn.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -7px);
+    }
+    /* モバイルメニュー */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 80%;
+      max-width: 320px;
+      height: 100vh;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+      transition: right 0.3s ease;
+      z-index: 9999;
+      overflow-y: auto;
+      padding-top: env(safe-area-inset-top, 20px);
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+    .mobile-menu.open {
+      right: 0;
+    }
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-menu-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .mobile-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      color: #e2e8f0;
+      text-decoration: none;
+      font-size: 16px;
+      min-height: 56px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      transition: background 0.2s ease;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+      touch-action: manipulation;
+    }
+    .mobile-menu-item:active {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(0.98);
+    }
+    .mobile-menu-item i {
+      width: 24px;
+      font-size: 18px;
+    }
+    /* デスクトップではハンバーガーメニューを非表示 */
+    @media (min-width: 768px) {
+      .hamburger-btn {
+        display: none;
+      }
     }
     
     .ocr-drop-zone {
@@ -4306,14 +4744,55 @@ app.get('/deals/new', (c) => {
           </a>
         </div>
         <div class="flex items-center space-x-4">
-          <span id="user-name" class="text-gray-200"></span>
-          <button onclick="logout()" class="text-gray-300 hover:text-white transition">
+          <span id="user-name" class="text-gray-200 hidden md:inline"></span>
+          <button onclick="logout()" class="text-gray-300 hover:text-white transition hidden md:inline-block">
             <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
+          </button>
+          <!-- ハンバーガーメニューボタン (モバイルのみ) -->
+          <button class="hamburger-btn md:hidden" onclick="toggleMobileMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
           </button>
         </div>
       </div>
     </div>
   </header>
+
+  <!-- モバイルメニューオーバーレイ -->
+  <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+  
+  <!-- モバイルメニュー -->
+  <nav class="mobile-menu">
+    <div style="padding: 24px 24px 16px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+      <div style="color: #94a3b8; font-size: 12px; margin-bottom: 4px;">ログインユーザー</div>
+      <div id="mobile-user-name" style="color: #f1f5f9; font-size: 16px; font-weight: 600;"></div>
+    </div>
+    <a href="/dashboard" class="mobile-menu-item">
+      <i class="fas fa-home"></i>
+      <span>ダッシュボード</span>
+    </a>
+    <a href="/purchase-criteria" class="mobile-menu-item">
+      <i class="fas fa-clipboard-check"></i>
+      <span>買取条件</span>
+    </a>
+    <a href="/showcase" class="mobile-menu-item">
+      <i class="fas fa-star"></i>
+      <span>ショーケース</span>
+    </a>
+    <a href="/deals" class="mobile-menu-item">
+      <i class="fas fa-folder-open"></i>
+      <span>案件一覧</span>
+    </a>
+    <a href="/deals/new" class="mobile-menu-item" style="background: rgba(59, 130, 246, 0.15);">
+      <i class="fas fa-plus-circle"></i>
+      <span>新規案件作成</span>
+    </a>
+    <a href="#" onclick="logout(); return false;" class="mobile-menu-item" style="margin-top: auto; border-top: 1px solid rgba(255, 255, 255, 0.1); color: #f87171;">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>ログアウト</span>
+    </a>
+  </nav>
 
   <!-- メインコンテンツ -->
   <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -10006,6 +10485,46 @@ app.get('/deals/new', (c) => {
       
       return errors;
     }
+
+    // ハンバーガーメニュー制御
+    function toggleMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const btn = document.querySelector('.hamburger-btn');
+      
+      menu.classList.toggle('open');
+      overlay.classList.toggle('open');
+      btn.classList.toggle('active');
+      
+      // メニューが開いているときはbodyのスクロールを無効化
+      if (menu.classList.contains('open')) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+
+    function closeMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const btn = document.querySelector('.hamburger-btn');
+      
+      menu.classList.remove('open');
+      overlay.classList.remove('open');
+      btn.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // ユーザー名を表示
+    window.addEventListener('DOMContentLoaded', function() {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.name) {
+        const mobileUserName = document.getElementById('mobile-user-name');
+        if (mobileUserName) {
+          mobileUserName.textContent = user.name;
+        }
+      }
+    });
 
   </script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->

@@ -1406,10 +1406,13 @@ app.get('/dashboard', (c) => {
   <style>
     body {
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      /* iOS Safari対応 */
+      -webkit-text-size-adjust: 100%;
+      touch-action: pan-x pan-y;
     }
     .header-logo {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
       border-radius: 10px;
       display: flex;
@@ -1417,31 +1420,71 @@ app.get('/dashboard', (c) => {
       justify-content: center;
       box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
     }
+    /* iOS Safari対応: ヘッダーリンクのタップ領域拡大 */
+    header a {
+      padding: 12px 16px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
+      touch-action: manipulation;
+      font-size: 16px;
+    }
+    header button {
+      padding: 12px 16px;
+      min-height: 44px;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
+      touch-action: manipulation;
+      font-size: 16px;
+    }
+    /* iOS Safari: タップ時のフィードバック */
+    header a:active, header button:active {
+      transform: scale(0.96);
+      opacity: 0.8;
+    }
+    /* iOS Safari: レスポンシブ対応 */
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 16px !important;
+      }
+      header .header-nav {
+        gap: 0.25rem;
+      }
+      header .header-nav a,
+      header .header-nav button {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+      /* iOS Safari: ユーザー情報のフォントサイズ */
+      #user-name {
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
 <body>
   <!-- ヘッダー -->
   <header class="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg border-b border-slate-700">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center py-4">
+      <div class="flex justify-between items-center py-3">
         <div class="flex items-center space-x-3">
           <div class="header-logo">
-            <img src="/logo-3d.png" alt="Logo" class="w-6 h-6" />
+            <img src="/logo-3d.png" alt="Logo" class="w-7 h-7" />
           </div>
           <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
         </div>
-        <div class="flex items-center space-x-6">
+        <div class="flex items-center header-nav" style="gap: 0.5rem;">
           <a href="/purchase-criteria" class="text-gray-300 hover:text-white transition">
-            <i class="fas fa-clipboard-check mr-2"></i>買取条件
+            <i class="fas fa-clipboard-check mr-1"></i><span class="hidden sm:inline">買取条件</span>
           </a>
           <a href="/showcase" class="text-gray-300 hover:text-white transition">
-            <i class="fas fa-images mr-2"></i>ショーケース
+            <i class="fas fa-images mr-1"></i><span class="hidden sm:inline">ショーケース</span>
           </a>
           <a href="/deals" class="text-gray-300 hover:text-white transition">
-            <i class="fas fa-folder mr-2"></i>案件一覧
+            <i class="fas fa-folder mr-1"></i><span class="hidden sm:inline">案件一覧</span>
           </a>
-          <span id="user-name" class="text-gray-200"></span>
-          <span id="user-role" class="text-xs px-3 py-1 rounded-full bg-blue-600 text-white font-medium"></span>
+          <span id="user-name" class="text-gray-200 text-sm hidden md:inline"></span>
+          <span id="user-role" class="text-xs px-2 py-1 rounded-full bg-blue-600 text-white font-medium"></span>
           <button onclick="logout()" class="text-gray-300 hover:text-white transition">
             <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
           </button>
@@ -5956,13 +5999,25 @@ app.get('/deals/new', (c) => {
         });
 
         // ステップ1: ジョブを作成
+        console.log('[OCR] ========================================');
         console.log('[OCR] ジョブ作成リクエスト送信中...');
         console.log('[OCR] ファイル数:', allFiles.length);
+        console.log('[OCR] トークン:', token ? 'あり (' + token.substring(0, 10) + '...)' : 'なし');
+        console.log('[OCR] User Agent:', navigator.userAgent);
+        console.log('[OCR] ========================================');
         
+        // iOS Safari対応: タイムアウト設定を追加（30秒）
         const createResponse = await axios.post('/api/ocr-jobs', formData, {
           headers: {
             'Authorization': 'Bearer ' + token,
             'Content-Type': 'multipart/form-data'
+          },
+          timeout: 30000, // 30秒タイムアウト
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log('[OCR] アップロード進捗:', percentCompleted + '%');
+            progressText.textContent = 'アップロード中... ' + percentCompleted + '%';
+            progressBar.style.width = (percentCompleted * 0.1) + '%'; // 最大10%まで
           }
         });
         
@@ -6112,11 +6167,18 @@ app.get('/deals/new', (c) => {
 
 
       } catch (error) {
-        console.error('[OCR] ❌ OCR処理エラー:', error);
+        console.error('[OCR] ========================================');
+        console.error('[OCR] ❌ OCR処理エラー');
+        console.error('[OCR] エラーオブジェクト:', error);
         console.error('[OCR] エラー詳細:');
-        console.error('[OCR]   - Status:', error.response?.status);
+        console.error('[OCR]   - Name:', error.name);
         console.error('[OCR]   - Message:', error.message);
-        console.error('[OCR]   - Response:', error.response?.data);
+        console.error('[OCR]   - Status:', error.response?.status);
+        console.error('[OCR]   - Status Text:', error.response?.statusText);
+        console.error('[OCR]   - Response Data:', error.response?.data);
+        console.error('[OCR]   - Request URL:', error.config?.url);
+        console.error('[OCR]   - Request Method:', error.config?.method);
+        console.error('[OCR] ========================================');
         
         if (cancelBtn) {
           cancelBtn.style.display = 'none';
@@ -6127,14 +6189,49 @@ app.get('/deals/new', (c) => {
         localStorage.removeItem('currentOCRJobId');
         progressSection.classList.add('hidden');
         
-        // 認証エラーの場合は特別な処理
-        if (error.response?.status === 401) {
-          console.error('[OCR] 認証エラー - トークンが無効または期限切れ');
-          showMessage('認証エラーが発生しました。ページを再読み込みしてログインし直してください。', 'error');
+        // エラーの種類に応じた処理
+        let errorTitle = 'OCR処理エラー';
+        let errorMessage = error.message;
+        
+        // タイムアウトエラー
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          errorTitle = 'タイムアウトエラー';
+          errorMessage = 'OCR処理の開始がタイムアウトしました。ネットワーク接続を確認してください。';
+          console.error('[OCR] タイムアウトエラー検出');
+        }
+        // ネットワークエラー
+        else if (error.message === 'Network Error' || !error.response) {
+          errorTitle = 'ネットワークエラー';
+          errorMessage = 'サーバーに接続できませんでした。インターネット接続を確認してください。';
+          console.error('[OCR] ネットワークエラー検出');
+        }
+        // 認証エラー
+        else if (error.response?.status === 401) {
+          errorTitle = '認証エラー';
+          errorMessage = '認証トークンが無効または期限切れです。ページを再読み込みしてログインし直してください。';
+          console.error('[OCR] 認証エラー検出 - トークンが無効または期限切れ');
+        }
+        // サーバーエラー
+        else if (error.response?.status >= 500) {
+          errorTitle = 'サーバーエラー';
+          errorMessage = 'サーバー側でエラーが発生しました: ' + (error.response?.data?.error || error.message);
+          console.error('[OCR] サーバーエラー検出');
+        }
+        // クライアントエラー
+        else if (error.response?.status >= 400) {
+          errorTitle = 'リクエストエラー';
+          errorMessage = error.response?.data?.error || error.message;
+          console.error('[OCR] クライアントエラー検出');
         }
         
         // エラー表示
-        displayOCRError(error);
+        displayOCRError(errorTitle, errorMessage);
+        
+        // iOS環境では追加のアラート表示
+        if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+          console.error('[OCR] iOS環境でのエラー - ユーザーに通知します');
+          alert('OCR処理エラー\n\n' + errorTitle + '\n' + errorMessage + '\n\n詳細はSafari開発者ツールのコンソールを確認してください。');
+        }
       }
     }
     
@@ -7814,14 +7911,33 @@ app.get('/deals/new', (c) => {
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 取得中...';
       
       try {
-        const token = localStorage.getItem('token');
+        // 正しいトークンキーを使用
+        const token = localStorage.getItem('auth_token');
+        console.log('[不動産情報ライブラリ] ========================================');
+        console.log('[不動産情報ライブラリ] トークン取得:', !!token);
+        console.log('[不動産情報ライブラリ] 住所:', address);
+        console.log('[不動産情報ライブラリ] ========================================');
+        
+        if (!token) {
+          console.error('[不動産情報ライブラリ] ❌ トークンなし');
+          alert('認証エラー: ログインし直してください。');
+          btn.disabled = false;
+          btn.innerHTML = originalHTML;
+          return;
+        }
+        
         const year = new Date().getFullYear();
         const quarter = Math.ceil((new Date().getMonth() + 1) / 3); // 現在の四半期
         
+        console.log('[不動産情報ライブラリ] リクエスト送信:', { address, year, quarter });
+        
         const response = await axios.get(\`/api/reinfolib/property-info\`, {
           params: { address, year, quarter },
-          headers: { 'Authorization': 'Bearer ' + token }
+          headers: { 'Authorization': 'Bearer ' + token },
+          timeout: 15000 // 15秒タイムアウト
         });
+        
+        console.log('[不動産情報ライブラリ] ✅ レスポンス受信:', response.data);
         
         if (!response.data.success) {
           alert('データの取得に失敗しました: ' + response.data.message);
@@ -7907,12 +8023,28 @@ app.get('/deals/new', (c) => {
         }
         
       } catch (error) {
-        console.error('Auto-fill error:', error);
-        console.error('Error response:', error.response);
+        console.error('[不動産情報ライブラリ] ========================================');
+        console.error('[不動産情報ライブラリ] ❌ エラー発生');
+        console.error('[不動産情報ライブラリ] エラーオブジェクト:', error);
+        console.error('[不動産情報ライブラリ] エラーレスポンス:', error.response);
+        console.error('[不動産情報ライブラリ] エラーメッセージ:', error.message);
+        console.error('[不動産情報ライブラリ] ステータス:', error.response?.status);
+        console.error('[不動産情報ライブラリ] ========================================');
         
-        if (error.response?.status === 401) {
-          alert('❌ 認証エラー\\n\\nMLIT_API_KEYが設定されていません');
-        } else if (error.response?.status === 400) {
+        // タイムアウトエラー
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          alert('❌ タイムアウトエラー\\n\\nサーバーの応答に時間がかかりすぎています。\\nもう一度お試しください。');
+        }
+        // ネットワークエラー
+        else if (error.message === 'Network Error' || !error.response) {
+          alert('❌ ネットワークエラー\\n\\nサーバーに接続できませんでした。\\nインターネット接続を確認してください。');
+        }
+        // 認証エラー
+        else if (error.response?.status === 401) {
+          alert('❌ 認証エラー\\n\\nMLIT_API_KEYが設定されていないか、認証トークンが無効です。\\n\\nページを再読み込みしてログインし直してください。');
+        } 
+        // 400エラー（住所解析失敗）
+        else if (error.response?.status === 400) {
           const message = error.response?.data?.message || '住所の解析に失敗しました';
           const details = error.response?.data?.details;
           let alertMessage = \`❌ エラー\\n\\n\${message}\\n\\n正しい形式で入力してください（例: 東京都板橋区蓮根三丁目17-7）\`;
@@ -7920,14 +8052,18 @@ app.get('/deals/new', (c) => {
             alertMessage += \`\\n\\n入力された住所: \${details.address}\`;
           }
           alert(alertMessage);
-        } else if (error.response?.status === 404) {
+        } 
+        // 404エラー（データなし）
+        else if (error.response?.status === 404) {
           alert('❌ エラー\\n\\n指定された住所のデータが見つかりませんでした。\\n\\n別の住所で試してください。');
-        } else if (error.response?.data) {
+        } 
+        // その他のエラー
+        else if (error.response?.data) {
           const errorData = error.response.data;
           const message = errorData.message || errorData.error || 'データ取得エラー';
           alert(\`❌ データの取得に失敗しました\\n\\n\${message}\`);
         } else {
-          alert(\`❌ データの取得に失敗しました\\n\\nエラー: \${error.message}\\n\\nステータス: \${error.response?.status || '不明'}\`);
+          alert(\`❌ データの取得に失敗しました\\n\\nエラー: \${error.message}\\n\\nステータス: \${error.response?.status || '不明'}\\n\\n詳細はコンソールを確認してください。\`);
         }
       } finally {
         btn.disabled = false;

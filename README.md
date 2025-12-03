@@ -1,8 +1,18 @@
-# 200棟土地仕入れ管理システム v3.103.0 (iOS Hamburger Menu + PWA Enhancements)
+# 200棟土地仕入れ管理システム v3.104.0 (Hamburger Menu Extended)
 
 ## 🆕 最新アップデート
 
-**システムステータス**: iOS Hamburger Menu実装、PWA強化、ファイル保管機能確認済み
+**システムステータス**: iOS Hamburger Menu実装拡大（ダッシュボード＋案件一覧）
+
+### v3.104.0の新機能（2025-12-03リリース）:
+1. **案件一覧ページへのハンバーガーメニュー適用** 🍔
+   - ダッシュボードと同じiOS対応メニュー
+   - iOS推奨タップターゲット（56px高さ）
+   - スライドインアニメーション（右から300ms ease）
+   - ユーザー情報表示
+   - メニュー構成: ダッシュボード、買取条件、ショーケース、案件一覧、新規案件作成、ログアウト
+   - デスクトップでは非表示
+   - **実装状況**: 2/5ページ完了（40%）
 
 ### v3.103.0の新機能（2025-12-03リリース）:
 1. **ハンバーガーメニュー実装（iOS対応）** 🍔
@@ -91,12 +101,16 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.103.0)**: https://735c7353.real-estate-200units-v2.pages.dev 🆕 **← 最新版（iOS Hamburger Menu + PWA強化）**
-  - 🍔 **iOS Hamburger Menu実装**（56pxタップ領域、スライドインアニメーション）
-  - 🚀 **PWA機能強化**（iOSインストールプロンプト、Service Worker v3.103.0）
+- **Production URL (Latest v3.104.0)**: https://19eb89c4.real-estate-200units-v2.pages.dev 🆕 **← 最新版（Hamburger Menu Extended）**
+  - 🍔 **iOS Hamburger Menu拡大**（ダッシュボード＋案件一覧ページ、2/5完了）
+  - 🚀 **PWA機能強化済み**（iOSインストールプロンプト、Service Worker v3.103.0）
   - 📁 **ファイル保管機能確認済み**（管理者専用、統計・検索・フィルター機能）
   - 📱 **iOS OCR修正済み**（v3.102.0で修正、30秒タイムアウト）
   - 🏠 **不動産情報ライブラリAPI実装済み**（v3.102.0で実装）
+- **Previous URL (v3.103.0)**: https://735c7353.real-estate-200units-v2.pages.dev
+  - 🍔 **iOS Hamburger Menu実装**（ダッシュボードのみ、56pxタップ領域）
+  - 🚀 **PWA機能強化**（iOSインストールプロンプト、Service Worker v3.103.0）
+  - 📁 **ファイル保管機能確認済み**（管理者専用、統計・検索・フィルター機能）
 - **Previous URL (v3.102.0)**: https://b052195e.real-estate-200units-v2.pages.dev
   - 📱 **iOS OCR「読込中...」フリーズ修正**（30秒タイムアウト、エラーハンドリング）
   - 🏠 **不動産情報ライブラリAPI完全実装**（物件情報自動入力機能）

@@ -5118,13 +5118,13 @@ app.get('/deals/new', (c) => {
               <p class="text-xs text-gray-500 mt-1">一度に処理できるファイルの最大数（1-50）</p>
             </div>
             
-            <!-- 並列処理設定 (v3.106.0で実装済み) -->
+            <!-- 並列処理設定 (v3.108.0で実装済み) -->
             <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div class="flex items-start">
                 <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-2"></i>
                 <div class="flex-1">
                   <p class="text-sm font-medium text-blue-900 mb-1">並列処理機能</p>
-                  <p class="text-xs text-blue-700 mb-2">v3.106.0で実装済み：複数ファイルを同時に処理して処理速度を向上させます</p>
+                  <p class="text-xs text-blue-700 mb-2">v3.108.0で実装済み：複数ファイルを同時に処理して処理速度を向上させます</p>
                   <ul class="text-xs text-blue-700 space-y-1 list-disc list-inside">
                     <li>最大3ファイルを同時処理（OpenAI APIレート制限対応）</li>
                     <li>Semaphoreパターンで並列度を自動制御</li>
@@ -5135,13 +5135,13 @@ app.get('/deals/new', (c) => {
               </div>
             </div>
             
-            <!-- 進捗永続化機能 (v3.106.0で実装済み) -->
+            <!-- 進捗永続化機能 (v3.108.0で実装済み) -->
             <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div class="flex items-start">
                 <i class="fas fa-check-circle text-green-600 mt-0.5 mr-2"></i>
                 <div class="flex-1">
                   <p class="text-sm font-medium text-green-900 mb-1">進捗永続化機能</p>
-                  <p class="text-xs text-green-700 mb-2">v3.106.0で実装済み：ブラウザをリロードしても処理進捗が復元されます</p>
+                  <p class="text-xs text-green-700 mb-2">v3.108.0で実装済み：ブラウザをリロードしても処理進捗が復元されます</p>
                   <ul class="text-xs text-green-700 space-y-1 list-disc list-inside">
                     <li>localStorage自動保存</li>
                     <li>ページリロード後の自動復元</li>

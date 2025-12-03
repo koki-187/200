@@ -281,12 +281,107 @@ function initializeEventDelegation() {
   console.log('[Event Delegation] Event delegation setup complete');
 }
 
-// ドロップゾーンのクリックハンドラーは index.tsx で管理されるため、
-// ここでは初期化しない（重複を防ぐため）
+// ドロップゾーンのクリックハンドラー初期化
+// CRITICAL FIX: index.tsxのスクリプトが実行されないため、ここで直接実装
 function initializeDropZone() {
-  console.log('[Event Delegation] Drop zone click handler is managed by index.tsx');
-  console.log('[Event Delegation] Skipping drop zone initialization to prevent conflicts');
-  // Note: Drop zone click event is handled in index.tsx's initOCRElements()
+  console.log('[Event Delegation] ========================================');
+  console.log('[Event Delegation] Initializing drop zone click handler');
+  
+  const dropZone = document.getElementById('ocr-drop-zone');
+  const fileInput = document.getElementById('ocr-file-input');
+  
+  console.log('[Event Delegation] dropZone element:', dropZone);
+  console.log('[Event Delegation] fileInput element:', fileInput);
+  
+  if (dropZone && fileInput) {
+    // 重複防止チェック
+    if (!dropZone.__clickHandlerAttached) {
+      dropZone.__clickHandlerAttached = true;
+      
+      console.log('[Event Delegation] Attaching click/touch handlers...');
+      
+      const clickHandler = function(event) {
+        console.log('[Event Delegation] ========================================');
+        console.log('[Event Delegation] Drop zone clicked/touched');
+        console.log('[Event Delegation] Event type:', event.type);
+        console.log('[Event Delegation] Event target:', event.target);
+        console.log('[Event Delegation] Target tagName:', event.target?.tagName);
+        console.log('[Event Delegation] Closest button:', event.target.closest('button'));
+        console.log('[Event Delegation] ========================================');
+        
+        // ボタン要素のクリックは無視（履歴・設定ボタンの動作を優先）
+        if (!event.target.closest('button')) {
+          console.log('[Event Delegation] Opening file dialog...');
+          console.log('[Event Delegation] fileInput element:', fileInput);
+          console.log('[Event Delegation] fileInput.click function:', typeof fileInput.click);
+          
+          // iOS Safari対応: preventDefault()とstopPropagation()
+          event.preventDefault();
+          event.stopPropagation();
+          
+          // ファイル入力をクリック
+          try {
+            fileInput.click();
+            console.log('[Event Delegation] ✅ fileInput.click() executed successfully');
+          } catch (error) {
+            console.error('[Event Delegation] ❌ Error calling fileInput.click():', error);
+            alert('ファイル選択ダイアログを開けませんでした。ページを再読み込みしてください。');
+          }
+        } else {
+          console.log('[Event Delegation] Button click detected, ignoring drop zone click');
+        }
+      };
+      
+      // clickとtouchendの両方を登録（iOS対応）
+      dropZone.addEventListener('click', clickHandler);
+      dropZone.addEventListener('touchend', clickHandler);
+      
+      console.log('[Event Delegation] ========================================');
+      console.log('[Event Delegation] ✅ Drop zone click/touch handlers attached');
+      console.log('[Event Delegation] Attached to element:', dropZone);
+      console.log('[Event Delegation] ========================================');
+      
+      // CRITICAL: ファイル入力のchangeイベントハンドラーも必須
+      fileInput.addEventListener('change', function(e) {
+        console.log('[Event Delegation] ========================================');
+        console.log('[Event Delegation] File input CHANGE event triggered');
+        console.log('[Event Delegation] Files selected:', e.target.files?.length || 0);
+        console.log('[Event Delegation] ========================================');
+        
+        const files = Array.from(e.target.files || []).filter(f => 
+          f.type.startsWith('image/') || f.type === 'application/pdf'
+        );
+        
+        if (files.length > 0) {
+          console.log('[Event Delegation] Valid files:', files.length);
+          console.log('[Event Delegation] Checking for processMultipleOCR function...');
+          
+          if (typeof processMultipleOCR === 'function') {
+            console.log('[Event Delegation] ✅ processMultipleOCR found, calling with', files.length, 'files');
+            setTimeout(() => {
+              processMultipleOCR(files);
+            }, 150); // iOS stability delay
+          } else {
+            console.error('[Event Delegation] ❌ processMultipleOCR function not found');
+            alert('OCR処理関数が見つかりません。ページを再読み込みしてください。');
+          }
+        } else {
+          console.warn('[Event Delegation] ⚠️ No valid image/PDF files selected');
+          alert('画像ファイル（PNG, JPG, JPEG, WEBP）またはPDFファイルを選択してください。');
+        }
+      });
+      
+      console.log('[Event Delegation] ✅ File input change handler attached');
+    } else {
+      console.log('[Event Delegation] ⚠️ Drop zone click handler already attached');
+    }
+  } else {
+    console.error('[Event Delegation] ========================================');
+    console.error('[Event Delegation] ❌ Drop zone or file input NOT FOUND');
+    console.error('[Event Delegation] dropZone:', dropZone);
+    console.error('[Event Delegation] fileInput:', fileInput);
+    console.error('[Event Delegation] ========================================');
+  }
 }
 
 // ページロード時に初期化を実行

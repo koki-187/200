@@ -1,3 +1,81 @@
+v3.106.0 (Fix OCR File Selection Issue)
+
+リリース日: 2025-12-03
+本番環境URL: https://58e6ba3f.real-estate-200units-v2.pages.dev
+
+## 🐛 Critical OCR Bug Fix
+
+### ✅ 修正された問題
+**問題**: OCR機能が「読み込み中...」のまま固まり、ファイル選択後も処理が開始されない
+
+**原因**: 
+- 案件作成ページ(`/deals/new`)のOCRドロップゾーンにクリックイベントハンドラーが欠けていた
+- ユーザーがドロップゾーンをクリックしてもファイル選択ダイアログが開かない
+- `deals-new-events.js`にはハンドラーがあったが、メインの`index.tsx`には実装されていなかった
+
+**修正内容**:
+- `index.tsx`内の`initOCRElements()`関数にドロップゾーンのクリックハンドラーを追加
+- クリック時に`fileInput.click()`を呼び出してファイル選択ダイアログを開く
+- ボタン要素のクリックは除外（履歴・設定ボタンの動作を優先）
+- iOS Safari互換性を維持
+
+**コード変更**:
+```javascript
+// ドロップゾーンのクリックでファイル選択ダイアログを開く
+if (!dropZone.dataset.clickAttached) {
+  dropZone.dataset.clickAttached = 'true';
+  dropZone.addEventListener('click', (e) => {
+    if (!e.target.closest('button')) {
+      console.log('[OCR Elements] Drop zone clicked - opening file dialog');
+      fileInput.click();
+    }
+  });
+}
+```
+
+### ✅ テスト結果（本番環境）
+
+**OCR APIエンドポイント**: ✅ 正常動作確認済み
+- エンドポイント: `/api/ocr-jobs`
+- テスト画像送信: ✅ 成功
+- ジョブID取得: ✅ 成功（例: `ztAck6kYBt9ylbYU`）
+- ジョブステータスポーリング: ✅ 正常動作
+- OCR処理完了: ✅ 確認済み
+
+**デプロイ情報**:
+- ビルド時間: 1分22秒
+- デプロイ時間: 17秒
+- デプロイURL: https://58e6ba3f.real-estate-200units-v2.pages.dev
+
+### 📋 iOS実機テスト項目（ユーザー確認依頼）
+
+以下の項目をiOS実機（iPhone/iPad）で確認してください：
+
+1. **ファイル選択テスト**:
+   - [ ] 案件作成ページ(`/deals/new`)にアクセス
+   - [ ] OCRドロップゾーンをタップ
+   - [ ] ファイル選択ダイアログが開くことを確認
+   - [ ] 画像またはPDFファイルを選択
+   - [ ] OCR処理が「読み込み中...」の状態で固まらず進行することを確認
+
+2. **ドラッグ&ドロップテスト**:
+   - [ ] 画像ファイルをドロップゾーンにドラッグ&ドロップ
+   - [ ] OCR処理が開始されることを確認
+
+3. **OCR結果表示テスト**:
+   - [ ] OCR処理完了後、抽出データが表示されることを確認
+   - [ ] 信頼度バッジが表示されることを確認
+
+4. **エラーハンドリングテスト**:
+   - [ ] 対応していないファイル形式を選択した場合のエラーメッセージ表示
+   - [ ] ネットワークエラー時のエラーメッセージ表示
+
+**テスト用アカウント**:
+- Email: `navigator-187@docomo.ne.jp`
+- Password: `kouki187`
+
+---
+
 v3.105.0 (Complete Hamburger Menu for All Pages)
 
 リリース日: 2025-12-03

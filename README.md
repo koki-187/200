@@ -1,8 +1,18 @@
-# 200棟土地仕入れ管理システム v3.105.0 (Complete Hamburger Menu for All Pages)
+# 200棟土地仕入れ管理システム v3.106.0 (Fix OCR File Selection Issue)
 
 ## 🆕 最新アップデート
 
-**システムステータス**: iOS Hamburger Menu実装完了（全5主要ページ） 🎉
+**システムステータス**: OCR機能修正完了 - iOS実機テスト準備完了 ✅
+
+### v3.106.0の新機能（2025-12-03リリース）:
+1. **OCR機能の重大なバグ修正** 🐛✨
+   - **問題**: OCR機能が「読み込み中...」のまま固まる
+   - **原因**: ドロップゾーンのクリックイベントハンドラーが欠けていた
+   - **修正**: `index.tsx`にドロップゾーンのクリックハンドラーを追加
+   - ファイル選択ダイアログが正常に開くように修正
+   - iOS Safari互換性を維持
+   - OCR APIエンドポイントは正常動作確認済み
+   - **本番URL**: https://58e6ba3f.real-estate-200units-v2.pages.dev
 
 ### v3.105.0の新機能（2025-12-03リリース）:
 1. **全主要ページへのハンバーガーメニュー実装完了** 🍔✨
@@ -106,7 +116,7 @@
 ## 🔐 ログイン情報
 
 ### 本番環境URL
-- **Production URL (Latest v3.105.0)**: https://c933a81f.real-estate-200units-v2.pages.dev 🆕 **← 最新版（Complete Hamburger Menu）🎉**
+- **Production URL (Latest v3.106.0)**: https://58e6ba3f.real-estate-200units-v2.pages.dev 🆕 **← 最新版（OCR File Selection Fix）✅**
   - 🍔 **iOS Hamburger Menu完全実装**（全5主要ページ、100%完了）✨
   - 🚀 **PWA機能強化済み**（iOSインストールプロンプト、Service Worker v3.103.0）
   - 📁 **ファイル保管機能確認済み**（管理者専用、統計・検索・フィルター機能）

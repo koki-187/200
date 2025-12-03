@@ -6489,6 +6489,23 @@ app.get('/deals/new', (c) => {
             });
           }
 
+          // ドロップゾーンのクリックでファイル選択ダイアログを開く
+          if (!dropZone.dataset.clickAttached) {
+            dropZone.dataset.clickAttached = 'true';
+            dropZone.addEventListener('click', (e) => {
+              // ボタン要素のクリックは無視（ボタンの動作を優先）
+              if (!e.target.closest('button')) {
+                console.log('[OCR Elements] ========================================');
+                console.log('[OCR Elements] Drop zone clicked - opening file dialog');
+                console.log('[OCR Elements] dropZone:', dropZone);
+                console.log('[OCR Elements] fileInput:', fileInput);
+                console.log('[OCR Elements] ========================================');
+                fileInput.click();
+              }
+            });
+            console.log('[OCR Elements] ✅ Drop zone click handler attached');
+          }
+
           if (!fileInput.dataset.changeAttached) {
             fileInput.dataset.changeAttached = 'true';
             fileInput.addEventListener('change', (e) => {

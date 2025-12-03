@@ -225,13 +225,32 @@ function initializeEventDelegation() {
   // ファイル入力の変更イベント
   document.body.addEventListener('change', function(event) {
     if (event.target.id === 'ocr-file-input') {
+      console.log('[Event Delegation] ========================================');
       console.log('[Event Delegation] File input changed');
+      console.log('[Event Delegation] Event target:', event.target);
+      console.log('[Event Delegation] Files property:', event.target.files);
       event.preventDefault(); // Prevent any default behavior
       event.stopPropagation();
       const files = Array.from(event.target.files);
       console.log('[Event Delegation] Files selected:', files.length);
-      if (files.length > 0 && typeof processMultipleOCR === 'function') {
-        processMultipleOCR(files);
+      console.log('[Event Delegation] Files array:', files);
+      console.log('[Event Delegation] typeof processMultipleOCR:', typeof processMultipleOCR);
+      console.log('[Event Delegation] window.processMultipleOCR:', typeof window.processMultipleOCR);
+      console.log('[Event Delegation] ========================================');
+      
+      if (files.length > 0) {
+        if (typeof processMultipleOCR === 'function') {
+          console.log('[Event Delegation] Calling processMultipleOCR (direct)');
+          processMultipleOCR(files);
+        } else if (typeof window.processMultipleOCR === 'function') {
+          console.log('[Event Delegation] Calling window.processMultipleOCR (global)');
+          window.processMultipleOCR(files);
+        } else {
+          console.error('[Event Delegation] ❌ processMultipleOCR function not found!');
+          alert('OCR処理関数が見つかりません。ページを再読み込みしてください。');
+        }
+      } else {
+        console.warn('[Event Delegation] No files selected');
       }
     }
   });
@@ -282,10 +301,36 @@ function initializeDropZone() {
 }
 
 // ページロード時に初期化を実行
-// window.loadイベントを使用して、すべてのDOM要素とインラインスクリプトが実行済みであることを保証
-window.addEventListener('load', function() {
-  console.log('[Event Delegation] window.load - Starting initialization');
+// DOMContentLoadedとwindow.loadの両方で初期化を試みる（確実性を高める）
+let initialized = false;
+
+function tryInitialize() {
+  if (initialized) {
+    console.log('[Event Delegation] Already initialized, skipping');
+    return;
+  }
+  
+  console.log('[Event Delegation] Starting initialization');
+  initialized = true;
   initializeEventDelegation();
   initializeDropZone();
   console.log('[Event Delegation] Initialization complete');
+}
+
+// DOMContentLoadedで初期化を試みる（より早く実行される）
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('[Event Delegation] DOMContentLoaded event fired');
+    tryInitialize();
+  });
+} else {
+  // すでにDOMがロード済みの場合は即座に実行
+  console.log('[Event Delegation] DOM already loaded, initializing immediately');
+  tryInitialize();
+}
+
+// window.loadでも初期化を試みる（フォールバック）
+window.addEventListener('load', function() {
+  console.log('[Event Delegation] window.load event fired');
+  tryInitialize();
 });

@@ -1420,6 +1420,100 @@ app.get('/dashboard', (c) => {
       justify-content: center;
       box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
     }
+    /* ハンバーガーメニューボタン */
+    .hamburger-btn {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
+      touch-action: manipulation;
+    }
+    .hamburger-btn span {
+      width: 24px;
+      height: 3px;
+      background-color: white;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+    .hamburger-btn.active span:nth-child(1) {
+      transform: rotate(45deg) translate(8px, 8px);
+    }
+    .hamburger-btn.active span:nth-child(2) {
+      opacity: 0;
+    }
+    .hamburger-btn.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -7px);
+    }
+    /* モバイルメニュー */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 80%;
+      max-width: 320px;
+      height: 100vh;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+      transition: right 0.3s ease;
+      z-index: 9999;
+      overflow-y: auto;
+      padding-top: env(safe-area-inset-top, 20px);
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+    .mobile-menu.open {
+      right: 0;
+    }
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-menu-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .mobile-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      color: #e2e8f0;
+      text-decoration: none;
+      font-size: 16px;
+      min-height: 56px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      transition: background 0.2s ease;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+      touch-action: manipulation;
+    }
+    .mobile-menu-item:active {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(0.98);
+    }
+    .mobile-menu-item i {
+      width: 24px;
+      font-size: 18px;
+    }
+    /* デスクトップではハンバーガーメニューを非表示 */
+    @media (min-width: 768px) {
+      .hamburger-btn {
+        display: none;
+      }
+    }
     /* iOS Safari対応: ヘッダーリンクのタップ領域拡大 */
     header a {
       padding: 12px 16px;
@@ -1448,16 +1542,7 @@ app.get('/dashboard', (c) => {
         font-size: 16px !important;
       }
       header .header-nav {
-        gap: 0.25rem;
-      }
-      header .header-nav a,
-      header .header-nav button {
-        font-size: 14px;
-        padding: 10px 12px;
-      }
-      /* iOS Safari: ユーザー情報のフォントサイズ */
-      #user-name {
-        font-size: 14px;
+        display: none;
       }
     }
   </style>
@@ -1473,25 +1558,73 @@ app.get('/dashboard', (c) => {
           </div>
           <h1 class="text-xl font-bold text-white tracking-tight">200棟土地仕入れ管理</h1>
         </div>
-        <div class="flex items-center header-nav" style="gap: 0.5rem;">
+        <!-- デスクトップナビゲーション -->
+        <div class="hidden md:flex items-center header-nav" style="gap: 0.5rem;">
           <a href="/purchase-criteria" class="text-gray-300 hover:text-white transition">
-            <i class="fas fa-clipboard-check mr-1"></i><span class="hidden sm:inline">買取条件</span>
+            <i class="fas fa-clipboard-check mr-1"></i><span>買取条件</span>
           </a>
           <a href="/showcase" class="text-gray-300 hover:text-white transition">
-            <i class="fas fa-images mr-1"></i><span class="hidden sm:inline">ショーケース</span>
+            <i class="fas fa-images mr-1"></i><span>ショーケース</span>
           </a>
           <a href="/deals" class="text-gray-300 hover:text-white transition">
-            <i class="fas fa-folder mr-1"></i><span class="hidden sm:inline">案件一覧</span>
+            <i class="fas fa-folder mr-1"></i><span>案件一覧</span>
           </a>
-          <span id="user-name" class="text-gray-200 text-sm hidden md:inline"></span>
+          <span id="user-name" class="text-gray-200 text-sm"></span>
           <span id="user-role" class="text-xs px-2 py-1 rounded-full bg-blue-600 text-white font-medium"></span>
           <button onclick="logout()" class="text-gray-300 hover:text-white transition">
             <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
           </button>
         </div>
+        <!-- ハンバーガーメニューボタン（モバイルのみ） -->
+        <button class="hamburger-btn md:hidden" onclick="toggleMobileMenu()" aria-label="メニューを開く">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
       </div>
     </div>
   </header>
+  
+  <!-- モバイルメニュー -->
+  <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+  <div class="mobile-menu">
+    <div class="p-6 border-b border-slate-600">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="header-logo">
+          <img src="/logo-3d.png" alt="Logo" class="w-7 h-7" />
+        </div>
+        <h2 class="text-white font-bold text-lg">メニュー</h2>
+      </div>
+      <div id="mobile-user-name" class="text-gray-300 text-sm"></div>
+      <div id="mobile-user-role" class="inline-block text-xs px-2 py-1 rounded-full bg-blue-600 text-white font-medium mt-2"></div>
+    </div>
+    <nav class="py-2">
+      <a href="/dashboard" class="mobile-menu-item">
+        <i class="fas fa-home"></i>
+        <span>ダッシュボード</span>
+      </a>
+      <a href="/purchase-criteria" class="mobile-menu-item">
+        <i class="fas fa-clipboard-check"></i>
+        <span>買取条件</span>
+      </a>
+      <a href="/showcase" class="mobile-menu-item">
+        <i class="fas fa-images"></i>
+        <span>ショーケース</span>
+      </a>
+      <a href="/deals" class="mobile-menu-item">
+        <i class="fas fa-folder"></i>
+        <span>案件一覧</span>
+      </a>
+      <a href="/deals/new" class="mobile-menu-item">
+        <i class="fas fa-plus-circle"></i>
+        <span>新規案件作成</span>
+      </a>
+      <button onclick="logout()" class="mobile-menu-item w-full text-left">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>ログアウト</span>
+      </button>
+    </nav>
+  </div>
 
   <!-- メインコンテンツ -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1799,6 +1932,35 @@ app.get('/dashboard', (c) => {
       // それ以外（seller_id のみ）は案件一覧へ
       // 実際には買側・管理者が同じユーザーなので、AGENTでも統合ビュー表示
       // ここでは全ユーザーがダッシュボードを見れるようにする
+    }
+
+    // モバイルメニューの開閉
+    function toggleMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const hamburger = document.querySelector('.hamburger-btn');
+      
+      menu.classList.toggle('open');
+      overlay.classList.toggle('open');
+      hamburger.classList.toggle('active');
+      
+      // メニュー開閉時にスクロールを制御
+      if (menu.classList.contains('open')) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+    
+    function closeMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const hamburger = document.querySelector('.hamburger-btn');
+      
+      menu.classList.remove('open');
+      overlay.classList.remove('open');
+      hamburger.classList.remove('active');
+      document.body.style.overflow = '';
     }
 
     // ログアウト
@@ -2207,8 +2369,17 @@ app.get('/dashboard', (c) => {
     window.addEventListener('load', function() {
       // ユーザー情報表示
       if (user.name) {
-        document.getElementById('user-name').textContent = user.name;
-        document.getElementById('user-role').textContent = user.role === 'ADMIN' ? '管理者' : 'ユーザー';
+        const userName = document.getElementById('user-name');
+        const userRole = document.getElementById('user-role');
+        const mobileUserName = document.getElementById('mobile-user-name');
+        const mobileUserRole = document.getElementById('mobile-user-role');
+        
+        if (userName) userName.textContent = user.name;
+        if (userRole) userRole.textContent = user.role === 'ADMIN' ? '管理者' : 'ユーザー';
+        
+        // モバイルメニューにもユーザー情報を表示
+        if (mobileUserName) mobileUserName.textContent = user.name;
+        if (mobileUserRole) mobileUserRole.textContent = user.role === 'ADMIN' ? '管理者' : 'ユーザー';
         
         // 管理者の場合、ファイル管理タブを表示
         if (user.role === 'ADMIN') {

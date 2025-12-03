@@ -2,7 +2,7 @@
  * Service Worker for Push Notifications & Performance Optimization
  */
 
-const CACHE_NAME = 'real-estate-v3.77.0';
+const CACHE_NAME = 'real-estate-v3.103.0';
 const STATIC_CACHE = [
   '/',
   '/static/dark-mode.css',

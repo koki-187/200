@@ -5968,6 +5968,13 @@ app.get('/deals/new', (c) => {
     // 3. グローバル関数定義（認証後）
     // ========================================
     
+    // CRITICAL FIX v3.111.0: Define processMultipleOCR placeholder immediately
+    // This ensures deals-new-events.js can find it even if full implementation comes later
+    window.processMultipleOCR = null; // Will be set to actual function later
+    window.selectTemplate = null; // Will be set to actual function later
+    
+    console.log('[Global Init] processMultipleOCR placeholder created');
+    
     // ユーザー名表示
     if (user.name) {
       document.getElementById('user-name').textContent = user.name;

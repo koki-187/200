@@ -3264,14 +3264,16 @@ app.get('/showcase', (c) => {
     .map-container {
       position: relative;
       overflow: hidden;
-      background: #f3f4f6;
+      background: #ffffff;
     }
     .map-container.featured {
-      height: 400px;
+      height: 500px;
+      background: #ffffff;
     }
     .map-container.featured .gallery-image {
       height: 100%;
-      object-fit: cover;
+      width: 100%;
+      object-fit: contain;
       object-position: center;
     }
     .grid-uniform > .gallery-card {
@@ -6310,20 +6312,41 @@ app.get('/deals/new', (c) => {
 
     // 売主リスト取得
     async function loadSellers() {
+      console.log('[Sellers] ========== START ==========');
+      console.log('[Sellers] Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL/UNDEFINED');
+      
       try {
+        const select = document.getElementById('seller_id');
+        if (!select) {
+          console.error('[Sellers] ❌ seller_id element not found');
+          return;
+        }
+        
+        console.log('[Sellers] Calling API: /api/auth/users');
         const response = await axios.get('/api/auth/users', {
           headers: { 'Authorization': 'Bearer ' + token }
         });
+        
+        console.log('[Sellers] API Response:', response.data);
         const sellers = response.data.users.filter(u => u.role === 'AGENT');
-        const select = document.getElementById('seller_id');
+        console.log('[Sellers] Filtered sellers:', sellers.length, 'AGENT users found');
+        
+        if (sellers.length === 0) {
+          console.warn('[Sellers] ⚠️ No AGENT users found in database');
+        }
+        
         sellers.forEach(seller => {
           const option = document.createElement('option');
           option.value = seller.id;
           option.textContent = seller.name + (seller.company_name ? ' (' + seller.company_name + ')' : '');
           select.appendChild(option);
+          console.log('[Sellers] Added option:', seller.name, '(' + seller.company_name + ')');
         });
+        
+        console.log('[Sellers] ✅ Successfully loaded', sellers.length, 'sellers');
       } catch (error) {
-        console.error('Failed to load sellers:', error);
+        console.error('[Sellers] ❌ Failed to load sellers:', error);
+        console.error('[Sellers] Error details:', error.response?.data || error.message);
       }
     }
 

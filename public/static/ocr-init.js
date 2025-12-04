@@ -14,7 +14,19 @@ console.log('[OCR Init] Creating window.processMultipleOCR function...');
 window.processMultipleOCR = async function(files) {
   console.log('[OCR] ========================================');
   console.log('[OCR] processMultipleOCR CALLED (standalone version)');
-  console.log('[OCR] Files:', files.length);
+  console.log('[OCR] Arguments:', arguments);
+  console.log('[OCR] Files parameter:', files);
+  console.log('[OCR] Files type:', typeof files);
+  console.log('[OCR] Files is Array:', Array.isArray(files));
+  
+  // Validate files parameter
+  if (!files || !Array.isArray(files) || files.length === 0) {
+    console.warn('[OCR] ⚠️ Invalid or empty files parameter, ignoring call');
+    console.warn('[OCR] This may be an unintended call from page initialization');
+    return;
+  }
+  
+  console.log('[OCR] Files count:', files.length);
   console.log('[OCR] ========================================');
   
   // Get auth token

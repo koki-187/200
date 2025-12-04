@@ -3548,26 +3548,6 @@ app.get('/showcase', (c) => {
             <p class="text-gray-600">長野県（松本市等）および埼玉県の一部地域をカバーしています。</p>
           </div>
         </div>
-
-        <!-- 関東エリア拡大マップ（NEW） -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
-          <div class="map-container">
-            <img src="/gallery/kanto-expansion-map.jpg" alt="関東エリア拡大販売エリア" class="gallery-image">
-          </div>
-          <div class="p-6 gallery-card-content">
-            <h4 class="text-xl font-bold text-gray-900 mb-2 flex items-center">
-              <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded mr-2">NEW</span>
-              関東エリア拡大
-            </h4>
-            <p class="text-gray-600 mb-2">2026年度から本格展開する新エリア：</p>
-            <ul class="text-sm text-gray-700 space-y-1">
-              <li class="flex items-center"><i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>東京全域</li>
-              <li class="flex items-center"><i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>埼玉県全域</li>
-              <li class="flex items-center"><i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>神奈川県全域</li>
-              <li class="flex items-center"><i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>千葉県西部</li>
-            </ul>
-          </div>
-        </div>
       </div>
     </div>
 

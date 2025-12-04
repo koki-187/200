@@ -332,36 +332,48 @@ function initializeDropZone() {
   }
 }
 
-// CRITICAL FIX v3.114.0: Retry logic to wait for window.processMultipleOCR
-// Reason: Main script may have syntax errors or slow execution
-// Solution: Poll for window.processMultipleOCR availability with retries
+// CRITICAL FIX v3.115.0: Check for ocr-init.js placeholder and wait for actual function
+// Reason: Main script may have syntax errors preventing window.processMultipleOCR definition
+// Solution: ocr-init.js creates placeholder (null), then wait for actual function
 
 console.log('[Event Delegation] Script loaded, waiting for window.load event');
 
-// Retry function to check if window.processMultipleOCR is available
+// Retry function to check if window.processMultipleOCR is a function
 function checkAndInitialize(attempt = 0) {
   const maxAttempts = 20; // 最大10秒待機（500ms * 20）
   
   console.log('[Event Delegation] ========================================');
   console.log('[Event Delegation] Attempt', attempt + 1, '/', maxAttempts);
-  console.log('[Event Delegation] Checking window.processMultipleOCR availability...');
-  console.log('[Event Delegation] window.processMultipleOCR type:', typeof window.processMultipleOCR);
-  console.log('[Event Delegation] window.processMultipleOCR value:', window.processMultipleOCR);
+  console.log('[Event Delegation] Checking window.processMultipleOCR...');
+  console.log('[Event Delegation] typeof:', typeof window.processMultipleOCR);
+  console.log('[Event Delegation] value:', window.processMultipleOCR);
+  console.log('[Event Delegation] ocrInitLoaded:', window.ocrInitLoaded);
   console.log('[Event Delegation] ========================================');
   
   if (typeof window.processMultipleOCR === 'function') {
-    console.log('[Event Delegation] ✅✅✅ window.processMultipleOCR is available!');
+    console.log('[Event Delegation] ✅✅✅ window.processMultipleOCR is a FUNCTION!');
+    console.log('[Event Delegation] OCR will work correctly');
     console.log('[Event Delegation] Starting initialization');
     initializeEventDelegation();
     initializeDropZone();
     console.log('[Event Delegation] Initialization complete');
     console.log('[Event Delegation] ========================================');
-  } else if (attempt < maxAttempts) {
-    console.log('[Event Delegation] ⏳ window.processMultipleOCR not yet available, retrying in 500ms...');
-    setTimeout(() => checkAndInitialize(attempt + 1), 500);
+  } else if (window.processMultipleOCR === null && window.ocrInitLoaded) {
+    // Placeholder exists but actual function not yet defined
+    if (attempt < maxAttempts) {
+      console.log('[Event Delegation] ⏳ Placeholder exists, waiting for actual function...');
+      setTimeout(() => checkAndInitialize(attempt + 1), 500);
+    } else {
+      console.error('[Event Delegation] ❌❌❌ FATAL: Timeout waiting for processMultipleOCR function');
+      console.error('[Event Delegation] Main script may have syntax errors');
+      console.error('[Event Delegation] Initializing anyway, OCR will NOT work until page reload');
+      initializeEventDelegation();
+      initializeDropZone();
+    }
   } else {
-    console.error('[Event Delegation] ❌❌❌ FATAL: window.processMultipleOCR not available after', maxAttempts, 'attempts');
-    console.error('[Event Delegation] Initializing anyway, but OCR will NOT work');
+    // Neither placeholder nor function exists
+    console.error('[Event Delegation] ❌❌❌ CRITICAL: ocr-init.js not loaded');
+    console.error('[Event Delegation] Script load order may be incorrect');
     initializeEventDelegation();
     initializeDropZone();
   }
@@ -371,7 +383,7 @@ function checkAndInitialize(attempt = 0) {
 window.addEventListener('load', function() {
   console.log('[Event Delegation] ========================================');
   console.log('[Event Delegation] window.load event fired');
-  console.log('[Event Delegation] Starting retry logic for window.processMultipleOCR');
+  console.log('[Event Delegation] Starting check for window.processMultipleOCR');
   console.log('[Event Delegation] ========================================');
   checkAndInitialize();
 });

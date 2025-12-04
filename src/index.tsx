@@ -3473,6 +3473,39 @@ app.get('/showcase', (c) => {
         <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i>販売エリア
       </h3>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 全エリア総合マップ (NEW - FEATURED) -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card col-span-full">
+          <div class="map-container">
+            <img src="/gallery/japan-sales-area-map.jpg" alt="全販売エリア総合マップ" class="w-full h-auto gallery-image">
+          </div>
+          <div class="p-6">
+            <h4 class="text-2xl font-bold text-gray-900 mb-3 flex items-center">
+              <span class="bg-gradient-to-r from-orange-600 to-blue-600 text-white text-xs px-3 py-1 rounded mr-3">全販売エリア</span>
+              200棟プロジェクト - 全6エリア展開
+            </h4>
+            <p class="text-gray-700 mb-4">2026年度からの200棟プロジェクト - 全6エリア展開</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h5 class="font-semibold text-orange-700 mb-2">既存エリア（2025年まで）</h5>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  <li class="flex items-center"><i class="fas fa-check-circle text-orange-600 mr-2"></i>愛知県全域</li>
+                  <li class="flex items-center"><i class="fas fa-check-circle text-orange-600 mr-2"></i>長野県（松本市等）</li>
+                  <li class="flex items-center"><i class="fas fa-check-circle text-orange-600 mr-2"></i>埼玉県一部</li>
+                </ul>
+              </div>
+              <div>
+                <h5 class="font-semibold text-blue-700 mb-2">拡大エリア（2026年度～）</h5>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  <li class="flex items-center"><i class="fas fa-star text-blue-600 mr-2"></i>東京全域</li>
+                  <li class="flex items-center"><i class="fas fa-star text-blue-600 mr-2"></i>埼玉県全域</li>
+                  <li class="flex items-center"><i class="fas fa-star text-blue-600 mr-2"></i>神奈川県全域</li>
+                  <li class="flex items-center"><i class="fas fa-star text-blue-600 mr-2"></i>千葉県西部</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <!-- 愛知県マップ -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
           <div class="map-container">

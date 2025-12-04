@@ -262,9 +262,10 @@ window.processMultipleOCR = async function(files) {
       headers['Authorization'] = 'Bearer ' + token;
     }
     
+    // 🔥 CRITICAL FIX: 同期処理に変更、タイムアウトを120秒に延長
     const createResponse = await axios.post('/api/ocr-jobs', formData, {
       headers: headers,
-      timeout: 30000,
+      timeout: 120000, // 120秒（OCR処理が同期的に実行されるため）
       onUploadProgress: (event) => {
         const percent = Math.round((event.loaded * 100) / event.total);
         console.log('[OCR] Upload progress:', percent + '%');
@@ -279,135 +280,49 @@ window.processMultipleOCR = async function(files) {
     console.log('[OCR] Response data:', JSON.stringify(createResponse.data, null, 2));
     console.log('[OCR] ========================================');
     
-    if (!createResponse.data || !createResponse.data.job_id) {
-      throw new Error('サーバーからジョブIDが返されませんでした。Response: ' + JSON.stringify(createResponse.data));
+    // 🔥 NEW: 同期処理なので結果が直接返される
+    const responseData = createResponse.data;
+    
+    if (!responseData || !responseData.success) {
+      throw new Error('サーバーからエラーが返されました: ' + (responseData?.error || 'Unknown error'));
     }
     
-    const jobId = createResponse.data.job_id;
-    console.log('[OCR] ✅ Job created successfully:', jobId);
+    // 進捗を100%に
+    if (progressBar) progressBar.style.width = '100%';
+    if (progressText) progressText.textContent = responseData.total_files + '/' + responseData.total_files + ' 完了';
     
-    // Save job ID for persistence
-    localStorage.setItem('currentOCRJobId', jobId);
+    console.log('[OCR] ========================================');
+    console.log('[OCR] ✅ OCR completed successfully (synchronous)');
+    console.log('[OCR] Total files processed:', responseData.total_files);
+    console.log('[OCR] Extracted data:', responseData.extracted_data);
+    console.log('[OCR] ========================================');
     
-    if (progressText) progressText.textContent = 'OCR処理中...';
-    if (progressBar) progressBar.style.width = '50%';
+    // 🔥 NEW: ポーリング不要、直接フォーム自動入力へ
+    const extracted = responseData.extracted_data;
     
-    // Poll for job status
-    let attempts = 0;
-    const maxAttempts = 120; // 2 minutes max
-    const startTime = Date.now();
+    // Hide progress after delay
+    setTimeout(() => {
+      if (progressSection) progressSection.classList.add('hidden');
+    }, 2000);
     
-    const pollInterval = setInterval(async () => {
-      try {
-        attempts++;
-        
-        if (attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          throw new Error('OCR処理がタイムアウトしました（2分）');
-        }
-        
-        // Get job status
-        const statusHeaders = {};
-        if (token) {
-          statusHeaders['Authorization'] = 'Bearer ' + token;
-        }
-        
-        const statusResponse = await axios.get('/api/ocr-jobs/' + jobId, {
-          headers: statusHeaders,
-          timeout: 10000
-        });
-        
-        console.log('[OCR] 📊 Poll #' + attempts + ' response:');
-        console.log('[OCR]   Status code:', statusResponse.status);
-        console.log('[OCR]   Job data:', JSON.stringify(statusResponse.data.job, null, 2));
-        
-        const job = statusResponse.data.job;
-        if (!job) {
-          throw new Error('サーバーからジョブ情報が返されませんでした');
-        }
-        
-        const processed = job.processed_files || 0;
-        const total = job.total_files || allFiles.length;
-        const status = job.status;
-        
-        console.log('[OCR]   Status:', status, '| Progress:', processed + '/' + total);
-        
-        // Calculate progress (50% - 100%)
-        const progress = 50 + Math.round((processed / total) * 50);
-        if (progressBar) progressBar.style.width = progress + '%';
-        if (progressText) progressText.textContent = processed + '/' + total + ' 完了';
-        
-        // Estimate time remaining
-        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-        const etaSeconds = processed > 0 ? 
-          Math.floor((elapsedSeconds / processed) * (total - processed)) : 0;
-        
-        console.log('[OCR] ⏱️  ETA:', etaSeconds + 's | Elapsed:', elapsedSeconds + 's');
-        
-        // Update file status list
-        if (fileStatusList && job.file_results) {
-          const statusItems = fileStatusList.children;
-          job.file_results.forEach((result, index) => {
-            if (statusItems[index]) {
-              const statusText = statusItems[index].querySelector('span:last-child');
-              const icon = statusItems[index].querySelector('i');
-              
-              if (result.status === 'completed') {
-                statusText.textContent = '完了';
-                statusText.className = 'text-green-600 text-xs font-medium';
-                icon.className = 'fas fa-check-circle text-green-500 mr-2';
-              } else if (result.status === 'processing') {
-                statusText.textContent = '処理中...';
-                statusText.className = 'text-blue-600 text-xs';
-                icon.className = 'fas fa-spinner fa-spin text-blue-500 mr-2';
-              } else if (result.status === 'failed') {
-                statusText.textContent = 'エラー';
-                statusText.className = 'text-red-600 text-xs font-medium';
-                icon.className = 'fas fa-times-circle text-red-500 mr-2';
-              }
-            }
-          });
-        }
-        
-        // Check completion
-        if (status === 'completed') {
-          clearInterval(pollInterval);
-          localStorage.removeItem('currentOCRJobId');
-          
-          if (progressBar) progressBar.style.width = '100%';
-          if (progressText) progressText.textContent = total + '/' + total + ' 完了';
-          
-          console.log('[OCR] ========================================');
-          console.log('[OCR] ✅ OCR completed successfully');
-          console.log('[OCR] Total files processed:', total);
-          console.log('[OCR] Time taken:', Math.floor((Date.now() - startTime) / 1000) + 's');
-          console.log('[OCR] Extracted data:', job.extracted_data);
-          console.log('[OCR] ========================================');
-          
-          // Hide progress after delay
-          setTimeout(() => {
-            if (progressSection) progressSection.classList.add('hidden');
-          }, 2000);
-          
-          // Auto-fill form with extracted data
-          const extracted = job.extracted_data;
-          if (extracted) {
-            console.log('[OCR] ========================================');
-            console.log('[OCR] Auto-filling form with extracted data...');
-            console.log('[OCR] extracted_data type:', typeof extracted);
-            console.log('[OCR] extracted_data:', extracted);
-            console.log('[OCR] extracted_data keys:', Object.keys(extracted));
-            
-            // 🔍 DEBUG: 各フィールドの詳細な値をログ出力
-            console.log('[OCR] 🔍 DETAILED FIELD VALUES:');
-            console.log('[OCR] property_name:', JSON.stringify(extracted.property_name));
-            console.log('[OCR] location:', JSON.stringify(extracted.location));
-            console.log('[OCR] station:', JSON.stringify(extracted.station));
-            console.log('[OCR] land_area:', JSON.stringify(extracted.land_area));
-            console.log('[OCR] building_area:', JSON.stringify(extracted.building_area));
-            console.log('[OCR] building_coverage:', JSON.stringify(extracted.building_coverage));
-            console.log('[OCR] floor_area_ratio:', JSON.stringify(extracted.floor_area_ratio));
-            console.log('[OCR] ========================================');
+    // Auto-fill form with extracted data
+    if (extracted) {
+      console.log('[OCR] ========================================');
+      console.log('[OCR] Auto-filling form with extracted data...');
+      console.log('[OCR] extracted_data type:', typeof extracted);
+      console.log('[OCR] extracted_data:', extracted);
+      console.log('[OCR] extracted_data keys:', Object.keys(extracted));
+      
+      // 🔍 DEBUG: 各フィールドの詳細な値をログ出力
+      console.log('[OCR] 🔍 DETAILED FIELD VALUES:');
+      console.log('[OCR]   property_name:', JSON.stringify(extracted.property_name));
+      console.log('[OCR]   location:', JSON.stringify(extracted.location));
+      console.log('[OCR]   station:', JSON.stringify(extracted.station));
+      console.log('[OCR]   land_area:', JSON.stringify(extracted.land_area));
+      console.log('[OCR]   building_area:', JSON.stringify(extracted.building_area));
+      console.log('[OCR]   building_coverage:', JSON.stringify(extracted.building_coverage));
+      console.log('[OCR]   floor_area_ratio:', JSON.stringify(extracted.floor_area_ratio));
+      console.log('[OCR] ========================================');
             
             // Map extracted data to form fields
             // NOTE: データ構造は { value: '...', confidence: 0.8 } 形式
@@ -556,47 +471,15 @@ window.processMultipleOCR = async function(files) {
                 console.log('[OCR] Set desired_price:', priceField.value);
               }
             }
-            
-            console.log('[OCR] ✅ Form auto-filled successfully');
-          }
-          
-          // Show success message
-          alert('✅ OCR処理が完了しました！\n\n処理ファイル数: ' + total + '\n処理時間: ' + Math.floor((Date.now() - startTime) / 1000) + '秒\n\n抽出されたデータをフォームに反映しました。\n内容を確認して保存してください。');
-          
-        } else if (status === 'failed') {
-          clearInterval(pollInterval);
-          localStorage.removeItem('currentOCRJobId');
-          
-          const errorMessage = job.error_message || 'OCR処理に失敗しました';
-          throw new Error(errorMessage);
-        }
-        
-      } catch (pollError) {
-        console.error('[OCR] ========================================');
-        console.error('[OCR] ❌ POLLING ERROR on attempt #' + attempts);
-        console.error('[OCR] Error type:', pollError.constructor.name);
-        console.error('[OCR] Error message:', pollError.message);
-        console.error('[OCR] Error stack:', pollError.stack);
-        if (pollError.response) {
-          console.error('[OCR] Response status:', pollError.response.status);
-          console.error('[OCR] Response data:', pollError.response.data);
-        } else {
-          console.error('[OCR] No response from server');
-        }
-        console.error('[OCR] ========================================');
-        
-        clearInterval(pollInterval);
-        localStorage.removeItem('currentOCRJobId');
-        
-        // Hide progress UI
-        if (progressSection) {
-          progressSection.classList.add('hidden');
-          console.log('[OCR] Progress section hidden after polling error');
-        }
-        
-        throw pollError;
-      }
-    }, 1000); // Poll every second
+      
+      console.log('[OCR] ✅ Form auto-filled successfully');
+    } else {
+      console.warn('[OCR] ⚠️ No extracted data found');
+    }
+    
+    // Show success message
+    alert('✅ OCR処理が完了しました！\n\n処理ファイル数: ' + responseData.total_files + '\n\n抽出されたデータをフォームに反映しました。\n内容を確認して保存してください。');
+
     
   } catch (error) {
     console.error('[OCR] ========================================');

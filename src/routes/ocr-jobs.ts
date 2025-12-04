@@ -42,7 +42,108 @@ class Semaphore {
 }
 
 /**
- * 新しいOCRジョブを作成（非同期処理開始）
+ * 同期的にOCR処理を実行（Cloudflare Workers対応）
+ * リクエスト内で完了し、結果を直接返す
+ */
+async function performOCRSync(files: File[], apiKey: string): Promise<any> {
+  console.log('[OCR Sync] Starting synchronous OCR for', files.length, 'files');
+  
+  const extractionResults: any[] = [];
+  
+  // 各ファイルを順次処理（並列ではなく直列でタイムアウト回避）
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    console.log(`[OCR Sync] Processing file ${i + 1}/${files.length}:`, file.name);
+    
+    try {
+      // ファイルをBase64に変換
+      const arrayBuffer = await file.arrayBuffer();
+      const base64Data = arrayBufferToBase64(arrayBuffer);
+      const mimeType = file.type;
+      
+      // OpenAI APIに送信
+      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: PROPERTY_EXTRACTION_PROMPT
+            },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Extract property information from this Japanese real estate document. Read all text carefully. Return ONLY a JSON object.'
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:${mimeType};base64,${base64Data}`,
+                    detail: 'high'
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.1,
+          response_format: { type: "json_object" }
+        })
+      });
+      
+      if (!openaiResponse.ok) {
+        const errorText = await openaiResponse.text();
+        console.error(`[OCR Sync] OpenAI API error for ${file.name}:`, errorText);
+        continue; // スキップして次へ
+      }
+      
+      const result = await openaiResponse.json();
+      
+      if (result.choices && result.choices.length > 0) {
+        const content = result.choices[0].message.content;
+        
+        if (content) {
+          try {
+            const rawData = JSON.parse(content);
+            const normalizedData = normalizePropertyData(rawData);
+            extractionResults.push(normalizedData);
+            console.log(`[OCR Sync] ✅ Successfully extracted data from ${file.name}`);
+          } catch (parseError) {
+            console.error(`[OCR Sync] JSON parse error for ${file.name}:`, parseError);
+          }
+        }
+      }
+    } catch (fileError) {
+      console.error(`[OCR Sync] Error processing ${file.name}:`, fileError);
+      // 続行
+    }
+  }
+  
+  // 結果を統合
+  if (extractionResults.length === 0) {
+    console.error('[OCR Sync] No data extracted from any files');
+    return {
+      property_name: { value: null, confidence: 0 },
+      location: { value: null, confidence: 0 },
+      overall_confidence: 0
+    };
+  }
+  
+  const mergedData = mergePropertyData(extractionResults);
+  console.log('[OCR Sync] ✅ Completed. Merged data:', JSON.stringify(mergedData).substring(0, 200));
+  
+  return mergedData;
+}
+
+/**
+ * 新しいOCRジョブを作成（同期処理）
  * POST /api/ocr-jobs
  */
 ocrJobs.post('/', async (c) => {
@@ -161,28 +262,32 @@ ocrJobs.post('/', async (c) => {
     // ジョブIDを生成
     const jobId = nanoid(16);
     
-    // ジョブをDBに保存
-    const fileNames = files.map(f => f.name);
-    const { DB } = c.env;
+    // 🔥 CRITICAL FIX: Cloudflare Workersではバックグラウンド処理が継続しない
+    // → 同期的にOCR処理を実行し、結果を直接返す
     
-    await DB.prepare(`
-      INSERT INTO ocr_jobs (id, user_id, status, total_files, file_names, created_at, updated_at)
-      VALUES (?, ?, 'pending', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `).bind(jobId, userId, files.length, JSON.stringify(fileNames)).run();
+    console.log('[OCR API] Starting synchronous OCR processing for', files.length, 'files');
     
-    // バックグラウンドで非同期処理を開始
-    // Cloudflare Workersの制約により、c.executionCtx.waitUntil()を使用
-    c.executionCtx.waitUntil(
-      processOCRJob(jobId, files, c.env)
-    );
+    // OpenAI API Keyチェック
+    if (!c.env.OPENAI_API_KEY) {
+      return c.json({ 
+        error: 'OpenAI API Keyが設定されていません',
+        details: '管理者にAPI Keyの設定を依頼してください'
+      }, 500);
+    }
     
-    // すぐにジョブIDを返す
+    // OCR処理を同期実行
+    const extracted_data = await performOCRSync(files, c.env.OPENAI_API_KEY);
+    
+    // 結果を直接返す（ポーリング不要）
     return c.json({
       success: true,
       job_id: jobId,
+      status: 'completed',
       total_files: files.length,
-      file_names: fileNames,
-      message: 'OCR処理を開始しました。ジョブIDを使用して進捗を確認できます。'
+      processed_files: files.length,
+      file_names: files.map(f => f.name),
+      extracted_data: extracted_data,
+      message: 'OCR処理が完了しました'
     });
     
   } catch (error) {

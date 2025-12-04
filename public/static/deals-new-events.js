@@ -222,38 +222,10 @@ function initializeEventDelegation() {
     }
   });
   
-  // ファイル入力の変更イベント
-  document.body.addEventListener('change', function(event) {
-    if (event.target.id === 'ocr-file-input') {
-      console.log('[Event Delegation] ========================================');
-      console.log('[Event Delegation] File input changed');
-      console.log('[Event Delegation] Event target:', event.target);
-      console.log('[Event Delegation] Files property:', event.target.files);
-      event.preventDefault(); // Prevent any default behavior
-      event.stopPropagation();
-      const files = Array.from(event.target.files);
-      console.log('[Event Delegation] Files selected:', files.length);
-      console.log('[Event Delegation] Files array:', files);
-      console.log('[Event Delegation] typeof processMultipleOCR:', typeof processMultipleOCR);
-      console.log('[Event Delegation] window.processMultipleOCR:', typeof window.processMultipleOCR);
-      console.log('[Event Delegation] ========================================');
-      
-      if (files.length > 0) {
-        if (typeof processMultipleOCR === 'function') {
-          console.log('[Event Delegation] Calling processMultipleOCR (direct)');
-          processMultipleOCR(files);
-        } else if (typeof window.processMultipleOCR === 'function') {
-          console.log('[Event Delegation] Calling window.processMultipleOCR (global)');
-          window.processMultipleOCR(files);
-        } else {
-          console.error('[Event Delegation] ❌ processMultipleOCR function not found!');
-          alert('OCR処理関数が見つかりません。ページを再読み込みしてください。');
-        }
-      } else {
-        console.warn('[Event Delegation] No files selected');
-      }
-    }
-  });
+  // CRITICAL FIX v3.112.0: document.bodyのchangeイベント委譲を削除
+  // 理由: fileInput.addEventListener('change')と競合し、
+  //      event.preventDefault()/stopPropagation()により個別ハンドラーが実行されない
+  // 解決策: initializeDropZone()内の個別changeハンドラーのみを使用
   
   // フォーム送信イベント（OCR設定フォームの送信を制御）
   document.body.addEventListener('submit', function(event) {
@@ -305,36 +277,49 @@ function initializeDropZone() {
     // CRITICAL: ファイル入力のchangeイベントハンドラーは必須
     fileInput.addEventListener('change', function(e) {
       console.log('[Event Delegation] ========================================');
-      console.log('[Event Delegation] File input CHANGE event triggered');
-      console.log('[Event Delegation] Files selected:', e.target.files?.length || 0);
+      console.log('[Event Delegation] 🔔 File input CHANGE event triggered');
+      console.log('[Event Delegation] Event object:', e);
+      console.log('[Event Delegation] Event target:', e.target);
+      console.log('[Event Delegation] Files object:', e.target.files);
+      console.log('[Event Delegation] Files count:', e.target.files?.length || 0);
       console.log('[Event Delegation] ========================================');
       
-      const files = Array.from(e.target.files || []).filter(f => 
+      const allFiles = Array.from(e.target.files || []);
+      console.log('[Event Delegation] All files (before filter):', allFiles.map(f => ({ name: f.name, type: f.type, size: f.size })));
+      
+      const files = allFiles.filter(f => 
         f.type.startsWith('image/') || f.type === 'application/pdf'
       );
+      console.log('[Event Delegation] Valid files (after filter):', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
       
       if (files.length > 0) {
-        console.log('[Event Delegation] Valid files:', files.length);
-        console.log('[Event Delegation] Checking for processMultipleOCR function...');
+        console.log('[Event Delegation] ✅ Valid files:', files.length);
+        console.log('[Event Delegation] 🔍 Checking for processMultipleOCR function...');
+        console.log('[Event Delegation] window.processMultipleOCR type:', typeof window.processMultipleOCR);
+        console.log('[Event Delegation] window.processMultipleOCR value:', window.processMultipleOCR);
         
         // CRITICAL FIX: Check window.processMultipleOCR first (global scope)
         const processFunc = window.processMultipleOCR || (typeof processMultipleOCR === 'function' ? processMultipleOCR : null);
         
         if (processFunc) {
-          console.log('[Event Delegation] ✅ processMultipleOCR found, calling with', files.length, 'files');
+          console.log('[Event Delegation] ✅✅✅ processMultipleOCR found, calling with', files.length, 'files');
+          console.log('[Event Delegation] 🚀 Starting OCR processing in 150ms...');
           setTimeout(() => {
+            console.log('[Event Delegation] 🚀 NOW calling processMultipleOCR with files:', files.map(f => f.name));
             processFunc(files);
           }, 150); // iOS stability delay
         } else {
-          console.error('[Event Delegation] ❌ processMultipleOCR function not found');
+          console.error('[Event Delegation] ❌❌❌ processMultipleOCR function not found');
           console.error('[Event Delegation] window.processMultipleOCR:', typeof window.processMultipleOCR);
           console.error('[Event Delegation] local processMultipleOCR:', typeof processMultipleOCR);
           alert('OCR処理関数が見つかりません。ページを再読み込みしてください。');
         }
       } else {
         console.warn('[Event Delegation] ⚠️ No valid image/PDF files selected');
+        console.warn('[Event Delegation] All files were:', allFiles.map(f => ({ name: f.name, type: f.type })));
         alert('画像ファイル（PNG, JPG, JPEG, WEBP）またはPDFファイルを選択してください。');
       }
+      console.log('[Event Delegation] ========================================');
     });
     
     console.log('[Event Delegation] ✅ File input change handler attached');

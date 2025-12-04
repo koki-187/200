@@ -273,8 +273,18 @@ window.processMultipleOCR = async function(files) {
       }
     });
     
+    console.log('[OCR] ========================================');
+    console.log('[OCR] 📥 Response received from /api/ocr-jobs');
+    console.log('[OCR] Response status:', createResponse.status);
+    console.log('[OCR] Response data:', JSON.stringify(createResponse.data, null, 2));
+    console.log('[OCR] ========================================');
+    
+    if (!createResponse.data || !createResponse.data.job_id) {
+      throw new Error('サーバーからジョブIDが返されませんでした。Response: ' + JSON.stringify(createResponse.data));
+    }
+    
     const jobId = createResponse.data.job_id;
-    console.log('[OCR] ✅ Job created:', jobId);
+    console.log('[OCR] ✅ Job created successfully:', jobId);
     
     // Save job ID for persistence
     localStorage.setItem('currentOCRJobId', jobId);
@@ -307,10 +317,20 @@ window.processMultipleOCR = async function(files) {
           timeout: 10000
         });
         
+        console.log('[OCR] 📊 Poll #' + attempts + ' response:');
+        console.log('[OCR]   Status code:', statusResponse.status);
+        console.log('[OCR]   Job data:', JSON.stringify(statusResponse.data.job, null, 2));
+        
         const job = statusResponse.data.job;
+        if (!job) {
+          throw new Error('サーバーからジョブ情報が返されませんでした');
+        }
+        
         const processed = job.processed_files || 0;
         const total = job.total_files || allFiles.length;
         const status = job.status;
+        
+        console.log('[OCR]   Status:', status, '| Progress:', processed + '/' + total);
         
         // Calculate progress (50% - 100%)
         const progress = 50 + Math.round((processed / total) * 50);
@@ -322,7 +342,7 @@ window.processMultipleOCR = async function(files) {
         const etaSeconds = processed > 0 ? 
           Math.floor((elapsedSeconds / processed) * (total - processed)) : 0;
         
-        console.log('[OCR] Poll #' + attempts + ' - Status:', status, 'Progress:', processed + '/' + total, 'ETA:', etaSeconds + 's');
+        console.log('[OCR] ⏱️  ETA:', etaSeconds + 's | Elapsed:', elapsedSeconds + 's');
         
         // Update file status list
         if (fileStatusList && job.file_results) {
@@ -552,8 +572,28 @@ window.processMultipleOCR = async function(files) {
         }
         
       } catch (pollError) {
+        console.error('[OCR] ========================================');
+        console.error('[OCR] ❌ POLLING ERROR on attempt #' + attempts);
+        console.error('[OCR] Error type:', pollError.constructor.name);
+        console.error('[OCR] Error message:', pollError.message);
+        console.error('[OCR] Error stack:', pollError.stack);
+        if (pollError.response) {
+          console.error('[OCR] Response status:', pollError.response.status);
+          console.error('[OCR] Response data:', pollError.response.data);
+        } else {
+          console.error('[OCR] No response from server');
+        }
+        console.error('[OCR] ========================================');
+        
         clearInterval(pollInterval);
         localStorage.removeItem('currentOCRJobId');
+        
+        // Hide progress UI
+        if (progressSection) {
+          progressSection.classList.add('hidden');
+          console.log('[OCR] Progress section hidden after polling error');
+        }
+        
         throw pollError;
       }
     }, 1000); // Poll every second

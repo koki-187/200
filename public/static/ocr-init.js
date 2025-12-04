@@ -367,30 +367,50 @@ window.processMultipleOCR = async function(files) {
             console.log('[OCR] extracted_data type:', typeof extracted);
             console.log('[OCR] extracted_data:', extracted);
             console.log('[OCR] extracted_data keys:', Object.keys(extracted));
+            
+            // 🔍 DEBUG: 各フィールドの詳細な値をログ出力
+            console.log('[OCR] 🔍 DETAILED FIELD VALUES:');
+            console.log('[OCR] property_name:', JSON.stringify(extracted.property_name));
+            console.log('[OCR] location:', JSON.stringify(extracted.location));
+            console.log('[OCR] station:', JSON.stringify(extracted.station));
+            console.log('[OCR] land_area:', JSON.stringify(extracted.land_area));
+            console.log('[OCR] building_area:', JSON.stringify(extracted.building_area));
+            console.log('[OCR] building_coverage:', JSON.stringify(extracted.building_coverage));
+            console.log('[OCR] floor_area_ratio:', JSON.stringify(extracted.floor_area_ratio));
             console.log('[OCR] ========================================');
             
             // Map extracted data to form fields
             // NOTE: データ構造は { value: '...', confidence: 0.8 } 形式
             const getFieldValue = (fieldData) => {
-              if (!fieldData) return '';
+              if (!fieldData) {
+                console.log('[OCR] ⚠️ getFieldValue: fieldData is null/undefined');
+                return '';
+              }
               // 新形式: { value, confidence }
               if (typeof fieldData === 'object' && 'value' in fieldData) {
                 const value = fieldData.value;
+                console.log('[OCR] ✅ getFieldValue: extracted value from object:', value);
                 if (value === null || value === undefined) return '';
                 return String(value);
               }
               // 旧形式または文字列
               if (fieldData === null || fieldData === undefined) return '';
+              console.log('[OCR] ℹ️ getFieldValue: using direct value:', fieldData);
               return String(fieldData);
             };
             
             if (extracted.property_name) {
               const titleField = document.getElementById('title');
               if (titleField) {
+                console.log('[OCR] 📝 Processing property_name:', extracted.property_name);
                 const value = getFieldValue(extracted.property_name);
                 titleField.value = value;
-                console.log('[OCR] Set title:', value);
+                console.log('[OCR] Set title:', value, '(length:', value.length, ')');
+              } else {
+                console.log('[OCR] ❌ title field not found in DOM');
               }
+            } else {
+              console.log('[OCR] ⚠️ property_name is empty/null');
             }
             if (extracted.location) {
               const locationField = document.getElementById('location');

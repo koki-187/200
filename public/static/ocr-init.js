@@ -362,76 +362,149 @@ window.processMultipleOCR = async function(files) {
           // Auto-fill form with extracted data
           const extracted = job.extracted_data;
           if (extracted) {
+            console.log('[OCR] ========================================');
             console.log('[OCR] Auto-filling form with extracted data...');
+            console.log('[OCR] extracted_data type:', typeof extracted);
+            console.log('[OCR] extracted_data:', extracted);
+            console.log('[OCR] extracted_data keys:', Object.keys(extracted));
+            console.log('[OCR] ========================================');
             
             // Map extracted data to form fields
+            // NOTE: データ構造は { value: '...', confidence: 0.8 } 形式
+            const getFieldValue = (fieldData) => {
+              if (!fieldData) return '';
+              // 新形式: { value, confidence }
+              if (typeof fieldData === 'object' && 'value' in fieldData) {
+                const value = fieldData.value;
+                if (value === null || value === undefined) return '';
+                return String(value);
+              }
+              // 旧形式または文字列
+              if (fieldData === null || fieldData === undefined) return '';
+              return String(fieldData);
+            };
+            
             if (extracted.property_name) {
               const titleField = document.getElementById('title');
-              if (titleField) titleField.value = extracted.property_name;
+              if (titleField) {
+                const value = getFieldValue(extracted.property_name);
+                titleField.value = value;
+                console.log('[OCR] Set title:', value);
+              }
             }
             if (extracted.location) {
               const locationField = document.getElementById('location');
-              if (locationField) locationField.value = extracted.location;
+              if (locationField) {
+                const value = getFieldValue(extracted.location);
+                locationField.value = value;
+                console.log('[OCR] Set location:', value);
+              }
             }
             if (extracted.station) {
               const stationField = document.getElementById('station');
-              if (stationField) stationField.value = extracted.station;
+              if (stationField) {
+                const value = getFieldValue(extracted.station);
+                stationField.value = value;
+                console.log('[OCR] Set station:', value);
+              }
             }
             if (extracted.walk_minutes) {
               const walkField = document.getElementById('walk_minutes');
-              if (walkField) walkField.value = extracted.walk_minutes;
+              if (walkField) {
+                walkField.value = getFieldValue(extracted.walk_minutes);
+                console.log('[OCR] Set walk_minutes:', walkField.value);
+              }
             }
             if (extracted.land_area) {
               const landAreaField = document.getElementById('land_area');
-              if (landAreaField) landAreaField.value = extracted.land_area;
+              if (landAreaField) {
+                landAreaField.value = getFieldValue(extracted.land_area);
+                console.log('[OCR] Set land_area:', landAreaField.value);
+              }
             }
             if (extracted.building_area) {
               const buildingAreaField = document.getElementById('building_area');
-              if (buildingAreaField) buildingAreaField.value = extracted.building_area;
+              if (buildingAreaField) {
+                buildingAreaField.value = getFieldValue(extracted.building_area);
+                console.log('[OCR] Set building_area:', buildingAreaField.value);
+              }
             }
             if (extracted.zoning) {
               const zoningField = document.getElementById('zoning');
-              if (zoningField) zoningField.value = extracted.zoning;
+              if (zoningField) {
+                zoningField.value = getFieldValue(extracted.zoning);
+                console.log('[OCR] Set zoning:', zoningField.value);
+              }
             }
             if (extracted.building_coverage) {
               const coverageField = document.getElementById('building_coverage');
-              if (coverageField) coverageField.value = extracted.building_coverage;
+              if (coverageField) {
+                coverageField.value = getFieldValue(extracted.building_coverage);
+                console.log('[OCR] Set building_coverage:', coverageField.value);
+              }
             }
             if (extracted.floor_area_ratio) {
               const farField = document.getElementById('floor_area_ratio');
-              if (farField) farField.value = extracted.floor_area_ratio;
+              if (farField) {
+                farField.value = getFieldValue(extracted.floor_area_ratio);
+                console.log('[OCR] Set floor_area_ratio:', farField.value);
+              }
             }
             if (extracted.road_info) {
               const roadField = document.getElementById('road_info');
-              if (roadField) roadField.value = extracted.road_info;
+              if (roadField) {
+                roadField.value = getFieldValue(extracted.road_info);
+                console.log('[OCR] Set road_info:', roadField.value);
+              }
             }
             if (extracted.frontage) {
               const frontageField = document.getElementById('frontage');
-              if (frontageField) frontageField.value = extracted.frontage;
+              if (frontageField) {
+                frontageField.value = getFieldValue(extracted.frontage);
+                console.log('[OCR] Set frontage:', frontageField.value);
+              }
             }
             if (extracted.structure) {
               const structureField = document.getElementById('structure');
-              if (structureField) structureField.value = extracted.structure;
+              if (structureField) {
+                structureField.value = getFieldValue(extracted.structure);
+                console.log('[OCR] Set structure:', structureField.value);
+              }
             }
             if (extracted.built_year) {
               const builtYearField = document.getElementById('built_year');
-              if (builtYearField) builtYearField.value = extracted.built_year;
+              if (builtYearField) {
+                builtYearField.value = getFieldValue(extracted.built_year);
+                console.log('[OCR] Set built_year:', builtYearField.value);
+              }
             }
             if (extracted.current_status) {
               const statusField = document.getElementById('current_status');
-              if (statusField) statusField.value = extracted.current_status;
+              if (statusField) {
+                statusField.value = getFieldValue(extracted.current_status);
+                console.log('[OCR] Set current_status:', statusField.value);
+              }
             }
             if (extracted.yield) {
               const yieldField = document.getElementById('yield_rate');
-              if (yieldField) yieldField.value = extracted.yield;
+              if (yieldField) {
+                yieldField.value = getFieldValue(extracted.yield);
+                console.log('[OCR] Set yield_rate:', yieldField.value);
+              }
             }
             if (extracted.occupancy) {
               const occupancyField = document.getElementById('occupancy_status');
-              if (occupancyField) occupancyField.value = extracted.occupancy;
+              if (occupancyField) {
+                occupancyField.value = getFieldValue(extracted.occupancy);
+                console.log('[OCR] Set occupancy_status:', occupancyField.value);
+              }
             }
             if (extracted.price) {
               const priceField = document.getElementById('desired_price');
-              if (priceField) priceField.value = extracted.price;
+              if (priceField) {
+                priceField.value = getFieldValue(extracted.price);
+                console.log('[OCR] Set desired_price:', priceField.value);
+              }
             }
             
             console.log('[OCR] ✅ Form auto-filled successfully');

@@ -359,11 +359,86 @@ window.processMultipleOCR = async function(files) {
             if (progressSection) progressSection.classList.add('hidden');
           }, 2000);
           
-          // Show success message
-          alert('✅ OCR処理が完了しました！\n\n処理ファイル数: ' + total + '\n処理時間: ' + Math.floor((Date.now() - startTime) / 1000) + '秒\n\n抽出されたデータを確認してください。');
+          // Auto-fill form with extracted data
+          const extracted = job.extracted_data;
+          if (extracted) {
+            console.log('[OCR] Auto-filling form with extracted data...');
+            
+            // Map extracted data to form fields
+            if (extracted.property_name) {
+              const titleField = document.getElementById('title');
+              if (titleField) titleField.value = extracted.property_name;
+            }
+            if (extracted.location) {
+              const locationField = document.getElementById('location');
+              if (locationField) locationField.value = extracted.location;
+            }
+            if (extracted.station) {
+              const stationField = document.getElementById('station');
+              if (stationField) stationField.value = extracted.station;
+            }
+            if (extracted.walk_minutes) {
+              const walkField = document.getElementById('walk_minutes');
+              if (walkField) walkField.value = extracted.walk_minutes;
+            }
+            if (extracted.land_area) {
+              const landAreaField = document.getElementById('land_area');
+              if (landAreaField) landAreaField.value = extracted.land_area;
+            }
+            if (extracted.building_area) {
+              const buildingAreaField = document.getElementById('building_area');
+              if (buildingAreaField) buildingAreaField.value = extracted.building_area;
+            }
+            if (extracted.zoning) {
+              const zoningField = document.getElementById('zoning');
+              if (zoningField) zoningField.value = extracted.zoning;
+            }
+            if (extracted.building_coverage) {
+              const coverageField = document.getElementById('building_coverage');
+              if (coverageField) coverageField.value = extracted.building_coverage;
+            }
+            if (extracted.floor_area_ratio) {
+              const farField = document.getElementById('floor_area_ratio');
+              if (farField) farField.value = extracted.floor_area_ratio;
+            }
+            if (extracted.road_info) {
+              const roadField = document.getElementById('road_info');
+              if (roadField) roadField.value = extracted.road_info;
+            }
+            if (extracted.frontage) {
+              const frontageField = document.getElementById('frontage');
+              if (frontageField) frontageField.value = extracted.frontage;
+            }
+            if (extracted.structure) {
+              const structureField = document.getElementById('structure');
+              if (structureField) structureField.value = extracted.structure;
+            }
+            if (extracted.built_year) {
+              const builtYearField = document.getElementById('built_year');
+              if (builtYearField) builtYearField.value = extracted.built_year;
+            }
+            if (extracted.current_status) {
+              const statusField = document.getElementById('current_status');
+              if (statusField) statusField.value = extracted.current_status;
+            }
+            if (extracted.yield) {
+              const yieldField = document.getElementById('yield_rate');
+              if (yieldField) yieldField.value = extracted.yield;
+            }
+            if (extracted.occupancy) {
+              const occupancyField = document.getElementById('occupancy_status');
+              if (occupancyField) occupancyField.value = extracted.occupancy;
+            }
+            if (extracted.price) {
+              const priceField = document.getElementById('desired_price');
+              if (priceField) priceField.value = extracted.price;
+            }
+            
+            console.log('[OCR] ✅ Form auto-filled successfully');
+          }
           
-          // TODO: Display extracted data in form fields
-          // This would require accessing the deal form elements
+          // Show success message
+          alert('✅ OCR処理が完了しました！\n\n処理ファイル数: ' + total + '\n処理時間: ' + Math.floor((Date.now() - startTime) / 1000) + '秒\n\n抽出されたデータをフォームに反映しました。\n内容を確認して保存してください。');
           
         } else if (status === 'failed') {
           clearInterval(pollInterval);

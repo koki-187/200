@@ -1047,6 +1047,41 @@ app.get('/purchase-criteria', (c) => {
             </div>
             <p class="text-sm text-gray-600">建築コストが高くなるため、対象外としています</p>
           </div>
+          <div class="criteria-card bg-red-50 rounded-lg p-4 border border-red-200">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-times-circle text-red-600 mr-2"></i>
+              <span class="font-semibold text-gray-900">崖地域</span>
+            </div>
+            <p class="text-sm text-gray-600">地盤の安定性や擁壁工事費用の問題から、対象外としています</p>
+          </div>
+          <div class="criteria-card bg-red-50 rounded-lg p-4 border border-red-200">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-times-circle text-red-600 mr-2"></i>
+              <span class="font-semibold text-gray-900">10m以上の浸水</span>
+            </div>
+            <p class="text-sm text-gray-600">浸水想定区域（10m以上）は融資制限の対象となります</p>
+          </div>
+          <div class="criteria-card bg-red-50 rounded-lg p-4 border border-red-200">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-times-circle text-red-600 mr-2"></i>
+              <span class="font-semibold text-gray-900">ハザードマップ</span>
+            </div>
+            <p class="text-sm text-gray-600">土砂災害警戒区域・特別警戒区域は金融機関融資NGとなります</p>
+          </div>
+          <div class="criteria-card bg-red-50 rounded-lg p-4 border border-red-200">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-times-circle text-red-600 mr-2"></i>
+              <span class="font-semibold text-gray-900">河川隣接</span>
+            </div>
+            <p class="text-sm text-gray-600">河川に隣接する土地は洪水リスクが高く、対象外としています</p>
+          </div>
+          <div class="criteria-card bg-red-50 rounded-lg p-4 border border-red-200">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-times-circle text-red-600 mr-2"></i>
+              <span class="font-semibold text-gray-900">家屋倒壊エリア</span>
+            </div>
+            <p class="text-sm text-gray-600">家屋倒壊等氾濫想定区域は、金融機関融資NGとなります</p>
+          </div>
         </div>
       </div>
     </div>
@@ -3394,7 +3429,7 @@ app.get('/showcase', (c) => {
     <!-- ページタイトル -->
     <div class="mb-8">
       <h2 class="text-3xl font-bold text-gray-900 mb-2">事業ショーケース</h2>
-      <p class="text-gray-600">当社の販売エリアと実績物件をご紹介します</p>
+      <p class="text-gray-600">200棟プロジェクト 過去販売エリアと実績物件をご紹介します</p>
     </div>
 
     <!-- 事業概要 -->
@@ -3406,25 +3441,26 @@ app.get('/showcase', (c) => {
         <div class="flex-1">
           <h3 class="text-2xl font-bold text-gray-900 mb-3">関東エリア進出プロジェクト</h3>
           <p class="text-gray-700 leading-relaxed mb-4">
-            当社は愛知県全域、長野県松本市、埼玉県東部・中央部・西部の一部を中心に、
-            <span class="font-semibold text-blue-600">200戸規模のマンション用地仕入れ事業</span>を展開しております。
+            これまで<span class="font-semibold text-blue-600">愛知県全域、長野県、埼玉県一部</span>を中心に展開してきました。
           </p>
           <p class="text-gray-700 leading-relaxed mb-4">
-            このたび、<span class="font-semibold text-blue-600">関東エリアへの本格進出</span>を決定し、
-            埼玉県を中心とした首都圏での用地仕入れを強化してまいります。
+            この度、<span class="font-semibold text-blue-600">2025年135棟実績 → 2026年度から200棟を目標</span>として、
+            <span class="font-semibold text-blue-600">東京全域、埼玉県全域、神奈川県全域、千葉県西部</span>に販売エリアを広げる為、
+            <span class="font-semibold text-blue-600">関東エリアへの本格進出</span>を決定し、
+            一都三県を中心とした首都圏での用地仕入れを強化してまいります。
           </p>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <div class="text-blue-600 font-semibold mb-1">対象エリア</div>
-              <div class="text-gray-900">愛知県全域・長野県・埼玉県</div>
+              <div class="text-gray-900 text-sm">愛知県全域・長野県・埼玉県一部<br>東京全域・埼玉県全域・神奈川県全域・千葉県西部</div>
             </div>
             <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <div class="text-blue-600 font-semibold mb-1">事業規模</div>
-              <div class="text-gray-900">200戸規模マンション用地</div>
+              <div class="text-gray-900">3階建て木造アパート200棟分のマンション用地</div>
             </div>
             <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <div class="text-blue-600 font-semibold mb-1">土地条件</div>
-              <div class="text-gray-900">40坪〜70坪程度</div>
+              <div class="text-gray-900">40坪〜70坪程度（1棟としての目安）<br><span class="text-xs text-gray-600">※過去同敷地内に7棟の竣工実績あり</span></div>
             </div>
           </div>
         </div>
@@ -3456,6 +3492,26 @@ app.get('/showcase', (c) => {
           <div class="p-6">
             <h4 class="text-xl font-bold text-gray-900 mb-2">長野県・埼玉県</h4>
             <p class="text-gray-600">長野県松本市、埼玉県東部・中央部・西部の一部に展開中。</p>
+          </div>
+        </div>
+        
+        <!-- 関東エリア拡大マップ（NEW） -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+          <div class="map-container">
+            <img src="/gallery/kanto-expansion-map.jpg" alt="関東エリア拡大販売エリア" class="w-full h-auto gallery-image">
+          </div>
+          <div class="p-6">
+            <h4 class="text-xl font-bold text-gray-900 mb-2 flex items-center">
+              <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded mr-2">NEW</span>
+              関東エリア拡大
+            </h4>
+            <p class="text-gray-600 mb-2">2026年度から本格展開する新エリア：</p>
+            <ul class="text-sm text-gray-700 space-y-1">
+              <li class="flex items-center"><i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>東京全域</li>
+              <li class="flex items-center"><i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>埼玉県全域</li>
+              <li class="flex items-center"><i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>神奈川県全域</li>
+              <li class="flex items-center"><i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>千葉県西部</li>
+            </ul>
           </div>
         </div>
       </div>

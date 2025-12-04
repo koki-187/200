@@ -332,37 +332,46 @@ function initializeDropZone() {
   }
 }
 
-// ページロード時に初期化を実行
-// DOMContentLoadedとwindow.loadの両方で初期化を試みる（確実性を高める）
-let initialized = false;
+// CRITICAL FIX v3.114.0: Retry logic to wait for window.processMultipleOCR
+// Reason: Main script may have syntax errors or slow execution
+// Solution: Poll for window.processMultipleOCR availability with retries
 
-function tryInitialize() {
-  if (initialized) {
-    console.log('[Event Delegation] Already initialized, skipping');
-    return;
-  }
+console.log('[Event Delegation] Script loaded, waiting for window.load event');
+
+// Retry function to check if window.processMultipleOCR is available
+function checkAndInitialize(attempt = 0) {
+  const maxAttempts = 20; // 最大10秒待機（500ms * 20）
   
-  console.log('[Event Delegation] Starting initialization');
-  initialized = true;
-  initializeEventDelegation();
-  initializeDropZone();
-  console.log('[Event Delegation] Initialization complete');
+  console.log('[Event Delegation] ========================================');
+  console.log('[Event Delegation] Attempt', attempt + 1, '/', maxAttempts);
+  console.log('[Event Delegation] Checking window.processMultipleOCR availability...');
+  console.log('[Event Delegation] window.processMultipleOCR type:', typeof window.processMultipleOCR);
+  console.log('[Event Delegation] window.processMultipleOCR value:', window.processMultipleOCR);
+  console.log('[Event Delegation] ========================================');
+  
+  if (typeof window.processMultipleOCR === 'function') {
+    console.log('[Event Delegation] ✅✅✅ window.processMultipleOCR is available!');
+    console.log('[Event Delegation] Starting initialization');
+    initializeEventDelegation();
+    initializeDropZone();
+    console.log('[Event Delegation] Initialization complete');
+    console.log('[Event Delegation] ========================================');
+  } else if (attempt < maxAttempts) {
+    console.log('[Event Delegation] ⏳ window.processMultipleOCR not yet available, retrying in 500ms...');
+    setTimeout(() => checkAndInitialize(attempt + 1), 500);
+  } else {
+    console.error('[Event Delegation] ❌❌❌ FATAL: window.processMultipleOCR not available after', maxAttempts, 'attempts');
+    console.error('[Event Delegation] Initializing anyway, but OCR will NOT work');
+    initializeEventDelegation();
+    initializeDropZone();
+  }
 }
 
-// DOMContentLoadedで初期化を試みる（より早く実行される）
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-    console.log('[Event Delegation] DOMContentLoaded event fired');
-    tryInitialize();
-  });
-} else {
-  // すでにDOMがロード済みの場合は即座に実行
-  console.log('[Event Delegation] DOM already loaded, initializing immediately');
-  tryInitialize();
-}
-
-// window.loadでも初期化を試みる（フォールバック）
+// Start checking after window.load
 window.addEventListener('load', function() {
+  console.log('[Event Delegation] ========================================');
   console.log('[Event Delegation] window.load event fired');
-  tryInitialize();
+  console.log('[Event Delegation] Starting retry logic for window.processMultipleOCR');
+  console.log('[Event Delegation] ========================================');
+  checkAndInitialize();
 });

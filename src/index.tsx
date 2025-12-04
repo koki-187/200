@@ -7151,9 +7151,8 @@ app.get('/deals/new', (c) => {
         }
       }
     }
-    
-    // OCR処理関数をグローバルに公開（イベント委譲から呼び出し可能にする）
-    window.processMultipleOCR = processMultipleOCR;
+    // NOTE: window.processMultipleOCR is already defined above (Line 6783)
+    // No need to reassign here
 
     // OCR結果編集UIの表示
     function displayOCRResultEditor(extractedData) {

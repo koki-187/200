@@ -6772,7 +6772,8 @@ app.get('/deals/new', (c) => {
       }
     }
 
-    async function processMultipleOCR(files) {
+    // CRITICAL FIX: Export to global scope for deals-new-events.js
+    window.processMultipleOCR = async function processMultipleOCR(files) {
       console.log('[OCR] ========================================');
       console.log('[OCR] processMultipleOCR CALLED');
       console.log('[OCR] Arguments received:', arguments);
@@ -9831,7 +9832,7 @@ app.get('/deals/new', (c) => {
     }
 
     // テンプレート選択
-    async function selectTemplate(templateId) {
+    window.selectTemplate = async function selectTemplate(templateId) {
       try {
         const template = currentTemplates.find(t => t.id === templateId);
         if (!template) {

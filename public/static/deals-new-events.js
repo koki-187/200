@@ -317,13 +317,18 @@ function initializeDropZone() {
         console.log('[Event Delegation] Valid files:', files.length);
         console.log('[Event Delegation] Checking for processMultipleOCR function...');
         
-        if (typeof processMultipleOCR === 'function') {
+        // CRITICAL FIX: Check window.processMultipleOCR first (global scope)
+        const processFunc = window.processMultipleOCR || (typeof processMultipleOCR === 'function' ? processMultipleOCR : null);
+        
+        if (processFunc) {
           console.log('[Event Delegation] ✅ processMultipleOCR found, calling with', files.length, 'files');
           setTimeout(() => {
-            processMultipleOCR(files);
+            processFunc(files);
           }, 150); // iOS stability delay
         } else {
           console.error('[Event Delegation] ❌ processMultipleOCR function not found');
+          console.error('[Event Delegation] window.processMultipleOCR:', typeof window.processMultipleOCR);
+          console.error('[Event Delegation] local processMultipleOCR:', typeof processMultipleOCR);
           alert('OCR処理関数が見つかりません。ページを再読み込みしてください。');
         }
       } else {

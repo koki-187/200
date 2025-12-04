@@ -690,61 +690,121 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 /**
- * 物件情報抽出用システムプロンプト（最適化版 - 800トークン以下）
+ * 物件情報抽出用システムプロンプト（v3.126.0 - 精度向上版）
  */
-const PROPERTY_EXTRACTION_PROMPT = `Extract property data from Japanese real estate documents (登記簿謄本, 物件概要書).
+const PROPERTY_EXTRACTION_PROMPT = `あなたは日本の不動産書類（登記簿謄本、物件概要書、重要事項説明書）から情報を抽出するエキスパートです。
 
-FIELDS TO EXTRACT:
-property_name: 物件名/建物の名称
-location: 所在/所在地 (full address)
-station: 最寄駅 (name only)
-walk_minutes: 徒歩X分 (number only)
-land_area: 地積/土地面積 (with unit)
-building_area: 床面積/建物面積 (with unit)
-zoning: 用途地域 (full name)
-building_coverage: 建蔽率/建ぺい率 (%)
-floor_area_ratio: 容積率 (%)
-price: 価格/売買価格 (with 万円)
-structure: 構造 (e.g. 木造2階建)
-built_year: 築年月/建築年月
-road_info: 接道/道路
-current_status: 現況
-yield: 利回り (%)
-occupancy: 入居状況
+【重要】以下のフィールドを必ず探して抽出してください：
 
-OUTPUT FORMAT (JSON only, NO markdown):
+1. property_name（物件名）
+   - 探す場所: 表題部、物件の表示、建物名称
+   - 例: 「〇〇マンション」「〇〇アパート」「〇〇ハイツ」
+   - ない場合: 所在地から「川崎市幸区塚越物件」のように生成
+
+2. location（所在地）
+   - 探す場所: 所在、不動産の表示
+   - 形式: 都道府県+市区町村+町名+番地
+   - 例: 「川崎市幸区塚越四丁目123番地」
+
+3. station（最寄駅）
+   - 探す場所: 交通、アクセス、最寄駅
+   - 形式: 駅名のみ（路線名不要）
+   - 例: 「川崎駅」「矢向駅」
+
+4. walk_minutes（徒歩分数）
+   - 探す場所: 交通、徒歩X分
+   - 形式: 数字のみ
+   - 例: 「10」（「徒歩10分」→「10」）
+
+5. land_area（土地面積）
+   - 探す場所: 地積、土地面積
+   - 形式: 数値+単位
+   - 例: 「150.00㎡」「45.36坪」
+
+6. building_area（建物面積）
+   - 探す場所: 床面積、延床面積
+   - 形式: 数値+単位
+   - 例: 「80.00㎡」「24.20坪」
+
+7. zoning（用途地域）
+   - 探す場所: 用途地域、都市計画
+   - 例: 「第一種低層住居専用地域」「準工業地域」
+
+8. building_coverage（建蔽率）⭐重要⭐
+   - 探す場所: 建蔽率、建ぺい率
+   - 形式: 数値のみ（%記号不要）
+   - 例: 「60」（「建蔽率60%」→「60」）
+
+9. floor_area_ratio（容積率）⭐重要⭐
+   - 探す場所: 容積率
+   - 形式: 数値のみ（%記号不要）
+   - 例: 「200」（「容積率200%」→「200」）
+
+10. price（価格）
+    - 探す場所: 売買価格、価格、販売価格
+    - 形式: 数値+単位
+    - 例: 「5,800万円」「58,000千円」
+
+11. structure（構造）
+    - 探す場所: 構造、建物の構造
+    - 例: 「木造2階建」「鉄筋コンクリート造3階建」
+
+12. built_year（築年月）
+    - 探す場所: 建築年月日、竣工年月
+    - 形式: 和暦または西暦
+    - 例: 「令和2年3月」「2020年3月」
+
+13. road_info（接道情報）
+    - 探す場所: 接道状況、道路
+    - 例: 「北側 幅員4.0m 公道」
+
+14. current_status（現況）
+    - 探す場所: 現況、引渡条件
+    - 例: 「空家」「居住中」「更地」
+
+15. yield（利回り）
+    - 探す場所: 表面利回り、想定利回り
+    - 形式: 数値のみ
+    - 例: 「5.2」（「利回り5.2%」→「5.2」）
+
+16. occupancy（入居状況）
+    - 探す場所: 稼働率、入居率
+    - 例: 「満室」「8戸中7戸入居」
+
+【出力形式】以下のJSON形式で出力してください（マークダウン不要、説明不要）：
+
 {
-  "property_name": {"value": "text or null", "confidence": 0.0-1.0},
-  "location": {"value": "text or null", "confidence": 0.0-1.0},
-  "station": {"value": "text or null", "confidence": 0.0-1.0},
-  "walk_minutes": {"value": "text or null", "confidence": 0.0-1.0},
-  "land_area": {"value": "text or null", "confidence": 0.0-1.0},
-  "building_area": {"value": "text or null", "confidence": 0.0-1.0},
-  "zoning": {"value": "text or null", "confidence": 0.0-1.0},
-  "building_coverage": {"value": "text or null", "confidence": 0.0-1.0},
-  "floor_area_ratio": {"value": "text or null", "confidence": 0.0-1.0},
-  "price": {"value": "text or null", "confidence": 0.0-1.0},
-  "structure": {"value": "text or null", "confidence": 0.0-1.0},
-  "built_year": {"value": "text or null", "confidence": 0.0-1.0},
-  "road_info": {"value": "text or null", "confidence": 0.0-1.0},
-  "current_status": {"value": "text or null", "confidence": 0.0-1.0},
-  "yield": {"value": "text or null", "confidence": 0.0-1.0},
-  "occupancy": {"value": "text or null", "confidence": 0.0-1.0},
+  "property_name": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "location": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "station": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "walk_minutes": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "land_area": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "building_area": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "zoning": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "building_coverage": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "floor_area_ratio": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "price": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "structure": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "built_year": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "road_info": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "current_status": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "yield": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "occupancy": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
   "overall_confidence": 0.0-1.0
 }
 
-CONFIDENCE RULES:
-0.9-1.0: Clear printed text, complete info
-0.75-0.89: Readable but small/blurry
-0.5-0.74: Difficult to read, partial info
-0.0: Not found or unreadable
+【信頼度スコア（confidence）の基準】
+- 0.9-1.0: 明瞭な印刷テキスト、完全な情報
+- 0.75-0.89: 読めるが小さい/ぼやけている
+- 0.5-0.74: 読みにくい、部分的な情報
+- 0.0-0.49: 見つからない、読めない → valueをnullに
 
-CRITICAL RULES:
-1. Return ONLY valid JSON (no markdown, no explanations)
-2. Start with { and end with }
-3. Use null for unclear fields (confidence < 0.5)
-4. Extract ONLY visible text, no guessing
-5. Preserve original units and formatting`;
+【必須ルール】
+1. 有効なJSONのみ返す（マークダウン不要、説明不要）
+2. {で始まり}で終わる
+3. 読めないフィールドはvalueをnullに
+4. 推測禁止。見えるテキストのみ抽出
+5. 元の単位とフォーマットを保持`;
 
 /**
  * OpenAI APIレスポンスを正規化
@@ -790,6 +850,18 @@ function normalizePropertyData(rawData: any): any {
     normalized.overall_confidence = rawData.overall_confidence;
   } else {
     normalized.overall_confidence = 0.5;
+  }
+  
+  // 物件名が空の場合、所在地から生成
+  if ((!normalized.property_name.value || normalized.property_name.value === null) && 
+      normalized.location.value && normalized.location.value !== null) {
+    const location = String(normalized.location.value);
+    // 「川崎市幸区塚越四丁目」→「川崎市幸区塚越物件」
+    const simplified = location.replace(/[一二三四五六七八九十]+丁目.*/, '').replace(/[0-9]+番地.*/, '').replace(/[０-９]+.*/, '');
+    normalized.property_name = {
+      value: simplified + '物件',
+      confidence: 0.6  // 自動生成なので信頼度は中程度
+    };
   }
   
   return normalized;
@@ -859,6 +931,22 @@ function mergePropertyData(results: any[]): any {
   }
   
   merged.overall_confidence = count > 0 ? totalConfidence / count : 0.5;
+  
+  // 物件名が空の場合、所在地から生成（マージ後の最終チェック）
+  if ((!merged.property_name || !merged.property_name.value || merged.property_name.value === null) && 
+      merged.location && merged.location.value && merged.location.value !== null) {
+    const location = String(merged.location.value);
+    // 「川崎市幸区塚越四丁目123番地」→「川崎市幸区塚越物件」
+    const simplified = location
+      .replace(/[一二三四五六七八九十]+丁目.*/, '')
+      .replace(/[0-9]+番地.*/, '')
+      .replace(/[０-９]+.*/, '')
+      .replace(/\s+/g, '');
+    merged.property_name = {
+      value: simplified + '物件',
+      confidence: 0.6  // 自動生成なので信頼度は中程度
+    };
+  }
   
   return merged;
 }

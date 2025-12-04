@@ -3538,6 +3538,17 @@ app.get('/showcase', (c) => {
           </div>
         </div>
 
+        <!-- 長野県・埼玉県マップ -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+          <div class="map-container">
+            <img src="/gallery/nagano-saitama-map.jpg" alt="長野県・埼玉県販売エリア" class="gallery-image">
+          </div>
+          <div class="p-6 gallery-card-content">
+            <h4 class="text-xl font-bold text-gray-900 mb-2">長野県・埼玉県</h4>
+            <p class="text-gray-600">長野県（松本市等）および埼玉県の一部地域をカバーしています。</p>
+          </div>
+        </div>
+
         <!-- 関東エリア拡大マップ（NEW） -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
           <div class="map-container">

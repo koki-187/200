@@ -3264,15 +3264,30 @@ app.get('/showcase', (c) => {
     .map-container {
       position: relative;
       overflow: hidden;
-      background: #ffffff;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 280px;
+    }
+    .map-container .gallery-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
     }
     .map-container.featured {
-      height: 500px;
-      background: #ffffff;
+      height: 450px;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .map-container.featured .gallery-image {
-      height: 100%;
-      width: 100%;
+      max-height: 100%;
+      max-width: 100%;
+      width: auto;
+      height: auto;
       object-fit: contain;
       object-position: center;
     }

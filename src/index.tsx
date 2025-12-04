@@ -3271,7 +3271,8 @@ app.get('/showcase', (c) => {
     }
     .map-container.featured .gallery-image {
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
+      object-position: center;
     }
     .grid-uniform > .gallery-card {
       min-height: 400px;
@@ -3494,7 +3495,29 @@ app.get('/showcase', (c) => {
         <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i>販売エリア
       </h3>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 grid-uniform">
-        <!-- 全エリア総合マップ (NEW - FEATURED) -->
+        <!-- 愛知県マップ -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+          <div class="map-container">
+            <img src="/gallery/aichi-map.jpg" alt="愛知県販売エリア" class="gallery-image">
+          </div>
+          <div class="p-6 gallery-card-content">
+            <h4 class="text-xl font-bold text-gray-900 mb-2">愛知県全域</h4>
+            <p class="text-gray-600">県内全域をカバー。名古屋市を中心に豊富な実績があります。</p>
+          </div>
+        </div>
+
+        <!-- 長野県・埼玉県マップ -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
+          <div class="map-container">
+            <img src="/gallery/nagano-saitama-map.jpg" alt="長野県・埼玉県販売エリア" class="gallery-image">
+          </div>
+          <div class="p-6 gallery-card-content">
+            <h4 class="text-xl font-bold text-gray-900 mb-2">長野県・埼玉県</h4>
+            <p class="text-gray-600">長野県（松本市等）および埼玉県の一部地域をカバーしています。</p>
+          </div>
+        </div>
+        
+        <!-- 全エリア総合マップ (FEATURED) -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card col-span-full">
           <div class="map-container featured">
             <img src="/gallery/japan-sales-area-map.jpg" alt="全販売エリア総合マップ" class="gallery-image">
@@ -3524,28 +3547,6 @@ app.get('/showcase', (c) => {
                 </ul>
               </div>
             </div>
-          </div>
-        </div>
-        
-        <!-- 愛知県マップ -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
-          <div class="map-container">
-            <img src="/gallery/aichi-map.jpg" alt="愛知県販売エリア" class="gallery-image">
-          </div>
-          <div class="p-6 gallery-card-content">
-            <h4 class="text-xl font-bold text-gray-900 mb-2">愛知県全域</h4>
-            <p class="text-gray-600">県内全域をカバー。名古屋市を中心に豊富な実績があります。</p>
-          </div>
-        </div>
-
-        <!-- 長野県・埼玉県マップ -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
-          <div class="map-container">
-            <img src="/gallery/nagano-saitama-map.jpg" alt="長野県・埼玉県販売エリア" class="gallery-image">
-          </div>
-          <div class="p-6 gallery-card-content">
-            <h4 class="text-xl font-bold text-gray-900 mb-2">長野県・埼玉県</h4>
-            <p class="text-gray-600">長野県（松本市等）および埼玉県の一部地域をカバーしています。</p>
           </div>
         </div>
       </div>

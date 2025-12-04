@@ -3239,6 +3239,9 @@ app.get('/showcase', (c) => {
     .gallery-card {
       transition: all 0.3s ease;
       overflow: hidden;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
     }
     .gallery-card:hover {
       transform: translateY(-8px);
@@ -3246,14 +3249,32 @@ app.get('/showcase', (c) => {
     }
     .gallery-image {
       transition: transform 0.5s ease;
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
     }
     .gallery-card:hover .gallery-image {
-      transform: scale(1.1);
+      transform: scale(1.05);
+    }
+    .gallery-card-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
     .map-container {
       position: relative;
       overflow: hidden;
-      border-radius: 1rem;
+      background: #f3f4f6;
+    }
+    .map-container.featured {
+      height: 400px;
+    }
+    .map-container.featured .gallery-image {
+      height: 100%;
+      object-fit: contain;
+    }
+    .grid-uniform > .gallery-card {
+      min-height: 400px;
     }
     /* ハンバーガーメニューボタン */
     .hamburger-btn {
@@ -3472,13 +3493,13 @@ app.get('/showcase', (c) => {
       <h3 class="text-2xl font-bold text-gray-900 mb-4">
         <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i>販売エリア
       </h3>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 grid-uniform">
         <!-- 全エリア総合マップ (NEW - FEATURED) -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card col-span-full">
-          <div class="map-container">
-            <img src="/gallery/japan-sales-area-map.jpg" alt="全販売エリア総合マップ" class="w-full h-auto gallery-image">
+          <div class="map-container featured">
+            <img src="/gallery/japan-sales-area-map.jpg" alt="全販売エリア総合マップ" class="gallery-image">
           </div>
-          <div class="p-6">
+          <div class="p-6 gallery-card-content">
             <h4 class="text-2xl font-bold text-gray-900 mb-3 flex items-center">
               <span class="bg-gradient-to-r from-orange-600 to-blue-600 text-white text-xs px-3 py-1 rounded mr-3">全販売エリア</span>
               200棟プロジェクト - 全6エリア展開
@@ -3509,31 +3530,20 @@ app.get('/showcase', (c) => {
         <!-- 愛知県マップ -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
           <div class="map-container">
-            <img src="/gallery/aichi-map.jpg" alt="愛知県販売エリア" class="w-full h-auto gallery-image">
+            <img src="/gallery/aichi-map.jpg" alt="愛知県販売エリア" class="gallery-image">
           </div>
-          <div class="p-6">
+          <div class="p-6 gallery-card-content">
             <h4 class="text-xl font-bold text-gray-900 mb-2">愛知県全域</h4>
             <p class="text-gray-600">県内全域をカバー。名古屋市を中心に豊富な実績があります。</p>
           </div>
         </div>
 
-        <!-- 長野・埼玉マップ -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
-          <div class="map-container">
-            <img src="/gallery/nagano-saitama-map.jpg" alt="長野県・埼玉県販売エリア" class="w-full h-auto gallery-image">
-          </div>
-          <div class="p-6">
-            <h4 class="text-xl font-bold text-gray-900 mb-2">長野県・埼玉県</h4>
-            <p class="text-gray-600">長野県松本市、埼玉県東部・中央部・西部の一部に展開中。</p>
-          </div>
-        </div>
-        
         <!-- 関東エリア拡大マップ（NEW） -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
           <div class="map-container">
-            <img src="/gallery/kanto-expansion-map.jpg" alt="関東エリア拡大販売エリア" class="w-full h-auto gallery-image">
+            <img src="/gallery/kanto-expansion-map.jpg" alt="関東エリア拡大販売エリア" class="gallery-image">
           </div>
-          <div class="p-6">
+          <div class="p-6 gallery-card-content">
             <h4 class="text-xl font-bold text-gray-900 mb-2 flex items-center">
               <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded mr-2">NEW</span>
               関東エリア拡大
@@ -3559,24 +3569,24 @@ app.get('/showcase', (c) => {
       <!-- 外観 -->
       <div class="mb-8">
         <h4 class="text-xl font-semibold text-gray-800 mb-4">外観デザイン</h4>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 grid-uniform">
           <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
             <div class="map-container">
-              <img src="/gallery/building-1.jpg" alt="物件外観1" class="w-full h-auto gallery-image">
+              <img src="/gallery/buildings-collection.jpg" alt="物件外観コレクション" class="gallery-image">
             </div>
-            <div class="p-6">
-              <h5 class="text-lg font-bold text-gray-900 mb-2">モダン外観タイプA</h5>
-              <p class="text-gray-600">シンプルで洗練されたグレータイル仕上げ。高級感のあるデザイン。</p>
+            <div class="p-6 gallery-card-content">
+              <h5 class="text-lg font-bold text-gray-900 mb-2">外観バリエーション</h5>
+              <p class="text-gray-600">グレー系、ホワイト系、ブラック系の3タイプをご用意しております。</p>
             </div>
           </div>
 
           <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
             <div class="map-container">
-              <img src="/gallery/buildings-collection.jpg" alt="物件外観コレクション" class="w-full h-auto gallery-image">
+              <img src="/gallery/building-1.jpg" alt="物件外観1" class="gallery-image">
             </div>
-            <div class="p-6">
-              <h5 class="text-lg font-bold text-gray-900 mb-2">外観バリエーション</h5>
-              <p class="text-gray-600">グレー系、ホワイト系、ブラック系の3タイプをご用意しております。</p>
+            <div class="p-6 gallery-card-content">
+              <h5 class="text-lg font-bold text-gray-900 mb-2">モダン外観タイプA</h5>
+              <p class="text-gray-600">シンプルで洗練されたグレータイル仕上げ。高級感のあるデザイン。</p>
             </div>
           </div>
         </div>
@@ -3587,9 +3597,9 @@ app.get('/showcase', (c) => {
         <h4 class="text-xl font-semibold text-gray-800 mb-4">内装デザイン</h4>
         <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
           <div class="map-container">
-            <img src="/gallery/interior-collection.jpg" alt="内装コレクション" class="w-full h-auto gallery-image">
+            <img src="/gallery/interior-collection.jpg" alt="内装コレクション" class="gallery-image" style="height: 300px;">
           </div>
-          <div class="p-6">
+          <div class="p-6 gallery-card-content">
             <h5 class="text-lg font-bold text-gray-900 mb-4">標準仕様</h5>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div class="text-sm">
@@ -3625,53 +3635,37 @@ app.get('/showcase', (c) => {
       <div class="mb-8">
         <h4 class="text-xl font-semibold text-gray-800 mb-4">9戸プラン 過去事例</h4>
         
-        <!-- 外観 -->
-        <div class="mb-6">
-          <h5 class="text-lg font-medium text-gray-700 mb-3">外観</h5>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 grid-uniform">
+          <!-- 外観 -->
           <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
             <div class="map-container">
-              <img src="/gallery/9units-exterior.jpg" alt="9戸プラン外観" class="w-full h-auto gallery-image">
+              <img src="/gallery/9units-exterior.jpg" alt="9戸プラン外観" class="gallery-image">
             </div>
-            <div class="p-6">
+            <div class="p-6 gallery-card-content">
+              <h5 class="text-lg font-bold text-gray-900 mb-2">外観</h5>
               <p class="text-gray-600">昼夜の表情が異なる洗練されたデザイン。白系とダーク系のツートンカラーで高級感を演出。</p>
             </div>
           </div>
-        </div>
 
-        <!-- 内観 -->
-        <div class="mb-6">
-          <h5 class="text-lg font-medium text-gray-700 mb-3">内観</h5>
+          <!-- 内観 -->
           <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
             <div class="map-container">
-              <img src="/gallery/9units-interior-living.jpg" alt="9戸プラン内観リビング" class="w-full h-auto gallery-image">
+              <img src="/gallery/9units-interior-living.jpg" alt="9戸プラン内観リビング" class="gallery-image">
             </div>
-            <div class="p-6">
+            <div class="p-6 gallery-card-content">
+              <h5 class="text-lg font-bold text-gray-900 mb-2">内観</h5>
               <p class="text-gray-600">明るく開放的なリビング空間。北欧スタイルの家具との相性も抜群です。</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 内観・設備 -->
-        <div class="mb-6">
-          <h5 class="text-lg font-medium text-gray-700 mb-3">内観・設備</h5>
-          <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
-            <div class="map-container">
-              <img src="/gallery/9units-interior-facilities.jpg" alt="9戸プラン内観設備" class="w-full h-auto gallery-image">
-            </div>
-            <div class="p-6">
-              <p class="text-gray-600">浴室乾燥機、独立洗面台、ウォシュレット、TVモニターインターホン、エアコン完備。</p>
             </div>
           </div>
         </div>
 
         <!-- 間取り図 -->
         <div class="mb-6">
-          <h5 class="text-lg font-medium text-gray-700 mb-3">間取り図</h5>
           <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
             <div class="map-container">
-              <img src="/gallery/9units-floorplan.jpg" alt="9戸プラン間取り図" class="w-full h-auto gallery-image">
+              <img src="/gallery/9units-floorplan.jpg" alt="9戸プラン間取り図" class="gallery-image" style="height: 300px;">
             </div>
-            <div class="p-6">
+            <div class="p-6 gallery-card-content">
               <h6 class="font-semibold text-gray-900 mb-3">建物概要</h6>
               <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                 <div>
@@ -3714,13 +3708,13 @@ app.get('/showcase', (c) => {
         2×4（ツー・バイ・フォー）工法の住宅に対して、資材調達・CAD入力・材料プレカット・パネル加工・現場搬入・建て方までを一貫した生産体制にて提供しています。
       </p>
       
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 grid-uniform">
         <!-- 事業概要 -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
           <div class="map-container">
-            <img src="/gallery/precut-business-overview.jpg" alt="プレカット事業部概要" class="w-full h-auto gallery-image">
+            <img src="/gallery/precut-business-overview.jpg" alt="プレカット事業部概要" class="gallery-image">
           </div>
-          <div class="p-6">
+          <div class="p-6 gallery-card-content">
             <h5 class="text-lg font-bold text-gray-900 mb-2">事業概要</h5>
             <ul class="space-y-2 text-sm text-gray-600">
               <li class="flex items-start">
@@ -3746,9 +3740,9 @@ app.get('/showcase', (c) => {
         <!-- メーカーとしての特長 -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
           <div class="map-container">
-            <img src="/gallery/precut-business-features.jpg" alt="2×4メーカーとしての特長" class="w-full h-auto gallery-image">
+            <img src="/gallery/precut-business-features.jpg" alt="2×4メーカーとしての特長" class="gallery-image">
           </div>
-          <div class="p-6">
+          <div class="p-6 gallery-card-content">
             <h5 class="text-lg font-bold text-gray-900 mb-2">2×4メーカーとしての3つの特長</h5>
             <ul class="space-y-2 text-sm text-gray-600">
               <li class="flex items-start">
@@ -3770,9 +3764,9 @@ app.get('/showcase', (c) => {
         <!-- ZEH基準・建物デザイン -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden gallery-card">
           <div class="map-container">
-            <img src="/gallery/precut-business-quality.jpg" alt="ZEH基準と建物品質" class="w-full h-auto gallery-image">
+            <img src="/gallery/precut-business-quality.jpg" alt="ZEH基準と建物品質" class="gallery-image">
           </div>
-          <div class="p-6">
+          <div class="p-6 gallery-card-content">
             <h5 class="text-lg font-bold text-gray-900 mb-2">高品質・高性能</h5>
             <ul class="space-y-2 text-sm text-gray-600">
               <li class="flex items-start">

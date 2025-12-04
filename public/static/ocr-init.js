@@ -122,16 +122,15 @@ window.processMultipleOCR = async function(files) {
   console.log('[OCR] iOS Detection:', /iPhone|iPad|iPod/.test(navigator.userAgent));
   console.log('[OCR] ========================================');
   
-  // Get auth token (required)
+  // Get auth token (optional - server will validate)
   const token = localStorage.getItem('auth_token');
   
   if (!token) {
-    console.error('[OCR] ❌ No auth token found');
-    displayOCRError('認証エラー', '認証トークンが見つかりません。ページを再読み込みしてログインし直してください。');
-    return;
+    console.warn('[OCR] ⚠️ No auth token found in localStorage');
+    console.log('[OCR] Attempting OCR without explicit token (server-side auth will be checked)');
+  } else {
+    console.log('[OCR] ✅ Auth token found');
   }
-  
-  console.log('[OCR] ✅ Auth token found');
   
   // Separate PDF and image files
   const pdfFiles = files.filter(f => f.type === 'application/pdf');
@@ -254,11 +253,17 @@ window.processMultipleOCR = async function(files) {
     console.log('[OCR] ========================================');
     
     // Create OCR job with 30 second timeout (iOS Safari support)
+    const headers = {
+      'Content-Type': 'multipart/form-data'
+    };
+    
+    // Add Authorization header only if token exists
+    if (token) {
+      headers['Authorization'] = 'Bearer ' + token;
+    }
+    
     const createResponse = await axios.post('/api/ocr-jobs', formData, {
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'multipart/form-data'
-      },
+      headers: headers,
       timeout: 30000,
       onUploadProgress: (event) => {
         const percent = Math.round((event.loaded * 100) / event.total);
@@ -292,8 +297,13 @@ window.processMultipleOCR = async function(files) {
         }
         
         // Get job status
+        const statusHeaders = {};
+        if (token) {
+          statusHeaders['Authorization'] = 'Bearer ' + token;
+        }
+        
         const statusResponse = await axios.get('/api/ocr-jobs/' + jobId, {
-          headers: { 'Authorization': 'Bearer ' + token },
+          headers: statusHeaders,
           timeout: 10000
         });
         

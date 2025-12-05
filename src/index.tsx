@@ -5968,7 +5968,7 @@ app.get('/deals/new', (c) => {
     // ========================================
     // CRITICAL: Earliest possible log to detect script execution
     // ========================================
-    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.142.0 ==========');
+    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.143.0 ==========');
     console.log('[CRITICAL DEBUG] typeof localStorage:', typeof localStorage);
     console.log('[CRITICAL DEBUG] typeof JSON:', typeof JSON);
     
@@ -8878,7 +8878,7 @@ app.get('/deals/new', (c) => {
     }
     
     // DOMContentLoaded後に初期化を実行（フェイルセーフ付き）
-    console.log('[Main] ========== v3.142.0 ==========');
+    console.log('[Main] ========== v3.143.0 ==========');
     console.log('[Main] Script loaded, document.readyState:', document.readyState);
     console.log('[Main] Token:', token ? 'EXISTS (' + token.length + ' chars)' : 'NULL');
     console.log('[Main] User:', user ? JSON.stringify(user) : 'NULL');
@@ -10710,10 +10710,10 @@ app.get('/deals/new', (c) => {
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
   <!-- This ensures window.processMultipleOCR placeholder exists even if main script has errors -->
-  <script src="/static/ocr-init.js?v=3.134.0"></script>
+  <script src="/static/ocr-init.js?v=3.142.0"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
-  <script src="/static/deals-new-events.js?v=3.134.0"></script>
-  <!-- Version: v3.134.0 - Cache busting enabled -->
+  <script src="/static/deals-new-events.js?v=3.142.0"></script>
+  <!-- Version: v3.142.0 - Cache busting enabled -->
 </body>
 </html>
   `);

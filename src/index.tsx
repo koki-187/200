@@ -5971,9 +5971,17 @@ app.get('/deals/new', (c) => {
     // ========================================
     // 2. 認証チェック
     // ========================================
+    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.138.0 ==========');
+    console.log('[CRITICAL DEBUG] Token exists:', !!token);
+    console.log('[CRITICAL DEBUG] User:', user);
+    console.log('[CRITICAL DEBUG] axios loaded:', typeof axios);
+    
     if (!token) {
+      console.log('[CRITICAL DEBUG] No token, redirecting to /');
       window.location.href = '/';
     }
+    
+    console.log('[CRITICAL DEBUG] Token verified, continuing...');
 
     // ========================================
     // 3. グローバル関数定義（認証後）
@@ -5988,7 +5996,10 @@ app.get('/deals/new', (c) => {
     
     // ユーザー名表示
     if (user.name) {
-      document.getElementById('user-name').textContent = user.name;
+      const userNameEl = document.getElementById('user-name');
+      if (userNameEl) {
+        userNameEl.textContent = user.name;
+      }
     }
 
     // ログアウト関数（グローバル）
@@ -8842,7 +8853,7 @@ app.get('/deals/new', (c) => {
     }
     
     // DOMContentLoaded後に初期化を実行（フェイルセーフ付き）
-    console.log('[Main] ========== v3.137.0 ==========');
+    console.log('[Main] ========== v3.138.0 ==========');
     console.log('[Main] Script loaded, document.readyState:', document.readyState);
     console.log('[Main] Token:', token ? 'EXISTS (' + token.length + ' chars)' : 'NULL');
     console.log('[Main] User:', user ? JSON.stringify(user) : 'NULL');

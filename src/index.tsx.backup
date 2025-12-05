@@ -5968,7 +5968,7 @@ app.get('/deals/new', (c) => {
     // ========================================
     // CRITICAL: Earliest possible log to detect script execution
     // ========================================
-    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.142.0 ==========');
+    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.140.0 ==========');
     console.log('[CRITICAL DEBUG] typeof localStorage:', typeof localStorage);
     console.log('[CRITICAL DEBUG] typeof JSON:', typeof JSON);
     
@@ -6164,10 +6164,10 @@ app.get('/deals/new', (c) => {
           // ユーザーに確認ダイアログを表示
           const fileName = job.file_names ? job.file_names.join(', ') : '不明';
           const statusText = job.status === 'processing' ? '処理中' : '待機中';
-          const confirmMessage = '前回のOCR処理が中断されています。  ' +
-            'ファイル: ' + fileName + ' ' +
-            'ステータス: ' + statusText + '  ' +
-            '処理を再開しますか？ ' +
+          const confirmMessage = '前回のOCR処理が中断されています。\\n\\n' +
+            'ファイル: ' + fileName + '\\n' +
+            'ステータス: ' + statusText + '\\n\\n' +
+            '処理を再開しますか？\\n' +
             '「キャンセル」を選択すると、前回の処理をクリアして新しくOCRを開始できます。';
           const shouldRestore = confirm(confirmMessage);
           
@@ -7220,7 +7220,7 @@ app.get('/deals/new', (c) => {
         // iOS環境では追加のアラート表示
         if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
           console.error('[OCR] iOS環境でのエラー - ユーザーに通知します');
-          alert('OCR処理エラー  ' + errorTitle + ' ' + errorMessage + '  詳細はSafari開発者ツールのコンソールを確認してください。');
+          alert('OCR処理エラー\n\n' + errorTitle + '\n' + errorMessage + '\n\n詳細はSafari開発者ツールのコンソールを確認してください。');
         }
       }
     }
@@ -7456,27 +7456,27 @@ app.get('/deals/new', (c) => {
         
         if (error.response.status === 400) {
           message = 'アップロードされたファイルに問題があります。';
-          solution = '✓ ファイル形式を確認してください（PNG、JPG、PDF対応） ✓ ファイルサイズが大きすぎないか確認してください（1ファイル10MB以下推奨）';
+          solution = '✓ ファイル形式を確認してください（PNG、JPG、PDF対応）\\n✓ ファイルサイズが大きすぎないか確認してください（1ファイル10MB以下推奨）';
         } else if (error.response.status === 401) {
           message = '認証エラーが発生しました。';
           solution = '✓ ページを再読み込みしてログインし直してください';
         } else if (error.response.status === 500) {
           message = errorData.error || 'サーバーエラーが発生しました。';
-          solution = '✓ ファイルが破損していないか確認してください ✓ 画像の品質が十分か確認してください（解像度300dpi以上推奨） ✓ しばらく待ってから再試行してください';
+          solution = '✓ ファイルが破損していないか確認してください\\n✓ 画像の品質が十分か確認してください（解像度300dpi以上推奨）\\n✓ しばらく待ってから再試行してください';
         } else {
           message = errorData.error || 'エラーが発生しました。';
           solution = '✓ 問題が続く場合は管理者にお問い合わせください';
         }
       } else if (error.request) {
         message = 'サーバーに接続できませんでした。';
-        solution = '✓ インターネット接続を確認してください ✓ しばらく待ってから再試行してください';
+        solution = '✓ インターネット接続を確認してください\\n✓ しばらく待ってから再試行してください';
       } else {
         message = error.message || '不明なエラーが発生しました。';
         solution = '✓ ページを再読み込みして再試行してください';
       }
       
       errorMessage.textContent = message;
-      errorSolution.innerHTML = solution.split(' ').map(function(line) { return '<div>' + line + '</div>'; }).join('');
+      errorSolution.innerHTML = solution.split('\\n').map(function(line) { return '<div>' + line + '</div>'; }).join('');
     }
     
     // エラー閉じるボタン
@@ -8878,7 +8878,7 @@ app.get('/deals/new', (c) => {
     }
     
     // DOMContentLoaded後に初期化を実行（フェイルセーフ付き）
-    console.log('[Main] ========== v3.142.0 ==========');
+    console.log('[Main] ========== v3.140.0 ==========');
     console.log('[Main] Script loaded, document.readyState:', document.readyState);
     console.log('[Main] Token:', token ? 'EXISTS (' + token.length + ' chars)' : 'NULL');
     console.log('[Main] User:', user ? JSON.stringify(user) : 'NULL');
@@ -8973,7 +8973,7 @@ app.get('/deals/new', (c) => {
         const metadata = response.data.metadata;
         
         if (!properties || properties.length === 0) {
-          alert(metadata.prefectureName + metadata.cityName + 'のデータが見つかりませんでした。 別の住所で試してください。');
+          alert(metadata.prefectureName + metadata.cityName + 'のデータが見つかりませんでした。\n別の住所で試してください。');
           return;
         }
         
@@ -9042,7 +9042,7 @@ app.get('/deals/new', (c) => {
         }
         
         if (filledCount > 0) {
-          alert('✅ ' + filledCount + '項目を自動入力しました  入力項目: ' + filledFields.join(', ') + '  データ元: 不動産情報ライブラリ（' + metadata.year + '年第' + metadata.quarter + '四半期）  ※ハザード情報も取得しました（下部に表示）');
+          alert('✅ ' + filledCount + '項目を自動入力しました\n\n入力項目: ' + filledFields.join(', ') + '\n\nデータ元: 不動産情報ライブラリ（' + metadata.year + '年第' + metadata.quarter + '四半期）\n\n※ハザード情報も取得しました（下部に表示）');
         } else {
           alert('入力可能な項目が見つかりませんでした（既に入力済みの可能性があります）');
         }
@@ -9058,37 +9058,37 @@ app.get('/deals/new', (c) => {
         
         // タイムアウトエラー
         if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-          alert('❌ タイムアウトエラー  サーバーの応答に時間がかかりすぎています。 もう一度お試しください。');
+          alert('❌ タイムアウトエラー\\n\\nサーバーの応答に時間がかかりすぎています。\\nもう一度お試しください。');
         }
         // ネットワークエラー
         else if (error.message === 'Network Error' || !error.response) {
-          alert('❌ ネットワークエラー  サーバーに接続できませんでした。 インターネット接続を確認してください。');
+          alert('❌ ネットワークエラー\\n\\nサーバーに接続できませんでした。\\nインターネット接続を確認してください。');
         }
         // 認証エラー
         else if (error.response?.status === 401) {
-          alert('❌ 認証エラー  MLIT_API_KEYが設定されていないか、認証トークンが無効です。  ページを再読み込みしてログインし直してください。');
+          alert('❌ 認証エラー\\n\\nMLIT_API_KEYが設定されていないか、認証トークンが無効です。\\n\\nページを再読み込みしてログインし直してください。');
         } 
         // 400エラー（住所解析失敗）
         else if (error.response?.status === 400) {
           const message = error.response?.data?.message || '住所の解析に失敗しました';
           const details = error.response?.data?.details;
-          let alertMessage = '❌ エラー  ' + message + '  正しい形式で入力してください（例: 東京都板橋区蓮根三丁目17-7）';
+          let alertMessage = '❌ エラー\n\n' + message + '\n\n正しい形式で入力してください（例: 東京都板橋区蓮根三丁目17-7）';
           if (details) {
-            alertMessage += '  入力された住所: ' + details.address;
+            alertMessage += '\n\n入力された住所: ' + details.address;
           }
           alert(alertMessage);
         } 
         // 404エラー（データなし）
         else if (error.response?.status === 404) {
-          alert('❌ エラー  指定された住所のデータが見つかりませんでした。  別の住所で試してください。');
+          alert('❌ エラー\\n\\n指定された住所のデータが見つかりませんでした。\\n\\n別の住所で試してください。');
         } 
         // その他のエラー
         else if (error.response?.data) {
           const errorData = error.response.data;
           const message = errorData.message || errorData.error || 'データ取得エラー';
-          alert('❌ データの取得に失敗しました  ' + message);
+          alert('❌ データの取得に失敗しました\n\n' + message);
         } else {
-          alert('❌ データの取得に失敗しました  エラー: ' + error.message + '  ステータス: ' + (error.response?.status || '不明') + '  詳細はコンソールを確認してください。');
+          alert('❌ データの取得に失敗しました\n\nエラー: ' + error.message + '\n\nステータス: ' + (error.response?.status || '不明') + '\n\n詳細はコンソールを確認してください。');
         }
       } finally {
         btn.disabled = false;
@@ -9295,21 +9295,21 @@ app.get('/deals/new', (c) => {
             '</div>' +
             '<div class="flex space-x-2">' +
             '<button ' +
-            'onclick="previewFile(&#39;' + dealId + '&#39;, &#39;' + file.id + '&#39;, &#39;' + file.file_name + '&#39;)" ' +
+            'onclick="previewFile(\'' + dealId + '\', \'' + file.id + '\', \'' + file.file_name + '\')" ' +
             'class="text-green-600 hover:text-green-800 text-sm" ' +
             'title="プレビュー" ' +
             '>' +
             '<i class="fas fa-eye"></i>' +
             '</button>' +
             '<button ' +
-            'onclick="downloadDealFile(&#39;' + dealId + '&#39;, &#39;' + file.id + '&#39;)" ' +
+            'onclick="downloadDealFile(\'' + dealId + '\', \'' + file.id + '\')" ' +
             'class="text-blue-600 hover:text-blue-800 text-sm" ' +
             'title="ダウンロード" ' +
             '>' +
             '<i class="fas fa-download"></i>' +
             '</button>' +
             '<button ' +
-            'onclick="deleteDealFile(&#39;' + dealId + '&#39;, &#39;' + file.id + '&#39;)" ' +
+            'onclick="deleteDealFile(\'' + dealId + '\', \'' + file.id + '\')" ' +
             'class="text-red-600 hover:text-red-800 text-sm" ' +
             'title="削除" ' +
             '>' +

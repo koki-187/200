@@ -8842,7 +8842,7 @@ app.get('/deals/new', (c) => {
     }
     
     // DOMContentLoaded後に初期化を実行（フェイルセーフ付き）
-    console.log('[Main] ========== v3.134.0 ==========');
+    console.log('[Main] ========== v3.137.0 ==========');
     console.log('[Main] Script loaded, document.readyState:', document.readyState);
     console.log('[Main] Token:', token ? 'EXISTS (' + token.length + ' chars)' : 'NULL');
     console.log('[Main] User:', user ? JSON.stringify(user) : 'NULL');
@@ -8920,7 +8920,7 @@ app.get('/deals/new', (c) => {
         
         console.log('[不動産情報ライブラリ] リクエスト送信:', { address, year, quarter });
         
-        const response = await axios.get(\`/api/reinfolib/property-info\`, {
+        const response = await axios.get('/api/reinfolib/property-info', {
           params: { address, year, quarter },
           headers: { 'Authorization': 'Bearer ' + token },
           timeout: 15000 // 15秒タイムアウト
@@ -9087,79 +9087,69 @@ app.get('/deals/new', (c) => {
       let html = '';
       
       // 融資制限警告バナーを追加
-      html += \`
-        <div class="bg-red-50 border-2 border-red-400 rounded-lg p-4 mb-4">
-          <div class="flex items-start">
-            <i class="fas fa-exclamation-triangle text-red-600 text-xl mr-3 mt-1"></i>
-            <div class="flex-1">
-              <h4 class="font-bold text-red-900 mb-2">⚠️ 融資制限条件の確認が必要です</h4>
-              <p class="text-sm text-red-800 mb-3">
-                以下に位置する物件は提携金融機関での融資が困難となります：
-              </p>
-              <ul class="text-sm text-red-800 space-y-1 mb-3 pl-4">
-                <li class="flex items-start">
-                  <span class="mr-2">•</span>
-                  <span><strong>水害による想定浸水深度が10m以上</strong>の区域</span>
-                </li>
-                <li class="flex items-start">
-                  <span class="mr-2">•</span>
-                  <span><strong>家屋倒壊等氾濫想定区域</strong>に該当</span>
-                </li>
-                <li class="flex items-start">
-                  <span class="mr-2">•</span>
-                  <span><strong>土砂災害特別警戒区域（レッドゾーン）</strong>に該当</span>
-                </li>
-              </ul>
-              <p class="text-sm text-red-800 font-semibold">
-                📍 必ず市区町村作成のハザードマップで上記項目を確認してください
-              </p>
-            </div>
-          </div>
-        </div>
-      \`;
+      html += '<div class="bg-red-50 border-2 border-red-400 rounded-lg p-4 mb-4">' +
+        '<div class="flex items-start">' +
+        '<i class="fas fa-exclamation-triangle text-red-600 text-xl mr-3 mt-1"></i>' +
+        '<div class="flex-1">' +
+        '<h4 class="font-bold text-red-900 mb-2">⚠️ 融資制限条件の確認が必要です</h4>' +
+        '<p class="text-sm text-red-800 mb-3">' +
+        '以下に位置する物件は提携金融機関での融資が困難となります：' +
+        '</p>' +
+        '<ul class="text-sm text-red-800 space-y-1 mb-3 pl-4">' +
+        '<li class="flex items-start">' +
+        '<span class="mr-2">•</span>' +
+        '<span><strong>水害による想定浸水深度が10m以上</strong>の区域</span>' +
+        '</li>' +
+        '<li class="flex items-start">' +
+        '<span class="mr-2">•</span>' +
+        '<span><strong>家屋倒壊等氾濫想定区域</strong>に該当</span>' +
+        '</li>' +
+        '<li class="flex items-start">' +
+        '<span class="mr-2">•</span>' +
+        '<span><strong>土砂災害特別警戒区域（レッドゾーン）</strong>に該当</span>' +
+        '</li>' +
+        '</ul>' +
+        '<p class="text-sm text-red-800 font-semibold">' +
+        '📍 必ず市区町村作成のハザードマップで上記項目を確認してください' +
+        '</p>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
       
       hazardData.hazards.forEach((hazard, index) => {
-        html += \`
-          <div class="border \${getRiskClass(hazard.risk_level)} rounded-lg p-4">
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <h4 class="font-medium mb-1">\${hazard.name}</h4>
-                <p class="text-sm mb-2">\${hazard.description}</p>
-                <p class="text-xs">リスクレベル: <span class="font-semibold">\${hazard.risk_level}</span></p>
-              </div>
-              <a href="\${hazard.url}" target="_blank" 
-                class="ml-4 px-3 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 transition whitespace-nowrap">
-                詳細確認 <i class="fas fa-external-link-alt ml-1"></i>
-              </a>
-            </div>
-          </div>
-        \`;
+        html += '<div class="border ' + getRiskClass(hazard.risk_level) + ' rounded-lg p-4">' +
+          '<div class="flex items-start justify-between">' +
+          '<div class="flex-1">' +
+          '<h4 class="font-medium mb-1">' + hazard.name + '</h4>' +
+          '<p class="text-sm mb-2">' + hazard.description + '</p>' +
+          '<p class="text-xs">リスクレベル: <span class="font-semibold">' + hazard.risk_level + '</span></p>' +
+          '</div>' +
+          '<a href="' + hazard.url + '" target="_blank" ' +
+          'class="ml-4 px-3 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 transition whitespace-nowrap">' +
+          '詳細確認 <i class="fas fa-external-link-alt ml-1"></i>' +
+          '</a>' +
+          '</div>' +
+          '</div>';
       });
       
       // 外部リンク
       if (hazardData.external_links && hazardData.external_links.length > 0) {
-        html += \`
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-            <h4 class="font-medium text-blue-900 mb-2 text-sm">
-              <i class="fas fa-link mr-1"></i>詳細情報
-            </h4>
-            <div class="space-y-1">
-        \`;
+        html += '<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">' +
+          '<h4 class="font-medium text-blue-900 mb-2 text-sm">' +
+          '<i class="fas fa-link mr-1"></i>詳細情報' +
+          '</h4>' +
+          '<div class="space-y-1">';
         
         hazardData.external_links.forEach(link => {
-          html += \`
-            <a href="\${link.url}" target="_blank" 
-              class="text-sm text-blue-700 hover:text-blue-900 hover:underline block">
-              <i class="fas fa-external-link-alt mr-1"></i>\${link.name}
-            </a>
-          \`;
+          html += '<a href="' + link.url + '" target="_blank" ' +
+            'class="text-sm text-blue-700 hover:text-blue-900 hover:underline block">' +
+            '<i class="fas fa-external-link-alt mr-1"></i>' + link.name +
+            '</a>';
         });
         
-        html += \`
-            </div>
-            <p class="text-xs text-blue-600 mt-2">\${hazardData.note}</p>
-          </div>
-        \`;
+        html += '</div>' +
+          '<p class="text-xs text-blue-600 mt-2">' + hazardData.note + '</p>' +
+          '</div>';
       }
       
       resultDiv.innerHTML = html;
@@ -9253,46 +9243,44 @@ app.get('/deals/new', (c) => {
                            'fa-file text-gray-500';
           const sizeKB = Math.round(file.file_size / 1024);
           
-          return \`
-            <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100">
-              <div class="flex items-center space-x-3 flex-1">
-                <input 
-                  type="checkbox" 
-                  class="file-checkbox w-4 h-4 text-blue-600 rounded" 
-                  data-file-id="\${file.id}"
-                  onchange="updateBulkDownloadButton()"
-                />
-                <i class="fas \${iconClass} text-lg"></i>
-                <div class="flex-1">
-                  <div class="text-sm font-medium text-gray-900">\${file.file_name}</div>
-                  <div class="text-xs text-gray-500">\${sizeKB} KB · \${new Date(file.uploaded_at).toLocaleString('ja-JP')}</div>
-                </div>
-              </div>
-              <div class="flex space-x-2">
-                <button 
-                  onclick="previewFile('\${dealId}', '\${file.id}', '\${file.file_name}')"
-                  class="text-green-600 hover:text-green-800 text-sm"
-                  title="プレビュー"
-                >
-                  <i class="fas fa-eye"></i>
-                </button>
-                <button 
-                  onclick="downloadDealFile('\${dealId}', '\${file.id}')"
-                  class="text-blue-600 hover:text-blue-800 text-sm"
-                  title="ダウンロード"
-                >
-                  <i class="fas fa-download"></i>
-                </button>
-                <button 
-                  onclick="deleteDealFile('\${dealId}', '\${file.id}')"
-                  class="text-red-600 hover:text-red-800 text-sm"
-                  title="削除"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </div>
-          \`;
+          return '<div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100">' +
+            '<div class="flex items-center space-x-3 flex-1">' +
+            '<input ' +
+            'type="checkbox" ' +
+            'class="file-checkbox w-4 h-4 text-blue-600 rounded" ' +
+            'data-file-id="' + file.id + '" ' +
+            'onchange="updateBulkDownloadButton()" ' +
+            '/>' +
+            '<i class="fas ' + iconClass + ' text-lg"></i>' +
+            '<div class="flex-1">' +
+            '<div class="text-sm font-medium text-gray-900">' + file.file_name + '</div>' +
+            '<div class="text-xs text-gray-500">' + sizeKB + ' KB · ' + new Date(file.uploaded_at).toLocaleString('ja-JP') + '</div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="flex space-x-2">' +
+            '<button ' +
+            'onclick="previewFile(\'' + dealId + '\', \'' + file.id + '\', \'' + file.file_name + '\')" ' +
+            'class="text-green-600 hover:text-green-800 text-sm" ' +
+            'title="プレビュー" ' +
+            '>' +
+            '<i class="fas fa-eye"></i>' +
+            '</button>' +
+            '<button ' +
+            'onclick="downloadDealFile(\'' + dealId + '\', \'' + file.id + '\')" ' +
+            'class="text-blue-600 hover:text-blue-800 text-sm" ' +
+            'title="ダウンロード" ' +
+            '>' +
+            '<i class="fas fa-download"></i>' +
+            '</button>' +
+            '<button ' +
+            'onclick="deleteDealFile(\'' + dealId + '\', \'' + file.id + '\')" ' +
+            'class="text-red-600 hover:text-red-800 text-sm" ' +
+            'title="削除" ' +
+            '>' +
+            '<i class="fas fa-trash"></i>' +
+            '</button>' +
+            '</div>' +
+            '</div>';
         }).join('');
       } catch (error) {
         console.error('Load files error:', error);
@@ -9305,7 +9293,7 @@ app.get('/deals/new', (c) => {
     window.downloadDealFile = async function(dealId, fileId) {
       try {
         const token = localStorage.getItem('token');
-        window.location.href = \`/api/deals/\${dealId}/files/\${fileId}/download?token=\${token}\`;
+        window.location.href = '/api/deals/' + dealId + '/files/' + fileId + '/download?token=' + token;
       } catch (error) {
         console.error('Download error:', error);
         alert('ダウンロードに失敗しました');
@@ -9394,7 +9382,7 @@ app.get('/deals/new', (c) => {
         
         // 一括ダウンロードAPIを呼び出し
         const response = await axios.post(
-          \`/api/deals/\${dealId}/files/bulk-download\`,
+          '/api/deals/' + dealId + '/files/bulk-download',
           { file_ids: fileIds },
           { headers: { 'Authorization': 'Bearer ' + token } }
         );
@@ -9420,7 +9408,7 @@ app.get('/deals/new', (c) => {
             
             zip.file(file.file_name, fileResponse.data);
           } catch (error) {
-            console.error(\`Failed to download \${file.file_name}:\`, error);
+            console.error('Failed to download ' + file.file_name + ':', error);
           }
         }
         
@@ -9432,13 +9420,13 @@ app.get('/deals/new', (c) => {
         const url = window.URL.createObjectURL(content);
         const a = document.createElement('a');
         a.href = url;
-        a.download = \`deal_\${dealId}_files_\${new Date().toISOString().split('T')[0]}.zip\`;
+        a.download = 'deal_' + dealId + '_files_' + new Date().toISOString().split('T')[0] + '.zip';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
         
-        alert(\`✅ \${response.data.files.length}件のファイルをダウンロードしました\`);
+        alert('✅ ' + response.data.files.length + '件のファイルをダウンロードしました');
         
         // チェックボックスをリセット
         checkboxes.forEach(cb => cb.checked = false);
@@ -9471,14 +9459,12 @@ app.get('/deals/new', (c) => {
         
         // プレビューエリア
         const previewArea = document.getElementById('preview-content-area');
-        previewArea.innerHTML = \`
-          <div class="flex items-center justify-center h-full">
-            <div class="text-center">
-              <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
-              <p class="text-gray-600">読み込み中...</p>
-            </div>
-          </div>
-        \`;
+        previewArea.innerHTML = '<div class="flex items-center justify-center h-full">' +
+          '<div class="text-center">' +
+          '<i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>' +
+          '<p class="text-gray-600">読み込み中...</p>' +
+          '</div>' +
+          '</div>';
         
         // ファイル拡張子から種類を判定
         const ext = fileName.toLowerCase().split('.').pop();
@@ -9501,21 +9487,19 @@ app.get('/deals/new', (c) => {
           await loadPDFPreview(fileUrl, token, previewArea);
         } else {
           // その他のファイル（プレビュー不可）
-          previewArea.innerHTML = \`
-            <div class="flex items-center justify-center h-full">
-              <div class="text-center">
-                <i class="fas fa-file-alt text-6xl text-gray-400 mb-4"></i>
-                <p class="text-gray-600 text-lg font-medium mb-2">このファイル形式はプレビューできません</p>
-                <p class="text-gray-500 text-sm mb-4">ダウンロードしてご確認ください</p>
-                <button 
-                  onclick="downloadPreviewFile()" 
-                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                >
-                  <i class="fas fa-download mr-2"></i>ダウンロード
-                </button>
-              </div>
-            </div>
-          \`;
+          previewArea.innerHTML = '<div class="flex items-center justify-center h-full">' +
+            '<div class="text-center">' +
+            '<i class="fas fa-file-alt text-6xl text-gray-400 mb-4"></i>' +
+            '<p class="text-gray-600 text-lg font-medium mb-2">このファイル形式はプレビューできません</p>' +
+            '<p class="text-gray-500 text-sm mb-4">ダウンロードしてご確認ください</p>' +
+            '<button ' +
+            'onclick="downloadPreviewFile()" ' +
+            'class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"' +
+            '>' +
+            '<i class="fas fa-download mr-2"></i>ダウンロード' +
+            '</button>' +
+            '</div>' +
+            '</div>';
         }
         
       } catch (error) {

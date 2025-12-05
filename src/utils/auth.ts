@@ -1,39 +1,49 @@
 import { Context } from 'hono';
 import { Bindings } from '../types';
 import { verifyToken } from './crypto';
+import { authLog, errorLog } from './logger';
 
 /**
  * JWT検証ミドルウェア（HMAC-SHA256署名検証）
+ * v3.149.0: Logger統合により本番環境でのパフォーマンス向上
  */
 export async function authMiddleware(c: Context<{ Bindings: Bindings }>, next: () => Promise<void>) {
-  console.log('[AuthMiddleware] ========== START ==========');
-  console.log('[AuthMiddleware] Path:', c.req.path);
-  console.log('[AuthMiddleware] Method:', c.req.method);
+  authLog('========== START ==========');
+  authLog('Path:', c.req.path);
+  authLog('Method:', c.req.method);
   
   const authHeader = c.req.header('Authorization');
-  console.log('[AuthMiddleware] Authorization header exists:', !!authHeader);
-  console.log('[AuthMiddleware] Authorization header (first 30 chars):', authHeader?.substring(0, 30) || 'NULL');
+  authLog('Authorization header exists:', !!authHeader);
+  authLog('Authorization header (first 30 chars):', authHeader?.substring(0, 30) || 'NULL');
   
   const token = authHeader?.replace('Bearer ', '');
-  console.log('[AuthMiddleware] Token extracted:', !!token);
-  console.log('[AuthMiddleware] Token (first 20 chars):', token?.substring(0, 20) + '...' || 'NULL');
+  authLog('Token extracted:', !!token);
+  authLog('Token (first 20 chars):', token?.substring(0, 20) + '...' || 'NULL');
 
   if (!token) {
-    console.error('[AuthMiddleware] ❌ No token provided');
-    return c.json({ error: 'Authentication required' }, 401);
+    errorLog('AuthMiddleware', '❌ No token provided');
+    return c.json({ 
+      error: 'Authentication required',
+      code: 'NO_TOKEN',
+      message: 'ログインが必要です。再度ログインしてください。'
+    }, 401);
   }
 
   try {
     const secret = c.env.JWT_SECRET;
-    console.log('[AuthMiddleware] JWT_SECRET exists:', !!secret);
+    authLog('JWT_SECRET exists:', !!secret);
     
     const payload = await verifyToken(token, secret);
-    console.log('[AuthMiddleware] Token verification result:', !!payload);
-    console.log('[AuthMiddleware] Payload:', payload);
+    authLog('Token verification result:', !!payload);
+    authLog('Payload:', payload);
     
     if (!payload) {
-      console.error('[AuthMiddleware] ❌ Token verification failed');
-      return c.json({ error: 'Invalid token' }, 401);
+      errorLog('AuthMiddleware', '❌ Token verification failed');
+      return c.json({ 
+        error: 'Invalid token',
+        code: 'INVALID_TOKEN',
+        message: 'トークンが無効です。再度ログインしてください。'
+      }, 401);
     }
     
     // DBからユーザー情報を取得
@@ -44,26 +54,35 @@ export async function authMiddleware(c: Context<{ Bindings: Bindings }>, next: (
     `).bind(payload.userId).first();
     
     if (!user) {
-      console.error('[AuthMiddleware] ❌ User not found in database, userId:', payload.userId);
-      return c.json({ error: 'User not found' }, 401);
+      errorLog('AuthMiddleware', '❌ User not found in database, userId:', payload.userId);
+      return c.json({ 
+        error: 'User not found',
+        code: 'USER_NOT_FOUND',
+        message: 'ユーザー情報が見つかりません。再度ログインしてください。'
+      }, 401);
     }
     
-    console.log('[AuthMiddleware] ✅ User found:', user.email);
-    console.log('[AuthMiddleware] User role:', user.role);
+    authLog('✅ User found:', user.email);
+    authLog('User role:', user.role);
     
     // コンテキストにユーザー情報を設定（後方互換性のため両方設定）
     c.set('userId', payload.userId);
     c.set('userRole', payload.role);
     c.set('user', user);
     
-    console.log('[AuthMiddleware] ✅ Authentication successful, proceeding to next()');
+    authLog('✅ Authentication successful, proceeding to next()');
     await next();
-    console.log('[AuthMiddleware] ========== END (next() completed) ==========');
+    authLog('========== END (next() completed) ==========');
   } catch (error) {
-    console.error('[AuthMiddleware] ❌ Exception occurred:', error);
-    console.error('[AuthMiddleware] Error message:', error.message);
-    console.error('[AuthMiddleware] Error stack:', error.stack);
-    return c.json({ error: 'Invalid token', details: error.message }, 401);
+    errorLog('AuthMiddleware', '❌ Exception occurred:', error);
+    errorLog('AuthMiddleware', 'Error message:', error.message);
+    errorLog('AuthMiddleware', 'Error stack:', error.stack);
+    return c.json({ 
+      error: 'Invalid token', 
+      code: 'TOKEN_ERROR',
+      message: '認証エラーが発生しました。再度ログインしてください。',
+      details: error.message 
+    }, 401);
   }
 }
 

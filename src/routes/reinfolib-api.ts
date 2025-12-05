@@ -96,10 +96,16 @@ app.get('/test-parse', (c) => {
  * - quarter: 四半期（1-4）デフォルトは最新
  */
 app.get('/property-info', async (c) => {
+  console.log('[REINFOLIB API] ========== /property-info CALLED ==========');
+  console.log('[REINFOLIB API] Path:', c.req.path);
+  console.log('[REINFOLIB API] Query params:', c.req.query());
+  
   try {
     const address = c.req.query('address');
     const year = c.req.query('year') || new Date().getFullYear().toString();
     const quarter = c.req.query('quarter') || '4';
+    
+    console.log('[REINFOLIB API] Parsed params:', { address, year, quarter });
 
     if (!address) {
       return c.json({ error: '住所が指定されていません' }, 400);

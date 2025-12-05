@@ -4840,7 +4840,7 @@ app.get('/deals/new', (c) => {
           <div id="storage-quota-display" class="text-xs md:text-sm bg-blue-50 text-blue-700 px-3 py-2 rounded-lg font-medium border border-blue-200 w-full sm:w-auto">
             <div class="flex items-center space-x-2">
               <i class="fas fa-database"></i>
-              <span id="storage-usage-text">読込中...</span>
+              <span id="storage-usage-text">ストレージ情報取得中...</span>
             </div>
             <div class="w-full sm:w-48 bg-gray-200 rounded-full h-2 hidden mt-1" id="storage-progress-container">
               <div id="storage-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -6329,14 +6329,18 @@ app.get('/deals/new', (c) => {
     async function loadSellers() {
       console.log('[Sellers] ========== START ==========');
       console.log('[Sellers] Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL/UNDEFINED');
+      console.log('[Sellers] Current URL:', window.location.href);
+      console.log('[Sellers] User:', user);
       
       try {
         const select = document.getElementById('seller_id');
         if (!select) {
           console.error('[Sellers] ❌ seller_id element not found');
+          console.error('[Sellers] Available select elements:', document.querySelectorAll('select').length);
           return;
         }
         
+        console.log('[Sellers] seller_id element found, current options:', select.options.length);
         console.log('[Sellers] Calling API: /api/auth/users');
         const response = await axios.get('/api/auth/users', {
           headers: { 'Authorization': 'Bearer ' + token }
@@ -6369,6 +6373,7 @@ app.get('/deals/new', (c) => {
     async function loadStorageQuota() {
       console.log('[Storage Quota] ========== START ==========');
       console.log('[Storage Quota] Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL/UNDEFINED');
+      console.log('[Storage Quota] Current URL:', window.location.href);
       
       try {
         console.log('[Storage Quota] Calling API: /api/storage-quota');
@@ -6473,7 +6478,7 @@ app.get('/deals/new', (c) => {
             }
             console.warn('[Storage Quota] Network error - please check your connection');
           } else {
-            storageText.textContent = '取得失敗';
+            storageText.textContent = '取得失敗 (' + (error.response?.status || 'Unknown') + ')';
             if (storageDisplay) {
               storageDisplay.className = 'text-sm bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full font-medium border border-yellow-200';
             }
@@ -8721,7 +8726,13 @@ app.get('/deals/new', (c) => {
 
     // 初期化 - DOM要素が存在する場合のみ実行
     function initializePage() {
-      console.log('[Init] initializePage called');
+      console.log('[Init] ========== INITIALIZE PAGE (deals/new) ==========');
+      console.log('[Init] Document ready state:', document.readyState);
+      console.log('[Init] Token exists:', !!token);
+      console.log('[Init] User:', user);
+      console.log('[Init] Current URL:', window.location.href);
+      console.log('[Init] Axios loaded:', typeof axios !== 'undefined');
+      
       loadSellers();
       loadOCRExtractedData();
       
@@ -8828,9 +8839,15 @@ app.get('/deals/new', (c) => {
     }
     
     // DOMContentLoaded後に初期化を実行
+    console.log('[Main] Script loaded, document.readyState:', document.readyState);
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializePage);
+      console.log('[Main] Waiting for DOMContentLoaded event...');
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('[Main] DOMContentLoaded event fired');
+        initializePage();
+      });
     } else {
+      console.log('[Main] Document already ready, calling initializePage immediately');
       initializePage();
     }
 

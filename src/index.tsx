@@ -8790,8 +8790,8 @@ app.get('/deals/new', (c) => {
         
         console.log('[MissingItems] Checking for deal:', dealId);
         
-        const response = await axios.get(\`/api/deals/\${dealId}/missing-items\`, {
-          headers: { Authorization: \`Bearer \${token}\` }
+        const response = await axios.get('/api/deals/' + dealId + '/missing-items', {
+          headers: { Authorization: 'Bearer ' + token }
         });
         
         if (response.data.success && response.data.total_missing > 0) {
@@ -8816,7 +8816,7 @@ app.get('/deals/new', (c) => {
       if (data.missing_fields && data.missing_fields.length > 0) {
         const fieldsHTML = '<ul class="list-disc list-inside space-y-1">' +
           data.missing_fields.map(item => 
-            \`<li><strong>\${item.label}</strong>の入力が必要です</li>\`
+            '<li><strong>' + item.label + '</strong>の入力が必要です</li>'
           ).join('') +
           '</ul>';
         fieldsList.innerHTML = fieldsHTML;
@@ -8826,7 +8826,7 @@ app.get('/deals/new', (c) => {
       if (data.missing_files && data.missing_files.length > 0) {
         const filesHTML = '<ul class="list-disc list-inside space-y-1 mt-2">' +
           data.missing_files.map(item => 
-            \`<li><strong>\${item.description}</strong>のアップロードが必要です（\${item.missing_count}件不足）</li>\`
+            '<li><strong>' + item.description + '</strong>のアップロードが必要です（' + item.missing_count + '件不足）</li>'
           ).join('') +
           '</ul>';
         filesList.innerHTML = filesHTML;
@@ -8937,7 +8937,7 @@ app.get('/deals/new', (c) => {
         const metadata = response.data.metadata;
         
         if (!properties || properties.length === 0) {
-          alert(\`\${metadata.prefectureName}\${metadata.cityName}のデータが見つかりませんでした。\\n別の住所で試してください。\`);
+          alert(metadata.prefectureName + metadata.cityName + 'のデータが見つかりませんでした。\n別の住所で試してください。');
           return;
         }
         
@@ -8950,7 +8950,7 @@ app.get('/deals/new', (c) => {
           { id: 'zoning', value: property.use || property.city_planning, label: '用途地域' },
           { id: 'building_coverage', value: property.building_coverage_ratio, label: '建蔽率' },
           { id: 'floor_area_ratio', value: property.floor_area_ratio, label: '容積率' },
-          { id: 'road_info', value: \`\${property.front_road_direction || ''} \${property.front_road_type || ''} 幅員\${property.front_road_width || ''}\`.trim(), label: '道路情報' },
+          { id: 'road_info', value: ((property.front_road_direction || '') + ' ' + (property.front_road_type || '') + ' 幅員' + (property.front_road_width || '')).trim(), label: '道路情報' },
           { id: 'frontage', value: property.frontage, label: '間口' },
           { id: 'building_area', value: property.building_area, label: '建物面積' },
           { id: 'structure', value: property.building_structure, label: '構造' },
@@ -8976,7 +8976,7 @@ app.get('/deals/new', (c) => {
         
         // ハザード情報も取得
         try {
-          const hazardResponse = await axios.get(\`/api/reinfolib/hazard-info\`, {
+          const hazardResponse = await axios.get('/api/reinfolib/hazard-info', {
             params: { address },
             headers: { 'Authorization': 'Bearer ' + token }
           });
@@ -8987,7 +8987,7 @@ app.get('/deals/new', (c) => {
           
           // 融資制限条件もチェック
           try {
-            const restrictionResponse = await axios.get(\`/api/reinfolib/check-financing-restrictions\`, {
+            const restrictionResponse = await axios.get('/api/reinfolib/check-financing-restrictions', {
               params: { address },
               headers: { 'Authorization': 'Bearer ' + token }
             });
@@ -9006,7 +9006,7 @@ app.get('/deals/new', (c) => {
         }
         
         if (filledCount > 0) {
-          alert(\`✅ \${filledCount}項目を自動入力しました\\n\\n入力項目: \${filledFields.join(', ')}\\n\\nデータ元: 不動産情報ライブラリ（\${metadata.year}年第\${metadata.quarter}四半期）\\n\\n※ハザード情報も取得しました（下部に表示）\`);
+          alert('✅ ' + filledCount + '項目を自動入力しました\n\n入力項目: ' + filledFields.join(', ') + '\n\nデータ元: 不動産情報ライブラリ（' + metadata.year + '年第' + metadata.quarter + '四半期）\n\n※ハザード情報も取得しました（下部に表示）');
         } else {
           alert('入力可能な項目が見つかりませんでした（既に入力済みの可能性があります）');
         }
@@ -9036,9 +9036,9 @@ app.get('/deals/new', (c) => {
         else if (error.response?.status === 400) {
           const message = error.response?.data?.message || '住所の解析に失敗しました';
           const details = error.response?.data?.details;
-          let alertMessage = \`❌ エラー\\n\\n\${message}\\n\\n正しい形式で入力してください（例: 東京都板橋区蓮根三丁目17-7）\`;
+          let alertMessage = '❌ エラー\n\n' + message + '\n\n正しい形式で入力してください（例: 東京都板橋区蓮根三丁目17-7）';
           if (details) {
-            alertMessage += \`\\n\\n入力された住所: \${details.address}\`;
+            alertMessage += '\n\n入力された住所: ' + details.address;
           }
           alert(alertMessage);
         } 
@@ -9050,9 +9050,9 @@ app.get('/deals/new', (c) => {
         else if (error.response?.data) {
           const errorData = error.response.data;
           const message = errorData.message || errorData.error || 'データ取得エラー';
-          alert(\`❌ データの取得に失敗しました\\n\\n\${message}\`);
+          alert('❌ データの取得に失敗しました\n\n' + message);
         } else {
-          alert(\`❌ データの取得に失敗しました\\n\\nエラー: \${error.message}\\n\\nステータス: \${error.response?.status || '不明'}\\n\\n詳細はコンソールを確認してください。\`);
+          alert('❌ データの取得に失敗しました\n\nエラー: ' + error.message + '\n\nステータス: ' + (error.response?.status || '不明') + '\n\n詳細はコンソールを確認してください。');
         }
       } finally {
         btn.disabled = false;
@@ -9203,7 +9203,7 @@ app.get('/deals/new', (c) => {
       
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.post(\`/api/deals/\${dealId}/files\`, formData, {
+        const response = await axios.post('/api/deals/' + dealId + '/files', formData, {
           headers: {
             'Authorization': 'Bearer ' + token,
             'Content-Type': 'multipart/form-data'
@@ -9235,7 +9235,7 @@ app.get('/deals/new', (c) => {
     async function loadDealFiles(dealId) {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(\`/api/deals/\${dealId}/files\`, {
+        const response = await axios.get('/api/deals/' + dealId + '/files', {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         
@@ -9320,7 +9320,7 @@ app.get('/deals/new', (c) => {
       
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(\`/api/deals/\${dealId}/files/\${fileId}\`, {
+        await axios.delete('/api/deals/' + dealId + '/files/' + fileId, {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         
@@ -9410,7 +9410,7 @@ app.get('/deals/new', (c) => {
         // 各ファイルをダウンロードしてZIPに追加
         for (let i = 0; i < response.data.files.length; i++) {
           const file = response.data.files[i];
-          btn.innerHTML = \`<i class="fas fa-spinner fa-spin mr-1"></i>(\${i + 1}/\${response.data.files.length}) \${file.file_name}\`;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>(' + (i + 1) + '/' + response.data.files.length + ') ' + file.file_name;
           
           try {
             const fileResponse = await axios.get(file.download_url, {
@@ -9486,20 +9486,16 @@ app.get('/deals/new', (c) => {
         const pdfExtensions = ['pdf'];
         
         const token = localStorage.getItem('token');
-        const fileUrl = \`/api/deals/\${dealId}/files/\${fileId}/download\`;
+        const fileUrl = '/api/deals/' + dealId + '/files/' + fileId + '/download';
         
         if (imageExtensions.includes(ext)) {
           // 画像プレビュー
-          previewArea.innerHTML = \`
-            <div class="flex items-center justify-center h-full bg-gray-900 rounded-lg">
-              <img 
-                src="\${fileUrl}?token=\${token}" 
-                alt="\${fileName}" 
-                class="max-w-full max-h-full object-contain"
-                onerror="this.parentElement.innerHTML='<div class=\\"text-white\\"><i class=\\"fas fa-exclamation-triangle text-3xl mb-2\\"></i><p>画像の読み込みに失敗しました</p></div>'"
-              />
-            </div>
-          \`;
+          previewArea.innerHTML = '<div class="flex items-center justify-center h-full bg-gray-900 rounded-lg">' +
+            '<img src="' + fileUrl + '?token=' + token + '" ' +
+            'alt="' + fileName + '" ' +
+            'class="max-w-full max-h-full object-contain" ' +
+            'onerror="this.parentElement.innerHTML=\'<div class=&quot;text-white&quot;><i class=&quot;fas fa-exclamation-triangle text-3xl mb-2&quot;></i><p>画像の読み込みに失敗しました</p></div>\'" ' +
+            '/></div>';
         } else if (pdfExtensions.includes(ext)) {
           // PDFプレビュー（PDF.jsを使用）
           await loadPDFPreview(fileUrl, token, previewArea);
@@ -9561,24 +9557,22 @@ app.get('/deals/new', (c) => {
         const totalPages = pdf.numPages;
         
         // プレビューエリアを初期化
-        previewArea.innerHTML = \`
-          <div class="bg-white rounded-lg p-4 w-full">
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-sm text-gray-600">ページ <span id="current-page">1</span> / \${totalPages}</span>
-              <div class="flex gap-2">
-                <button id="prev-page" onclick="changePDFPage(-1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50" disabled>
-                  <i class="fas fa-chevron-left"></i>
-                </button>
-                <button id="next-page" onclick="changePDFPage(1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
-                  <i class="fas fa-chevron-right"></i>
-                </button>
-              </div>
-            </div>
-            <div id="pdf-canvas-container" class="flex justify-center bg-gray-100 rounded overflow-auto" style="max-height: 70vh;">
-              <canvas id="pdf-canvas"></canvas>
-            </div>
-          </div>
-        \`;
+        previewArea.innerHTML = '<div class="bg-white rounded-lg p-4 w-full">' +
+          '<div class="flex items-center justify-between mb-4">' +
+          '<span class="text-sm text-gray-600">ページ <span id="current-page">1</span> / ' + totalPages + '</span>' +
+          '<div class="flex gap-2">' +
+          '<button id="prev-page" onclick="changePDFPage(-1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50" disabled>' +
+          '<i class="fas fa-chevron-left"></i>' +
+          '</button>' +
+          '<button id="next-page" onclick="changePDFPage(1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">' +
+          '<i class="fas fa-chevron-right"></i>' +
+          '</button>' +
+          '</div>' +
+          '</div>' +
+          '<div id="pdf-canvas-container" class="flex justify-center bg-gray-100 rounded overflow-auto" style="max-height: 70vh;">' +
+          '<canvas id="pdf-canvas"></canvas>' +
+          '</div>' +
+          '</div>';
         
         // ページレンダリング変数を保存
         window.currentPDF = {
@@ -9592,15 +9586,13 @@ app.get('/deals/new', (c) => {
         
       } catch (error) {
         console.error('PDF preview error:', error);
-        previewArea.innerHTML = \`
-          <div class="flex items-center justify-center h-full">
-            <div class="text-center">
-              <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-              <p class="text-gray-600">PDFの読み込みに失敗しました</p>
-              <p class="text-sm text-gray-500 mt-2">\${error.message}</p>
-            </div>
-          </div>
-        \`;
+        previewArea.innerHTML = '<div class="flex items-center justify-center h-full">' +
+          '<div class="text-center">' +
+          '<i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>' +
+          '<p class="text-gray-600">PDFの読み込みに失敗しました</p>' +
+          '<p class="text-sm text-gray-500 mt-2">' + error.message + '</p>' +
+          '</div>' +
+          '</div>';
       }
     }
     

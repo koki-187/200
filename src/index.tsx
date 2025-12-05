@@ -5965,23 +5965,48 @@ app.get('/deals/new', (c) => {
     const DEBUG_MODE = false; // デバッグモード（本番環境ではfalse）
     const PAGE_LOAD_TIMEOUT = 10000; // ページロードタイムアウト: 10秒
     
-    const token = localStorage.getItem('auth_token');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    // ========================================
+    // CRITICAL: Earliest possible log to detect script execution
+    // ========================================
+    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.139.0 ==========');
+    console.log('[CRITICAL DEBUG] typeof localStorage:', typeof localStorage);
+    console.log('[CRITICAL DEBUG] typeof JSON:', typeof JSON);
+    
+    let token = null;
+    let user = {};
+    
+    try {
+      token = localStorage.getItem('auth_token');
+      console.log('[CRITICAL DEBUG] Token retrieved:', !!token);
+    } catch (e) {
+      console.error('[CRITICAL DEBUG] localStorage.getItem error:', e);
+    }
+    
+    try {
+      const userStr = localStorage.getItem('user') || '{}';
+      console.log('[CRITICAL DEBUG] User string:', userStr);
+      user = JSON.parse(userStr);
+      console.log('[CRITICAL DEBUG] User parsed:', user);
+    } catch (e) {
+      console.error('[CRITICAL DEBUG] JSON.parse error:', e);
+      user = {};
+    }
 
     // ========================================
     // 2. 認証チェック
     // ========================================
-    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.138.0 ==========');
+    console.log('[CRITICAL DEBUG] Starting authentication check...');
     console.log('[CRITICAL DEBUG] Token exists:', !!token);
     console.log('[CRITICAL DEBUG] User:', user);
-    console.log('[CRITICAL DEBUG] axios loaded:', typeof axios);
+    console.log('[CRITICAL DEBUG] typeof axios:', typeof axios);
+    console.log('[CRITICAL DEBUG] axios loaded:', typeof axios !== 'undefined');
     
     if (!token) {
-      console.log('[CRITICAL DEBUG] No token, redirecting to /');
+      console.log('[CRITICAL DEBUG] ❌ No token found, redirecting to /');
       window.location.href = '/';
     }
     
-    console.log('[CRITICAL DEBUG] Token verified, continuing...');
+    console.log('[CRITICAL DEBUG] ✅ Token verified, continuing...');
 
     // ========================================
     // 3. グローバル関数定義（認証後）
@@ -8853,7 +8878,7 @@ app.get('/deals/new', (c) => {
     }
     
     // DOMContentLoaded後に初期化を実行（フェイルセーフ付き）
-    console.log('[Main] ========== v3.138.0 ==========');
+    console.log('[Main] ========== v3.139.0 ==========');
     console.log('[Main] Script loaded, document.readyState:', document.readyState);
     console.log('[Main] Token:', token ? 'EXISTS (' + token.length + ' chars)' : 'NULL');
     console.log('[Main] User:', user ? JSON.stringify(user) : 'NULL');

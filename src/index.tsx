@@ -5968,9 +5968,33 @@ app.get('/deals/new', (c) => {
     // ========================================
     // CRITICAL: Earliest possible log to detect script execution
     // ========================================
-    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.146.0 ==========');
+    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.148.0 ==========');
     console.log('[CRITICAL DEBUG] typeof localStorage:', typeof localStorage);
     console.log('[CRITICAL DEBUG] typeof JSON:', typeof JSON);
+    
+    // CRITICAL FIX v3.148.0: Clear Service Worker cache
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+          console.log('[CRITICAL DEBUG] ✅ Service Worker unregistered');
+        }
+      }).catch(function(err) {
+        console.log('[CRITICAL DEBUG] ⚠️ Service Worker unregister failed:', err);
+      });
+    }
+    
+    // CRITICAL FIX v3.148.0: Clear all caches
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (let name of names) {
+          caches.delete(name);
+          console.log('[CRITICAL DEBUG] ✅ Cache deleted:', name);
+        }
+      }).catch(function(err) {
+        console.log('[CRITICAL DEBUG] ⚠️ Cache delete failed:', err);
+      });
+    }
     
     let token = null;
     let user = {};
@@ -8878,7 +8902,7 @@ app.get('/deals/new', (c) => {
     }
     
     // DOMContentLoaded後に初期化を実行（フェイルセーフ付き）
-    console.log('[Main] ========== v3.146.0 ==========');
+    console.log('[Main] ========== v3.148.0 ==========');
     console.log('[Main] Script loaded, document.readyState:', document.readyState);
     console.log('[Main] Token:', token ? 'EXISTS (' + token.length + ' chars)' : 'NULL');
     console.log('[Main] User:', user ? JSON.stringify(user) : 'NULL');
@@ -10711,9 +10735,9 @@ app.get('/deals/new', (c) => {
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
   <!-- This ensures window.processMultipleOCR placeholder exists even if main script has errors -->
-  <script src="/static/ocr-init.js?v=3.146.0"></script>
+  <script src="/static/ocr-init.js?v=3.148.0"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
-  <script src="/static/deals-new-events.js?v=3.146.0"></script>
+  <script src="/static/deals-new-events.js?v=3.148.0"></script>
   <!-- Version: v3.142.0 - Cache busting enabled -->
 </body>
 </html>

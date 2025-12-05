@@ -4542,6 +4542,9 @@ app.get('/deals/new', (c) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="200Units">
@@ -8838,17 +8841,41 @@ app.get('/deals/new', (c) => {
       });
     }
     
-    // DOMContentLoaded後に初期化を実行
+    // DOMContentLoaded後に初期化を実行（フェイルセーフ付き）
+    console.log('[Main] ========== v3.134.0 ==========');
     console.log('[Main] Script loaded, document.readyState:', document.readyState);
+    console.log('[Main] Token:', token ? 'EXISTS (' + token.length + ' chars)' : 'NULL');
+    console.log('[Main] User:', user ? JSON.stringify(user) : 'NULL');
+    
+    let initializePageCalled = false;
+    
+    function safeInitializePage() {
+      if (initializePageCalled) {
+        console.log('[Main] initializePage already called, skipping...');
+        return;
+      }
+      initializePageCalled = true;
+      console.log('[Main] Calling initializePage NOW');
+      initializePage();
+    }
+    
     if (document.readyState === 'loading') {
       console.log('[Main] Waiting for DOMContentLoaded event...');
       document.addEventListener('DOMContentLoaded', function() {
         console.log('[Main] DOMContentLoaded event fired');
-        initializePage();
+        safeInitializePage();
       });
+      
+      // フェイルセーフ: 3秒後にまだ初期化されていなければ強制実行
+      setTimeout(function() {
+        if (!initializePageCalled) {
+          console.warn('[Main] ⚠️ FAILSAFE: initializePage was not called after 3s, forcing execution');
+          safeInitializePage();
+        }
+      }, 3000);
     } else {
       console.log('[Main] Document already ready, calling initializePage immediately');
-      initializePage();
+      safeInitializePage();
     }
 
     // ============================================================
@@ -10671,9 +10698,10 @@ app.get('/deals/new', (c) => {
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
   <!-- This ensures window.processMultipleOCR placeholder exists even if main script has errors -->
-  <script src="/static/ocr-init.js"></script>
+  <script src="/static/ocr-init.js?v=3.134.0"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
-  <script src="/static/deals-new-events.js"></script>
+  <script src="/static/deals-new-events.js?v=3.134.0"></script>
+  <!-- Version: v3.134.0 - Cache busting enabled -->
 </body>
 </html>
   `);

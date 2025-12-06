@@ -5,7 +5,7 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = '3.149.0';
+export const APP_VERSION = '3.149.1';
 export const BUILD_DATE = '2025-12-05';
 export const BUILD_DESCRIPTION = 'Debug log optimization, version management automation, error handling improvement';
 

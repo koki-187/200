@@ -5969,11 +5969,11 @@ app.get('/deals/new', (c) => {
     // ========================================
     // CRITICAL: Earliest possible log to detect script execution
     // ========================================
-    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.149.0 ==========');
+    console.log('[CRITICAL DEBUG] ========== SCRIPT START v3.149.1 ==========');
     console.log('[CRITICAL DEBUG] typeof localStorage:', typeof localStorage);
     console.log('[CRITICAL DEBUG] typeof JSON:', typeof JSON);
     
-    // CRITICAL FIX v3.148.0 → v3.149.0: Clear Service Worker cache
+    // CRITICAL FIX v3.148.0 → v3.149.1: Clear Service Worker cache
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for(let registration of registrations) {
@@ -5985,7 +5985,7 @@ app.get('/deals/new', (c) => {
       });
     }
     
-    // CRITICAL FIX v3.148.0 → v3.149.0: Clear all caches
+    // CRITICAL FIX v3.148.0 → v3.149.1: Clear all caches
     if ('caches' in window) {
       caches.keys().then(function(names) {
         for (let name of names) {
@@ -8903,7 +8903,7 @@ app.get('/deals/new', (c) => {
     }
     
     // DOMContentLoaded後に初期化を実行（フェイルセーフ付き）
-    console.log('[Main] ========== v3.149.0 ==========');
+    console.log('[Main] ========== v3.149.1 ==========');
     console.log('[Main] Script loaded, document.readyState:', document.readyState);
     console.log('[Main] Token:', token ? 'EXISTS (' + token.length + ' chars)' : 'NULL');
     console.log('[Main] User:', user ? JSON.stringify(user) : 'NULL');

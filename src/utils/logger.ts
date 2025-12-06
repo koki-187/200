@@ -73,6 +73,11 @@ export const logger = {
     if (DEBUG_MODE) {
       console.log(`[${context || 'DEBUG'}]`, message, data || '');
     }
+  },
+  logRequest: (method: string, path: string, status: number, duration: number) => {
+    if (DEBUG_MODE) {
+      console.log(`[Request] ${method} ${path} - ${status} (${duration}ms)`);
+    }
   }
 };
 
@@ -88,8 +93,12 @@ export class PerformanceTimer {
     this.startTime = Date.now();
   }
 
+  elapsed() {
+    return Date.now() - this.startTime;
+  }
+
   end() {
-    const duration = Date.now() - this.startTime;
+    const duration = this.elapsed();
     if (DEBUG_MODE) {
       console.log(`[Performance] ${this.label}: ${duration}ms`);
     }

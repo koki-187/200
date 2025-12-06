@@ -562,19 +562,15 @@ async function runComprehensiveRiskCheck(address) {
     const judgment = result.financingJudgment;
     const propertyInfo = result.propertyInfo;
     
-    let message = `📊 包括的リスクチェック結果\n\n`;
-    message += `住所: ${result.address}\n\n`;
-    message += `【基本情報】\n`;
-    message += `建蔽率: ${propertyInfo.CoverageRatio || '取得失敗'}%\n`;
-    message += `容積率: ${propertyInfo.FloorAreaRatio || '取得失敗'}%\n`;
-    message += `用途: ${propertyInfo.Use || '取得失敗'}\n\n`;
+    let message = `📊 包括的リスクチェック結果 (${result.version || 'v3.152'})\n\n`;
+    message += `住所: ${result.address}\n`;
+    message += `都道府県: ${propertyInfo.prefecture || 'N/A'}\n`;
+    message += `市区町村: ${propertyInfo.city || 'N/A'}\n\n`;
     message += `【総合判定】\n`;
-    message += `判定: ${judgment.judgment}\n`;
-    message += `スコア: ${judgment.score}/100点\n`;
     message += `${judgment.message}\n\n`;
     
-    if (judgment.note) {
-      message += `※ ${judgment.note}`;
+    if (result.processingTime) {
+      message += `処理時間: ${result.processingTime}`;
     }
     
     alert(message);

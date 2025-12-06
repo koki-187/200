@@ -905,8 +905,8 @@ function parseAddress(address: string): {
  * 
  * NOTE: 認証を一時的に無効化（デバッグ用）
  */
-app.get('/comprehensive-check', async (c) => {
-  console.log('[COMPREHENSIVE CHECK] ========== START ==========');
+app.get('/comprehensive-check', (c) => {
+  const startTime = Date.now();
   
   try {
     const address = c.req.query('address');
@@ -914,11 +914,10 @@ app.get('/comprehensive-check', async (c) => {
     if (!address) {
       return c.json({ 
         success: false,
-        error: '住所が指定されていません' 
-      }, 200); // 200で返す（400だとCloudflareがキャッシュする可能性）
+        error: '住所が指定されていません',
+        version: 'v3.152.1-sync'
+      }, 200);
     }
-    
-    console.log('[COMPREHENSIVE CHECK] Address:', address);
     
     // 住所解析
     const locationCodes = parseAddress(address);
@@ -926,73 +925,55 @@ app.get('/comprehensive-check', async (c) => {
       return c.json({
         success: false,
         error: '住所の解析に失敗しました',
-        address: address
+        address: address,
+        version: 'v3.152.1-sync'
       }, 200);
     }
     
-    const { prefectureCode, cityCode, prefectureName, cityName } = locationCodes;
-    const year = c.req.query('year') || new Date().getFullYear().toString();
-    const quarter = c.req.query('quarter') || Math.ceil((new Date().getMonth() + 1) / 3).toString();
+    const { prefectureName, cityName } = locationCodes;
     
-    console.log('[COMPREHENSIVE CHECK] Parsed:', { prefectureName, cityName, prefectureCode, cityCode });
-    
-    // ① 不動産価格情報取得（簡易版：ダミーデータ）
+    // ① 不動産価格情報（簡易版）
     const propertyInfo = {
-      CoverageRatio: '60',
-      FloorAreaRatio: '200',
-      Use: '住宅地',
-      note: 'デバッグモード：実際のAPI呼び出しは省略'
+      prefecture: prefectureName,
+      city: cityName,
+      address: address,
+      note: 'v3.152.1: 住所解析のみ。詳細情報はv3.153で実装予定'
     };
     
-    // ② 簡易リスク判定（座標ベースAPIは今後実装）
+    // ② リスク判定（v3.153で実装予定）
     const riskAssessment = {
       sedimentDisaster: {
-        status: 'unknown',
-        level: 'unknown',
-        message: '※土砂災害リスクチェックは座標情報が必要です（今後実装予定）',
-        financingImpact: '要手動確認'
+        status: 'pending',
+        message: 'v3.153で実装予定'
       },
       floodRisk: {
-        status: 'unknown',
-        level: 'unknown',
-        message: '※洪水浸水リスクチェックは座標情報が必要です（今後実装予定）',
-        financingImpact: '要手動確認'
+        status: 'pending',
+        message: 'v3.153で実装予定'
       },
       urbanPlan: {
-        status: 'unknown',
-        level: 'unknown',
-        message: '※都市計画区域判定は座標情報が必要です（今後実装予定）',
-        financingImpact: '要手動確認'
-      },
-      disasterZone: {
-        status: 'unknown',
-        level: 'unknown',
-        message: '※災害危険区域判定は座標情報が必要です（今後実装予定）',
-        financingImpact: '要手動確認'
+        status: 'pending',
+        message: 'v3.153で実装予定'
       }
     };
     
-    // ③ 総合判定（現時点では基本情報のみで判定）
+    // ③ 総合判定
     const financingJudgment = {
-      judgment: 'REVIEW',
-      score: 50,
-      message: '基本情報確認済み。詳細リスクは手動確認が必要です。',
-      criticalRisks: [],
-      warningRisks: ['座標ベースリスクチェック未実装'],
-      note: '※v3.152.0で座標ベース災害リスクチェック機能を実装予定',
+      judgment: 'PENDING',
+      message: '住所解析完了。詳細リスク評価はv3.153で実装予定。',
       timestamp: new Date().toISOString()
     };
     
     const result = {
       success: true,
+      version: 'v3.152.1-sync',
       address: address,
       timestamp: new Date().toISOString(),
       propertyInfo: propertyInfo,
       risks: riskAssessment,
-      financingJudgment: financingJudgment
+      financingJudgment: financingJudgment,
+      processingTime: `${Date.now() - startTime}ms`
     };
     
-    console.log('[COMPREHENSIVE CHECK] ========== COMPLETED ==========');
     return c.json(result, 200);
     
   } catch (error: any) {

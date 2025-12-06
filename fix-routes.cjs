@@ -46,6 +46,9 @@ if (fs.existsSync(routesPath)) {
     routes.exclude.push('/static/*');
   }
   
+  // Explicitly remove test-reinfolib.html from exclude list to make it accessible
+  routes.exclude = routes.exclude.filter(path => path !== '/test-reinfolib.html');
+  
   fs.writeFileSync(routesPath, JSON.stringify(routes, null, 2));
   console.log('✓ Updated _routes.json to exclude static assets and fixed route conflicts');
 } else {

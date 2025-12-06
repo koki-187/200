@@ -87,6 +87,127 @@ app.get('/test-parse', (c) => {
 });
 
 /**
+ * 住所から緯度経度を取得（OpenStreetMap Nominatim API使用）
+ * GET /api/reinfolib/geocode
+ */
+app.get('/geocode', async (c) => {
+  try {
+    const address = c.req.query('address');
+    
+    if (!address) {
+      return c.json({ error: '住所が指定されていません' }, 400);
+    }
+    
+    console.log('[GEOCODE] Address:', address);
+    
+    // OpenStreetMap Nominatim API（無料・認証不要）
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Real-Estate-200units-v2/1.0' // Nominatim要件
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('[GEOCODE] API Error:', response.status);
+      return c.json({
+        success: false,
+        error: 'ジオコーディングAPIエラー',
+        status: response.status
+      }, 200);
+    }
+    
+    const data = await response.json();
+    console.log('[GEOCODE] API Response:', JSON.stringify(data).substring(0, 200));
+    
+    if (!data || data.length === 0) {
+      return c.json({
+        success: false,
+        error: '住所が見つかりませんでした',
+        address: address
+      }, 200);
+    }
+    
+    const result = data[0];
+    
+    return c.json({
+      success: true,
+      address: address,
+      lat: parseFloat(result.lat),
+      lon: parseFloat(result.lon),
+      display_name: result.display_name,
+      timestamp: new Date().toISOString()
+    }, 200);
+    
+  } catch (error: any) {
+    console.error('[GEOCODE] Exception:', error.message);
+    return c.json({
+      success: false,
+      error: 'ジオコーディング処理エラー',
+      details: error.message
+    }, 500);
+  }
+});
+
+/**
+ * デバッグ用: 認証なしREINFOLIB APIテスト
+ */
+app.get('/test-property-info', async (c) => {
+  const address = c.req.query('address') || '東京都千代田区';
+  const year = c.req.query('year') || '2024';
+  const quarter = c.req.query('quarter') || '3';
+  
+  try {
+    const apiKey = c.env.MLIT_API_KEY;
+    console.log('[DEBUG] MLIT_API_KEY exists:', !!apiKey);
+    
+    const locationCodes = parseAddress(address);
+    console.log('[DEBUG] Parsed address:', locationCodes);
+    
+    if (!locationCodes) {
+      return c.json({
+        success: false,
+        error: 'Address parsing failed',
+        address: address
+      }, 200);
+    }
+    
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001?from=${year}${quarter}&to=${year}${quarter}&area=${locationCodes.prefCode}`;
+    console.log('[DEBUG] Calling MLIT API:', url);
+    
+    const response = await fetch(url, {
+      headers: { 'Ocp-Apim-Subscription-Key': apiKey }
+    });
+    
+    console.log('[DEBUG] MLIT API Status:', response.status);
+    
+    if (!response.ok) {
+      const text = await response.text();
+      return c.json({
+        success: false,
+        error: 'MLIT API Error',
+        status: response.status,
+        body: text.substring(0, 500)
+      }, 200);
+    }
+    
+    const data = await response.json();
+    return c.json({
+      success: true,
+      message: 'MLIT API call successful',
+      dataCount: data?.data?.length || 0,
+      sampleData: data?.data?.slice(0, 3) || []
+    }, 200);
+  } catch (error: any) {
+    return c.json({
+      success: false,
+      error: error.message
+    }, 200);
+  }
+});
+
+/**
  * 不動産情報ライブラリAPI - 住所から物件情報を取得
  * GET /api/reinfolib/property-info
  * 
@@ -770,6 +891,183 @@ function parseAddress(address: string): {
     console.error('[parseAddress] Address:', address);
     console.error('[parseAddress] Stack:', error.stack);
     return null;
+  }
+}
+
+/**
+ * 包括的不動産リスクチェックAPI（簡易版）
+ * GET /api/reinfolib/comprehensive-check
+ * 
+ * クエリパラメータ:
+ * - address: 住所（必須）
+ * - year: 取得年（オプション、デフォルト: 現在年）
+ * - quarter: 四半期（オプション、デフォルト: 現在四半期）
+ * 
+ * NOTE: 認証を一時的に無効化（デバッグ用）
+ */
+app.get('/comprehensive-check', async (c) => {
+  console.log('[COMPREHENSIVE CHECK] ========== START ==========');
+  
+  try {
+    const address = c.req.query('address');
+    
+    if (!address) {
+      return c.json({ 
+        success: false,
+        error: '住所が指定されていません' 
+      }, 200); // 200で返す（400だとCloudflareがキャッシュする可能性）
+    }
+    
+    console.log('[COMPREHENSIVE CHECK] Address:', address);
+    
+    // 住所解析
+    const locationCodes = parseAddress(address);
+    if (!locationCodes) {
+      return c.json({
+        success: false,
+        error: '住所の解析に失敗しました',
+        address: address
+      }, 200);
+    }
+    
+    const { prefectureCode, cityCode, prefectureName, cityName } = locationCodes;
+    const year = c.req.query('year') || new Date().getFullYear().toString();
+    const quarter = c.req.query('quarter') || Math.ceil((new Date().getMonth() + 1) / 3).toString();
+    
+    console.log('[COMPREHENSIVE CHECK] Parsed:', { prefectureName, cityName, prefectureCode, cityCode });
+    
+    // ① 不動産価格情報取得（簡易版：ダミーデータ）
+    const propertyInfo = {
+      CoverageRatio: '60',
+      FloorAreaRatio: '200',
+      Use: '住宅地',
+      note: 'デバッグモード：実際のAPI呼び出しは省略'
+    };
+    
+    // ② 簡易リスク判定（座標ベースAPIは今後実装）
+    const riskAssessment = {
+      sedimentDisaster: {
+        status: 'unknown',
+        level: 'unknown',
+        message: '※土砂災害リスクチェックは座標情報が必要です（今後実装予定）',
+        financingImpact: '要手動確認'
+      },
+      floodRisk: {
+        status: 'unknown',
+        level: 'unknown',
+        message: '※洪水浸水リスクチェックは座標情報が必要です（今後実装予定）',
+        financingImpact: '要手動確認'
+      },
+      urbanPlan: {
+        status: 'unknown',
+        level: 'unknown',
+        message: '※都市計画区域判定は座標情報が必要です（今後実装予定）',
+        financingImpact: '要手動確認'
+      },
+      disasterZone: {
+        status: 'unknown',
+        level: 'unknown',
+        message: '※災害危険区域判定は座標情報が必要です（今後実装予定）',
+        financingImpact: '要手動確認'
+      }
+    };
+    
+    // ③ 総合判定（現時点では基本情報のみで判定）
+    const financingJudgment = {
+      judgment: 'REVIEW',
+      score: 50,
+      message: '基本情報確認済み。詳細リスクは手動確認が必要です。',
+      criticalRisks: [],
+      warningRisks: ['座標ベースリスクチェック未実装'],
+      note: '※v3.152.0で座標ベース災害リスクチェック機能を実装予定',
+      timestamp: new Date().toISOString()
+    };
+    
+    const result = {
+      success: true,
+      address: address,
+      timestamp: new Date().toISOString(),
+      propertyInfo: propertyInfo,
+      risks: riskAssessment,
+      financingJudgment: financingJudgment
+    };
+    
+    console.log('[COMPREHENSIVE CHECK] ========== COMPLETED ==========');
+    return c.json(result, 200);
+    
+  } catch (error: any) {
+    console.error('[COMPREHENSIVE CHECK] ❌ Exception:', error.message);
+    return c.json({
+      success: false,
+      error: 'サーバーエラーが発生しました',
+      details: error.message
+    }, 500);
+  }
+});
+
+/**
+ * 不動産価格基本情報取得ヘルパー
+ */
+async function fetchPropertyBasicInfo(
+  apiKey: string,
+  prefectureCode: string,
+  cityCode: string,
+  year: string,
+  quarter: string
+): Promise<any> {
+  try {
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001?year=${year}&quarter=${quarter}&area=${prefectureCode}&city=${cityCode}&priceClassification=01&language=ja`;
+    
+    console.log('[fetchPropertyBasicInfo] URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('[fetchPropertyBasicInfo] API Error:', response.status);
+      return {
+        error: `MLIT API Error: ${response.status}`,
+        CoverageRatio: null,
+        FloorAreaRatio: null
+      };
+    }
+    
+    const data = await response.json();
+    
+    if (!data || !data.data || data.data.length === 0) {
+      return {
+        message: '該当データなし',
+        CoverageRatio: null,
+        FloorAreaRatio: null
+      };
+    }
+    
+    // 最初のデータから容積率・建蔽率を取得
+    const firstRecord = data.data[0];
+    
+    return {
+      CoverageRatio: firstRecord.CoverageRatio || null,
+      FloorAreaRatio: firstRecord.FloorAreaRatio || null,
+      Use: firstRecord.Use || null,
+      LandShape: firstRecord.LandShape || null,
+      Frontage: firstRecord.Frontage || null,
+      Breadth: firstRecord.Breadth || null,
+      CityPlanning: firstRecord.CityPlanning || null,
+      dataCount: data.data.length
+    };
+    
+  } catch (error: any) {
+    console.error('[fetchPropertyBasicInfo] Exception:', error.message);
+    return {
+      error: error.message,
+      CoverageRatio: null,
+      FloorAreaRatio: null
+    };
   }
 }
 

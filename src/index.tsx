@@ -5223,9 +5223,16 @@ app.get('/deals/new', (c) => {
               <span class="hidden sm:inline">物件情報を自動入力</span>
               <span class="inline sm:hidden">自動入力</span>
             </button>
+            <button type="button" id="comprehensive-check-btn" onclick="manualComprehensiveRiskCheck()"
+              class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:bg-purple-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
+              style="min-height: 44px; -webkit-tap-highlight-color: rgba(0,0,0,0.1);">
+              <i class="fas fa-shield-alt"></i>
+              <span class="hidden sm:inline">リスクチェック</span>
+              <span class="inline sm:hidden">リスク</span>
+            </button>
           </div>
           <p class="text-xs text-gray-500 mt-1">
-            <i class="fas fa-info-circle mr-1"></i>住所を入力後、「自動入力」ボタンをタップすると、不動産情報ライブラリから物件情報を取得します（国土交通省データ連携）
+            <i class="fas fa-info-circle mr-1"></i>住所を入力後、「自動入力」ボタンで物件情報を取得、「リスクチェック」ボタンで災害リスクを確認できます
           </p>
         </div>
 
@@ -9121,6 +9128,43 @@ app.get('/deals/new', (c) => {
         btn.innerHTML = originalHTML;
       }
     }
+    
+    /**
+     * 包括的リスクチェック（手動実行）
+     */
+    window.manualComprehensiveRiskCheck = async function() {
+      const locationInput = document.getElementById('location');
+      const address = locationInput.value.trim();
+      
+      if (!address) {
+        alert('住所を入力してください');
+        return;
+      }
+      
+      const btn = document.getElementById('comprehensive-check-btn');
+      const originalHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> チェック中...';
+      
+      try {
+        console.log('[包括チェック] Starting manual check...');
+        
+        // runComprehensiveRiskCheck関数を呼び出し
+        if (typeof window.runComprehensiveRiskCheck === 'function') {
+          await window.runComprehensiveRiskCheck(address);
+        } else {
+          console.error('[包括チェック] runComprehensiveRiskCheck function not found');
+          alert('❌ エラー\n\n包括チェック機能が読み込まれていません。ページを再読み込みしてください。');
+        }
+        
+      } catch (error) {
+        console.error('[包括チェック] Error:', error);
+        alert('❌ エラー\n\nリスクチェック中にエラーが発生しました。\n\n' + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+      }
+    };
     
     /**
      * ハザード情報を表示

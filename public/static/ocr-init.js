@@ -473,6 +473,17 @@ window.processMultipleOCR = async function(files) {
             }
       
       console.log('[OCR] ✅ Form auto-filled successfully');
+      
+      // 🆕 包括的リスクチェック自動実行
+      console.log('[OCR] Starting comprehensive risk check...');
+      if (extracted.location) {
+        try {
+          await runComprehensiveRiskCheck(extracted.location);
+        } catch (err) {
+          console.error('[OCR] Comprehensive check error:', err);
+          // エラーでもOCR処理は成功として扱う
+        }
+      }
     } else {
       console.warn('[OCR] ⚠️ No extracted data found');
     }
@@ -518,10 +529,74 @@ window.processMultipleOCR = async function(files) {
   }
 };
 
+/**
+ * 包括的リスクチェック実行関数
+ */
+async function runComprehensiveRiskCheck(address) {
+  console.log('[COMPREHENSIVE CHECK] ========================================');
+  console.log('[COMPREHENSIVE CHECK] Starting check for address:', address);
+  
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.error('[COMPREHENSIVE CHECK] No auth token');
+      return;
+    }
+    
+    // API呼び出し
+    const response = await axios.get('/api/reinfolib/comprehensive-check', {
+      params: { address: address },
+      headers: { 'Authorization': `Bearer ${token}` },
+      timeout: 30000
+    });
+    
+    console.log('[COMPREHENSIVE CHECK] Response:', response.data);
+    
+    if (!response.data.success) {
+      console.error('[COMPREHENSIVE CHECK] Check failed:', response.data.error);
+      return;
+    }
+    
+    // 結果表示（簡易版：アラートで表示）
+    const result = response.data;
+    const judgment = result.financingJudgment;
+    const propertyInfo = result.propertyInfo;
+    
+    let message = `📊 包括的リスクチェック結果\n\n`;
+    message += `住所: ${result.address}\n\n`;
+    message += `【基本情報】\n`;
+    message += `建蔽率: ${propertyInfo.CoverageRatio || '取得失敗'}%\n`;
+    message += `容積率: ${propertyInfo.FloorAreaRatio || '取得失敗'}%\n`;
+    message += `用途: ${propertyInfo.Use || '取得失敗'}\n\n`;
+    message += `【総合判定】\n`;
+    message += `判定: ${judgment.judgment}\n`;
+    message += `スコア: ${judgment.score}/100点\n`;
+    message += `${judgment.message}\n\n`;
+    
+    if (judgment.note) {
+      message += `※ ${judgment.note}`;
+    }
+    
+    alert(message);
+    
+    console.log('[COMPREHENSIVE CHECK] ✅ Check completed');
+    
+  } catch (error) {
+    console.error('[COMPREHENSIVE CHECK] ❌ Error:', error);
+    // エラーはサイレントに処理（OCR処理自体は成功）
+  }
+  
+  console.log('[COMPREHENSIVE CHECK] ========================================');
+}
+
+// Export to global scope
+window.runComprehensiveRiskCheck = runComprehensiveRiskCheck;
+
 // Flag to indicate this file has loaded
 window.ocrInitLoaded = true;
 
 console.log('[OCR Init] ✅ window.processMultipleOCR function created (complete with PDF support)');
+console.log('[OCR Init] ✅ window.runComprehensiveRiskCheck function created');
 console.log('[OCR Init] ✅ PDF.js preload initiated for iOS Safari');
 console.log('[OCR Init] window.ocrInitLoaded = true');
 console.log('[OCR Init] ========================================');

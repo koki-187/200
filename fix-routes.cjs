@@ -37,6 +37,10 @@ if (fs.existsSync(routesPath)) {
     routes.exclude.push('/logo-3d.png');
   }
   
+  if (!routes.exclude.includes('/favicon.ico')) {
+    routes.exclude.push('/favicon.ico');
+  }
+  
   // Add static files to exclude list
   if (!routes.exclude.includes('/static/*')) {
     routes.exclude.push('/static/*');

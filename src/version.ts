@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = '3.149.1';
-export const BUILD_DATE = '2025-12-05';
-export const BUILD_DESCRIPTION = 'Debug log optimization, version management automation, error handling improvement';
+export const APP_VERSION = '3.150.0';
+export const BUILD_DATE = '2025-12-06';
+export const BUILD_DESCRIPTION = 'Environment variable setup (MLIT_API_KEY, OPENAI_API_KEY) - Fixes OCR and Property Info Auto-fill';
 
 /**
  * バージョン情報をコンソールに出力

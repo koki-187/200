@@ -517,7 +517,31 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
                 content: [
                   {
                     type: 'text',
-                    text: 'Extract property information from this Japanese real estate registry document (登記簿謄本) or property overview sheet. Read all text carefully including small fonts, tables, and detailed fields. Return ONLY a JSON object with the specified structure.'
+                    text: `⚠️ CRITICAL: You MUST return ALL 16 fields in your JSON response. Do NOT omit any fields.
+
+Extract property information from this Japanese real estate document. Read all text carefully.
+
+MANDATORY: Your JSON response MUST include ALL of these 16 fields (even if value is null):
+1. property_name
+2. location
+3. station
+4. walk_minutes
+5. land_area
+6. building_area
+7. zoning
+8. building_coverage
+9. floor_area_ratio
+10. price
+11. structure
+12. built_year
+13. road_info
+14. current_status
+15. yield
+16. occupancy
+17. overall_confidence
+
+If a field is not found in the document, set its value to null and confidence to 0.0.
+Return ONLY a valid JSON object. No markdown, no explanations.`
                   },
                   {
                     type: 'image_url',
@@ -842,11 +866,19 @@ function normalizePropertyData(rawData: any): any {
     }
     // その他のオブジェクトまたはnullの場合
     else {
+      // ⚠️ CRITICAL FIX: フィールドが欠落している場合でも、空のオブジェクトを作成
+      console.warn(`[OCR] Field "${field}" is missing or null in OpenAI response`);
       normalized[field] = {
         value: null,
         confidence: 0
       };
     }
+  }
+  
+  // ⚠️ CRITICAL FIX: OpenAI APIが一部フィールドしか返さない場合のロギング
+  const missingFields = fields.filter(f => !rawData[f] && f !== 'overall_confidence');
+  if (missingFields.length > 0) {
+    console.error(`[OCR] OpenAI API returned incomplete data. Missing ${missingFields.length} fields:`, missingFields.join(', '));
   }
   
   // overall_confidenceは数値として扱う

@@ -331,17 +331,27 @@ window.processMultipleOCR = async function(files) {
                 console.log('[OCR] ⚠️ getFieldValue: fieldData is null/undefined');
                 return '';
               }
+              
               // 新形式: { value, confidence }
               if (typeof fieldData === 'object' && 'value' in fieldData) {
                 const value = fieldData.value;
+                if (value === null || value === undefined) {
+                  console.log('[OCR] ⚠️ getFieldValue: extracted value is null/undefined');
+                  return '';
+                }
                 console.log('[OCR] ✅ getFieldValue: extracted value from object:', value);
-                if (value === null || value === undefined) return '';
                 return String(value);
               }
-              // 旧形式または文字列
-              if (fieldData === null || fieldData === undefined) return '';
-              console.log('[OCR] ℹ️ getFieldValue: using direct value:', fieldData);
-              return String(fieldData);
+              
+              // 旧形式または文字列（直接値）
+              if (typeof fieldData === 'string' || typeof fieldData === 'number') {
+                console.log('[OCR] ℹ️ getFieldValue: using direct value:', fieldData);
+                return String(fieldData);
+              }
+              
+              // その他のオブジェクトまたは未知の形式
+              console.warn('[OCR] ⚠️ getFieldValue: unexpected data format:', typeof fieldData, fieldData);
+              return '';
             };
             
             if (extracted.property_name) {

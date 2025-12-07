@@ -10844,10 +10844,10 @@ app.get('/deals/new', (c) => {
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
   <!-- This ensures window.processMultipleOCR placeholder exists even if main script has errors -->
-  <script src="/static/ocr-init.js?v=3.152.4"></script>
+  <script src="/static/ocr-init.js?v=3.152.5"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
-  <script src="/static/deals-new-events.js?v=3.152.4"></script>
-  <!-- Version: v3.152.4 - Cache busting enabled - CRITICAL OCR & Button Fix -->
+  <script src="/static/deals-new-events.js?v=3.152.5"></script>
+  <!-- Version: v3.152.5 - FINAL FIX: OpenAI mandatory field enforcement + robust getFieldValue -->
 </body>
 </html>
   `);

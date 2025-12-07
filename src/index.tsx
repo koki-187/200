@@ -6408,13 +6408,22 @@ app.get('/deals/new', (c) => {
         if (!select) {
           console.error('[Sellers] ❌ seller_id element not found');
           console.error('[Sellers] Available select elements:', document.querySelectorAll('select').length);
+          alert('エラー: 売主選択フィールドが見つかりません。ページを再読み込みしてください。');
           return;
         }
         
         console.log('[Sellers] seller_id element found, current options:', select.options.length);
+        
+        if (!token) {
+          console.error('[Sellers] ❌ No token available');
+          alert('エラー: 認証トークンがありません。再ログインしてください。');
+          return;
+        }
+        
         console.log('[Sellers] Calling API: /api/auth/users');
         const response = await axios.get('/api/auth/users', {
-          headers: { 'Authorization': 'Bearer ' + token }
+          headers: { 'Authorization': 'Bearer ' + token },
+          timeout: 10000
         });
         
         console.log('[Sellers] API Response:', response.data);
@@ -6423,6 +6432,7 @@ app.get('/deals/new', (c) => {
         
         if (sellers.length === 0) {
           console.warn('[Sellers] ⚠️ No AGENT users found in database');
+          alert('警告: 売主（AGENTユーザー）が登録されていません。管理者に連絡してください。');
         }
         
         sellers.forEach(seller => {
@@ -6437,6 +6447,7 @@ app.get('/deals/new', (c) => {
       } catch (error) {
         console.error('[Sellers] ❌ Failed to load sellers:', error);
         console.error('[Sellers] Error details:', error.response?.data || error.message);
+        alert('エラー: 売主リストの取得に失敗しました。\n' + (error.response?.data?.error || error.message));
       }
     }
 

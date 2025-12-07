@@ -8854,34 +8854,57 @@ app.get('/deals/new', (c) => {
       checkMissingItems();
       
       // イベントリスナー設定（CRITICAL FIX for CSP）
-      const autoFillBtn = document.getElementById('auto-fill-btn');
-      const riskCheckBtn = document.getElementById('comprehensive-check-btn');
-      
-      if (autoFillBtn) {
-        console.log('[Init] Setting up auto-fill button event listener');
-        autoFillBtn.addEventListener('click', function() {
-          if (typeof window.autoFillFromReinfolib === 'function') {
-            window.autoFillFromReinfolib();
-          } else {
-            console.error('[Init] autoFillFromReinfolib function not found');
-          }
-        });
-      } else {
-        console.warn('[Init] auto-fill-btn not found');
+      // Retry logic to ensure buttons are found and initialized
+      function setupButtonListeners(retryCount = 0) {
+        const autoFillBtn = document.getElementById('auto-fill-btn');
+        const riskCheckBtn = document.getElementById('comprehensive-check-btn');
+        
+        let needsRetry = false;
+        
+        if (autoFillBtn && !autoFillBtn.dataset.listenerAttached) {
+          console.log('[Init] Setting up auto-fill button event listener');
+          autoFillBtn.addEventListener('click', function() {
+            if (typeof window.autoFillFromReinfolib === 'function') {
+              window.autoFillFromReinfolib();
+            } else {
+              console.error('[Init] autoFillFromReinfolib function not found');
+            }
+          });
+          autoFillBtn.dataset.listenerAttached = 'true';
+        } else if (!autoFillBtn) {
+          console.warn('[Init] auto-fill-btn not found (attempt ' + retryCount + ')');
+          needsRetry = true;
+        }
+        
+        if (riskCheckBtn && !riskCheckBtn.dataset.listenerAttached) {
+          console.log('[Init] Setting up risk check button event listener');
+          riskCheckBtn.addEventListener('click', function() {
+            if (typeof window.manualComprehensiveRiskCheck === 'function') {
+              window.manualComprehensiveRiskCheck();
+            } else {
+              console.error('[Init] manualComprehensiveRiskCheck function not found');
+            }
+          });
+          riskCheckBtn.dataset.listenerAttached = 'true';
+        } else if (!riskCheckBtn) {
+          console.warn('[Init] comprehensive-check-btn not found (attempt ' + retryCount + ')');
+          needsRetry = true;
+        }
+        
+        // Retry if buttons not found and we haven't exceeded max retries
+        if (needsRetry && retryCount < 5) {
+          console.log('[Init] Retrying button setup in 300ms...');
+          setTimeout(function() {
+            setupButtonListeners(retryCount + 1);
+          }, 300);
+        } else if (needsRetry) {
+          console.error('[Init] ❌ CRITICAL: Failed to find buttons after 5 retries');
+        } else {
+          console.log('[Init] ✅ All button listeners successfully attached');
+        }
       }
       
-      if (riskCheckBtn) {
-        console.log('[Init] Setting up risk check button event listener');
-        riskCheckBtn.addEventListener('click', function() {
-          if (typeof window.manualComprehensiveRiskCheck === 'function') {
-            window.manualComprehensiveRiskCheck();
-          } else {
-            console.error('[Init] manualComprehensiveRiskCheck function not found');
-          }
-        });
-      } else {
-        console.warn('[Init] comprehensive-check-btn not found');
-      }
+      setupButtonListeners();
     }
     
     /**

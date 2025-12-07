@@ -10844,10 +10844,10 @@ app.get('/deals/new', (c) => {
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
   <!-- This ensures window.processMultipleOCR placeholder exists even if main script has errors -->
-  <script src="/static/ocr-init.js?v=3.149.0"></script>
+  <script src="/static/ocr-init.js?v=3.152.4"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
-  <script src="/static/deals-new-events.js?v=3.149.0"></script>
-  <!-- Version: v3.142.0 - Cache busting enabled -->
+  <script src="/static/deals-new-events.js?v=3.152.4"></script>
+  <!-- Version: v3.152.4 - Cache busting enabled - CRITICAL OCR & Button Fix -->
 </body>
 </html>
   `);

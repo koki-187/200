@@ -5216,14 +5216,14 @@ app.get('/deals/new', (c) => {
               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="例: 東京都板橋区蓮根三丁目17-7"
               style="min-height: 44px;">
-            <button type="button" id="auto-fill-btn" onclick="autoFillFromReinfolib()"
+            <button type="button" id="auto-fill-btn"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
               style="min-height: 44px; -webkit-tap-highlight-color: rgba(0,0,0,0.1);">
               <i class="fas fa-magic"></i>
               <span class="hidden sm:inline">物件情報を自動入力</span>
               <span class="inline sm:hidden">自動入力</span>
             </button>
-            <button type="button" id="comprehensive-check-btn" onclick="manualComprehensiveRiskCheck()"
+            <button type="button" id="comprehensive-check-btn"
               class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:bg-purple-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
               style="min-height: 44px; -webkit-tap-highlight-color: rgba(0,0,0,0.1);">
               <i class="fas fa-shield-alt"></i>
@@ -8841,6 +8841,36 @@ app.get('/deals/new', (c) => {
       
       // 不足項目チェック（案件IDがある場合のみ）
       checkMissingItems();
+      
+      // イベントリスナー設定（CRITICAL FIX for CSP）
+      const autoFillBtn = document.getElementById('auto-fill-btn');
+      const riskCheckBtn = document.getElementById('comprehensive-check-btn');
+      
+      if (autoFillBtn) {
+        console.log('[Init] Setting up auto-fill button event listener');
+        autoFillBtn.addEventListener('click', function() {
+          if (typeof window.autoFillFromReinfolib === 'function') {
+            window.autoFillFromReinfolib();
+          } else {
+            console.error('[Init] autoFillFromReinfolib function not found');
+          }
+        });
+      } else {
+        console.warn('[Init] auto-fill-btn not found');
+      }
+      
+      if (riskCheckBtn) {
+        console.log('[Init] Setting up risk check button event listener');
+        riskCheckBtn.addEventListener('click', function() {
+          if (typeof window.manualComprehensiveRiskCheck === 'function') {
+            window.manualComprehensiveRiskCheck();
+          } else {
+            console.error('[Init] manualComprehensiveRiskCheck function not found');
+          }
+        });
+      } else {
+        console.warn('[Init] comprehensive-check-btn not found');
+      }
     }
     
     /**

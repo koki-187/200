@@ -9030,15 +9030,32 @@ app.get('/deals/new', (c) => {
      * CRITICAL FIX: Export to global scope for onclick handler
      */
     window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
+      console.log('[不動産情報ライブラリ] ========================================');
+      console.log('[不動産情報ライブラリ] Auto-fill function called');
+      
       const locationInput = document.getElementById('location');
+      if (!locationInput) {
+        console.error('[不動産情報ライブラリ] ❌ location input element not found');
+        alert('エラー: 住所入力フィールドが見つかりません。');
+        return;
+      }
+      
       const address = locationInput.value.trim();
+      console.log('[不動産情報ライブラリ] Address from input:', address);
+      console.log('[不動産情報ライブラリ] Address length:', address.length);
       
       if (!address) {
+        console.warn('[不動産情報ライブラリ] ⚠️ Address is empty');
         alert('住所を入力してください');
         return;
       }
       
       const btn = document.getElementById('auto-fill-btn');
+      if (!btn) {
+        console.error('[不動産情報ライブラリ] ❌ auto-fill-btn not found');
+        return;
+      }
+      
       const originalHTML = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 取得中...';
@@ -9046,7 +9063,6 @@ app.get('/deals/new', (c) => {
       try {
         // 正しいトークンキーを使用
         const token = localStorage.getItem('auth_token');
-        console.log('[不動産情報ライブラリ] ========================================');
         console.log('[不動産情報ライブラリ] トークン取得:', !!token);
         console.log('[不動産情報ライブラリ] 住所:', address);
         console.log('[不動産情報ライブラリ] ========================================');
@@ -9208,36 +9224,60 @@ app.get('/deals/new', (c) => {
      * 包括的リスクチェック（手動実行）
      */
     window.manualComprehensiveRiskCheck = async function() {
+      console.log('[包括チェック] ========================================');
+      console.log('[包括チェック] Manual comprehensive risk check started');
+      
       const locationInput = document.getElementById('location');
+      if (!locationInput) {
+        console.error('[包括チェック] ❌ location input element not found');
+        alert('エラー: 住所入力フィールドが見つかりません。ページを再読み込みしてください。');
+        return;
+      }
+      
       const address = locationInput.value.trim();
+      console.log('[包括チェック] Address from input:', address);
+      console.log('[包括チェック] Address length:', address.length);
       
       if (!address) {
+        console.warn('[包括チェック] ⚠️ Address is empty');
         alert('住所を入力してください');
         return;
       }
       
       const btn = document.getElementById('comprehensive-check-btn');
+      if (!btn) {
+        console.error('[包括チェック] ❌ comprehensive-check-btn not found');
+        return;
+      }
+      
       const originalHTML = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> チェック中...';
       
       try {
-        console.log('[包括チェック] Starting manual check...');
+        console.log('[包括チェック] Checking if runComprehensiveRiskCheck exists...');
+        console.log('[包括チェック] typeof window.runComprehensiveRiskCheck:', typeof window.runComprehensiveRiskCheck);
         
         // runComprehensiveRiskCheck関数を呼び出し
         if (typeof window.runComprehensiveRiskCheck === 'function') {
+          console.log('[包括チェック] ✅ Calling window.runComprehensiveRiskCheck with address:', address);
           await window.runComprehensiveRiskCheck(address);
+          console.log('[包括チェック] ✅ runComprehensiveRiskCheck completed');
         } else {
-          console.error('[包括チェック] runComprehensiveRiskCheck function not found');
+          console.error('[包括チェック] ❌ runComprehensiveRiskCheck function not found');
+          console.error('[包括チェック] window.ocrInitLoaded:', window.ocrInitLoaded);
           alert('❌ エラー\n\n包括チェック機能が読み込まれていません。ページを再読み込みしてください。');
         }
         
       } catch (error) {
-        console.error('[包括チェック] Error:', error);
+        console.error('[包括チェック] ❌ Error:', error);
+        console.error('[包括チェック] Error message:', error.message);
+        console.error('[包括チェック] Error stack:', error.stack);
         alert('❌ エラー\n\nリスクチェック中にエラーが発生しました。\n\n' + error.message);
       } finally {
         btn.disabled = false;
         btn.innerHTML = originalHTML;
+        console.log('[包括チェック] ========================================');
       }
     };
     

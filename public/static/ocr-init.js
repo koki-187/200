@@ -548,17 +548,35 @@ window.processMultipleOCR = async function(files) {
 async function runComprehensiveRiskCheck(address) {
   console.log('[COMPREHENSIVE CHECK] ========================================');
   console.log('[COMPREHENSIVE CHECK] Starting check for address:', address);
+  console.log('[COMPREHENSIVE CHECK] Address type:', typeof address);
+  console.log('[COMPREHENSIVE CHECK] Address length:', address ? address.length : 0);
+  
+  // 住所のバリデーション
+  if (!address || typeof address !== 'string' || address.trim().length === 0) {
+    console.error('[COMPREHENSIVE CHECK] ❌ Invalid address - empty or not a string');
+    alert('エラー: 有効な住所を入力してください');
+    return;
+  }
+  
+  const trimmedAddress = address.trim();
+  console.log('[COMPREHENSIVE CHECK] Trimmed address:', trimmedAddress);
   
   try {
     const token = localStorage.getItem('auth_token');
     if (!token) {
       console.error('[COMPREHENSIVE CHECK] No auth token');
+      alert('エラー: 認証トークンがありません。ページを再読み込みしてログイン直してください。');
       return;
     }
     
+    console.log('[COMPREHENSIVE CHECK] Token found, calling API...');
+    
     // API呼び出し
+    console.log('[COMPREHENSIVE CHECK] API URL: /api/reinfolib/comprehensive-check');
+    console.log('[COMPREHENSIVE CHECK] API params:', { address: trimmedAddress });
+    
     const response = await axios.get('/api/reinfolib/comprehensive-check', {
-      params: { address: address },
+      params: { address: trimmedAddress },
       headers: { 'Authorization': `Bearer ${token}` },
       timeout: 30000
     });
@@ -567,6 +585,7 @@ async function runComprehensiveRiskCheck(address) {
     
     if (!response.data.success) {
       console.error('[COMPREHENSIVE CHECK] Check failed:', response.data.error);
+      alert('❌ リスクチェック失敗\n\n' + response.data.error + '\n\n住所を確認してください。');
       return;
     }
     
@@ -592,7 +611,18 @@ async function runComprehensiveRiskCheck(address) {
     
   } catch (error) {
     console.error('[COMPREHENSIVE CHECK] ❌ Error:', error);
-    // エラーはサイレントに処理（OCR処理自体は成功）
+    console.error('[COMPREHENSIVE CHECK] Error message:', error.message);
+    console.error('[COMPREHENSIVE CHECK] Error response:', error.response?.data);
+    console.error('[COMPREHENSIVE CHECK] Error status:', error.response?.status);
+    
+    // ユーザーへのエラー表示
+    let errorMessage = 'リスクチェック中にエラーが発生しました。';
+    if (error.response?.data?.error) {
+      errorMessage += '\n\n' + error.response.data.error;
+    } else if (error.message) {
+      errorMessage += '\n\n' + error.message;
+    }
+    alert('❌ エラー\n\n' + errorMessage);
   }
   
   console.log('[COMPREHENSIVE CHECK] ========================================');

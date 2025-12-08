@@ -492,8 +492,40 @@ window.processMultipleOCR = async function(files) {
       
       console.log('[OCR] ✅ Form auto-filled successfully');
       
-      // v3.153.4: リスクチェックは自動実行しない（ユーザーが手動でボタンをクリックする）
-      console.log('[OCR] ✅ v3.153.4: OCR processing completed. No automatic risk check. User can manually click buttons if needed.');
+      // v3.153.5: 住所が抽出された場合、自動的に物件情報とリスクチェックを実行
+      console.log('[OCR] ========================================');
+      console.log('[OCR] v3.153.5: Starting automatic property info and risk check...');
+      
+      // 住所のバリデーション
+      const location = extracted.location;
+      const locationValue = location && location.value ? location.value.trim() : '';
+      
+      console.log('[OCR] Extracted location:', locationValue);
+      console.log('[OCR] Location confidence:', location ? location.confidence : 0);
+      
+      if (locationValue && locationValue.length > 5) {
+        console.log('[OCR] ✅ Valid location found, starting automatic processes...');
+        
+        try {
+          // Step 1: 物件情報自動取得
+          console.log('[OCR] Step 1: Fetching property info from MLIT API...');
+          await autoFetchPropertyInfo(locationValue);
+          
+          // Step 2: リスクチェック（物件情報取得後に実行）
+          console.log('[OCR] Step 2: Running comprehensive risk check...');
+          await autoRunRiskCheck(locationValue);
+          
+          console.log('[OCR] ✅ All automatic processes completed successfully');
+        } catch (autoError) {
+          console.error('[OCR] ⚠️ Automatic process error (non-critical):', autoError.message);
+          // エラーが発生してもOCR処理は成功として扱う
+        }
+      } else {
+        console.warn('[OCR] ⚠️ No valid location extracted, skipping automatic processes');
+        console.warn('[OCR] User can manually use buttons if needed');
+      }
+      
+      console.log('[OCR] ========================================');
     } else {
       console.warn('[OCR] ⚠️ No extracted data found');
     }
@@ -625,8 +657,132 @@ async function runComprehensiveRiskCheck(address) {
   console.log('[COMPREHENSIVE CHECK] ========================================');
 }
 
+/**
+ * 物件情報自動取得（OCR完了後の自動実行用）
+ * エラーが発生してもサイレントに処理
+ */
+async function autoFetchPropertyInfo(address) {
+  console.log('[Auto Property Info] ========================================');
+  console.log('[Auto Property Info] Starting automatic property info fetch...');
+  console.log('[Auto Property Info] Address:', address);
+  
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.warn('[Auto Property Info] ⚠️ No auth token, skipping');
+      return;
+    }
+    
+    const year = new Date().getFullYear();
+    const quarter = Math.ceil((new Date().getMonth() + 1) / 3);
+    
+    console.log('[Auto Property Info] Calling API with:', { address, year, quarter });
+    
+    const response = await axios.get('/api/reinfolib/property-info', {
+      params: { address, year, quarter },
+      headers: { 'Authorization': 'Bearer ' + token },
+      timeout: 15000
+    });
+    
+    console.log('[Auto Property Info] API response received');
+    
+    if (!response.data.success) {
+      console.warn('[Auto Property Info] ⚠️ API returned error:', response.data.message);
+      return;
+    }
+    
+    const properties = response.data.data;
+    if (!properties || properties.length === 0) {
+      console.warn('[Auto Property Info] ⚠️ No property data found');
+      return;
+    }
+    
+    const property = properties[0];
+    console.log('[Auto Property Info] Property data:', property);
+    
+    // フォームフィールドに自動入力
+    const fields = [
+      { id: 'land_area', value: property.land_area },
+      { id: 'zoning', value: property.use || property.city_planning },
+      { id: 'building_coverage', value: property.building_coverage_ratio },
+      { id: 'floor_area_ratio', value: property.floor_area_ratio },
+      { id: 'frontage', value: property.frontage },
+      { id: 'building_area', value: property.building_area },
+      { id: 'structure', value: property.building_structure },
+      { id: 'built_year', value: property.building_year }
+    ];
+    
+    let filledCount = 0;
+    fields.forEach(field => {
+      const input = document.getElementById(field.id);
+      if (input && field.value && !input.value.trim()) {
+        input.value = field.value;
+        filledCount++;
+        console.log('[Auto Property Info] ✅ Filled:', field.id, '=', field.value);
+      }
+    });
+    
+    console.log('[Auto Property Info] ✅ Completed: ' + filledCount + ' fields filled');
+    
+  } catch (error) {
+    console.error('[Auto Property Info] ❌ Error:', error.message);
+    // エラーはサイレントに処理（ユーザーに通知しない）
+  }
+  
+  console.log('[Auto Property Info] ========================================');
+}
+
+/**
+ * リスクチェック自動実行（OCR完了後の自動実行用）
+ * エラーが発生してもサイレントに処理
+ */
+async function autoRunRiskCheck(address) {
+  console.log('[Auto Risk Check] ========================================');
+  console.log('[Auto Risk Check] Starting automatic risk check...');
+  console.log('[Auto Risk Check] Address:', address);
+  
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.warn('[Auto Risk Check] ⚠️ No auth token, skipping');
+      return;
+    }
+    
+    console.log('[Auto Risk Check] Calling API...');
+    
+    const response = await axios.get('/api/reinfolib/comprehensive-check', {
+      params: { address: address },
+      headers: { 'Authorization': 'Bearer ' + token },
+      timeout: 30000
+    });
+    
+    console.log('[Auto Risk Check] API response received');
+    
+    if (!response.data.success) {
+      console.warn('[Auto Risk Check] ⚠️ API returned error:', response.data.error);
+      return;
+    }
+    
+    const result = response.data;
+    console.log('[Auto Risk Check] ✅ Risk check completed');
+    console.log('[Auto Risk Check] Prefecture:', result.propertyInfo?.prefecture);
+    console.log('[Auto Risk Check] City:', result.propertyInfo?.city);
+    console.log('[Auto Risk Check] Judgment:', result.financingJudgment?.message);
+    
+    // 結果は Console ログのみ（ユーザーにアラート表示しない）
+    
+  } catch (error) {
+    console.error('[Auto Risk Check] ❌ Error:', error.message);
+    // エラーはサイレントに処理（ユーザーに通知しない）
+  }
+  
+  console.log('[Auto Risk Check] ========================================');
+}
+
 // Export to global scope
 window.runComprehensiveRiskCheck = runComprehensiveRiskCheck;
+window.autoFetchPropertyInfo = autoFetchPropertyInfo;
+window.autoRunRiskCheck = autoRunRiskCheck;
 
 // Flag to indicate this file has loaded
 window.ocrInitLoaded = true;

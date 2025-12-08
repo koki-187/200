@@ -10898,7 +10898,69 @@ app.get('/deals/new', (c) => {
   <script src="/static/ocr-init.js?v=3.152.6"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
   <script src="/static/deals-new-events.js?v=3.152.6"></script>
-  <!-- Version: v3.152.6 - DEBUG: Full extracted_data logging + detailed getFieldValue trace -->
+  
+  <!-- EMERGENCY FIX v3.153.7: Force loadSellers execution -->
+  <script>
+    (function() {
+      console.log('[EMERGENCY] Force loadSellers script loaded');
+      console.log('[EMERGENCY] typeof loadSellers:', typeof loadSellers);
+      
+      // Wait for DOM to be fully loaded
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', forceLoadSellers);
+      } else {
+        forceLoadSellers();
+      }
+      
+      function forceLoadSellers() {
+        console.log('[EMERGENCY] forceLoadSellers called');
+        console.log('[EMERGENCY] typeof loadSellers:', typeof loadSellers);
+        
+        // Check if loadSellers exists
+        if (typeof loadSellers !== 'function') {
+          console.error('[EMERGENCY] loadSellers is not a function!');
+          console.error('[EMERGENCY] This indicates a serious script loading issue');
+          return;
+        }
+        
+        // Try to call loadSellers with retry logic
+        let retryCount = 0;
+        const maxRetries = 10;
+        const retryInterval = 500;
+        
+        function attemptLoadSellers() {
+          console.log('[EMERGENCY] Attempt', retryCount + 1, '/', maxRetries);
+          
+          const sellerSelect = document.getElementById('seller_id');
+          if (!sellerSelect) {
+            console.warn('[EMERGENCY] seller_id element not found yet');
+            if (retryCount < maxRetries) {
+              retryCount++;
+              setTimeout(attemptLoadSellers, retryInterval);
+            } else {
+              console.error('[EMERGENCY] Failed to find seller_id after', maxRetries, 'retries');
+            }
+            return;
+          }
+          
+          console.log('[EMERGENCY] seller_id element found!');
+          console.log('[EMERGENCY] Calling loadSellers()...');
+          
+          try {
+            loadSellers();
+            console.log('[EMERGENCY] loadSellers() called successfully');
+          } catch (error) {
+            console.error('[EMERGENCY] Error calling loadSellers():', error);
+          }
+        }
+        
+        // Start attempting
+        attemptLoadSellers();
+      }
+    })();
+  </script>
+  
+  <!-- Version: v3.153.7 - EMERGENCY: Force loadSellers execution -->
 </body>
 </html>
   `);

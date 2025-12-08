@@ -9038,6 +9038,17 @@ app.get('/deals/new', (c) => {
       console.log('[Main] Document already ready, calling initializePage immediately');
       safeInitializePage();
     }
+    
+    // CRITICAL FIX v3.153.17: Also listen to window.load event as additional failsafe
+    window.addEventListener('load', function() {
+      console.log('[Main] window.load event fired');
+      if (!initializePageCalled) {
+        console.warn('[Main] ⚠️ window.load FAILSAFE: initializePage was not called yet, executing now');
+        safeInitializePage();
+      } else {
+        console.log('[Main] initializePage already called, skipping window.load execution');
+      }
+    });
 
     // ============================================================
     // 不動産情報ライブラリAPI自動入力機能

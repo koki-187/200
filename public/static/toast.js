@@ -214,7 +214,7 @@ class DialogManager {
    * @returns {Promise<void>}
    */
   // alert removed per user requirement - see console
-    console.error(title, message, okText = 'OK') {
+  showAlert(title, message, okText = 'OK') {
     return new Promise((resolve) => {
       const overlay = document.createElement('div');
       overlay.className = 'custom-dialog-overlay';

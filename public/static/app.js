@@ -56,7 +56,8 @@ document.getElementById('login-form')?.addEventListener('submit', async (e) => {
     submitBtn.disabled = false;
     
     const errorMsg = error.response?.data?.error || error.message || '不明なエラーが発生しました';
-    alert('ログインに失敗しました:\n\n' + errorMsg + '\n\n入力内容を確認してください。');
+    // alert removed per user requirement - see console
+    console.error('ログインに失敗しました:\n\n' + errorMsg + '\n\n入力内容を確認してください。');
   }
 });
 
@@ -271,7 +272,8 @@ async function showDealDetail(dealId) {
     renderDealDetail();
   } catch (error) {
     console.error('Failed to load deal detail:', error);
-    alert('案件詳細の読み込みに失敗しました');
+    // alert removed per user requirement - see console
+    console.error('案件詳細の読み込みに失敗しました');
   }
 }
 
@@ -503,9 +505,11 @@ function renderDealDetail() {
       try {
         await axios.put(`/deals/${deal.id}`, { status: e.target.value });
         state.currentDeal.status = e.target.value;
-        alert('ステータスを更新しました');
+        // alert removed per user requirement - see console
+    console.error('ステータスを更新しました');
       } catch (error) {
-        alert('ステータスの更新に失敗しました');
+        // alert removed per user requirement - see console
+    console.error('ステータスの更新に失敗しました');
       }
     });
     
@@ -554,7 +558,8 @@ async function sendMessage() {
     input.value = '';
     loadMessages(state.currentDeal.id);
   } catch (error) {
-    alert('メッセージの送信に失敗しました');
+    // alert removed per user requirement - see console
+    console.error('メッセージの送信に失敗しました');
   }
 }
 
@@ -579,10 +584,12 @@ async function saveDealInfo() {
   try {
     await axios.put(`/deals/${state.currentDeal.id}`, updates);
     state.currentDeal = { ...state.currentDeal, ...updates };
-    alert('案件情報を保存しました');
+    // alert removed per user requirement - see console
+    console.error('案件情報を保存しました');
     renderDealDetail();
   } catch (error) {
-    alert('保存に失敗しました: ' + (error.response?.data?.error || error.message));
+    // alert removed per user requirement - see console
+    console.error('保存に失敗しました: ' + (error.response?.data?.error || error.message));
   }
 }
 
@@ -689,7 +696,8 @@ async function handleFileUpload(event) {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
     } catch (error) {
-      alert(`${file.name}のアップロードに失敗しました: ${error.response?.data?.error || error.message}`);
+      // alert removed per user requirement - see console
+    console.error(`${file.name}のアップロードに失敗しました: ${error.response?.data?.error || error.message}`);
     }
   }
   
@@ -703,7 +711,8 @@ async function downloadFile(fileId) {
   try {
     window.open(`/api/files/${fileId}`, '_blank');
   } catch (error) {
-    alert('ファイルのダウンロードに失敗しました');
+    // alert removed per user requirement - see console
+    console.error('ファイルのダウンロードに失敗しました');
   }
 }
 
@@ -715,7 +724,8 @@ async function deleteFile(fileId) {
     await axios.delete(`/files/${fileId}`);
     loadFiles(state.currentDeal.id);
   } catch (error) {
-    alert('ファイルの削除に失敗しました');
+    // alert removed per user requirement - see console
+    console.error('ファイルの削除に失敗しました');
   }
 }
 
@@ -743,12 +753,14 @@ async function generateProposal() {
     const proposal = response.data.proposal;
     
     // 提案結果を表示
-    alert(`AI提案を生成しました！\n\n【総合評価】\n${proposal.summary}\n\n提案の詳細は案件メモに保存されました。`);
+    // alert removed per user requirement - see console
+    console.error(`AI提案を生成しました！\n\n【総合評価】\n${proposal.summary}\n\n提案の詳細は案件メモに保存されました。`);
     
     // 案件詳細を再読み込み
     await showDealDetail(state.currentDeal.id);
   } catch (error) {
-    alert('AI提案の生成に失敗しました: ' + (error.response?.data?.error || error.message));
+    // alert removed per user requirement - see console
+    console.error('AI提案の生成に失敗しました: ' + (error.response?.data?.error || error.message));
   } finally {
     if (btn) {
       btn.innerHTML = originalText;
@@ -761,7 +773,8 @@ async function generateProposal() {
 document.getElementById('btn-new-deal')?.addEventListener('click', async () => {
   // 管理者権限チェック
   if (state.user?.role !== 'ADMIN') {
-    alert('案件作成は管理者のみ可能です');
+    // alert removed per user requirement - see console
+    console.error('案件作成は管理者のみ可能です');
     return;
   }
   
@@ -778,7 +791,8 @@ document.getElementById('btn-new-deal')?.addEventListener('click', async () => {
     // モーダルを表示
     document.getElementById('new-deal-modal').classList.remove('hidden');
   } catch (error) {
-    alert('エージェント情報の取得に失敗しました');
+    // alert removed per user requirement - see console
+    console.error('エージェント情報の取得に失敗しました');
   }
 });
 
@@ -807,7 +821,8 @@ document.getElementById('new-deal-form')?.addEventListener('submit', async (e) =
   };
   
   if (!newDeal.title || !newDeal.seller_id) {
-    alert('案件名とエージェントは必須です');
+    // alert removed per user requirement - see console
+    console.error('案件名とエージェントは必須です');
     return;
   }
   
@@ -815,10 +830,12 @@ document.getElementById('new-deal-form')?.addEventListener('submit', async (e) =
     await axios.post('/deals', newDeal);
     document.getElementById('new-deal-modal').classList.add('hidden');
     document.getElementById('new-deal-form').reset();
-    alert('案件を作成しました');
+    // alert removed per user requirement - see console
+    console.error('案件を作成しました');
     await loadDeals();
   } catch (error) {
-    alert('案件の作成に失敗しました: ' + (error.response?.data?.error || error.message));
+    // alert removed per user requirement - see console
+    console.error('案件の作成に失敗しました: ' + (error.response?.data?.error || error.message));
   }
 });
 
@@ -1011,9 +1028,11 @@ document.getElementById('btn-mark-all-read')?.addEventListener('click', async ()
   try {
     await axios.put('/notifications/read-all');
     loadNotifications();
-    alert('すべての通知を既読にしました');
+    // alert removed per user requirement - see console
+    console.error('すべての通知を既読にしました');
   } catch (error) {
-    alert('既読処理に失敗しました');
+    // alert removed per user requirement - see console
+    console.error('既読処理に失敗しました');
   }
 });
 
@@ -1023,7 +1042,8 @@ async function markAsRead(notificationId) {
     await axios.put(`/notifications/${notificationId}/read`);
     loadNotifications();
   } catch (error) {
-    alert('既読処理に失敗しました');
+    // alert removed per user requirement - see console
+    console.error('既読処理に失敗しました');
   }
 }
 
@@ -1035,7 +1055,8 @@ async function deleteNotification(notificationId) {
     await axios.delete(`/notifications/${notificationId}`);
     loadNotifications();
   } catch (error) {
-    alert('通知の削除に失敗しました');
+    // alert removed per user requirement - see console
+    console.error('通知の削除に失敗しました');
   }
 }
 
@@ -1090,7 +1111,8 @@ async function loadSettings() {
     }
   } catch (error) {
     console.error('Failed to load settings:', error);
-    alert('設定の読み込みに失敗しました');
+    // alert removed per user requirement - see console
+    console.error('設定の読み込みに失敗しました');
   }
 }
 
@@ -1123,9 +1145,11 @@ document.getElementById('btn-save-business-days')?.addEventListener('click', asy
   
   try {
     await axios.put('/settings', { business_days: checkedDays });
-    alert('ビジネスデイ設定を保存しました');
+    // alert removed per user requirement - see console
+    console.error('ビジネスデイ設定を保存しました');
   } catch (error) {
-    alert('保存に失敗しました');
+    // alert removed per user requirement - see console
+    console.error('保存に失敗しました');
   }
 });
 
@@ -1135,7 +1159,8 @@ document.getElementById('btn-add-holiday')?.addEventListener('click', async () =
   const description = document.getElementById('new-holiday-desc').value;
   
   if (!date) {
-    alert('日付を選択してください');
+    // alert removed per user requirement - see console
+    console.error('日付を選択してください');
     return;
   }
   
@@ -1145,7 +1170,8 @@ document.getElementById('btn-add-holiday')?.addEventListener('click', async () =
     document.getElementById('new-holiday-desc').value = '';
     loadSettings();
   } catch (error) {
-    alert('休日の追加に失敗しました');
+    // alert removed per user requirement - see console
+    console.error('休日の追加に失敗しました');
   }
 });
 
@@ -1157,7 +1183,8 @@ async function deleteHoliday(date) {
     await axios.delete(`/settings/holidays/${date}`);
     loadSettings();
   } catch (error) {
-    alert('休日の削除に失敗しました');
+    // alert removed per user requirement - see console
+    console.error('休日の削除に失敗しました');
   }
 }
 
@@ -1166,15 +1193,18 @@ document.getElementById('btn-save-storage')?.addEventListener('click', async () 
   const limit = parseInt(document.getElementById('storage-limit').value);
   
   if (limit < 10 || limit > 500) {
-    alert('ストレージ上限は10MB〜500MBの範囲で設定してください');
+    // alert removed per user requirement - see console
+    console.error('ストレージ上限は10MB〜500MBの範囲で設定してください');
     return;
   }
   
   try {
     await axios.put('/settings', { storage_limit_mb: limit });
-    alert('ストレージ設定を保存しました');
+    // alert removed per user requirement - see console
+    console.error('ストレージ設定を保存しました');
   } catch (error) {
-    alert('保存に失敗しました');
+    // alert removed per user requirement - see console
+    console.error('保存に失敗しました');
   }
 });
 
@@ -1217,7 +1247,8 @@ document.getElementById('btn-create-user')?.addEventListener('click', async () =
   const userRole = document.getElementById('new-user-role').value;
   
   if (!email || !name || !password) {
-    alert('すべての項目を入力してください');
+    // alert removed per user requirement - see console
+    console.error('すべての項目を入力してください');
     return;
   }
   
@@ -1226,10 +1257,12 @@ document.getElementById('btn-create-user')?.addEventListener('click', async () =
     document.getElementById('new-user-email').value = '';
     document.getElementById('new-user-name').value = '';
     document.getElementById('new-user-password').value = '';
-    alert('ユーザーを追加しました');
+    // alert removed per user requirement - see console
+    console.error('ユーザーを追加しました');
     loadUsers();
   } catch (error) {
-    alert('ユーザーの追加に失敗しました: ' + (error.response?.data?.error || error.message));
+    // alert removed per user requirement - see console
+    console.error('ユーザーの追加に失敗しました: ' + (error.response?.data?.error || error.message));
   }
 });
 
@@ -1247,7 +1280,8 @@ document.getElementById('btn-new-deal')?.addEventListener('click', async () => {
     
     document.getElementById('new-deal-modal').classList.remove('hidden');
   } catch (error) {
-    alert('ユーザー情報の読み込みに失敗しました');
+    // alert removed per user requirement - see console
+    console.error('ユーザー情報の読み込みに失敗しました');
   }
 });
 
@@ -1274,7 +1308,8 @@ async function createNewDeal() {
   const remarks = document.getElementById('new-deal-remarks').value.trim();
   
   if (!title || !sellerId) {
-    alert('案件名と売主担当者は必須です');
+    // alert removed per user requirement - see console
+    console.error('案件名と売主担当者は必須です');
     return;
   }
   
@@ -1292,10 +1327,12 @@ async function createNewDeal() {
     
     await axios.post('/deals', newDeal);
     closeNewDealModal();
-    alert('案件を作成しました');
+    // alert removed per user requirement - see console
+    console.error('案件を作成しました');
     await loadDeals();
   } catch (error) {
-    alert('案件の作成に失敗しました: ' + (error.response?.data?.error || error.message));
+    // alert removed per user requirement - see console
+    console.error('案件の作成に失敗しました: ' + (error.response?.data?.error || error.message));
   }
 }
 
@@ -1374,7 +1411,8 @@ document.getElementById('ocr-file-input')?.addEventListener('change', async (e) 
 // PDF生成機能
 document.getElementById('btn-download-pdf')?.addEventListener('click', async () => {
   if (!state.currentDeal) {
-    alert('案件情報が読み込まれていません');
+    // alert removed per user requirement - see console
+    console.error('案件情報が読み込まれていません');
     return;
   }
 
@@ -1594,11 +1632,13 @@ document.getElementById('btn-download-pdf')?.addEventListener('click', async () 
     const filename = `案件レポート_${data.deal.title.replace(/[^\w\s]/gi, '')}_${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(filename);
 
-    alert('PDFレポートを生成しました');
+    // alert removed per user requirement - see console
+    console.error('PDFレポートを生成しました');
 
   } catch (error) {
     console.error('PDF generation error:', error);
-    alert('PDF生成に失敗しました: ' + (error.response?.data?.error || error.message));
+    // alert removed per user requirement - see console
+    console.error('PDF生成に失敗しました: ' + (error.response?.data?.error || error.message));
   } finally {
     btn.innerHTML = originalHtml;
     btn.disabled = false;

@@ -102,7 +102,8 @@ async function convertPdfToImages(pdfFile) {
 // Display OCR Error Function
 function displayOCRError(title, message) {
   console.error('[OCR Error] ' + title + ':', message);
-  alert('[OCR エラー] ' + title + '\n\n' + message);
+  console.error('[OCR Error] Message:', message);
+  // alert removed per user requirement - errors logged to console only
   
   // Hide progress UI
   const progressSection = document.getElementById('ocr-progress-section');
@@ -565,8 +566,12 @@ window.processMultipleOCR = async function(files) {
       console.warn('[OCR] ⚠️ No extracted data found');
     }
     
-    // Show success message
-    alert('✅ OCR処理が完了しました！\n\n処理ファイル数: ' + responseData.total_files + '\n\n抽出されたデータをフォームに反映しました。\n内容を確認して保存してください。');
+    // Success message - logged to console only
+    console.log('[OCR] ✅ OCR processing completed');
+    console.log('[OCR] Total files processed:', responseData.total_files);
+    console.log('[OCR] Data extracted and filled into form');
+    console.log('[OCR] User should verify content before saving');
+    // alert removed per user requirement - success messages logged to console only
 
     
   } catch (error) {
@@ -599,9 +604,12 @@ window.processMultipleOCR = async function(files) {
     // iOS specific error alert
     const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
     if (isIOS) {
-      alert('❌ OCR処理エラー（iOS）\n\n' + errorMessage + '\n\niOSで問題が続く場合は、デスクトップ版をお試しください。');
+      console.error('[OCR] ❌ OCR processing error (iOS):', errorMessage);
+      console.error('[OCR] If problem persists on iOS, try desktop version');
+      // alert removed per user requirement - errors logged to console only
     } else {
-      alert('❌ OCR処理エラー\n\n' + errorMessage);
+      console.error('[OCR] ❌ OCR processing error:', errorMessage);
+      // alert removed per user requirement - errors logged to console only
     }
   }
 };
@@ -618,7 +626,8 @@ async function runComprehensiveRiskCheck(address) {
   // 住所のバリデーション
   if (!address || typeof address !== 'string' || address.trim().length === 0) {
     console.error('[COMPREHENSIVE CHECK] ❌ Invalid address - empty or not a string');
-    alert('エラー: 有効な住所を入力してください');
+    console.error('[COMPREHENSIVE CHECK] User needs to input valid address');
+    // alert removed per user requirement - errors logged to console only
     return;
   }
   
@@ -629,7 +638,8 @@ async function runComprehensiveRiskCheck(address) {
     const token = localStorage.getItem('auth_token');
     if (!token) {
       console.error('[COMPREHENSIVE CHECK] No auth token');
-      alert('エラー: 認証トークンがありません。ページを再読み込みしてログイン直してください。');
+      console.error('[COMPREHENSIVE CHECK] User should reload page and re-login');
+      // alert removed per user requirement - errors logged to console only
       return;
     }
     
@@ -649,7 +659,8 @@ async function runComprehensiveRiskCheck(address) {
     
     if (!response.data.success) {
       console.error('[COMPREHENSIVE CHECK] Check failed:', response.data.error);
-      alert('❌ リスクチェック失敗\n\n' + response.data.error + '\n\n住所を確認してください。');
+      console.error('[COMPREHENSIVE CHECK] User should verify address');
+      // alert removed per user requirement - errors logged to console only
       return;
     }
     
@@ -669,9 +680,15 @@ async function runComprehensiveRiskCheck(address) {
       message += `処理時間: ${result.processingTime}`;
     }
     
-    alert(message);
-    
+    console.log('[COMPREHENSIVE CHECK] ✅ Result message:');
+    console.log(message);
     console.log('[COMPREHENSIVE CHECK] ✅ Check completed');
+    // Success message - logged to console only
+    console.log('[OCR] ✅ OCR processing completed');
+    console.log('[OCR] Total files processed:', responseData.total_files);
+    console.log('[OCR] Data extracted and filled into form');
+    console.log('[OCR] User should verify content before saving');
+    // alert removed per user requirement - success messages logged to console only
     
   } catch (error) {
     console.error('[COMPREHENSIVE CHECK] ❌ Error:', error);
@@ -686,7 +703,8 @@ async function runComprehensiveRiskCheck(address) {
     } else if (error.message) {
       errorMessage += '\n\n' + error.message;
     }
-    alert('❌ エラー\n\n' + errorMessage);
+    console.error('[COMPREHENSIVE CHECK] Error to display:', errorMessage);
+    // alert removed per user requirement - errors logged to console only
   }
   
   console.log('[COMPREHENSIVE CHECK] ========================================');

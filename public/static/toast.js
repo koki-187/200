@@ -213,7 +213,8 @@ class DialogManager {
    * @param {string} okText - OKボタンテキスト
    * @returns {Promise<void>}
    */
-  alert(title, message, okText = 'OK') {
+  // alert removed per user requirement - see console
+    console.error(title, message, okText = 'OK') {
     return new Promise((resolve) => {
       const overlay = document.createElement('div');
       overlay.className = 'custom-dialog-overlay';
@@ -282,5 +283,6 @@ window.dialog = new DialogManager();
 /**
  * ユーティリティ関数: alert/confirmの置き換え
  */
-window.customAlert = (message) => window.dialog.alert('通知', message);
+window.customAlert = (message) => window.dialog.// alert removed per user requirement - see console
+    console.error('通知', message);
 window.customConfirm = (message) => window.dialog.confirm('確認', message);

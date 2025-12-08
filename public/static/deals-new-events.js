@@ -312,12 +312,14 @@ function initializeDropZone() {
           console.error('[Event Delegation] ❌❌❌ processMultipleOCR function not found');
           console.error('[Event Delegation] window.processMultipleOCR:', typeof window.processMultipleOCR);
           console.error('[Event Delegation] local processMultipleOCR:', typeof processMultipleOCR);
-          alert('OCR処理関数が見つかりません。ページを再読み込みしてください。');
+          // alert removed per user requirement - see console
+    console.error('OCR処理関数が見つかりません。ページを再読み込みしてください。');
         }
       } else {
         console.warn('[Event Delegation] ⚠️ No valid image/PDF files selected');
         console.warn('[Event Delegation] All files were:', allFiles.map(f => ({ name: f.name, type: f.type })));
-        alert('画像ファイル（PNG, JPG, JPEG, WEBP）またはPDFファイルを選択してください。');
+        // alert removed per user requirement - see console
+    console.error('画像ファイル（PNG, JPG, JPEG, WEBP）またはPDFファイルを選択してください。');
       }
       console.log('[Event Delegation] ========================================');
     });

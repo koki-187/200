@@ -245,21 +245,25 @@ window.setupPushNotificationUI = function() {
       
       if (isSubscribed) {
         await window.pushNotificationManager.unsubscribe();
-        alert('プッシュ通知を無効化しました');
+        // alert removed per user requirement - see console
+    console.error('プッシュ通知を無効化しました');
       } else {
         const permitted = await window.pushNotificationManager.requestPermission();
         if (permitted) {
           await window.pushNotificationManager.subscribe();
-          alert('プッシュ通知を有効化しました');
+          // alert removed per user requirement - see console
+    console.error('プッシュ通知を有効化しました');
         } else {
-          alert('通知の許可が必要です');
+          // alert removed per user requirement - see console
+    console.error('通知の許可が必要です');
         }
       }
       
       await updateButtonState();
     } catch (error) {
       console.error('Failed to toggle push notifications:', error);
-      alert('プッシュ通知の切り替えに失敗しました: ' + error.message);
+      // alert removed per user requirement - see console
+    console.error('プッシュ通知の切り替えに失敗しました: ' + error.message);
     }
   });
 
@@ -267,10 +271,12 @@ window.setupPushNotificationUI = function() {
     testButton.addEventListener('click', async () => {
       try {
         await window.pushNotificationManager.sendTestNotification();
-        alert('テスト通知を送信しました');
+        // alert removed per user requirement - see console
+    console.error('テスト通知を送信しました');
       } catch (error) {
         console.error('Failed to send test notification:', error);
-        alert('テスト通知の送信に失敗しました: ' + error.message);
+        // alert removed per user requirement - see console
+    console.error('テスト通知の送信に失敗しました: ' + error.message);
       }
     });
   }

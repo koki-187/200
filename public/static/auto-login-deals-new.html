@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自動ログイン→案件作成ページへ</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body>
+  <h1>自動ログインテスト</h1>
+  <div id="status">処理中...</div>
+
+  <script>
+    async function autoLogin() {
+      try {
+        // Login
+        const response = await axios.post('/api/auth/login', {
+          email: 'navigator-187@docomo.ne.jp',
+          password: 'kouki187'
+        });
+        
+        const token = response.data.token;
+        const user = response.data.user;
+        
+        // Store in localStorage
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        document.getElementById('status').innerHTML = 
+          `✅ ログイン成功: ${user.name}<br>2秒後に/deals/newへリダイレクト...`;
+        
+        console.log('Token stored:', token.substring(0, 30) + '...');
+        console.log('User stored:', user);
+        
+        // Redirect to deals/new
+        setTimeout(() => {
+          window.location.href = '/deals/new';
+        }, 2000);
+        
+      } catch (error) {
+        document.getElementById('status').innerHTML = '❌ エラー: ' + error.message;
+        console.error('Login failed:', error);
+      }
+    }
+
+    // Auto-run
+    window.addEventListener('DOMContentLoaded', autoLogin);
+  </script>
+</body>
+</html>

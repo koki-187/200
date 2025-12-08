@@ -39,6 +39,7 @@ import buildingRegulations from './routes/building-regulations';
 import monitoring from './routes/monitoring';
 // import reports from './routes/reports'; // DELETED: レポート機能削除
 import investmentSimulator from './routes/investment-simulator';
+import health from './routes/health';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -164,10 +165,8 @@ app.route('/api/monitoring', monitoring);
 // app.route('/api/reports', reports); // DELETED: レポート機能削除
 // app.route('/api/investment-simulator', investmentSimulator); // DELETED: 投資シミュレーター機能削除
 
-// ヘルスチェック
-app.get('/api/health', (c) => {
-  return c.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+// ヘルスチェック（詳細版）
+app.route('/api/health', health);
 
 // デバッグ用エンドポイント - 環境変数とバインディング確認
 app.get('/api/debug/env', (c) => {

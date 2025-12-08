@@ -487,16 +487,8 @@ window.processMultipleOCR = async function(files) {
       
       console.log('[OCR] ✅ Form auto-filled successfully');
       
-      // 🆕 包括的リスクチェック自動実行
-      console.log('[OCR] Starting comprehensive risk check...');
-      if (extracted.location) {
-        try {
-          await runComprehensiveRiskCheck(extracted.location);
-        } catch (err) {
-          console.error('[OCR] Comprehensive check error:', err);
-          // エラーでもOCR処理は成功として扱う
-        }
-      }
+      // リスクチェックは自動実行しない（ユーザーが手動でボタンをクリックする）
+      console.log('[OCR] ✅ OCR processing completed. User can manually run risk check if needed.');
     } else {
       console.warn('[OCR] ⚠️ No extracted data found');
     }

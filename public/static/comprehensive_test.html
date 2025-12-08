@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Comprehensive Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #000; color: #0f0; }
+    .status { margin: 10px 0; padding: 10px; border: 1px solid #0f0; }
+    .error { color: #f00; }
+    .success { color: #0f0; }
+  </style>
+</head>
+<body>
+  <h1>Comprehensive Test Results</h1>
+  <div id="results"></div>
+  
+  <script>
+    const BASE_URL = window.location.origin;
+    const results = document.getElementById('results');
+    
+    function log(message, isError = false) {
+      const div = document.createElement('div');
+      div.className = 'status ' + (isError ? 'error' : 'success');
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      results.appendChild(div);
+      console.log(message);
+    }
+    
+    (async function() {
+      try {
+        // Step 1: Login
+        log('Step 1: Logging in...');
+        const loginResponse = await axios.post(`${BASE_URL}/api/auth/login`, {
+          email: 'navigator-187@docomo.ne.jp',
+          password: 'kouki187'
+        });
+        
+        const token = loginResponse.data.token;
+        log(`✅ Login successful, token: ${token.substring(0, 20)}...`);
+        
+        // Step 2: Check Sellers API
+        log('Step 2: Checking Sellers API...');
+        const sellersResponse = await axios.get(`${BASE_URL}/api/auth/users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const agents = sellersResponse.data.users.filter(u => u.role === 'AGENT');
+        log(`✅ Found ${agents.length} AGENT users`);
+        agents.forEach((agent, i) => {
+          log(`  [${i+1}] ${agent.name} (${agent.company_name})`);
+        });
+        
+        if (agents.length !== 4) {
+          log(`❌ ERROR: Expected 4 agents but found ${agents.length}`, true);
+        }
+        
+        // Step 3: Check if there are duplicates
+        const names = agents.map(a => a.name);
+        const uniqueNames = [...new Set(names)];
+        if (names.length !== uniqueNames.length) {
+          log(`❌ ERROR: Duplicate names detected!`, true);
+          log(`  All names: ${names.join(', ')}`, true);
+        } else {
+          log(`✅ No duplicate names in API response`);
+        }
+        
+        // Step 4: Store token and redirect
+        log('Step 3: Storing token and preparing to redirect...');
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('user', JSON.stringify(loginResponse.data.user || {}));
+        
+        log('Step 4: Redirecting to /deals/new in 2 seconds...');
+        log('PLEASE WAIT AND CHECK:');
+        log('  1. Seller dropdown for duplicates');
+        log('  2. OCR file upload functionality');
+        log('  3. Property info auto-fill button');
+        log('  4. Risk check button');
+        
+        setTimeout(() => {
+          window.location.href = '/deals/new';
+        }, 2000);
+        
+      } catch (error) {
+        log(`❌ ERROR: ${error.message}`, true);
+        console.error('Full error:', error);
+      }
+    })();
+  </script>
+</body>
+</html>

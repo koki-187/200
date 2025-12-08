@@ -8827,30 +8827,25 @@ app.get('/deals/new', (c) => {
       console.log('[Init] Current URL:', window.location.href);
       console.log('[Init] Axios loaded:', typeof axios !== 'undefined');
       
-      // DOM要素が確実に存在するまで待機してから実行
-      // CRITICAL FIX v3.153.15: Add debug logs and verify functions exist
-      console.log('[Init] About to schedule setTimeout for loadSellers and loadOCRExtractedData');
+      // CRITICAL FIX v3.153.16: Call immediately instead of setTimeout
+      // Reason: setTimeout may not fire if page redirects or context changes
+      console.log('[Init] ========== CALLING loadSellers and loadOCRExtractedData IMMEDIATELY ==========');
       console.log('[Init] typeof loadSellers:', typeof loadSellers);
       console.log('[Init] typeof loadOCRExtractedData:', typeof loadOCRExtractedData);
       
-      setTimeout(() => {
-        console.log('[Init] ========== setTimeout FIRED ==========');
-        console.log('[Init] Starting delayed initialization for sellers and OCR...');
-        
-        if (typeof loadSellers === 'function') {
-          console.log('[Init] Calling loadSellers()...');
-          loadSellers();
-        } else {
-          console.error('[Init] ❌ loadSellers is not a function!');
-        }
-        
-        if (typeof loadOCRExtractedData === 'function') {
-          console.log('[Init] Calling loadOCRExtractedData()...');
-          loadOCRExtractedData();
-        } else {
-          console.error('[Init] ❌ loadOCRExtractedData is not a function!');
-        }
-      }, 100);
+      if (typeof loadSellers === 'function') {
+        console.log('[Init] Calling loadSellers() NOW...');
+        loadSellers();
+      } else {
+        console.error('[Init] ❌ loadSellers is not a function!');
+      }
+      
+      if (typeof loadOCRExtractedData === 'function') {
+        console.log('[Init] Calling loadOCRExtractedData() NOW...');
+        loadOCRExtractedData();
+      } else {
+        console.error('[Init] ❌ loadOCRExtractedData is not a function!');
+      }
       
       // ストレージ使用量表示の初期化
       const storageText = document.getElementById('storage-usage-text');

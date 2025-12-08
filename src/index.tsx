@@ -8828,11 +8828,28 @@ app.get('/deals/new', (c) => {
       console.log('[Init] Axios loaded:', typeof axios !== 'undefined');
       
       // DOM要素が確実に存在するまで待機してから実行
-      // CRITICAL FIX v3.153.11: Reduced timeout to execute before potential redirect
+      // CRITICAL FIX v3.153.15: Add debug logs and verify functions exist
+      console.log('[Init] About to schedule setTimeout for loadSellers and loadOCRExtractedData');
+      console.log('[Init] typeof loadSellers:', typeof loadSellers);
+      console.log('[Init] typeof loadOCRExtractedData:', typeof loadOCRExtractedData);
+      
       setTimeout(() => {
+        console.log('[Init] ========== setTimeout FIRED ==========');
         console.log('[Init] Starting delayed initialization for sellers and OCR...');
-        loadSellers();
-        loadOCRExtractedData();
+        
+        if (typeof loadSellers === 'function') {
+          console.log('[Init] Calling loadSellers()...');
+          loadSellers();
+        } else {
+          console.error('[Init] ❌ loadSellers is not a function!');
+        }
+        
+        if (typeof loadOCRExtractedData === 'function') {
+          console.log('[Init] Calling loadOCRExtractedData()...');
+          loadOCRExtractedData();
+        } else {
+          console.error('[Init] ❌ loadOCRExtractedData is not a function!');
+        }
       }, 100);
       
       // ストレージ使用量表示の初期化
@@ -10905,35 +10922,7 @@ app.get('/deals/new', (c) => {
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
   <script src="/static/deals-new-events.js?v=3.152.6"></script>
   
-  <!-- EMERGENCY FIX v3.153.11: Force loadSellers execution -->
-  <script>
-    (function() {
-      console.log('[EMERGENCY] Force loadSellers script loaded');
-      
-      // Wait 200ms for main script to define window.loadSellers
-      setTimeout(function() {
-        console.log('[EMERGENCY] typeof window.loadSellers:', typeof window.loadSellers);
-        
-        // Check if loadSellers exists
-        if (typeof window.loadSellers !== 'function') {
-          console.error('[EMERGENCY] window.loadSellers is not a function!');
-          console.error('[EMERGENCY] This indicates main script did not execute properly');
-          return;
-        }
-        
-        // Try to call loadSellers
-        try {
-          console.log('[EMERGENCY] Calling window.loadSellers()...');
-          window.loadSellers();
-          console.log('[EMERGENCY] ✅ window.loadSellers() called successfully');
-        } catch (error) {
-          console.error('[EMERGENCY] ❌ Failed to call window.loadSellers():', error);
-        }
-      }, 200);
-    })();
-  </script>
-  
-  <!-- Version: v3.153.7 - EMERGENCY: Force loadSellers execution -->
+  <!-- REMOVED v3.153.15: Emergency script caused duplicate loadSellers calls -->
 </body>
 </html>
   `);

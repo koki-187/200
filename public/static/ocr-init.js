@@ -16,22 +16,25 @@ console.log('[OCR Init] ocr-init.js loaded - complete implementation with PDF su
 console.log('[OCR Init] Creating window.processMultipleOCR function...');
 
 // PDF.js Configuration - Preload for iOS Safari
-let pdfjsLibPreloaded = null;
-(async () => {
-  try {
-    pdfjsLibPreloaded = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs');
-    pdfjsLibPreloaded.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
-    console.log('[OCR Init] ✅ PDF.js preloaded for iOS Safari');
-  } catch (error) {
-    console.warn('[OCR Init] ⚠️ PDF.js preload failed (will use dynamic import):', error);
-  }
-})();
+// CRITICAL FIX v3.153.15: Use window property to avoid duplicate declaration error
+window.pdfjsLibPreloaded = window.pdfjsLibPreloaded || null;
+if (!window.pdfjsLibPreloaded) {
+  (async () => {
+    try {
+      window.pdfjsLibPreloaded = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs');
+      window.pdfjsLibPreloaded.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
+      console.log('[OCR Init] ✅ PDF.js preloaded for iOS Safari');
+    } catch (error) {
+      console.warn('[OCR Init] ⚠️ PDF.js preload failed (will use dynamic import):', error);
+    }
+  })();
+}
 
 // PDF Conversion Function
 async function convertPdfToImages(pdfFile) {
   try {
     // iOS Safari対応: 事前読み込み済みのPDF.jsを優先的に使用
-    let pdfjsLib = pdfjsLibPreloaded;
+    let pdfjsLib = window.pdfjsLibPreloaded;
     
     if (!pdfjsLib) {
       console.log('[PDF Conversion] Preloaded PDF.js not available, importing dynamically...');

@@ -6395,9 +6395,9 @@ app.get('/deals/new', (c) => {
       newCancelBtn.addEventListener('click', cancelHandler);
     }
 
-    // 売主リスト取得
-    async function loadSellers() {
-      console.log('[Sellers] ========== START ==========');
+    // 売主リスト取得（リトライロジック付き）
+    async function loadSellers(retryCount = 0) {
+      console.log('[Sellers] ========== START (Retry:', retryCount, ') ==========');
       console.log('[Sellers] Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL/UNDEFINED');
       console.log('[Sellers] Current URL:', window.location.href);
       console.log('[Sellers] User:', user);
@@ -6405,17 +6405,24 @@ app.get('/deals/new', (c) => {
       try {
         const select = document.getElementById('seller_id');
         if (!select) {
-          console.error('[Sellers] ❌ seller_id element not found');
-          console.error('[Sellers] Available select elements:', document.querySelectorAll('select').length);
-          alert('エラー: 売主選択フィールドが見つかりません。ページを再読み込みしてください。');
-          return;
+          if (retryCount < 5) {
+            console.warn('[Sellers] ⚠️ seller_id element not found, retrying in 300ms... (attempt ' + (retryCount + 1) + '/5)');
+            setTimeout(() => loadSellers(retryCount + 1), 300);
+            return;
+          } else {
+            console.error('[Sellers] ❌ seller_id element not found after 5 retries');
+            console.error('[Sellers] Available select elements:', document.querySelectorAll('select').length);
+            console.error('[Sellers] This may indicate a page structure issue');
+            // alert を削除 - 不要なエラーメッセージを表示しない
+            return;
+          }
         }
         
         console.log('[Sellers] seller_id element found, current options:', select.options.length);
         
         if (!token) {
           console.error('[Sellers] ❌ No token available');
-          alert('エラー: 認証トークンがありません。再ログインしてください。');
+          console.error('[Sellers] User must log in or token expired');
           return;
         }
         
@@ -6431,7 +6438,7 @@ app.get('/deals/new', (c) => {
         
         if (sellers.length === 0) {
           console.warn('[Sellers] ⚠️ No AGENT users found in database');
-          alert('警告: 売主（AGENTユーザー）が登録されていません。管理者に連絡してください。');
+          // システム管理者向けの警告ログのみ - ユーザーには不要なアラートを表示しない
         }
         
         sellers.forEach(seller => {
@@ -6446,7 +6453,8 @@ app.get('/deals/new', (c) => {
       } catch (error) {
         console.error('[Sellers] ❌ Failed to load sellers:', error);
         console.error('[Sellers] Error details:', error.response?.data || error.message);
-        alert('エラー: 売主リストの取得に失敗しました。\n' + (error.response?.data?.error || error.message));
+        console.error('[Sellers] This may affect seller selection functionality');
+        // ユーザーへのアラートは表示せず、ログのみ記録（UX改善）
       }
     }
 
@@ -8814,8 +8822,12 @@ app.get('/deals/new', (c) => {
       console.log('[Init] Current URL:', window.location.href);
       console.log('[Init] Axios loaded:', typeof axios !== 'undefined');
       
-      loadSellers();
-      loadOCRExtractedData();
+      // DOM要素が確実に存在するまで待機してから実行
+      setTimeout(() => {
+        console.log('[Init] Starting delayed initialization for sellers and OCR...');
+        loadSellers();
+        loadOCRExtractedData();
+      }, 500);
       
       // ストレージ使用量表示の初期化
       const storageText = document.getElementById('storage-usage-text');

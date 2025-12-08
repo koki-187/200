@@ -310,7 +310,7 @@ window.processMultipleOCR = async function(files) {
       console.log('[OCR] ========================================');
       console.log('[OCR] Auto-filling form with extracted data...');
       console.log('[OCR] extracted_data type:', typeof extracted);
-      console.log('[OCR] extracted_data:', extracted);
+      console.log('[OCR] 🔥 FULL extracted_data:', JSON.stringify(extracted, null, 2));
       console.log('[OCR] extracted_data keys:', Object.keys(extracted));
       
       // 🔍 DEBUG: 各フィールドの詳細な値をログ出力
@@ -327,6 +327,8 @@ window.processMultipleOCR = async function(files) {
             // Map extracted data to form fields
             // NOTE: データ構造は { value: '...', confidence: 0.8 } 形式
             const getFieldValue = (fieldData) => {
+              console.log('[OCR] 🔍 getFieldValue called with:', JSON.stringify(fieldData));
+              
               if (!fieldData) {
                 console.log('[OCR] ⚠️ getFieldValue: fieldData is null/undefined');
                 return '';
@@ -335,6 +337,7 @@ window.processMultipleOCR = async function(files) {
               // 新形式: { value, confidence }
               if (typeof fieldData === 'object' && 'value' in fieldData) {
                 const value = fieldData.value;
+                console.log('[OCR] 🔍 fieldData.value:', value, '(type:', typeof value, ')');
                 if (value === null || value === undefined) {
                   console.log('[OCR] ⚠️ getFieldValue: extracted value is null/undefined');
                   return '';
@@ -350,7 +353,7 @@ window.processMultipleOCR = async function(files) {
               }
               
               // その他のオブジェクトまたは未知の形式
-              console.warn('[OCR] ⚠️ getFieldValue: unexpected data format:', typeof fieldData, fieldData);
+              console.warn('[OCR] ⚠️ getFieldValue: unexpected data format:', typeof fieldData, JSON.stringify(fieldData));
               return '';
             };
             

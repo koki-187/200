@@ -6397,8 +6397,7 @@ app.get('/deals/new', (c) => {
     }
 
     // 売主リスト取得（リトライロジック付き）
-    // CRITICAL FIX v3.153.11: Export to global scope for emergency script
-    window.loadSellers = async function loadSellers(retryCount = 0) {
+    async function loadSellers(retryCount = 0) {
       console.log('[Sellers] ========== START (Retry:', retryCount, ') ==========');
       console.log('[Sellers] Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL/UNDEFINED');
       console.log('[Sellers] Current URL:', window.location.href);
@@ -6459,6 +6458,10 @@ app.get('/deals/new', (c) => {
         // ユーザーへのアラートは表示せず、ログのみ記録（UX改善）
       }
     }
+    
+    // CRITICAL FIX v3.153.13: Export loadSellers to global scope for emergency script
+    window.loadSellers = loadSellers;
+    console.log('[Global] window.loadSellers exported:', typeof window.loadSellers);
 
     // ストレージ使用量を取得して表示
     async function loadStorageQuota() {

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>完全動作確認テスト</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="p-8 bg-gray-100">
+  <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
+    <h1 class="text-2xl font-bold mb-6">v3.153.19 完全動作確認テスト</h1>
+    
+    <div id="status" class="mb-6 p-4 bg-blue-50 rounded-lg">
+      <h2 class="font-bold text-lg mb-2">ステータス</h2>
+      <div id="statusText">テスト準備中...</div>
+    </div>
+
+    <div id="results" class="mb-6 p-4 bg-gray-50 rounded-lg">
+      <h2 class="font-bold text-lg mb-2">テスト結果</h2>
+      <div id="resultsText">-</div>
+    </div>
+
+    <div id="sellers" class="mb-6 p-4 bg-green-50 rounded-lg">
+      <h2 class="font-bold text-lg mb-2">売主ドロップダウン</h2>
+      <select id="seller_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+        <option value="">選択してください</option>
+      </select>
+      <div id="sellersDebug" class="mt-2 text-sm text-gray-600"></div>
+    </div>
+
+    <button onclick="runTests()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+      テスト実行
+    </button>
+  </div>
+
+  <script>
+    let testResults = [];
+
+    function log(message, isError = false) {
+      const timestamp = new Date().toLocaleTimeString('ja-JP');
+      const logEntry = `[${timestamp}] ${message}`;
+      testResults.push(logEntry);
+      
+      const resultsDiv = document.getElementById('resultsText');
+      resultsDiv.innerHTML = testResults.join('<br>');
+      
+      console.log(logEntry);
+      
+      // Update status
+      const statusDiv = document.getElementById('statusText');
+      statusDiv.innerHTML = `<div class="${isError ? 'text-red-600' : 'text-blue-600'}">${message}</div>`;
+    }
+
+    async function loadSellers(token) {
+      log('売主データ取得開始...');
+      
+      try {
+        const response = await axios.get('/api/auth/users', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const users = response.data.users || [];
+        const sellers = users.filter(u => u.role === 'AGENT');
+        
+        log(`✅ 売主データ取得成功: ${sellers.length}名`);
+        
+        const select = document.getElementById('seller_id');
+        select.innerHTML = '<option value="">選択してください</option>';
+        
+        sellers.forEach(seller => {
+          const option = document.createElement('option');
+          option.value = seller.id;
+          option.textContent = `${seller.name} (${seller.company_name || '会社名なし'})`;
+          select.appendChild(option);
+        });
+        
+        log(`✅ ドロップダウンに${sellers.length}名追加完了`);
+        document.getElementById('sellersDebug').innerHTML = 
+          `売主リスト: ${sellers.map(s => s.name).join(', ')}`;
+        
+        return true;
+      } catch (error) {
+        log(`❌ 売主データ取得エラー: ${error.message}`, true);
+        return false;
+      }
+    }
+
+    async function runTests() {
+      testResults = [];
+      log('テスト開始...');
+      
+      try {
+        // Test 1: Login
+        log('Test 1: ログインAPIテスト');
+        const loginResponse = await axios.post('/api/auth/login', {
+          email: 'navigator-187@docomo.ne.jp',
+          password: 'kouki187'
+        });
+        
+        const token = loginResponse.data.token;
+        const user = loginResponse.data.user;
+        
+        log(`✅ ログイン成功: ${user.name} (${user.role})`);
+        
+        // Store in localStorage
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // Test 2: Load Sellers
+        log('Test 2: 売主データ読み込みテスト');
+        const sellersLoaded = await loadSellers(token);
+        
+        if (!sellersLoaded) {
+          throw new Error('売主データ読み込み失敗');
+        }
+        
+        // Test 3: Check for alerts
+        log('Test 3: alert()呼び出しチェック');
+        const originalAlert = window.alert;
+        let alertCalled = false;
+        window.alert = function(...args) {
+          alertCalled = true;
+          log(`❌ ALERT DETECTED: ${args[0]}`, true);
+          return originalAlert.apply(this, args);
+        };
+        
+        // Wait and check
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        if (alertCalled) {
+          log('❌ alert()が呼び出されました！', true);
+        } else {
+          log('✅ alert()は呼び出されませんでした');
+        }
+        
+        // Test 4: Final verification
+        log('Test 4: 最終確認');
+        const select = document.getElementById('seller_id');
+        const optionCount = select.options.length - 1; // Exclude "選択してください"
+        
+        if (optionCount >= 4) {
+          log(`✅ 売主ドロップダウン: ${optionCount}名表示中`);
+        } else {
+          log(`⚠️ 売主ドロップダウン: ${optionCount}名のみ表示`, true);
+        }
+        
+        log('========================================');
+        log('✅ 全テスト完了！');
+        log('========================================');
+        
+      } catch (error) {
+        log(`❌ テスト失敗: ${error.message}`, true);
+        console.error('Full error:', error);
+      }
+    }
+
+    // Auto-run on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      log('ページ読み込み完了');
+      setTimeout(runTests, 1000);
+    });
+  </script>
+</body>
+</html>

@@ -496,14 +496,46 @@ window.processMultipleOCR = async function(files) {
       console.log('[OCR] ========================================');
       console.log('[OCR] v3.153.5: Starting automatic property info and risk check...');
       
-      // 住所のバリデーション
+      // 住所のバリデーション（厳格化）
       const location = extracted.location;
       const locationValue = location && location.value ? location.value.trim() : '';
       
       console.log('[OCR] Extracted location:', locationValue);
       console.log('[OCR] Location confidence:', location ? location.confidence : 0);
       
-      if (locationValue && locationValue.length > 5) {
+      // 住所の妥当性チェック（都道府県名を含むか確認）
+      const prefectures = ['北海道', '青森', '岩手', '宮城', '秋田', '山形', '福島', 
+                          '茨城', '栃木', '群馬', '埼玉', '千葉', '東京', '神奈川',
+                          '新潟', '富山', '石川', '福井', '山梨', '長野', '岐阜', '静岡', '愛知', '三重',
+                          '滋賀', '京都', '大阪', '兵庫', '奈良', '和歌山',
+                          '鳥取', '島根', '岡山', '広島', '山口',
+                          '徳島', '香川', '愛媛', '高知',
+                          '福岡', '佐賀', '長崎', '熊本', '大分', '宮崎', '鹿児島', '沖縄'];
+      
+      const hasPrefecture = prefectures.some(pref => 
+        locationValue.includes(pref + '都') || 
+        locationValue.includes(pref + '府') || 
+        locationValue.includes(pref + '県') ||
+        locationValue === '北海道' ||
+        locationValue.includes('北海道')
+      );
+      
+      const hasCity = locationValue.includes('市') || locationValue.includes('区') || 
+                     locationValue.includes('町') || locationValue.includes('村');
+      
+      const isValidAddress = locationValue && 
+                           locationValue.length >= 8 && 
+                           hasPrefecture && 
+                           hasCity;
+      
+      console.log('[OCR] Address validation:', {
+        length: locationValue.length,
+        hasPrefecture,
+        hasCity,
+        isValid: isValidAddress
+      });
+      
+      if (isValidAddress) {
         console.log('[OCR] ✅ Valid location found, starting automatic processes...');
         
         try {

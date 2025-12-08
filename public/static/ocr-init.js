@@ -631,8 +631,11 @@ window.runComprehensiveRiskCheck = runComprehensiveRiskCheck;
 // Flag to indicate this file has loaded
 window.ocrInitLoaded = true;
 
+console.log('[OCR Init] ========================================');
+console.log('[OCR Init] 🆕 VERSION: v3.153.4 (2025-12-08)');
 console.log('[OCR Init] ✅ window.processMultipleOCR function created (complete with PDF support)');
 console.log('[OCR Init] ✅ window.runComprehensiveRiskCheck function created');
 console.log('[OCR Init] ✅ PDF.js preload initiated for iOS Safari');
+console.log('[OCR Init] ⚠️ NO AUTOMATIC RISK CHECK - User must click button manually');
 console.log('[OCR Init] window.ocrInitLoaded = true');
 console.log('[OCR Init] ========================================');

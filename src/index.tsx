@@ -9266,14 +9266,14 @@ app.get('/deals/new', (c) => {
         } else {
           console.error('[包括チェック] ❌ runComprehensiveRiskCheck function not found');
           console.error('[包括チェック] window.ocrInitLoaded:', window.ocrInitLoaded);
-          alert('❌ エラー\n\n包括チェック機能が読み込まれていません。ページを再読み込みしてください。');
+          alert('❌ エラー\\n\\n包括チェック機能が読み込まれていません。ページを再読み込みしてください。');
         }
         
       } catch (error) {
         console.error('[包括チェック] ❌ Error:', error);
         console.error('[包括チェック] Error message:', error.message);
         console.error('[包括チェック] Error stack:', error.stack);
-        alert('❌ エラー\n\nリスクチェック中にエラーが発生しました。\n\n' + error.message);
+        alert('❌ エラー\\n\\nリスクチェック中にエラーが発生しました。\\n\\n' + error.message);
       } finally {
         btn.disabled = false;
         btn.innerHTML = originalHTML;

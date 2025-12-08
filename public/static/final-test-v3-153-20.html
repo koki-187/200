@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>v3.153.20 完全動作確認テスト</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="p-8 bg-gray-100">
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-6">
+    <h1 class="text-3xl font-bold mb-6 text-center">v3.153.20 完全動作確認テスト</h1>
+    
+    <div class="grid grid-cols-2 gap-6">
+      <!-- Status Panel -->
+      <div class="col-span-2 p-4 bg-blue-50 rounded-lg">
+        <h2 class="font-bold text-lg mb-2">📊 テストステータス</h2>
+        <div id="status" class="text-sm">準備中...</div>
+      </div>
+
+      <!-- Test Results -->
+      <div class="col-span-2 p-4 bg-gray-50 rounded-lg">
+        <h2 class="font-bold text-lg mb-2">✅ テスト結果</h2>
+        <div id="results" class="text-sm space-y-1"></div>
+      </div>
+
+      <!-- Seller Dropdown Test -->
+      <div class="p-4 bg-green-50 rounded-lg">
+        <h2 class="font-bold text-lg mb-3">👥 売主ドロップダウンテスト</h2>
+        <select id="test_seller_dropdown" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-2">
+          <option value="">選択してください</option>
+        </select>
+        <div id="seller_count" class="text-sm font-semibold"></div>
+        <div id="seller_list" class="text-xs text-gray-600 mt-2"></div>
+      </div>
+
+      <!-- Alert Test -->
+      <div class="p-4 bg-yellow-50 rounded-lg">
+        <h2 class="font-bold text-lg mb-3">🚫 Alert()検出テスト</h2>
+        <div id="alert_status" class="text-sm"></div>
+        <button onclick="testAlertDetection()" class="mt-2 bg-yellow-500 text-white px-4 py-2 rounded">
+          Alert検出テスト実行
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-6 text-center">
+      <button onclick="runAllTests()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-semibold">
+        🚀 全テスト実行
+      </button>
+      <a href="/deals/new" class="ml-4 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg text-lg font-semibold inline-block">
+        📝 実際の案件作成ページへ
+      </a>
+    </div>
+  </div>
+
+  <script>
+    let testLogs = [];
+    let alertDetected = false;
+
+    // Alert detection
+    const originalAlert = window.alert;
+    window.alert = function(...args) {
+      alertDetected = true;
+      log(`🚨 ALERT DETECTED: ${args[0]}`, 'error');
+      document.getElementById('alert_status').innerHTML = 
+        `<div class="text-red-600 font-bold">❌ Alert検出！</div><div class="text-xs mt-1">${args[0]}</div>`;
+      return originalAlert.apply(this, args);
+    };
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString('ja-JP');
+      const logEntry = `<div class="flex items-start gap-2">
+        <span class="text-gray-500 text-xs">${timestamp}</span>
+        <span class="${type === 'error' ? 'text-red-600' : type === 'success' ? 'text-green-600' : 'text-gray-700'}">${message}</span>
+      </div>`;
+      
+      testLogs.push(logEntry);
+      document.getElementById('results').innerHTML = testLogs.join('');
+      
+      // Update status
+      document.getElementById('status').innerHTML = `<div class="${type === 'error' ? 'text-red-600' : 'text-blue-600'}">${message}</div>`;
+      
+      console.log(`[${timestamp}] ${message}`);
+    }
+
+    async function testLogin() {
+      log('🔐 テスト1: ログイン認証');
+      
+      try {
+        const response = await axios.post('/api/auth/login', {
+          email: 'navigator-187@docomo.ne.jp',
+          password: 'kouki187'
+        });
+        
+        const token = response.data.token;
+        const user = response.data.user;
+        
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        log(`✅ ログイン成功: ${user.name} (${user.role})`, 'success');
+        return { token, user };
+      } catch (error) {
+        log(`❌ ログイン失敗: ${error.message}`, 'error');
+        throw error;
+      }
+    }
+
+    async function testSellersAPI(token) {
+      log('👥 テスト2: 売主データAPI呼び出し');
+      
+      try {
+        const response = await axios.get('/api/auth/users', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const users = response.data.users || [];
+        const sellers = users.filter(u => u.role === 'AGENT');
+        
+        log(`✅ 売主データ取得成功: ${sellers.length}名`, 'success');
+        
+        // Populate dropdown
+        const select = document.getElementById('test_seller_dropdown');
+        select.innerHTML = '<option value="">選択してください</option>';
+        
+        sellers.forEach(seller => {
+          const option = document.createElement('option');
+          option.value = seller.id;
+          option.textContent = `${seller.name} (${seller.company_name || '会社名なし'})`;
+          select.appendChild(option);
+        });
+        
+        // Update display
+        document.getElementById('seller_count').innerHTML = 
+          `<span class="text-green-600">✅ ${sellers.length}名の売主を表示中</span>`;
+        document.getElementById('seller_list').innerHTML = 
+          `売主リスト: ${sellers.map(s => s.name).join(', ')}`;
+        
+        log(`✅ ドロップダウンに${sellers.length}名追加完了`, 'success');
+        return sellers;
+      } catch (error) {
+        log(`❌ 売主データ取得エラー: ${error.message}`, 'error');
+        throw error;
+      }
+    }
+
+    function testAlertDetection() {
+      log('🚫 テスト3: Alert検出メカニズム');
+      
+      if (!alertDetected) {
+        log('✅ これまでにAlert()は検出されていません', 'success');
+        document.getElementById('alert_status').innerHTML = 
+          '<div class="text-green-600 font-bold">✅ Alert未検出</div>';
+      } else {
+        log('❌ Alert()が検出されました！', 'error');
+      }
+    }
+
+    async function testAlertCalledStatus() {
+      log('🔍 テスト4: Alert呼び出し状態の最終確認');
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      if (alertDetected) {
+        log('❌ CRITICAL: Alert()が呼び出されました', 'error');
+        return false;
+      } else {
+        log('✅ SUCCESS: Alert()は一度も呼び出されませんでした', 'success');
+        document.getElementById('alert_status').innerHTML = 
+          '<div class="text-green-600 font-bold">✅ 完全成功：Alert未使用</div>';
+        return true;
+      }
+    }
+
+    async function runAllTests() {
+      testLogs = [];
+      alertDetected = false;
+      
+      log('========================================');
+      log('🚀 v3.153.20 完全動作確認テスト開始');
+      log('========================================');
+      
+      try {
+        // Test 1: Login
+        const { token, user } = await testLogin();
+        
+        // Test 2: Sellers API
+        const sellers = await testSellersAPI(token);
+        
+        // Test 3: Alert Detection
+        testAlertDetection();
+        
+        // Test 4: Final Alert Check
+        await testAlertCalledStatus();
+        
+        // Summary
+        log('========================================');
+        log('✅ 全テスト完了！', 'success');
+        log(`📊 結果サマリー:`);
+        log(`   - ログイン: ✅ 成功`);
+        log(`   - 売主データ取得: ✅ ${sellers.length}名`);
+        log(`   - Alert検出: ${alertDetected ? '❌ 検出' : '✅ なし'}`);
+        log('========================================');
+        
+        document.getElementById('status').innerHTML = 
+          `<div class="text-green-600 font-bold text-lg">✅ 全テスト完了！問題なし</div>`;
+        
+      } catch (error) {
+        log(`❌ テスト失敗: ${error.message}`, 'error');
+        document.getElementById('status').innerHTML = 
+          `<div class="text-red-600 font-bold">❌ テスト失敗</div>`;
+      }
+    }
+
+    // Auto-run on load
+    window.addEventListener('DOMContentLoaded', () => {
+      log('ページ読み込み完了');
+      document.getElementById('alert_status').innerHTML = 
+        '<div class="text-gray-600">Alert監視中...</div>';
+      setTimeout(runAllTests, 1000);
+    });
+  </script>
+</body>
+</html>

@@ -6035,6 +6035,7 @@ app.get('/deals/new', (c) => {
     if (!token) {
       console.log('[CRITICAL DEBUG] ❌ No token found, redirecting to /');
       window.location.href = '/';
+      return; // CRITICAL FIX: Stop execution when no token
     }
     
     console.log('[CRITICAL DEBUG] ✅ Token verified, continuing...');
@@ -6396,7 +6397,8 @@ app.get('/deals/new', (c) => {
     }
 
     // 売主リスト取得（リトライロジック付き）
-    async function loadSellers(retryCount = 0) {
+    // CRITICAL FIX v3.153.11: Export to global scope for emergency script
+    window.loadSellers = async function loadSellers(retryCount = 0) {
       console.log('[Sellers] ========== START (Retry:', retryCount, ') ==========');
       console.log('[Sellers] Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL/UNDEFINED');
       console.log('[Sellers] Current URL:', window.location.href);
@@ -8823,11 +8825,12 @@ app.get('/deals/new', (c) => {
       console.log('[Init] Axios loaded:', typeof axios !== 'undefined');
       
       // DOM要素が確実に存在するまで待機してから実行
+      // CRITICAL FIX v3.153.11: Reduced timeout to execute before potential redirect
       setTimeout(() => {
         console.log('[Init] Starting delayed initialization for sellers and OCR...');
         loadSellers();
         loadOCRExtractedData();
-      }, 500);
+      }, 100);
       
       // ストレージ使用量表示の初期化
       const storageText = document.getElementById('storage-usage-text');
@@ -10899,64 +10902,31 @@ app.get('/deals/new', (c) => {
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
   <script src="/static/deals-new-events.js?v=3.152.6"></script>
   
-  <!-- EMERGENCY FIX v3.153.7: Force loadSellers execution -->
+  <!-- EMERGENCY FIX v3.153.11: Force loadSellers execution -->
   <script>
     (function() {
       console.log('[EMERGENCY] Force loadSellers script loaded');
-      console.log('[EMERGENCY] typeof loadSellers:', typeof loadSellers);
       
-      // Wait for DOM to be fully loaded
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', forceLoadSellers);
-      } else {
-        forceLoadSellers();
-      }
-      
-      function forceLoadSellers() {
-        console.log('[EMERGENCY] forceLoadSellers called');
-        console.log('[EMERGENCY] typeof loadSellers:', typeof loadSellers);
+      // Wait 200ms for main script to define window.loadSellers
+      setTimeout(function() {
+        console.log('[EMERGENCY] typeof window.loadSellers:', typeof window.loadSellers);
         
         // Check if loadSellers exists
-        if (typeof loadSellers !== 'function') {
-          console.error('[EMERGENCY] loadSellers is not a function!');
-          console.error('[EMERGENCY] This indicates a serious script loading issue');
+        if (typeof window.loadSellers !== 'function') {
+          console.error('[EMERGENCY] window.loadSellers is not a function!');
+          console.error('[EMERGENCY] This indicates main script did not execute properly');
           return;
         }
         
-        // Try to call loadSellers with retry logic
-        let retryCount = 0;
-        const maxRetries = 10;
-        const retryInterval = 500;
-        
-        function attemptLoadSellers() {
-          console.log('[EMERGENCY] Attempt', retryCount + 1, '/', maxRetries);
-          
-          const sellerSelect = document.getElementById('seller_id');
-          if (!sellerSelect) {
-            console.warn('[EMERGENCY] seller_id element not found yet');
-            if (retryCount < maxRetries) {
-              retryCount++;
-              setTimeout(attemptLoadSellers, retryInterval);
-            } else {
-              console.error('[EMERGENCY] Failed to find seller_id after', maxRetries, 'retries');
-            }
-            return;
-          }
-          
-          console.log('[EMERGENCY] seller_id element found!');
-          console.log('[EMERGENCY] Calling loadSellers()...');
-          
-          try {
-            loadSellers();
-            console.log('[EMERGENCY] loadSellers() called successfully');
-          } catch (error) {
-            console.error('[EMERGENCY] Error calling loadSellers():', error);
-          }
+        // Try to call loadSellers
+        try {
+          console.log('[EMERGENCY] Calling window.loadSellers()...');
+          window.loadSellers();
+          console.log('[EMERGENCY] ✅ window.loadSellers() called successfully');
+        } catch (error) {
+          console.error('[EMERGENCY] ❌ Failed to call window.loadSellers():', error);
         }
-        
-        // Start attempting
-        attemptLoadSellers();
-      }
+      }, 200);
     })();
   </script>
   

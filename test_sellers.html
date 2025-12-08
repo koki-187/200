@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Seller Dropdown Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body>
+  <h1>Seller Dropdown Test</h1>
+  <select id="seller_id">
+    <option value="">選択してください</option>
+  </select>
+  
+  <div id="log" style="margin-top: 20px; padding: 10px; background: #f0f0f0;"></div>
+  
+  <script>
+    function log(msg) {
+      console.log(msg);
+      const logDiv = document.getElementById('log');
+      logDiv.innerHTML += '<div>' + msg + '</div>';
+    }
+    
+    log('[Test] Script started');
+    
+    async function loadSellers() {
+      log('[Test] loadSellers() called');
+      
+      const token = localStorage.getItem('auth_token');
+      log('[Test] Token exists: ' + !!token);
+      
+      if (!token) {
+        log('[Test] ERROR: No token found');
+        return;
+      }
+      
+      try {
+        log('[Test] Calling /api/auth/users...');
+        const response = await axios.get('/api/auth/users', {
+          headers: { 'Authorization': 'Bearer ' + token },
+          timeout: 10000
+        });
+        
+        log('[Test] API response received');
+        const sellers = response.data.users.filter(u => u.role === 'AGENT');
+        log('[Test] Found ' + sellers.length + ' AGENT users');
+        
+        const select = document.getElementById('seller_id');
+        sellers.forEach(seller => {
+          const option = document.createElement('option');
+          option.value = seller.id;
+          option.textContent = seller.name + (seller.company_name ? ' (' + seller.company_name + ')' : '');
+          select.appendChild(option);
+          log('[Test] Added: ' + seller.name);
+        });
+        
+        log('[Test] SUCCESS: ' + sellers.length + ' sellers loaded');
+      } catch (error) {
+        log('[Test] ERROR: ' + error.message);
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      log('[Test] DOMContentLoaded fired');
+      loadSellers();
+    });
+  </script>
+</body>
+</html>

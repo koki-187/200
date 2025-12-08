@@ -173,7 +173,7 @@ ocrJobs.post('/', async (c) => {
     // ファイルバリデーションと選別
     // 注意: OpenAI Vision APIは画像形式のみをサポート
     // PDFファイルはフロントエンドで画像に変換されてから送信されます
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
     const maxSize = 10 * 1024 * 1024; // 10MB
     
     // OCR対象ファイルの選別
@@ -208,7 +208,7 @@ ocrJobs.post('/', async (c) => {
       if (!file.type || !allowedTypes.includes(file.type.toLowerCase())) {
         return c.json({ 
           error: `ファイル "${file.name}" の形式が対応していません`,
-          details: 'PNG, JPG, JPEG, WEBP形式のみ対応しています'
+          details: 'PNG, JPG, JPEG, WEBP, PDF形式のみ対応しています'
         }, 400);
       }
       

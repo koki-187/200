@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seller Dropdown Test - Auto Login</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    h1 { color: #333; }
+    select { width: 100%; padding: 10px; font-size: 16px; margin: 10px 0; }
+    .log { background: #f9f9f9; padding: 15px; margin: 15px 0; border-left: 4px solid #4CAF50; overflow-x: auto; }
+    .log-item { margin: 5px 0; font-family: monospace; font-size: 13px; }
+    .error { color: red; }
+    .success { color: green; }
+    .info { color: blue; }
+    button { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 5px; }
+    button:hover { background: #45a049; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    #status { padding: 10px; margin: 10px 0; border-radius: 4px; font-weight: bold; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-success { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Seller Dropdown Test (Auto Login)</h1>
+    
+    <div id="status" class="status-pending">Status: Initializing...</div>
+    
+    <h2>Seller Dropdown</h2>
+    <select id="seller_id">
+      <option value="">Loading...</option>
+    </select>
+    
+    <div>
+      <button id="loginBtn" onclick="testLogin()">1. Test Login</button>
+      <button id="loadBtn" onclick="testLoadSellers()" disabled>2. Load Sellers</button>
+      <button id="clearBtn" onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <h2>Console Log</h2>
+    <div class="log" id="log"></div>
+  </div>
+  
+  <script>
+    let token = null;
+    
+    function log(msg, type = 'info') {
+      const logDiv = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString();
+      const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+      logDiv.innerHTML += `<div class="log-item ${className}">[${timestamp}] ${msg}</div>`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(`[${timestamp}] ${msg}`);
+    }
+    
+    function updateStatus(msg, type = 'pending') {
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = `Status: ${msg}`;
+      statusDiv.className = `status-${type}`;
+    }
+    
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+      log('Log cleared', 'info');
+    }
+    
+    async function testLogin() {
+      log('========================================', 'info');
+      log('Starting login test...', 'info');
+      updateStatus('Logging in...', 'pending');
+      
+      const loginBtn = document.getElementById('loginBtn');
+      const loadBtn = document.getElementById('loadBtn');
+      loginBtn.disabled = true;
+      
+      try {
+        log('Calling /api/auth/login...', 'info');
+        const response = await axios.post('/api/auth/login', {
+          email: 'navigator-187@docomo.ne.jp',
+          password: 'kouki187'
+        }, {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 10000
+        });
+        
+        log('✅ Login successful', 'success');
+        log(`Token: ${response.data.token.substring(0, 30)}...`, 'success');
+        
+        token = response.data.token;
+        localStorage.setItem('auth_token', token);
+        
+        log('Token saved to localStorage', 'success');
+        updateStatus('Login successful', 'success');
+        
+        loadBtn.disabled = false;
+        
+        // Automatically load sellers
+        setTimeout(() => testLoadSellers(), 500);
+        
+      } catch (error) {
+        log(`❌ Login failed: ${error.message}`, 'error');
+        if (error.response) {
+          log(`Response status: ${error.response.status}`, 'error');
+          log(`Response data: ${JSON.stringify(error.response.data)}`, 'error');
+        }
+        updateStatus('Login failed', 'error');
+        loginBtn.disabled = false;
+      }
+    }
+    
+    async function testLoadSellers() {
+      log('========================================', 'info');
+      log('Starting loadSellers test...', 'info');
+      updateStatus('Loading sellers...', 'pending');
+      
+      const loadBtn = document.getElementById('loadBtn');
+      loadBtn.disabled = true;
+      
+      try {
+        if (!token) {
+          token = localStorage.getItem('auth_token');
+          if (!token) {
+            log('❌ No token found. Please login first.', 'error');
+            updateStatus('No token - login first', 'error');
+            return;
+          }
+        }
+        
+        log(`Using token: ${token.substring(0, 30)}...`, 'info');
+        log('Calling /api/auth/users...', 'info');
+        
+        const response = await axios.get('/api/auth/users', {
+          headers: { 'Authorization': `Bearer ${token}` },
+          timeout: 10000
+        });
+        
+        log('✅ API response received', 'success');
+        log(`Total users: ${response.data.users.length}`, 'info');
+        
+        const sellers = response.data.users.filter(u => u.role === 'AGENT');
+        log(`✅ Found ${sellers.length} AGENT users`, 'success');
+        
+        const select = document.getElementById('seller_id');
+        select.innerHTML = '<option value="">選択してください</option>';
+        
+        sellers.forEach((seller, index) => {
+          const option = document.createElement('option');
+          option.value = seller.id;
+          option.textContent = `${seller.name}${seller.company_name ? ' (' + seller.company_name + ')' : ''}`;
+          select.appendChild(option);
+          log(`Added [${index + 1}]: ${seller.name} (${seller.company_name})`, 'success');
+        });
+        
+        log(`✅ Successfully loaded ${sellers.length} sellers into dropdown`, 'success');
+        updateStatus(`Successfully loaded ${sellers.length} sellers`, 'success');
+        
+      } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
+        if (error.response) {
+          log(`Response status: ${error.response.status}`, 'error');
+          log(`Response data: ${JSON.stringify(error.response.data)}`, 'error');
+        }
+        updateStatus('Failed to load sellers', 'error');
+      } finally {
+        loadBtn.disabled = false;
+      }
+    }
+    
+    // Auto-start on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      log('Page loaded', 'info');
+      log('Auto-starting login test in 1 second...', 'info');
+      updateStatus('Auto-starting...', 'pending');
+      
+      setTimeout(() => {
+        testLogin();
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

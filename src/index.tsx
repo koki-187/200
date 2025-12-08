@@ -6035,10 +6035,10 @@ app.get('/deals/new', (c) => {
     if (!token) {
       console.log('[CRITICAL DEBUG] ❌ No token found, redirecting to /');
       window.location.href = '/';
-      return; // CRITICAL FIX: Stop execution when no token
     }
     
-    console.log('[CRITICAL DEBUG] ✅ Token verified, continuing...');
+    // CRITICAL FIX v3.153.11: Always log this even during redirect
+    console.log('[CRITICAL DEBUG] ✅ Token verified or redirect scheduled');
 
     // ========================================
     // 3. グローバル関数定義（認証後）

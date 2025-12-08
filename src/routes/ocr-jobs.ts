@@ -300,6 +300,80 @@ ocrJobs.post('/', async (c) => {
 });
 
 /**
+ * 🧪 OpenAI API接続テスト用エンドポイント
+ * GET /api/ocr-jobs/test-openai
+ * 
+ * このエンドポイントは、OpenAI APIが正しく動作しているかをテストします。
+ * シンプルなテキストプロンプトで応答を確認します。
+ */
+ocrJobs.get('/test-openai', async (c) => {
+  try {
+    const apiKey = c.env.OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      return c.json({
+        success: false,
+        error: 'OPENAI_API_KEY is not set in environment variables'
+      }, 500);
+    }
+    
+    console.log('[OpenAI Test] Sending test request to OpenAI API...');
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful assistant that responds in JSON format.'
+          },
+          {
+            role: 'user',
+            content: 'Return a JSON object with a single field "test" set to "success"'
+          }
+        ],
+        max_tokens: 100,
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[OpenAI Test] API error:', errorText);
+      return c.json({
+        success: false,
+        error: `OpenAI API returned ${response.status}: ${errorText}`,
+        status: response.status
+      }, response.status);
+    }
+    
+    const result = await response.json();
+    console.log('[OpenAI Test] ✅ API responded successfully');
+    
+    return c.json({
+      success: true,
+      model: 'gpt-4o',
+      tokens_used: result.usage,
+      response: result.choices[0]?.message?.content,
+      full_response: result
+    });
+    
+  } catch (error) {
+    console.error('[OpenAI Test] Error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
  * OCRジョブのステータスを取得
  * GET /api/ocr-jobs/:jobId
  */
@@ -988,79 +1062,5 @@ function mergePropertyData(results: any[]): any {
   
   return merged;
 }
-
-/**
- * 🧪 OpenAI API接続テスト用エンドポイント
- * GET /api/ocr-jobs/test-openai
- * 
- * このエンドポイントは、OpenAI APIが正しく動作しているかをテストします。
- * シンプルなテキストプロンプトで応答を確認します。
- */
-ocrJobs.get('/test-openai', async (c) => {
-  try {
-    const apiKey = c.env.OPENAI_API_KEY;
-    
-    if (!apiKey) {
-      return c.json({
-        success: false,
-        error: 'OPENAI_API_KEY is not set in environment variables'
-      }, 500);
-    }
-    
-    console.log('[OpenAI Test] Sending test request to OpenAI API...');
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful assistant that responds in JSON format.'
-          },
-          {
-            role: 'user',
-            content: 'Return a JSON object with a single field "test" set to "success"'
-          }
-        ],
-        max_tokens: 100,
-        temperature: 0.1,
-        response_format: { type: "json_object" }
-      })
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[OpenAI Test] API error:', errorText);
-      return c.json({
-        success: false,
-        error: `OpenAI API returned ${response.status}: ${errorText}`,
-        status: response.status
-      }, response.status);
-    }
-    
-    const result = await response.json();
-    console.log('[OpenAI Test] ✅ API responded successfully');
-    
-    return c.json({
-      success: true,
-      model: 'gpt-4o',
-      tokens_used: result.usage,
-      response: result.choices[0]?.message?.content,
-      full_response: result
-    });
-    
-  } catch (error) {
-    console.error('[OpenAI Test] Error:', error);
-    return c.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, 500);
-  }
-});
 
 export default ocrJobs;

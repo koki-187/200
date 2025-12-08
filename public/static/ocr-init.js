@@ -1,12 +1,17 @@
 /**
  * OCR Processor - Complete Standalone Implementation
- * v3.116.0 - FINAL FIX: PDF Conversion + Full OCR Implementation
+ * v3.153.4 - CRITICAL FIX: Removed automatic risk check after OCR
  * 
  * This standalone file provides a complete processMultipleOCR implementation
  * with PDF conversion support, bypassing main script syntax errors.
+ * 
+ * CHANGELOG v3.153.4:
+ * - Removed automatic runComprehensiveRiskCheck() call after OCR completion
+ * - User must manually click "総合リスクチェック実施" button
  */
 
 console.log('[OCR Init] ========================================');
+console.log('[OCR Init] VERSION: v3.153.4 - No automatic risk check');
 console.log('[OCR Init] ocr-init.js loaded - complete implementation with PDF support');
 console.log('[OCR Init] Creating window.processMultipleOCR function...');
 
@@ -487,8 +492,8 @@ window.processMultipleOCR = async function(files) {
       
       console.log('[OCR] ✅ Form auto-filled successfully');
       
-      // リスクチェックは自動実行しない（ユーザーが手動でボタンをクリックする）
-      console.log('[OCR] ✅ OCR processing completed. User can manually run risk check if needed.');
+      // v3.153.4: リスクチェックは自動実行しない（ユーザーが手動でボタンをクリックする）
+      console.log('[OCR] ✅ v3.153.4: OCR processing completed. No automatic risk check. User can manually click buttons if needed.');
     } else {
       console.warn('[OCR] ⚠️ No extracted data found');
     }

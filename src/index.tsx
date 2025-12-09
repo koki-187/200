@@ -9499,11 +9499,13 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ボタンリスナー設定を実行（少し遅延させて確実に実行）
-    setTimeout(function() {
+    // ボタンリスナー設定をwindow.loadイベント後に実行
+    window.addEventListener('load', function() {
       console.log('[Init] Calling setupButtonListeners after global functions are defined');
-      setupButtonListeners();
-    }, 500);
+      setTimeout(function() {
+        setupButtonListeners();
+      }, 500);
+    });
     
     // ============================================================
     // ファイル管理機能

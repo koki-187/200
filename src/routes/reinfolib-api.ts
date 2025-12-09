@@ -579,7 +579,7 @@ app.get('/hazard-info', async (c) => {
           type: 'tsunami_risk',
           name: '津波浸水想定区域',
           risk_level: '調査中',
-          description: 'API実装予定（XKA033）',
+          description: 'API実装予定（XKT033）',
           financing_restriction: false,
           url: 'https://disaportal.gsi.go.jp/'
         },
@@ -587,7 +587,7 @@ app.get('/hazard-info', async (c) => {
           type: 'storm_surge_risk',
           name: '高潮浸水想定区域',
           risk_level: '調査中',
-          description: 'API実装予定（XKA032）',
+          description: 'API実装予定（XKT032）',
           financing_restriction: false,
           url: 'https://disaportal.gsi.go.jp/'
         }
@@ -627,13 +627,13 @@ app.get('/hazard-info', async (c) => {
  */
 async function getFloodDepth(lat: string, lon: string, apiKey: string): Promise<{ depth: number | null, description: string }> {
   try {
-    const zoom = 18;
+    const zoom = 11;  // MLIT API supports zoom level 11, not 18
     const latRad = parseFloat(lat) * Math.PI / 180;
     const tileX = Math.floor((parseFloat(lon) + 180) / 360 * Math.pow(2, zoom));
     const tileY = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom));
 
-    // API #34: 洪水浸水想定区域
-    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKA034?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
+    // API #34: 洪水浸水想定区域（XKT034は2024年11月公開、現在Resource not found）
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKT034?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
     
     console.log('[FLOOD] API URL:', url);
     
@@ -681,13 +681,13 @@ async function getFloodDepth(lat: string, lon: string, apiKey: string): Promise<
  */
 async function getLandslideZone(lat: string, lon: string, apiKey: string): Promise<{ isRedZone: boolean, description: string }> {
   try {
-    const zoom = 18;
+    const zoom = 11;  // MLIT API supports zoom level 11, not 18
     const latRad = parseFloat(lat) * Math.PI / 180;
     const tileX = Math.floor((parseFloat(lon) + 180) / 360 * Math.pow(2, zoom));
     const tileY = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom));
 
-    // API #31: 土砂災害警戒区域
-    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKA031?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
+    // API #31: 土砂災害警戒区域（XKT031、動作確認済み）
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKT031?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
     
     console.log('[LANDSLIDE] API URL:', url);
     
@@ -963,8 +963,8 @@ app.get('/zoning-info', async (c) => {
       console.log('[ZONING] Geocoded:', latitude, longitude);
     }
 
-    // タイル座標に変換（ズームレベル18を使用）
-    const zoom = 18;
+    // タイル座標に変換（ズームレベル11を使用 - MLIT API制約）
+    const zoom = 11;
     const latRad = parseFloat(latitude) * Math.PI / 180;
     const tileX = Math.floor((parseFloat(longitude) + 180) / 360 * Math.pow(2, zoom));
     const tileY = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom));

@@ -1949,8 +1949,9 @@ app.get('/dashboard', (c) => {
           <button 
             onclick="switchDashboardTab('login-history')" 
             id="tab-login-history"
-            class="dashboard-tab border-b-2 border-transparent py-4 px-1 text-sm font-semibold text-gray-600 hover:text-blue-700 transition">
-            <i class="fas fa-history mr-2"></i>ログイン履歴
+            class="dashboard-tab border-b-2 border-transparent py-4 px-1 text-sm font-semibold text-gray-600 hover:text-blue-700 transition"
+            style="display: none;">
+            <i class="fas fa-history mr-2"></i>ログイン履歴（管理者専用）
           </button>
         </nav>
       </div>
@@ -2595,11 +2596,16 @@ app.get('/dashboard', (c) => {
         if (mobileUserName) mobileUserName.textContent = user.name;
         if (mobileUserRole) mobileUserRole.textContent = user.role === 'ADMIN' ? '管理者' : 'ユーザー';
         
-        // 管理者の場合、ファイル管理タブを表示
+        // 管理者の場合、ファイル管理タブとログイン履歴タブを表示
         if (user.role === 'ADMIN') {
           const filesTab = document.getElementById('tab-files-admin');
           if (filesTab) {
             filesTab.style.display = 'block';
+          }
+          
+          const loginHistoryTab = document.getElementById('tab-login-history');
+          if (loginHistoryTab) {
+            loginHistoryTab.style.display = 'block';
           }
         }
       }
@@ -5229,7 +5235,7 @@ app.get('/deals/new', (c) => {
           <div class="flex flex-col sm:flex-row gap-2">
             <input type="text" id="location" required
               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="例: 東京都板橋区蓮根三丁目17-7"
+              placeholder="例: 東京都港区六本木1-1-1"
               style="min-height: 44px;">
             <button type="button" id="auto-fill-btn"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
@@ -6468,6 +6474,13 @@ app.get('/deals/new', (c) => {
         console.log('[Sellers] Clearing existing options (count before:', select.options.length, ')');
         select.innerHTML = '';
         console.log('[Sellers] Options cleared (count after:', select.options.length, ')');
+        
+        // 初期オプション「選択してください」を追加
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '選択してください';
+        select.appendChild(defaultOption);
+        console.log('[Sellers] Added default option: 選択してください');
         
         sellers.forEach(seller => {
           const option = document.createElement('option');

@@ -1001,13 +1001,22 @@ app.get('/zoning-info', async (c) => {
       for (const feature of geoJsonData.features) {
         if (feature.properties) {
           // プロパティから用途地域情報を取得
+          // XKT002 APIの正しいキー名: use_area_ja, u_building_coverage_ratio_ja, u_floor_area_ratio_ja
+          const props = feature.properties;
           zoningInfo = {
-            用途地域: feature.properties.用途地域 || feature.properties.name || '不明',
-            建蔽率: feature.properties.建蔽率 || feature.properties.building_coverage_ratio,
-            容積率: feature.properties.容積率 || feature.properties.floor_area_ratio,
-            その他: feature.properties
+            用途地域: props.use_area_ja || props.用途地域 || '不明',
+            建蔽率: props.u_building_coverage_ratio_ja || props.建蔽率 || null,
+            容積率: props.u_floor_area_ratio_ja || props.容積率 || null,
+            都道府県: props.prefecture || null,
+            市区町村: props.city_name || null,
+            決定日: props.decision_date || null
           };
-          break; // 最初のフィーチャーを使用
+          
+          // 建蔽率・容積率がある場合のみ使用（空文字列を除外）
+          if (!zoningInfo.建蔽率 || zoningInfo.建蔽率 === '') {
+            continue; // 次のフィーチャーを探す
+          }
+          break; // 有効なデータが見つかったら終了
         }
       }
     }

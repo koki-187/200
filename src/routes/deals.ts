@@ -255,9 +255,9 @@ deals.post('/', adminOnly, async (c) => {
 
     // 新規案件通知（メール + D1通知）
     // 通知処理でエラーが発生しても案件作成自体は成功させる
-    // TEMPORARILY DISABLED FOR DEBUGGING
-    if (false) { try {
+    try {
       const seller = await db.getUserById(body.seller_id);
+      const buyer = await db.getUserById(userId);
       
       // D1データベースに通知を保存（管理者用）
       const { createNotification } = await import('./notifications');
@@ -273,7 +273,7 @@ deals.post('/', adminOnly, async (c) => {
           admin.id as string,
           'NEW_DEAL',
           `新規案件登録: ${newDeal.title}`,
-          `${seller?.name || '担当者'}が新しい案件を登録しました。\n所在地: ${newDeal.location || '未設定'}\n最寄駅: ${newDeal.station || '未設定'}`,
+          `${buyer?.name || '担当者'}が新しい案件を登録しました。\n所在地: ${newDeal.location || '未設定'}\n最寄駅: ${newDeal.station || '未設定'}`,
           `/deals/${newDeal.id}`
         );
       }
@@ -287,16 +287,16 @@ deals.post('/', adminOnly, async (c) => {
           ? adminUsers.results.map((admin) => admin.id as string)
           : [];
         
-        if (adminIds.length > 0) {
+        if (adminIds.length > 0 && buyer) {
           await sendNotificationToUsers(c.env, adminIds, {
             type: 'deal_create',
             title: '新規案件登録',
-            message: `${seller?.name || '担当者'}が新しい案件を登録しました。\n\n📍 所在地: ${newDeal.location || '未設定'}\n🚉 最寄駅: ${newDeal.station || '未設定'}`,
+            message: `${buyer.name || '担当者'}が新しい案件を登録しました。\n\n📍 所在地: ${newDeal.location || '未設定'}\n🚉 最寄駅: ${newDeal.station || '未設定'}`,
             url: `${c.req.url.replace(/\/api\/deals.*/, '')}/deals/${newDeal.id}`,
             user: {
-              id: user.id,
-              name: seller?.name || user.name,
-              email: seller?.email || user.email
+              id: buyer.id,
+              name: buyer.name,
+              email: buyer.email
             },
             deal: {
               id: newDeal.id,
@@ -362,7 +362,7 @@ deals.post('/', adminOnly, async (c) => {
         console.error('Error details:', notificationError.message);
         console.error('Stack trace:', notificationError.stack);
       }
-    } } // END OF: try/if (false)
+    }
 
     return c.json({ deal: newDeal }, 201);
   } catch (error) {

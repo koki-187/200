@@ -6,6 +6,7 @@ import { useToast } from '../hooks/useToast'
 
 interface DealFormData {
   title: string
+  seller_id?: string
   location: string
   nearest_station: string
   walk_minutes: string
@@ -38,6 +39,7 @@ const DealCreatePage: React.FC = () => {
   
   const [formData, setFormData] = useState<DealFormData>({
     title: '',
+    seller_id: user?.id || '',
     location: '',
     nearest_station: '',
     walk_minutes: '',

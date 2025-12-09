@@ -1477,9 +1477,10 @@ app.get('/comprehensive-check', async (c) => {
       timestamp: new Date().toISOString()
     };
     
+    // フロントエンド互換性のため、簡易形式でレスポンスを返す
     const result = {
       success: true,
-      version: 'v3.154.3 - Full Hazard Integration (Tsunami + Storm Surge)',
+      version: 'v3.154.4 - User-Friendly Error Messages',
       address: address,
       coordinates: {
         latitude: parseFloat(latitude),
@@ -1490,8 +1491,18 @@ app.get('/comprehensive-check', async (c) => {
         city: cityName
       },
       timestamp: new Date().toISOString(),
-      risks: riskAssessment,
-      financingJudgment: financingJudgment,
+      risks: {
+        // 簡易形式（文字列）でレスポンスを返す
+        floodRisk: floodData.description || 'N/A',
+        sedimentDisaster: landslideData.description || 'N/A',
+        tsunamiRisk: tsunamiData.description || 'N/A',
+        stormSurgeRisk: stormSurgeData.description || 'N/A',
+        houseCollapseZone: 'manual_check_required'
+      },
+      // 詳細情報は別フィールドで提供
+      riskDetails: riskAssessment,
+      financingJudgment: financingJudgment.judgment,
+      financingMessage: financingJudgment.message,
       processingTime: `${Date.now() - startTime}ms`,
       hazardMapUrl: `https://disaportal.gsi.go.jp/maps/?ll=${latitude},${longitude}&z=15&base=pale&vs=c1j0l0u0`
     };

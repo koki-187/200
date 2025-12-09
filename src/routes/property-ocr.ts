@@ -307,7 +307,7 @@ function mergePropertyData(results: any[]): any {
   const fields = [
     'property_name', 'location', 'station', 'walk_minutes',
     'land_area', 'building_area', 'zoning', 'building_coverage',
-    'floor_area_ratio', 'price', 'structure', 'built_year',
+    'floor_area_ratio', 'height_district', 'fire_zone', 'price', 'structure', 'built_year',
     'road_info', 'frontage', 'current_status', 'yield', 'occupancy'
   ];
   

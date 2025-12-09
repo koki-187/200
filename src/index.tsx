@@ -11027,21 +11027,13 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ボタンリスナー設定をDOMContentLoaded後に実行（window.loadより早い）
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('[Init] DOMContentLoaded fired, calling setupButtonListeners in 500ms');
-        setTimeout(function() {
-          setupButtonListeners();
-        }, 500);
-      });
-    } else {
-      // DOMがすでに読み込まれている場合は即座に実行
-      console.log('[Init] DOM already ready, calling setupButtonListeners in 500ms');
-      setTimeout(function() {
-        setupButtonListeners();
-      }, 500);
-    }
+    // ボタンリスナー設定を遅延実行（確実に呼び出されるよう）
+    // CRITICAL: この時点でDOMContentLoadedは既に発火済みのため、setTimeoutで確実に実行
+    console.log('[Init] Scheduling setupButtonListeners in 1000ms (readyState:', document.readyState, ')');
+    setTimeout(function() {
+      console.log('[Init] Executing setupButtonListeners NOW');
+      setupButtonListeners();
+    }, 1000);
 
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->

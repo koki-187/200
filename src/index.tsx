@@ -4889,14 +4889,14 @@ app.get('/deals/new', (c) => {
       </div>
       
       <!-- ドロップゾーン -->
-      <div id="ocr-drop-zone" class="ocr-drop-zone rounded-lg p-8 text-center mb-4">
+      <div id="ocr-drop-zone" class="ocr-drop-zone rounded-lg p-8 text-center mb-4 cursor-pointer">
         <i class="fas fa-cloud-upload-alt text-5xl text-purple-400 mb-3"></i>
         <p class="text-gray-700 font-medium mb-2">登記簿謄本や物件資料を複数まとめてアップロード</p>
         <p class="text-sm text-gray-500 mb-2">PNG、JPG、WEBP、PDF形式に対応</p>
         <p class="text-sm text-gray-500 mb-4">画像とPDFを混在してアップロードできます（最大10ファイル）</p>
-        <label for="ocr-file-input" class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 cursor-pointer inline-block transition font-medium shadow-lg touch-manipulation">
+        <span class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 cursor-pointer inline-block transition font-medium shadow-lg touch-manipulation">
           <i class="fas fa-folder-open mr-2"></i>ファイルを選択またはドラッグ＆ドロップ
-        </label>
+        </span>
         <input type="file" id="ocr-file-input" accept="image/*,application/pdf" class="hidden" multiple>
         <p class="text-sm text-gray-600 mt-2">
           <i class="fas fa-info-circle mr-1"></i>
@@ -6685,11 +6685,10 @@ app.get('/deals/new', (c) => {
               console.log('[OCR Elements] Drop zone clicked/touched');
               console.log('[OCR Elements] Event type:', e.type);
               console.log('[OCR Elements] Target:', e.target);
-              console.log('[OCR Elements] Target closest button:', e.target.closest('button'));
               console.log('[OCR Elements] ========================================');
               
-              // ボタン要素のクリックは無視（ボタンの動作を優先）
-              if (!e.target.closest('button')) {
+              // ファイル入力以外の要素をクリックした場合のみ、ファイル選択ダイアログを開く
+              if (e.target !== fileInput && !e.target.closest('#ocr-file-input')) {
                 console.log('[OCR Elements] Opening file dialog...');
                 console.log('[OCR Elements] fileInput element:', fileInput);
                 console.log('[OCR Elements] fileInput.click function:', typeof fileInput.click);
@@ -6699,11 +6698,14 @@ app.get('/deals/new', (c) => {
                 e.stopPropagation();
                 
                 // ファイル入力をクリック
-                fileInput.click();
-                
-                console.log('[OCR Elements] fileInput.click() executed');
+                if (fileInput && typeof fileInput.click === 'function') {
+                  fileInput.click();
+                  console.log('[OCR Elements] fileInput.click() executed');
+                } else {
+                  console.error('[OCR Elements] fileInput.click() is not available');
+                }
               } else {
-                console.log('[OCR Elements] Button click detected, ignoring drop zone click');
+                console.log('[OCR Elements] File input clicked directly, using default behavior');
               }
             };
             

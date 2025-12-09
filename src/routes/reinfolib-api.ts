@@ -646,7 +646,10 @@ async function getFloodDepth(lat: string, lon: string, apiKey: string): Promise<
 
     if (!response.ok) {
       console.error('[FLOOD] API Error:', response.status);
-      return { depth: null, description: 'データ取得エラー' };
+      if (response.status === 404) {
+        return { depth: null, description: '洪水浸水想定データは現在準備中です（国土交通省APIデータ整備待ち）' };
+      }
+      return { depth: null, description: `データ取得エラー（HTTPステータス: ${response.status}）` };
     }
 
     const geoJsonData = await response.json();
@@ -700,7 +703,10 @@ async function getLandslideZone(lat: string, lon: string, apiKey: string): Promi
 
     if (!response.ok) {
       console.error('[LANDSLIDE] API Error:', response.status);
-      return { isRedZone: false, description: 'データ取得エラー' };
+      if (response.status === 404) {
+        return { isRedZone: false, description: '土砂災害警戒区域データは現在準備中です（国土交通省APIデータ整備待ち）' };
+      }
+      return { isRedZone: false, description: `データ取得エラー（HTTPステータス: ${response.status}）` };
     }
 
     const geoJsonData = await response.json();
@@ -754,7 +760,10 @@ async function getTsunamiZone(lat: string, lon: string, apiKey: string): Promise
 
     if (!response.ok) {
       console.error('[TSUNAMI] API Error:', response.status);
-      return { inTsunamiZone: false, depth: null, description: 'データ取得エラー' };
+      if (response.status === 404) {
+        return { inTsunamiZone: false, depth: null, description: '津波浸水想定データは現在準備中です（国土交通省APIデータ整備待ち）' };
+      }
+      return { inTsunamiZone: false, depth: null, description: `データ取得エラー（HTTPステータス: ${response.status}）` };
     }
 
     const geoJsonData = await response.json();
@@ -818,7 +827,10 @@ async function getStormSurgeZone(lat: string, lon: string, apiKey: string): Prom
 
     if (!response.ok) {
       console.error('[STORM_SURGE] API Error:', response.status);
-      return { inStormSurgeZone: false, depth: null, description: 'データ取得エラー' };
+      if (response.status === 404) {
+        return { inStormSurgeZone: false, depth: null, description: '高潮浸水想定データは現在準備中です（国土交通省APIデータ整備待ち）' };
+      }
+      return { inStormSurgeZone: false, depth: null, description: `データ取得エラー（HTTPステータス: ${response.status}）` };
     }
 
     const geoJsonData = await response.json();
@@ -1343,7 +1355,7 @@ app.get('/comprehensive-check', async (c) => {
       return c.json({ 
         success: false,
         error: '住所が指定されていません',
-        version: 'v3.154.3 - Full Hazard Integration'
+        version: 'v3.154.4 - User-Friendly Error Messages'
       }, 200);
     }
 
@@ -1352,7 +1364,7 @@ app.get('/comprehensive-check', async (c) => {
       return c.json({ 
         success: false,
         error: 'MLIT API Keyが設定されていません',
-        version: 'v3.154.3 - Full Hazard Integration'
+        version: 'v3.154.4 - User-Friendly Error Messages'
       }, 500);
     }
     
@@ -1363,7 +1375,7 @@ app.get('/comprehensive-check', async (c) => {
         success: false,
         error: '住所の解析に失敗しました',
         address: address,
-        version: 'v3.154.3 - Full Hazard Integration'
+        version: 'v3.154.4 - User-Friendly Error Messages'
       }, 200);
     }
     
@@ -1384,7 +1396,7 @@ app.get('/comprehensive-check', async (c) => {
         success: false,
         error: 'ジオコーディングに失敗しました',
         address: address,
-        version: 'v3.154.3 - Full Hazard Integration'
+        version: 'v3.154.4 - User-Friendly Error Messages'
       }, 200);
     }
     
@@ -1395,7 +1407,7 @@ app.get('/comprehensive-check', async (c) => {
         success: false,
         error: '住所が見つかりませんでした',
         address: address,
-        version: 'v3.154.3 - Full Hazard Integration'
+        version: 'v3.154.4 - User-Friendly Error Messages'
       }, 200);
     }
     

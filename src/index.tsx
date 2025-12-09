@@ -5250,7 +5250,10 @@ app.get('/deals/new', (c) => {
             <i class="fas fa-info-circle mr-1"></i>住所を入力後、「自動補足」ボタンで物件情報を取得、「リスクチェック」ボタンで災害リスクを確認できます
           </p>
           <p class="text-xs text-blue-600 mt-1 bg-blue-50 p-2 rounded">
-            <i class="fas fa-info-circle mr-1"></i><strong>自動補足可能な情報:</strong> 土地面積、用途地域、建蔽率、容積率、道路情報、間口、建物面積、構造、築年月、希望価格、ハザード情報
+            <i class="fas fa-info-circle mr-1"></i><strong>自動補足可能な情報:</strong> 土地面積、建蔽率、容積率、道路情報、間口、建物面積、構造、築年月、過去取引価格
+          </p>
+          <p class="text-xs text-amber-600 mt-1 bg-amber-50 p-2 rounded">
+            <i class="fas fa-exclamation-triangle mr-1"></i><strong>注意:</strong> 用途地域・ハザード情報は別途「リスクチェック」ボタンから確認してください。取得される価格情報は過去の取引事例であり、現在の販売価格ではありません。
           </p>
         </div>
 

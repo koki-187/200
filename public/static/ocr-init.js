@@ -683,12 +683,6 @@ async function runComprehensiveRiskCheck(address) {
     console.log('[COMPREHENSIVE CHECK] ✅ Result message:');
     console.log(message);
     console.log('[COMPREHENSIVE CHECK] ✅ Check completed');
-    // Success message - logged to console only
-    console.log('[OCR] ✅ OCR processing completed');
-    console.log('[OCR] Total files processed:', responseData.total_files);
-    console.log('[OCR] Data extracted and filled into form');
-    console.log('[OCR] User should verify content before saving');
-    // alert removed per user requirement - success messages logged to console only
     
   } catch (error) {
     console.error('[COMPREHENSIVE CHECK] ❌ Error:', error);

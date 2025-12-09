@@ -488,45 +488,107 @@ app.get('/hazard-info', async (c) => {
     const lon = c.req.query('longitude');
 
     if (!address && (!lat || !lon)) {
-      return c.json({ error: '住所または座標が必要です' }, 400);
+      return c.json({ 
+        success: false,
+        error: '住所または座標が必要です' 
+      }, 400);
+    }
+
+    const apiKey = c.env.MLIT_API_KEY;
+    if (!apiKey) {
+      return c.json({ 
+        success: false,
+        error: 'MLIT API Keyが設定されていません'
+      }, 500);
+    }
+
+    // 座標が指定されていない場合は住所から座標を取得
+    let latitude = lat;
+    let longitude = lon;
+    
+    if (!latitude || !longitude) {
+      console.log('[HAZARD] Geocoding address:', address);
+      
+      const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
+      
+      const geocodeResponse = await fetch(geocodeUrl, {
+        headers: {
+          'User-Agent': 'Real-Estate-200units-v2/1.0'
+        }
+      });
+      
+      if (!geocodeResponse.ok) {
+        return c.json({ 
+          success: false,
+          error: 'ジオコーディングに失敗しました',
+          status: geocodeResponse.status
+        }, 200);
+      }
+      
+      const geocodeData = await geocodeResponse.json();
+      
+      if (!geocodeData || geocodeData.length === 0) {
+        return c.json({
+          success: false,
+          error: '住所が見つかりませんでした',
+          address: address
+        }, 200);
+      }
+      
+      latitude = geocodeData[0].lat;
+      longitude = geocodeData[0].lon;
     }
 
     // 住所から都道府県・市区町村を抽出
     const locationCodes = address ? parseAddress(address) : null;
     
-    // ハザード情報の簡易判定（実際のAPIが利用可能になるまでの代替実装）
-    // 現時点では、住所ベースの一般的なハザード情報を返す
+    // 洪水浸水想定区域チェック
+    const floodData = await getFloodDepth(latitude, longitude, apiKey);
+    
+    // 土砂災害警戒区域チェック
+    const landslideData = await getLandslideZone(latitude, longitude, apiKey);
+    
+    // ハザード情報の統合
     const hazardInfo = {
-      address: address || `緯度${lat}, 経度${lon}`,
+      address: address || `緯度${latitude}, 経度${longitude}`,
       prefecture: locationCodes?.prefectureName || '不明',
       city: locationCodes?.cityName || '不明',
+      coordinates: {
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude)
+      },
       hazards: [
         {
           type: 'flood_risk',
           name: '洪水浸水想定区域',
-          risk_level: '調査中',
-          description: 'ハザードマップポータルサイトで詳細をご確認ください',
+          risk_level: floodData.depth !== null ? (floodData.depth >= 10 ? '高' : floodData.depth > 0 ? '中' : '低') : '不明',
+          depth: floodData.depth,
+          description: floodData.description,
+          financing_restriction: floodData.depth !== null && floodData.depth >= 10,
           url: 'https://disaportal.gsi.go.jp/'
         },
         {
           type: 'landslide_risk',
           name: '土砂災害警戒区域',
-          risk_level: '調査中',
-          description: 'ハザードマップポータルサイトで詳細をご確認ください',
+          risk_level: landslideData.isRedZone ? '高（レッドゾーン）' : '低',
+          description: landslideData.description,
+          financing_restriction: landslideData.isRedZone,
           url: 'https://disaportal.gsi.go.jp/'
         },
         {
           type: 'tsunami_risk',
           name: '津波浸水想定区域',
           risk_level: '調査中',
-          description: 'ハザードマップポータルサイトで詳細をご確認ください',
+          description: 'API実装予定（XKA033）',
+          financing_restriction: false,
           url: 'https://disaportal.gsi.go.jp/'
         },
         {
-          type: 'liquefaction_risk',
-          name: '液状化リスク',
+          type: 'storm_surge_risk',
+          name: '高潮浸水想定区域',
           risk_level: '調査中',
-          description: 'ハザードマップポータルサイトで詳細をご確認ください',
+          description: 'API実装予定（XKA032）',
+          financing_restriction: false,
           url: 'https://disaportal.gsi.go.jp/'
         }
       ],
@@ -538,7 +600,7 @@ app.get('/hazard-info', async (c) => {
         },
         {
           name: '重ねるハザードマップ',
-          url: `https://disaportal.gsi.go.jp/maps/?ll=${lat || '35.6812'},${lon || '139.7671'}&z=15&base=pale&vs=c1j0l0u0`
+          url: `https://disaportal.gsi.go.jp/maps/?ll=${latitude},${longitude}&z=15&base=pale&vs=c1j0l0u0`
         }
       ],
       timestamp: new Date().toISOString()
@@ -546,23 +608,126 @@ app.get('/hazard-info', async (c) => {
 
     return c.json({
       success: true,
-      data: hazardInfo,
-      metadata: {
-        address,
-        latitude: lat,
-        longitude: lon,
-        locationCodes
-      }
+      data: hazardInfo
     });
 
   } catch (error: any) {
     console.error('❌ Error fetching hazard info:', error);
     return c.json({ 
+      success: false,
       error: 'ハザード情報の取得に失敗しました',
       message: error.message 
     }, 500);
   }
 });
+
+/**
+ * 洪水浸水想定区域API (REINFOLIB #34)
+ * 内部ヘルパー関数 - GeoJSON APIから洪水深度を取得
+ */
+async function getFloodDepth(lat: string, lon: string, apiKey: string): Promise<{ depth: number | null, description: string }> {
+  try {
+    const zoom = 18;
+    const latRad = parseFloat(lat) * Math.PI / 180;
+    const tileX = Math.floor((parseFloat(lon) + 180) / 360 * Math.pow(2, zoom));
+    const tileY = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom));
+
+    // API #34: 洪水浸水想定区域
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKA034?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
+    
+    console.log('[FLOOD] API URL:', url);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('[FLOOD] API Error:', response.status);
+      return { depth: null, description: 'データ取得エラー' };
+    }
+
+    const geoJsonData = await response.json();
+    
+    // GeoJSONから浸水深度情報を抽出
+    if (geoJsonData.features && geoJsonData.features.length > 0) {
+      for (const feature of geoJsonData.features) {
+        if (feature.properties) {
+          // 深度情報を取得 (単位: m)
+          const depth = feature.properties.浸水深 || feature.properties.depth || feature.properties.A31_004;
+          if (depth !== undefined && depth !== null) {
+            return {
+              depth: parseFloat(depth),
+              description: `浸水深: ${depth}m`
+            };
+          }
+        }
+      }
+    }
+
+    return { depth: 0, description: '洪水浸水想定区域外' };
+
+  } catch (error: any) {
+    console.error('[FLOOD] Exception:', error);
+    return { depth: null, description: 'エラー: ' + error.message };
+  }
+}
+
+/**
+ * 土砂災害警戒区域API (REINFOLIB #31)
+ * 内部ヘルパー関数 - GeoJSON APIから土砂災害区域を取得
+ */
+async function getLandslideZone(lat: string, lon: string, apiKey: string): Promise<{ isRedZone: boolean, description: string }> {
+  try {
+    const zoom = 18;
+    const latRad = parseFloat(lat) * Math.PI / 180;
+    const tileX = Math.floor((parseFloat(lon) + 180) / 360 * Math.pow(2, zoom));
+    const tileY = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom));
+
+    // API #31: 土砂災害警戒区域
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKA031?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
+    
+    console.log('[LANDSLIDE] API URL:', url);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('[LANDSLIDE] API Error:', response.status);
+      return { isRedZone: false, description: 'データ取得エラー' };
+    }
+
+    const geoJsonData = await response.json();
+    
+    // GeoJSONから区域種別を取得
+    if (geoJsonData.features && geoJsonData.features.length > 0) {
+      for (const feature of geoJsonData.features) {
+        if (feature.properties) {
+          // レッドゾーン判定
+          const zoneType = feature.properties.区域区分 || feature.properties.A33_004 || '';
+          const isRedZone = zoneType.includes('特別警戒') || zoneType.includes('レッド') || zoneType === '2';
+          
+          return {
+            isRedZone: isRedZone,
+            description: isRedZone ? '土砂災害特別警戒区域（レッドゾーン）' : '土砂災害警戒区域（イエローゾーン）'
+          };
+        }
+      }
+    }
+
+    return { isRedZone: false, description: '土砂災害警戒区域外' };
+
+  } catch (error: any) {
+    console.error('[LANDSLIDE] Exception:', error);
+    return { isRedZone: false, description: 'エラー: ' + error.message };
+  }
+}
 
 /**
  * 融資制限条件チェックAPI
@@ -587,24 +752,81 @@ app.get('/check-financing-restrictions', async (c) => {
     const lon = c.req.query('longitude');
 
     if (!address && (!lat || !lon)) {
-      return c.json({ error: '住所または座標が必要です' }, 400);
+      return c.json({ 
+        success: false,
+        error: '住所または座標が必要です' 
+      }, 400);
+    }
+
+    const apiKey = c.env.MLIT_API_KEY;
+    if (!apiKey) {
+      return c.json({ 
+        success: false,
+        error: 'MLIT API Keyが設定されていません'
+      }, 500);
+    }
+
+    // 座標が指定されていない場合は住所から座標を取得
+    let latitude = lat;
+    let longitude = lon;
+    
+    if (!latitude || !longitude) {
+      console.log('[FINANCING_CHECK] Geocoding address:', address);
+      
+      const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
+      
+      const geocodeResponse = await fetch(geocodeUrl, {
+        headers: {
+          'User-Agent': 'Real-Estate-200units-v2/1.0'
+        }
+      });
+      
+      if (!geocodeResponse.ok) {
+        return c.json({ 
+          success: false,
+          error: 'ジオコーディングに失敗しました',
+          status: geocodeResponse.status
+        }, 200);
+      }
+      
+      const geocodeData = await geocodeResponse.json();
+      
+      if (!geocodeData || geocodeData.length === 0) {
+        return c.json({
+          success: false,
+          error: '住所が見つかりませんでした',
+          address: address
+        }, 200);
+      }
+      
+      latitude = geocodeData[0].lat;
+      longitude = geocodeData[0].lon;
     }
 
     // 住所から都道府県・市区町村を抽出
     const locationCodes = address ? parseAddress(address) : null;
     
+    // 洪水深度チェック
+    const floodData = await getFloodDepth(latitude, longitude, apiKey);
+    const hasFloodRestriction = floodData.depth !== null && floodData.depth >= 10;
+    
+    // 土砂災害レッドゾーンチェック
+    const landslideData = await getLandslideZone(latitude, longitude, apiKey);
+    const hasLandslideRestriction = landslideData.isRedZone;
+    
     // 融資制限条件のチェック結果
-    // 実際のハザードマップAPIが利用可能になるまでは、ユーザーに手動確認を促す
     const restrictions = [
       {
         type: 'flood_depth',
         name: '水害による想定浸水深度',
         threshold: '10m以上',
-        status: 'manual_check_required',
-        result: null,
-        warning: '市区町村作成のハザードマップで確認が必要です',
+        status: floodData.depth !== null ? 'checked' : 'check_failed',
+        result: hasFloodRestriction ? 'NG' : 'OK',
+        depth: floodData.depth,
+        description: floodData.description,
+        warning: hasFloodRestriction ? '⚠️ 融資制限対象: 浸水深10m以上' : null,
         check_url: 'https://disaportal.gsi.go.jp/',
-        severity: 'high'
+        severity: hasFloodRestriction ? 'critical' : 'low'
       },
       {
         type: 'house_collapse_zone',
@@ -620,29 +842,30 @@ app.get('/check-financing-restrictions', async (c) => {
         type: 'landslide_red_zone',
         name: '土砂災害特別警戒区域（レッドゾーン）',
         threshold: '該当区域内',
-        status: 'manual_check_required',
-        result: null,
-        warning: '市区町村作成のハザードマップで確認が必要です',
+        status: 'checked',
+        result: hasLandslideRestriction ? 'NG' : 'OK',
+        description: landslideData.description,
+        warning: hasLandslideRestriction ? '⚠️ 融資制限対象: レッドゾーン該当' : null,
         check_url: 'https://disaportal.gsi.go.jp/',
-        severity: 'high'
+        severity: hasLandslideRestriction ? 'critical' : 'low'
       }
     ];
 
     // 総合判定
-    const hasRestrictions = false; // 自動判定は現時点では不可
-    const requiresManualCheck = true;
+    const hasRestrictions = hasFloodRestriction || hasLandslideRestriction;
+    const requiresManualCheck = floodData.depth === null; // 家屋倒壊区域は手動確認が必要
 
     return c.json({
       success: true,
-      financing_available: null, // 自動判定不可のためnull
+      financing_available: hasRestrictions ? false : (requiresManualCheck ? null : true),
       requires_manual_check: requiresManualCheck,
       restrictions: restrictions,
       summary: {
-        address: address || `緯度${lat}, 経度${lon}`,
+        address: address || `緯度${latitude}, 経度${longitude}`,
         prefecture: locationCodes?.prefectureName || '不明',
         city: locationCodes?.cityName || '不明',
-        warning_message: '⚠️ 融資制限条件の確認が必要です',
-        action_required: '市区町村作成の水害・土砂災害ハザードマップで以下の項目を確認してください：\n1. 水害による想定浸水深度が10m以上でないこと\n2. 家屋倒壊等氾濫想定区域に該当しないこと\n3. 土砂災害特別警戒区域(レッドゾーン)に該当しないこと',
+        warning_message: hasRestrictions ? '❌ 融資制限条件に該当します' : (requiresManualCheck ? '⚠️ 手動確認が必要です' : '✅ 融資制限条件に該当しません'),
+        action_required: hasRestrictions ? '該当物件は提携金融機関での融資が困難です。' : (requiresManualCheck ? '家屋倒壊等氾濫想定区域について市区町村のハザードマップで確認してください。' : null),
         check_urls: [
           {
             name: '国土交通省ハザードマップポータルサイト',
@@ -650,9 +873,13 @@ app.get('/check-financing-restrictions', async (c) => {
           },
           {
             name: '重ねるハザードマップ（該当地点）',
-            url: `https://disaportal.gsi.go.jp/maps/?ll=${lat || '35.6812'},${lon || '139.7671'}&z=15&base=pale&vs=c1j0l0u0`
+            url: `https://disaportal.gsi.go.jp/maps/?ll=${latitude},${longitude}&z=15&base=pale&vs=c1j0l0u0`
           }
         ]
+      },
+      coordinates: {
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude)
       },
       timestamp: new Date().toISOString()
     });
@@ -660,6 +887,7 @@ app.get('/check-financing-restrictions', async (c) => {
   } catch (error: any) {
     console.error('❌ Error checking financing restrictions:', error);
     return c.json({ 
+      success: false,
       error: '融資制限条件のチェックに失敗しました',
       message: error.message 
     }, 500);
@@ -682,12 +910,16 @@ app.get('/zoning-info', async (c) => {
     const lon = c.req.query('longitude');
 
     if (!address && (!lat || !lon)) {
-      return c.json({ error: '住所または座標が必要です' }, 400);
+      return c.json({ 
+        success: false,
+        error: '住所または座標が必要です' 
+      }, 400);
     }
 
     const apiKey = c.env.MLIT_API_KEY;
     if (!apiKey) {
       return c.json({ 
+        success: false,
         error: 'MLIT API Keyが設定されていません'
       }, 500);
     }
@@ -697,18 +929,47 @@ app.get('/zoning-info', async (c) => {
     let longitude = lon;
     
     if (!latitude || !longitude) {
-      // TODO: ジオコーディングAPIを使用して住所→座標変換
-      // 現時点では簡易実装としてエラーを返す
-      return c.json({ 
-        error: '座標情報が必要です',
-        message: '住所から座標への変換は今後実装予定です'
-      }, 400);
+      console.log('[ZONING] Geocoding address:', address);
+      
+      // OpenStreetMap Nominatim APIで住所→座標変換
+      const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
+      
+      const geocodeResponse = await fetch(geocodeUrl, {
+        headers: {
+          'User-Agent': 'Real-Estate-200units-v2/1.0'
+        }
+      });
+      
+      if (!geocodeResponse.ok) {
+        return c.json({ 
+          success: false,
+          error: 'ジオコーディングに失敗しました',
+          status: geocodeResponse.status
+        }, 200);
+      }
+      
+      const geocodeData = await geocodeResponse.json();
+      
+      if (!geocodeData || geocodeData.length === 0) {
+        return c.json({
+          success: false,
+          error: '住所が見つかりませんでした',
+          address: address
+        }, 200);
+      }
+      
+      latitude = geocodeData[0].lat;
+      longitude = geocodeData[0].lon;
+      console.log('[ZONING] Geocoded:', latitude, longitude);
     }
 
-    // タイル座標に変換（簡易実装: ズームレベル18を使用）
+    // タイル座標に変換（ズームレベル18を使用）
     const zoom = 18;
+    const latRad = parseFloat(latitude) * Math.PI / 180;
     const tileX = Math.floor((parseFloat(longitude) + 180) / 360 * Math.pow(2, zoom));
-    const tileY = Math.floor((1 - Math.log(Math.tan(parseFloat(latitude) * Math.PI / 180) + 1 / Math.cos(parseFloat(latitude) * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
+    const tileY = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom));
+
+    console.log('[ZONING] Tile coordinates:', { zoom, tileX, tileY });
 
     // 用途地域API（XKT002）
     const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKT002?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
@@ -722,28 +983,58 @@ app.get('/zoning-info', async (c) => {
 
     if (!response.ok) {
       return c.json({ 
-        error: 'データ取得に失敗しました',
+        success: false,
+        error: 'XKT002 APIデータ取得に失敗しました',
         status: response.status
-      }, response.status);
+      }, 200);
     }
 
-    const data = await response.json();
+    const geoJsonData = await response.json();
+
+    // GeoJSONから用途地域情報を抽出
+    let zoningInfo = null;
+    if (geoJsonData.features && geoJsonData.features.length > 0) {
+      // 座標に最も近いフィーチャーを検索
+      const targetLat = parseFloat(latitude);
+      const targetLon = parseFloat(longitude);
+      
+      for (const feature of geoJsonData.features) {
+        if (feature.properties) {
+          // プロパティから用途地域情報を取得
+          zoningInfo = {
+            用途地域: feature.properties.用途地域 || feature.properties.name || '不明',
+            建蔽率: feature.properties.建蔽率 || feature.properties.building_coverage_ratio,
+            容積率: feature.properties.容積率 || feature.properties.floor_area_ratio,
+            その他: feature.properties
+          };
+          break; // 最初のフィーチャーを使用
+        }
+      }
+    }
 
     return c.json({
       success: true,
-      data: data,
+      address: address,
+      coordinates: {
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude)
+      },
+      zoning: zoningInfo,
+      raw_data: geoJsonData,
       metadata: {
-        latitude,
-        longitude,
         zoom,
         tileX,
-        tileY
+        tileY,
+        features_count: geoJsonData.features?.length || 0
       }
     });
 
   } catch (error: any) {
     console.error('❌ Error fetching zoning info:', error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ 
+      success: false,
+      error: error.message 
+    }, 500);
   }
 });
 
@@ -905,7 +1196,7 @@ function parseAddress(address: string): {
  * 
  * NOTE: 認証を一時的に無効化（デバッグ用）
  */
-app.get('/comprehensive-check', (c) => {
+app.get('/comprehensive-check', async (c) => {
   const startTime = Date.now();
   
   try {
@@ -915,8 +1206,17 @@ app.get('/comprehensive-check', (c) => {
       return c.json({ 
         success: false,
         error: '住所が指定されていません',
-        version: 'v3.152.1-sync'
+        version: 'v3.154.0'
       }, 200);
+    }
+
+    const apiKey = c.env.MLIT_API_KEY;
+    if (!apiKey) {
+      return c.json({ 
+        success: false,
+        error: 'MLIT API Keyが設定されていません',
+        version: 'v3.154.0'
+      }, 500);
     }
     
     // 住所解析
@@ -926,52 +1226,105 @@ app.get('/comprehensive-check', (c) => {
         success: false,
         error: '住所の解析に失敗しました',
         address: address,
-        version: 'v3.152.1-sync'
+        version: 'v3.154.0'
       }, 200);
     }
     
     const { prefectureName, cityName } = locationCodes;
     
-    // ① 不動産価格情報（簡易版）
-    const propertyInfo = {
-      prefecture: prefectureName,
-      city: cityName,
-      address: address,
-      note: 'v3.152.1: 住所解析のみ。詳細情報はv3.153で実装予定'
-    };
+    // ジオコーディング
+    console.log('[COMPREHENSIVE] Geocoding address:', address);
+    const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
     
-    // ② リスク判定（v3.153で実装予定）
+    const geocodeResponse = await fetch(geocodeUrl, {
+      headers: {
+        'User-Agent': 'Real-Estate-200units-v2/1.0'
+      }
+    });
+    
+    if (!geocodeResponse.ok) {
+      return c.json({
+        success: false,
+        error: 'ジオコーディングに失敗しました',
+        address: address,
+        version: 'v3.154.0'
+      }, 200);
+    }
+    
+    const geocodeData = await geocodeResponse.json();
+    
+    if (!geocodeData || geocodeData.length === 0) {
+      return c.json({
+        success: false,
+        error: '住所が見つかりませんでした',
+        address: address,
+        version: 'v3.154.0'
+      }, 200);
+    }
+    
+    const latitude = geocodeData[0].lat;
+    const longitude = geocodeData[0].lon;
+    
+    // ① 洪水浸水想定区域チェック
+    const floodData = await getFloodDepth(latitude, longitude, apiKey);
+    
+    // ② 土砂災害警戒区域チェック
+    const landslideData = await getLandslideZone(latitude, longitude, apiKey);
+    
+    // ③ リスク判定
+    const hasFloodRestriction = floodData.depth !== null && floodData.depth >= 10;
+    const hasLandslideRestriction = landslideData.isRedZone;
+    const hasFinancingRestriction = hasFloodRestriction || hasLandslideRestriction;
+    
     const riskAssessment = {
       sedimentDisaster: {
-        status: 'pending',
-        message: 'v3.153で実装予定'
+        status: 'checked',
+        isRedZone: landslideData.isRedZone,
+        description: landslideData.description,
+        financingRestriction: landslideData.isRedZone
       },
       floodRisk: {
-        status: 'pending',
-        message: 'v3.153で実装予定'
+        status: floodData.depth !== null ? 'checked' : 'check_failed',
+        depth: floodData.depth,
+        description: floodData.description,
+        financingRestriction: hasFloodRestriction
       },
-      urbanPlan: {
-        status: 'pending',
-        message: 'v3.153で実装予定'
+      houseCollapseZone: {
+        status: 'manual_check_required',
+        message: '家屋倒壊等氾濫想定区域は市区町村のハザードマップで確認が必要です'
       }
     };
     
-    // ③ 総合判定
+    // ④ 総合判定
     const financingJudgment = {
-      judgment: 'PENDING',
-      message: '住所解析完了。詳細リスク評価はv3.153で実装予定。',
+      judgment: hasFinancingRestriction ? 'NG' : (floodData.depth === null ? 'MANUAL_CHECK_REQUIRED' : 'OK'),
+      message: hasFinancingRestriction 
+        ? '⚠️ 融資制限条件に該当します。提携金融機関での融資が困難です。'
+        : (floodData.depth === null ? '一部項目について手動確認が必要です。' : '✅ 融資制限条件に該当しません。'),
+      details: {
+        flood_restriction: hasFloodRestriction ? '浸水深10m以上のため融資制限対象' : null,
+        landslide_restriction: hasLandslideRestriction ? 'レッドゾーン該当のため融資制限対象' : null
+      },
       timestamp: new Date().toISOString()
     };
     
     const result = {
       success: true,
-      version: 'v3.152.1-sync',
+      version: 'v3.154.0 - Full Integration',
       address: address,
+      coordinates: {
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude)
+      },
+      location: {
+        prefecture: prefectureName,
+        city: cityName
+      },
       timestamp: new Date().toISOString(),
-      propertyInfo: propertyInfo,
       risks: riskAssessment,
       financingJudgment: financingJudgment,
-      processingTime: `${Date.now() - startTime}ms`
+      processingTime: `${Date.now() - startTime}ms`,
+      hazardMapUrl: `https://disaportal.gsi.go.jp/maps/?ll=${latitude},${longitude}&z=15&base=pale&vs=c1j0l0u0`
     };
     
     return c.json(result, 200);
@@ -981,7 +1334,8 @@ app.get('/comprehensive-check', (c) => {
     return c.json({
       success: false,
       error: 'サーバーエラーが発生しました',
-      details: error.message
+      details: error.message,
+      version: 'v3.154.0'
     }, 500);
   }
 });

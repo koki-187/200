@@ -730,6 +730,134 @@ async function getLandslideZone(lat: string, lon: string, apiKey: string): Promi
 }
 
 /**
+ * 津波浸水想定区域API (REINFOLIB #33)
+ * 内部ヘルパー関数 - GeoJSON APIから津波浸水想定区域を取得
+ */
+async function getTsunamiZone(lat: string, lon: string, apiKey: string): Promise<{ inTsunamiZone: boolean, depth: number | null, description: string }> {
+  try {
+    const zoom = 11;  // MLIT API supports zoom level 11
+    const latRad = parseFloat(lat) * Math.PI / 180;
+    const tileX = Math.floor((parseFloat(lon) + 180) / 360 * Math.pow(2, zoom));
+    const tileY = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom));
+
+    // API #33: 津波浸水想定区域（XKT033）
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKT033?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
+    
+    console.log('[TSUNAMI] API URL:', url);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('[TSUNAMI] API Error:', response.status);
+      return { inTsunamiZone: false, depth: null, description: 'データ取得エラー' };
+    }
+
+    const geoJsonData = await response.json();
+    
+    // GeoJSONから津波浸水深度情報を抽出
+    if (geoJsonData.features && geoJsonData.features.length > 0) {
+      for (const feature of geoJsonData.features) {
+        if (feature.properties) {
+          // 深度情報を取得 (単位: m)
+          const depth = feature.properties.浸水深 || feature.properties.depth || feature.properties.A24_005;
+          const ranking = feature.properties.ランク || feature.properties.rank || feature.properties.A24_006;
+          
+          if (depth !== undefined && depth !== null) {
+            return {
+              inTsunamiZone: true,
+              depth: parseFloat(depth),
+              description: `津波浸水想定区域: 浸水深 ${depth}m${ranking ? ` (ランク: ${ranking})` : ''}`
+            };
+          }
+          
+          // 深度情報がなくても区域内であれば該当とする
+          return {
+            inTsunamiZone: true,
+            depth: null,
+            description: '津波浸水想定区域内'
+          };
+        }
+      }
+    }
+
+    return { inTsunamiZone: false, depth: null, description: '津波浸水想定区域外' };
+
+  } catch (error: any) {
+    console.error('[TSUNAMI] Exception:', error);
+    return { inTsunamiZone: false, depth: null, description: 'エラー: ' + error.message };
+  }
+}
+
+/**
+ * 高潮浸水想定区域API (REINFOLIB #32)
+ * 内部ヘルパー関数 - GeoJSON APIから高潮浸水想定区域を取得
+ */
+async function getStormSurgeZone(lat: string, lon: string, apiKey: string): Promise<{ inStormSurgeZone: boolean, depth: number | null, description: string }> {
+  try {
+    const zoom = 11;  // MLIT API supports zoom level 11
+    const latRad = parseFloat(lat) * Math.PI / 180;
+    const tileX = Math.floor((parseFloat(lon) + 180) / 360 * Math.pow(2, zoom));
+    const tileY = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom));
+
+    // API #32: 高潮浸水想定区域（XKT032）
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKT032?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
+    
+    console.log('[STORM_SURGE] API URL:', url);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('[STORM_SURGE] API Error:', response.status);
+      return { inStormSurgeZone: false, depth: null, description: 'データ取得エラー' };
+    }
+
+    const geoJsonData = await response.json();
+    
+    // GeoJSONから高潮浸水深度情報を抽出
+    if (geoJsonData.features && geoJsonData.features.length > 0) {
+      for (const feature of geoJsonData.features) {
+        if (feature.properties) {
+          // 深度情報を取得 (単位: m)
+          const depth = feature.properties.浸水深 || feature.properties.depth || feature.properties.A31_004;
+          const ranking = feature.properties.ランク || feature.properties.rank;
+          
+          if (depth !== undefined && depth !== null) {
+            return {
+              inStormSurgeZone: true,
+              depth: parseFloat(depth),
+              description: `高潮浸水想定区域: 浸水深 ${depth}m${ranking ? ` (ランク: ${ranking})` : ''}`
+            };
+          }
+          
+          // 深度情報がなくても区域内であれば該当とする
+          return {
+            inStormSurgeZone: true,
+            depth: null,
+            description: '高潮浸水想定区域内'
+          };
+        }
+      }
+    }
+
+    return { inStormSurgeZone: false, depth: null, description: '高潮浸水想定区域外' };
+
+  } catch (error: any) {
+    console.error('[STORM_SURGE] Exception:', error);
+    return { inStormSurgeZone: false, depth: null, description: 'エラー: ' + error.message };
+  }
+}
+
+/**
  * 融資制限条件チェックAPI
  * GET /api/reinfolib/check-financing-restrictions
  * 
@@ -1215,7 +1343,7 @@ app.get('/comprehensive-check', async (c) => {
       return c.json({ 
         success: false,
         error: '住所が指定されていません',
-        version: 'v3.154.0'
+        version: 'v3.154.3 - Full Hazard Integration'
       }, 200);
     }
 
@@ -1224,7 +1352,7 @@ app.get('/comprehensive-check', async (c) => {
       return c.json({ 
         success: false,
         error: 'MLIT API Keyが設定されていません',
-        version: 'v3.154.0'
+        version: 'v3.154.3 - Full Hazard Integration'
       }, 500);
     }
     
@@ -1235,7 +1363,7 @@ app.get('/comprehensive-check', async (c) => {
         success: false,
         error: '住所の解析に失敗しました',
         address: address,
-        version: 'v3.154.0'
+        version: 'v3.154.3 - Full Hazard Integration'
       }, 200);
     }
     
@@ -1256,7 +1384,7 @@ app.get('/comprehensive-check', async (c) => {
         success: false,
         error: 'ジオコーディングに失敗しました',
         address: address,
-        version: 'v3.154.0'
+        version: 'v3.154.3 - Full Hazard Integration'
       }, 200);
     }
     
@@ -1267,7 +1395,7 @@ app.get('/comprehensive-check', async (c) => {
         success: false,
         error: '住所が見つかりませんでした',
         address: address,
-        version: 'v3.154.0'
+        version: 'v3.154.3 - Full Hazard Integration'
       }, 200);
     }
     
@@ -1280,7 +1408,13 @@ app.get('/comprehensive-check', async (c) => {
     // ② 土砂災害警戒区域チェック
     const landslideData = await getLandslideZone(latitude, longitude, apiKey);
     
-    // ③ リスク判定
+    // ③ 津波浸水想定区域チェック（NEW: v3.154.3）
+    const tsunamiData = await getTsunamiZone(latitude, longitude, apiKey);
+    
+    // ④ 高潮浸水想定区域チェック（NEW: v3.154.3）
+    const stormSurgeData = await getStormSurgeZone(latitude, longitude, apiKey);
+    
+    // ⑤ リスク判定
     const hasFloodRestriction = floodData.depth !== null && floodData.depth >= 10;
     const hasLandslideRestriction = landslideData.isRedZone;
     const hasFinancingRestriction = hasFloodRestriction || hasLandslideRestriction;
@@ -1297,6 +1431,20 @@ app.get('/comprehensive-check', async (c) => {
         depth: floodData.depth,
         description: floodData.description,
         financingRestriction: hasFloodRestriction
+      },
+      tsunamiRisk: {
+        status: 'checked',
+        inTsunamiZone: tsunamiData.inTsunamiZone,
+        depth: tsunamiData.depth,
+        description: tsunamiData.description,
+        warning: tsunamiData.inTsunamiZone ? '⚠️ 津波浸水想定区域内です' : null
+      },
+      stormSurgeRisk: {
+        status: 'checked',
+        inStormSurgeZone: stormSurgeData.inStormSurgeZone,
+        depth: stormSurgeData.depth,
+        description: stormSurgeData.description,
+        warning: stormSurgeData.inStormSurgeZone ? '⚠️ 高潮浸水想定区域内です' : null
       },
       houseCollapseZone: {
         status: 'manual_check_required',
@@ -1319,7 +1467,7 @@ app.get('/comprehensive-check', async (c) => {
     
     const result = {
       success: true,
-      version: 'v3.154.0 - Full Integration',
+      version: 'v3.154.3 - Full Hazard Integration (Tsunami + Storm Surge)',
       address: address,
       coordinates: {
         latitude: parseFloat(latitude),
@@ -1344,7 +1492,7 @@ app.get('/comprehensive-check', async (c) => {
       success: false,
       error: 'サーバーエラーが発生しました',
       details: error.message,
-      version: 'v3.154.0'
+      version: 'v3.154.3 - Full Hazard Integration'
     }, 500);
   }
 });

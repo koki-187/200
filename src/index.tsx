@@ -5235,8 +5235,8 @@ app.get('/deals/new', (c) => {
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
               style="min-height: 44px; -webkit-tap-highlight-color: rgba(0,0,0,0.1);">
               <i class="fas fa-magic"></i>
-              <span class="hidden sm:inline">物件情報を自動入力</span>
-              <span class="inline sm:hidden">自動入力</span>
+              <span class="hidden sm:inline">物件情報自動補足</span>
+              <span class="inline sm:hidden">自動補足</span>
             </button>
             <button type="button" id="comprehensive-check-btn"
               class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:bg-purple-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
@@ -5247,7 +5247,10 @@ app.get('/deals/new', (c) => {
             </button>
           </div>
           <p class="text-xs text-gray-500 mt-1">
-            <i class="fas fa-info-circle mr-1"></i>住所を入力後、「自動入力」ボタンで物件情報を取得、「リスクチェック」ボタンで災害リスクを確認できます
+            <i class="fas fa-info-circle mr-1"></i>住所を入力後、「自動補足」ボタンで物件情報を取得、「リスクチェック」ボタンで災害リスクを確認できます
+          </p>
+          <p class="text-xs text-blue-600 mt-1 bg-blue-50 p-2 rounded">
+            <i class="fas fa-info-circle mr-1"></i><strong>自動補足可能な情報:</strong> 土地面積、用途地域、建蔽率、容積率、道路情報、間口、建物面積、構造、築年月、希望価格、ハザード情報
           </p>
         </div>
 

@@ -1354,9 +1354,10 @@ document.getElementById('ocr-file-input')?.addEventListener('change', async (e) 
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await axios.post('/ocr/extract', formData, {
+    const response = await axios.post('/api/ocr/extract', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
     });
 

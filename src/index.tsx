@@ -209,7 +209,7 @@ app.get('/test-deals-page', (c) => {
         document.getElementById('status').innerHTML = 'Login successful, token: ' + token.substring(0, 20) + '...';
         
         // Step 2: Store in localStorage (simulating real app behavior)
-        localStorage.setItem('auth_token', token);
+        localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
         
         // Step 3: Load deals
@@ -663,7 +663,7 @@ app.get('/register', (c) => {
     }
 
     // 認証チェック（管理者のみアクセス可能）
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     if (!token || user.role !== 'ADMIN') {
@@ -1150,7 +1150,7 @@ app.get('/purchase-criteria', (c) => {
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     
     if (!token) {
@@ -1167,7 +1167,7 @@ app.get('/purchase-criteria', (c) => {
     }
 
     function logout() {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
     }
@@ -2131,7 +2131,7 @@ app.get('/dashboard', (c) => {
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
     // 認証チェック
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     if (!token) {
@@ -2180,7 +2180,7 @@ app.get('/dashboard', (c) => {
     // ログアウト
     function logout() {
       // 認証トークンとユーザー情報のみ削除（Remember Me情報は保持）
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
     }
@@ -2932,7 +2932,7 @@ app.get('/property-ocr-legacy', (c) => {
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     if (!token) {
@@ -2940,7 +2940,7 @@ app.get('/property-ocr-legacy', (c) => {
     }
 
     function logout() {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
     }
@@ -3821,7 +3821,7 @@ app.get('/showcase', (c) => {
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     if (!token) {
@@ -3829,7 +3829,7 @@ app.get('/showcase', (c) => {
     }
 
     function logout() {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
     }
@@ -4171,7 +4171,7 @@ app.get('/deals', (c) => {
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     
     if (!token) {
@@ -4216,7 +4216,7 @@ app.get('/deals', (c) => {
 
     function logout() {
       // 認証トークンとユーザー情報のみ削除（Remember Me情報は保持）
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
     }
@@ -6029,7 +6029,7 @@ app.get('/deals/new', (c) => {
     let user = {};
     
     try {
-      token = localStorage.getItem('auth_token');
+      token = localStorage.getItem('token');
       console.log('[CRITICAL DEBUG] Token retrieved:', !!token);
     } catch (e) {
       console.error('[CRITICAL DEBUG] localStorage.getItem error:', e);
@@ -6083,7 +6083,7 @@ app.get('/deals/new', (c) => {
 
     // ログアウト関数（グローバル）
     window.logout = function logout() {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
     };
@@ -6586,7 +6586,7 @@ app.get('/deals/new', (c) => {
             // 5秒後にログイン画面にリダイレクト
             setTimeout(() => {
               if (confirm('認証の有効期限が切れています。ログインページに移動しますか？')) {
-                localStorage.removeItem('auth_token');
+                localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 window.location.href = '/';
               }
@@ -6949,7 +6949,7 @@ app.get('/deals/new', (c) => {
       console.log('[OCR] ========================================');
       
       // トークンを取得（必須）
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token');
       
       console.log('[OCR] ========================================');
       console.log('[OCR] OCR処理開始');
@@ -8375,7 +8375,7 @@ app.get('/deals/new', (c) => {
       e.preventDefault();
 
       // トークンを取得（必須）
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token');
       if (!token) {
         const errorMsg = '認証エラーが発生しました。ページを再読み込みしてログインし直してください。';
         console.error('[Deal Form] 認証トークンが見つかりません');
@@ -9133,7 +9133,7 @@ app.get('/deals/new', (c) => {
       
       try {
         // 正しいトークンキーを使用
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('token');
         console.log('[不動産情報ライブラリ] トークン取得:', !!token);
         console.log('[不動産情報ライブラリ] 住所:', address);
         console.log('[不動産情報ライブラリ] ========================================');
@@ -11094,7 +11094,7 @@ app.get('/deals/:id', (c) => {
     const DEBUG_MODE = true;
     const PAGE_LOAD_TIMEOUT = 10000; // 10秒
 
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const dealId = '${dealId}';
 
@@ -11103,7 +11103,7 @@ app.get('/deals/:id', (c) => {
     }
 
     function logout() {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
     }
@@ -12176,7 +12176,7 @@ app.get('/', (c) => {
       localStorage.removeItem('auth_expiry');
 
       // 保存された認証情報を確認
-      const savedToken = localStorage.getItem('auth_token');
+      const savedToken = localStorage.getItem('token');
       const savedEmail = localStorage.getItem('saved_email');
 
       // トークンが存在すれば自動リダイレクト（JWTの有効期限はサーバー側で管理）
@@ -12216,7 +12216,7 @@ app.get('/', (c) => {
 
         if (response.data.token) {
           // トークンを保存
-          localStorage.setItem('auth_token', response.data.token);
+          localStorage.setItem('token', response.data.token);
           localStorage.setItem('user', JSON.stringify(response.data.user));
           
           // Remember Me が有効な場合、メールアドレスのみ保存（セキュリティのためパスワードは保存しない）

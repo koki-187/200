@@ -104,7 +104,7 @@
         log(`✅ ログイン成功: ${user.name} (${user.role})`);
         
         // Store in localStorage
-        localStorage.setItem('auth_token', token);
+        localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         
         // Test 2: Load Sellers

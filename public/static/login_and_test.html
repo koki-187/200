@@ -25,7 +25,7 @@
         console.log('✅ Token obtained:', token.substring(0, 20) + '...');
         
         // Step 2: Set token in localStorage
-        localStorage.setItem('auth_token', token);
+        localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(loginResponse.data.user || {}));
         
         statusDiv.textContent = 'Step 2: Token saved, redirecting to /deals/new...';

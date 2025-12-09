@@ -91,7 +91,7 @@
         log(`Token: ${response.data.token.substring(0, 30)}...`, 'success');
         
         token = response.data.token;
-        localStorage.setItem('auth_token', token);
+        localStorage.setItem('token', token);
         
         log('Token saved to localStorage', 'success');
         updateStatus('Login successful', 'success');
@@ -122,7 +122,7 @@
       
       try {
         if (!token) {
-          token = localStorage.getItem('auth_token');
+          token = localStorage.getItem('token');
           if (!token) {
             log('❌ No token found. Please login first.', 'error');
             updateStatus('No token - login first', 'error');

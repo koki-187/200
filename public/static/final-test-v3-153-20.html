@@ -96,7 +96,7 @@
         const token = response.data.token;
         const user = response.data.user;
         
-        localStorage.setItem('auth_token', token);
+        localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         
         log(`✅ ログイン成功: ${user.name} (${user.role})`, 'success');

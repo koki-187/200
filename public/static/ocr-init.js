@@ -444,6 +444,20 @@ window.processMultipleOCR = async function(files) {
                 console.log('[OCR] Set road_info:', roadField.value);
               }
             }
+            if (extracted.height_district) {
+              const heightDistrictField = document.getElementById('height_district');
+              if (heightDistrictField) {
+                heightDistrictField.value = getFieldValue(extracted.height_district);
+                console.log('[OCR] Set height_district:', heightDistrictField.value);
+              }
+            }
+            if (extracted.fire_zone) {
+              const fireZoneField = document.getElementById('fire_zone');
+              if (fireZoneField) {
+                fireZoneField.value = getFieldValue(extracted.fire_zone);
+                console.log('[OCR] Set fire_zone:', fireZoneField.value);
+              }
+            }
             if (extracted.frontage) {
               const frontageField = document.getElementById('frontage');
               if (frontageField) {

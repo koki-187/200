@@ -9443,71 +9443,6 @@ app.get('/deals/new', (c) => {
     }
     
     // ============================================================
-    // イベントリスナー設定（グローバル関数定義後に実行）
-    // ============================================================
-    
-    /**
-     * ボタンイベントリスナー設定
-     * CRITICAL FIX: グローバル関数定義後に実行する
-     */
-    function setupButtonListeners(retryCount = 0) {
-      const autoFillBtn = document.getElementById('auto-fill-btn');
-      const riskCheckBtn = document.getElementById('comprehensive-check-btn');
-      
-      let needsRetry = false;
-      
-      if (autoFillBtn && !autoFillBtn.dataset.listenerAttached) {
-        console.log('[Init] Setting up auto-fill button event listener');
-        autoFillBtn.addEventListener('click', function() {
-          if (typeof window.autoFillFromReinfolib === 'function') {
-            window.autoFillFromReinfolib();
-          } else {
-            console.error('[Init] autoFillFromReinfolib function not found');
-          }
-        });
-        autoFillBtn.dataset.listenerAttached = 'true';
-      } else if (!autoFillBtn) {
-        console.warn('[Init] auto-fill-btn not found (attempt ' + retryCount + ')');
-        needsRetry = true;
-      }
-      
-      if (riskCheckBtn && !riskCheckBtn.dataset.listenerAttached) {
-        console.log('[Init] Setting up risk check button event listener');
-        riskCheckBtn.addEventListener('click', function() {
-          if (typeof window.manualComprehensiveRiskCheck === 'function') {
-            window.manualComprehensiveRiskCheck();
-          } else {
-            console.error('[Init] manualComprehensiveRiskCheck function not found');
-          }
-        });
-        riskCheckBtn.dataset.listenerAttached = 'true';
-      } else if (!riskCheckBtn) {
-        console.warn('[Init] comprehensive-check-btn not found (attempt ' + retryCount + ')');
-        needsRetry = true;
-      }
-      
-      // Retry if buttons not found and we haven't exceeded max retries
-      if (needsRetry && retryCount < 5) {
-        console.log('[Init] Retrying button setup in 300ms...');
-        setTimeout(function() {
-          setupButtonListeners(retryCount + 1);
-        }, 300);
-      } else if (needsRetry) {
-        console.error('[Init] ❌ CRITICAL: Failed to find buttons after 5 retries');
-      } else {
-        console.log('[Init] ✅ All button listeners successfully attached');
-      }
-    }
-    
-    // ボタンリスナー設定をwindow.loadイベント後に実行
-    window.addEventListener('load', function() {
-      console.log('[Init] Calling setupButtonListeners after global functions are defined');
-      setTimeout(function() {
-        setupButtonListeners();
-      }, 500);
-    });
-    
-    // ============================================================
     // ファイル管理機能
     // ============================================================
     
@@ -11033,6 +10968,71 @@ app.get('/deals/new', (c) => {
           mobileUserName.textContent = user.name;
         }
       }
+    });
+
+    // ============================================================
+    // イベントリスナー設定（グローバル関数定義後に実行）
+    // ============================================================
+    
+    /**
+     * ボタンイベントリスナー設定
+     * CRITICAL FIX: グローバル関数定義後に実行する
+     */
+    function setupButtonListeners(retryCount = 0) {
+      const autoFillBtn = document.getElementById('auto-fill-btn');
+      const riskCheckBtn = document.getElementById('comprehensive-check-btn');
+      
+      let needsRetry = false;
+      
+      if (autoFillBtn && !autoFillBtn.dataset.listenerAttached) {
+        console.log('[Init] Setting up auto-fill button event listener');
+        autoFillBtn.addEventListener('click', function() {
+          if (typeof window.autoFillFromReinfolib === 'function') {
+            window.autoFillFromReinfolib();
+          } else {
+            console.error('[Init] autoFillFromReinfolib function not found');
+          }
+        });
+        autoFillBtn.dataset.listenerAttached = 'true';
+      } else if (!autoFillBtn) {
+        console.warn('[Init] auto-fill-btn not found (attempt ' + retryCount + ')');
+        needsRetry = true;
+      }
+      
+      if (riskCheckBtn && !riskCheckBtn.dataset.listenerAttached) {
+        console.log('[Init] Setting up risk check button event listener');
+        riskCheckBtn.addEventListener('click', function() {
+          if (typeof window.manualComprehensiveRiskCheck === 'function') {
+            window.manualComprehensiveRiskCheck();
+          } else {
+            console.error('[Init] manualComprehensiveRiskCheck function not found');
+          }
+        });
+        riskCheckBtn.dataset.listenerAttached = 'true';
+      } else if (!riskCheckBtn) {
+        console.warn('[Init] comprehensive-check-btn not found (attempt ' + retryCount + ')');
+        needsRetry = true;
+      }
+      
+      // Retry if buttons not found and we haven't exceeded max retries
+      if (needsRetry && retryCount < 5) {
+        console.log('[Init] Retrying button setup in 300ms...');
+        setTimeout(function() {
+          setupButtonListeners(retryCount + 1);
+        }, 300);
+      } else if (needsRetry) {
+        console.error('[Init] ❌ CRITICAL: Failed to find buttons after 5 retries');
+      } else {
+        console.log('[Init] ✅ All button listeners successfully attached');
+      }
+    }
+    
+    // ボタンリスナー設定をwindow.loadイベント後に実行
+    window.addEventListener('load', function() {
+      console.log('[Init] Calling setupButtonListeners after global functions are defined');
+      setTimeout(function() {
+        setupButtonListeners();
+      }, 500);
     });
 
   </script>

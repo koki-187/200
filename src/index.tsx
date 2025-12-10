@@ -1361,11 +1361,7 @@ app.get('/building-regulations', (c) => {
         
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">防火地域</label>
-          <select id="fire_zone" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-            <option value="">なし</option>
-            <option value="防火地域">防火地域</option>
-            <option value="準防火地域">準防火地域</option>
-          </select>
+          <input type="text" id="fire_zone" placeholder="防火地域、準防火地域等" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
         </div>
         
         <div>

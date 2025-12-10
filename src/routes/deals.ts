@@ -191,8 +191,15 @@ deals.get('/:id', async (c) => {
   }
 });
 
-// 案件作成（管理者のみ）
-deals.post('/', adminOnly, async (c) => {
+// 案件作成（AGENT と ADMIN のみ）
+// CRITICAL FIX v3.153.49: Changed from adminOnly to authMiddleware + role check
+// This allows AGENT users to create deals with their own seller_id
+deals.post('/', authMiddleware, async (c) => {
+  // Role check: Only AGENT and ADMIN can create deals
+  const userRole = c.get('userRole') as string;
+  if (userRole !== 'AGENT' && userRole !== 'ADMIN') {
+    return c.json({ error: '案件を作成する権限がありません（AGENT または ADMIN のみ）' }, 403);
+  }
   try {
     const body = await c.req.json();
     const userId = c.get('userId') as string;

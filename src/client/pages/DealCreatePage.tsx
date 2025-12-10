@@ -261,15 +261,15 @@ const DealCreatePage: React.FC = () => {
     )
   }
 
-  // CRITICAL FIX v3.153.48: Only AGENT can create deals
-  // This prevents seller_id mismatch errors (was causing HTTP 500)
-  if (user?.role !== 'AGENT') {
+  // CRITICAL FIX v3.153.49: Both AGENT and ADMIN can create deals
+  // Backend now validates this with authMiddleware + role check
+  if (user?.role !== 'AGENT' && user?.role !== 'ADMIN') {
     return (
       <Layout>
         <div className="text-center py-12">
           <p className="text-red-600">案件を作成する権限がありません</p>
           <p className="text-sm text-gray-600 mt-2">
-            案件作成は売主(AGENT)ユーザーのみ可能です
+            案件作成は売主(AGENT)または管理者(ADMIN)のみ可能です
           </p>
         </div>
       </Layout>

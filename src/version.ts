@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = 'v3.153.44';
+export const APP_VERSION = 'v3.153.45';
 export const BUILD_DATE = '2025-12-10';
-export const BUILD_DESCRIPTION = 'CRITICAL OCR FIX - Allow prefecture inference from city name when prefecture is missing from document';
+export const BUILD_DESCRIPTION = 'CRITICAL OCR DEBUG - Enhanced text extraction instructions and comprehensive API response logging';
 
 /**
  * バージョン情報をコンソールに出力

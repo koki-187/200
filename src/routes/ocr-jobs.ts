@@ -595,14 +595,23 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
 
 Extract property information from this Japanese real estate document. Read all text carefully.
 
-🔍 SPECIAL INSTRUCTIONS:
-- Look for "所在" (location), "所在地" (address), "住所" (address) labels
+🔍 SPECIAL INSTRUCTIONS FOR TEXT EXTRACTION:
+⚠️ CRITICAL: This document contains EMBEDDED TEXT. Use your OCR capabilities to READ ALL TEXT in the image.
+- DO NOT say "text not found" - LOOK CAREFULLY at the image and extract ALL visible text
+- Japanese text may appear in different fonts, sizes, and positions
+- Scan EVERY part of the document: headers, body, tables, margins, footers
+- Even if text is small or faint, extract it with appropriate confidence level
+
+🔍 LOCATION EXTRACTION (MOST IMPORTANT):
+- Look for "所在" (location), "所在地" (address), "住所" (address), "不動産の表示" labels
 - Location MUST include prefecture (都道府県). Example: "埼玉県幸手市..." NOT just "幸手市..."
 - ⚠️ CRITICAL: If prefecture is missing, INFER it from city name:
   * 幸手市 → 埼玉県幸手市 (Satte City is in Saitama Prefecture)
   * 川崎市 → 神奈川県川崎市 (Kawasaki City is in Kanagawa Prefecture)
   * 柏市 → 千葉県柏市 (Kashiwa City is in Chiba Prefecture)
+  * 品川区 → 東京都品川区 (Shinagawa Ward is in Tokyo)
   * Set confidence to 0.7 for inferred prefecture
+- If you see ANY address-like text (e.g., "〇〇市〇〇丁目〇-〇"), extract it
 - Scan the ENTIRE document including headers, footers, and all text blocks
 - If a field appears multiple times, choose the most complete and detailed value
 
@@ -672,12 +681,29 @@ Return ONLY a valid JSON object. No markdown, no explanations.`
             return { index, success: false, error: errorMsg };
           }
           
-          console.log(`[OCR] OpenAI response for ${file.name}:`, content.substring(0, 500));
+          // 🔍 CRITICAL DEBUG: OpenAI APIの完全なレスポンスをログ出力
+          console.log(`[OCR] ========================================`);
+          console.log(`[OCR] 🔍 FULL OpenAI response for ${file.name}:`);
+          console.log(`[OCR] Content length: ${content.length} characters`);
+          console.log(`[OCR] First 1000 chars:`, content.substring(0, 1000));
+          console.log(`[OCR] ========================================`);
           
           // JSON抽出 (response_format: json_objectを使用しているため直接パース)
           try {
             let rawData = JSON.parse(content);
             console.log(`[OCR] Successfully parsed JSON for ${file.name}`);
+            
+            // 🔍 CRITICAL DEBUG: 各フィールドの詳細ログ
+            console.log(`[OCR] ========================================`);
+            console.log(`[OCR] 🔍 DETAILED FIELD ANALYSIS for ${file.name}:`);
+            console.log(`[OCR]   property_name: ${JSON.stringify(rawData.property_name)}`);
+            console.log(`[OCR]   location: ${JSON.stringify(rawData.location)}`);
+            console.log(`[OCR]   station: ${JSON.stringify(rawData.station)}`);
+            console.log(`[OCR]   height_district: ${JSON.stringify(rawData.height_district)}`);
+            console.log(`[OCR]   fire_zone: ${JSON.stringify(rawData.fire_zone)}`);
+            console.log(`[OCR]   frontage: ${JSON.stringify(rawData.frontage)}`);
+            console.log(`[OCR]   overall_confidence: ${JSON.stringify(rawData.overall_confidence)}`);
+            console.log(`[OCR] ========================================`);
             console.log(`[OCR] Raw data sample:`, JSON.stringify(rawData).substring(0, 300));
             
             // データ正規化: OpenAI APIのレスポンスを期待する形式に変換

@@ -11026,40 +11026,6 @@ app.get('/deals/new', (c) => {
         console.log('[Init] ✅ All button listeners successfully attached');
       }
     }
-    
-    // ボタンリスナー設定を即座に実行（トップレベルスクリプトとして）
-    // CRITICAL: <script>タグのトップレベルで実行されるため、ページロード時に確実に呼び出される
-    (function() {
-      console.log('[Init] ===== BUTTON LISTENER SETUP (Top-level script) =====');
-      console.log('[Init] typeof setupButtonListeners:', typeof setupButtonListeners);
-      console.log('[Init] document.readyState:', document.readyState);
-      
-      // 外部スクリプト（ocr-init.js, deals-new-events.js）のロード完了を待つ
-      if (document.readyState === 'loading') {
-        console.log('[Init] Document still loading, waiting for DOMContentLoaded...');
-        document.addEventListener('DOMContentLoaded', function() {
-          console.log('[Init] DOMContentLoaded fired! Scheduling setupButtonListeners in 2000ms...');
-          setTimeout(function() {
-            console.log('[Init] About to call setupButtonListeners (after 2000ms delay)');
-            try {
-              setupButtonListeners();
-            } catch (err) {
-              console.error('[Init] ❌ ERROR calling setupButtonListeners:', err);
-            }
-          }, 2000);
-        });
-      } else {
-        console.log('[Init] Document already loaded! Scheduling setupButtonListeners in 2000ms...');
-        setTimeout(function() {
-          console.log('[Init] About to call setupButtonListeners (after 2000ms delay)');
-          try {
-            setupButtonListeners();
-          } catch (err) {
-            console.error('[Init] ❌ ERROR calling setupButtonListeners:', err);
-          }
-        }, 2000);
-      }
-    })();
 
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
@@ -11067,6 +11033,28 @@ app.get('/deals/new', (c) => {
   <script src="/static/ocr-init.js?v=3.152.6"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
   <script src="/static/deals-new-events.js?v=3.152.6"></script>
+  
+  <!-- CRITICAL FIX v3.153.31: Button event listeners setup after external scripts -->
+  <script>
+    (function() {
+      console.log('[ButtonListeners] ===== INITIALIZING AFTER EXTERNAL SCRIPTS =====');
+      console.log('[ButtonListeners] typeof setupButtonListeners:', typeof setupButtonListeners);
+      console.log('[ButtonListeners] typeof window.autoFillFromReinfolib:', typeof window.autoFillFromReinfolib);
+      console.log('[ButtonListeners] typeof window.manualComprehensiveRiskCheck:', typeof window.manualComprehensiveRiskCheck);
+      
+      // setupButtonListeners is defined in the previous <script> tag (main page script)
+      if (typeof setupButtonListeners === 'function') {
+        console.log('[ButtonListeners] Calling setupButtonListeners NOW (no delay)');
+        try {
+          setupButtonListeners();
+        } catch (err) {
+          console.error('[ButtonListeners] ❌ ERROR:', err);
+        }
+      } else {
+        console.error('[ButtonListeners] ❌ setupButtonListeners function not found!');
+      }
+    })();
+  </script>
   
   <!-- REMOVED v3.153.15: Emergency script caused duplicate loadSellers calls -->
 </body>

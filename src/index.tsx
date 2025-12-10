@@ -1374,6 +1374,16 @@ app.get('/building-regulations', (c) => {
         </div>
         
         <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">間口</label>
+          <input type="text" id="frontage" placeholder="4.14m" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">道路情報</label>
+          <input type="text" id="road_info" placeholder="北側私道 幅員2.0m 接道2.0m" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+        </div>
+        
+        <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">現況</label>
           <input type="text" id="current_status" placeholder="木造2階建て" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
         </div>

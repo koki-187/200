@@ -11,7 +11,7 @@
  */
 
 console.log('[OCR Init] ========================================');
-console.log('[OCR Init] VERSION: v3.153.4 - No automatic risk check');
+console.log('[OCR Init] VERSION: v3.153.34 (2025-12-10) - CRITICAL: height_district/fire_zone field mapping added');
 console.log('[OCR Init] ocr-init.js loaded - complete implementation with PDF support');
 console.log('[OCR Init] Creating window.processMultipleOCR function...');
 
@@ -849,7 +849,7 @@ window.autoRunRiskCheck = autoRunRiskCheck;
 window.ocrInitLoaded = true;
 
 console.log('[OCR Init] ========================================');
-console.log('[OCR Init] 🆕 VERSION: v3.153.33 (2025-12-10) - CRITICAL: height_district and fire_zone field mapping added');
+console.log('[OCR Init] 🆕 VERSION: v3.153.34 (2025-12-10) - CRITICAL: height_district and fire_zone field mapping added');
 console.log('[OCR Init] ✅ window.processMultipleOCR function created (complete with PDF support)');
 console.log('[OCR Init] ✅ window.runComprehensiveRiskCheck function created');
 console.log('[OCR Init] ✅ PDF.js preload initiated for iOS Safari');

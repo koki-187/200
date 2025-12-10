@@ -598,6 +598,11 @@ Extract property information from this Japanese real estate document. Read all t
 🔍 SPECIAL INSTRUCTIONS:
 - Look for "所在" (location), "所在地" (address), "住所" (address) labels
 - Location MUST include prefecture (都道府県). Example: "埼玉県幸手市..." NOT just "幸手市..."
+- ⚠️ CRITICAL: If prefecture is missing, INFER it from city name:
+  * 幸手市 → 埼玉県幸手市 (Satte City is in Saitama Prefecture)
+  * 川崎市 → 神奈川県川崎市 (Kawasaki City is in Kanagawa Prefecture)
+  * 柏市 → 千葉県柏市 (Kashiwa City is in Chiba Prefecture)
+  * Set confidence to 0.7 for inferred prefecture
 - Scan the ENTIRE document including headers, footers, and all text blocks
 - If a field appears multiple times, choose the most complete and detailed value
 
@@ -812,13 +817,17 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは日本の不動産書類（登�
    - ない場合: 所在地から「川崎市幸区塚越物件」のように生成
 
 2. location（所在地）⭐最重要⭐
-   - 探す場所: 所在、不動産の表示、所在地、住所、物件所在地
+   - 探す場所: 所在、不動産の表示、所在地、住所、物件所在地、不動産番号
    - 形式: 都道府県+市区町村+町名+番地
    - 例: 
      * 「神奈川県川崎市幸区塚越四丁目123番地」
      * 「埼玉県幸手市北二丁目1-8」
      * 「東京都品川区西中延2-15-12」
-   - 重要: 都道府県を必ず含めてください。市区町村だけでは不十分です。
+   - 重要: 都道府県を必ず含めてください。
+   - ⚠️ 特殊ケース: 都道府県が記載されていない場合の対応
+     * 市区町村名から都道府県を推測できます（例: 幸手市→埼玉県、川崎市→神奈川県）
+     * 推測した場合でもconfidenceを0.7以上に設定してください
+     * 例: 「幸手市北二丁目1-8」→「埼玉県幸手市北二丁目1-8」(confidence: 0.7)
    - 抽出方法: ページ内の「所在」「所在地」「住所」などのラベルの近くを探す
 
 3. station（最寄駅）

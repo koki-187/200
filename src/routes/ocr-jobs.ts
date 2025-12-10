@@ -591,11 +591,11 @@ async function processOCRJob(jobId: string, files: File[], env: Bindings): Promi
                 content: [
                   {
                     type: 'text',
-                    text: `⚠️ CRITICAL: You MUST return ALL 16 fields in your JSON response. Do NOT omit any fields.
+                    text: `⚠️ CRITICAL: You MUST return ALL 19 fields in your JSON response. Do NOT omit any fields.
 
 Extract property information from this Japanese real estate document. Read all text carefully.
 
-MANDATORY: Your JSON response MUST include ALL of these 16 fields (even if value is null):
+MANDATORY: Your JSON response MUST include ALL of these 19 fields (even if value is null):
 1. property_name
 2. location
 3. station
@@ -609,10 +609,16 @@ MANDATORY: Your JSON response MUST include ALL of these 16 fields (even if value
 11. structure
 12. built_year
 13. road_info
-14. current_status
-15. yield
-16. occupancy
-17. overall_confidence
+14. height_district (高度地区) ⚠️ CRITICAL - MUST be included
+15. fire_zone (防火地域) ⚠️ CRITICAL - MUST be included
+16. frontage (間口) ⚠️ CRITICAL - MUST be included
+17. current_status
+18. yield
+19. occupancy
+20. overall_confidence
+
+⚠️ SPECIAL ATTENTION: height_district, fire_zone, and frontage are CRITICAL fields.
+These three fields MUST be extracted if present in the document. Do NOT omit them.
 
 If a field is not found in the document, set its value to null and confidence to 0.0.
 Return ONLY a valid JSON object. No markdown, no explanations.`

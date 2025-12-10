@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = 'v3.153.41';
+export const APP_VERSION = 'v3.153.42';
 export const BUILD_DATE = '2025-12-10';
-export const BUILD_DESCRIPTION = 'CRITICAL UI FIX - Changed fire_zone from select to input to allow OCR to set any value. Added comprehensive error logging for OCR and deal creation';
+export const BUILD_DESCRIPTION = 'CRITICAL OCR FIX - Fixed hardcoded 16-field user message to 19 fields with height_district, fire_zone, frontage explicitly listed';
 
 /**
  * バージョン情報をコンソールに出力

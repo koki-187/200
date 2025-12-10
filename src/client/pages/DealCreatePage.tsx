@@ -39,6 +39,8 @@ const DealCreatePage: React.FC = () => {
   
   const [formData, setFormData] = useState<DealFormData>({
     title: '',
+    // CRITICAL FIX v3.153.48: Always use logged-in user's ID as seller_id
+    // Only AGENT can create deals, so seller_id must be user's ID
     seller_id: user?.id || '',
     location: '',
     nearest_station: '',
@@ -259,11 +261,16 @@ const DealCreatePage: React.FC = () => {
     )
   }
 
-  if (user?.role !== 'AGENT' && user?.role !== 'ADMIN') {
+  // CRITICAL FIX v3.153.48: Only AGENT can create deals
+  // This prevents seller_id mismatch errors (was causing HTTP 500)
+  if (user?.role !== 'AGENT') {
     return (
       <Layout>
         <div className="text-center py-12">
           <p className="text-red-600">案件を作成する権限がありません</p>
+          <p className="text-sm text-gray-600 mt-2">
+            案件作成は売主(AGENT)ユーザーのみ可能です
+          </p>
         </div>
       </Layout>
     )

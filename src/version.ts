@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = 'v3.153.47';
+export const APP_VERSION = 'v3.153.48';
 export const BUILD_DATE = '2025-12-10';
-export const BUILD_DESCRIPTION = 'CRITICAL FIX - Error① OCR null handling (prevent "null" string in form fields)';
+export const BUILD_DESCRIPTION = 'CRITICAL FIX - Error④ Only AGENT can create deals (prevent seller_id mismatch HTTP 500)';
 
 /**
  * バージョン情報をコンソールに出力

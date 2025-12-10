@@ -335,11 +335,12 @@ window.processMultipleOCR = async function(files) {
             
             // Map extracted data to form fields
             // NOTE: データ構造は { value: '...', confidence: 0.8 } 形式
+            // 🔥 CRITICAL FIX v3.153.47: Enhanced null handling to prevent "null" string in form fields
             const getFieldValue = (fieldData) => {
               console.log('[OCR] 🔍 getFieldValue called with:', JSON.stringify(fieldData));
               
               if (!fieldData) {
-                console.log('[OCR] ⚠️ getFieldValue: fieldData is null/undefined');
+                console.log('[OCR] ⚠️ getFieldValue: fieldData is null/undefined, returning empty string');
                 return '';
               }
               
@@ -347,18 +348,36 @@ window.processMultipleOCR = async function(files) {
               if (typeof fieldData === 'object' && 'value' in fieldData) {
                 const value = fieldData.value;
                 console.log('[OCR] 🔍 fieldData.value:', value, '(type:', typeof value, ')');
-                if (value === null || value === undefined) {
-                  console.log('[OCR] ⚠️ getFieldValue: extracted value is null/undefined');
+                
+                // 🔥 CRITICAL: Check for null, undefined, or "null" string
+                if (value === null || value === undefined || value === 'null' || value === 'NULL') {
+                  console.log('[OCR] ⚠️ getFieldValue: value is null/undefined/"null" string, returning empty string');
                   return '';
                 }
-                console.log('[OCR] ✅ getFieldValue: extracted value from object:', value);
-                return String(value);
+                
+                // 🔥 CRITICAL: Convert to string and trim whitespace
+                const stringValue = String(value).trim();
+                if (stringValue === '' || stringValue.toLowerCase() === 'null') {
+                  console.log('[OCR] ⚠️ getFieldValue: trimmed value is empty or "null", returning empty string');
+                  return '';
+                }
+                
+                console.log('[OCR] ✅ getFieldValue: extracted value from object:', stringValue);
+                return stringValue;
               }
               
               // 旧形式または文字列（直接値）
               if (typeof fieldData === 'string' || typeof fieldData === 'number') {
-                console.log('[OCR] ℹ️ getFieldValue: using direct value:', fieldData);
-                return String(fieldData);
+                const stringValue = String(fieldData).trim();
+                
+                // 🔥 CRITICAL: Check for "null" string
+                if (stringValue.toLowerCase() === 'null' || stringValue === '') {
+                  console.log('[OCR] ⚠️ getFieldValue: direct value is "null" or empty, returning empty string');
+                  return '';
+                }
+                
+                console.log('[OCR] ℹ️ getFieldValue: using direct value:', stringValue);
+                return stringValue;
               }
               
               // その他のオブジェクトまたは未知の形式

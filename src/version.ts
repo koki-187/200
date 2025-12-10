@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = 'v3.153.46';
+export const APP_VERSION = 'v3.153.47';
 export const BUILD_DATE = '2025-12-10';
-export const BUILD_DESCRIPTION = 'CRITICAL FIX - Error③ Risk check prefecture reference error (propertyInfo -> location)';
+export const BUILD_DESCRIPTION = 'CRITICAL FIX - Error① OCR null handling (prevent "null" string in form fields)';
 
 /**
  * バージョン情報をコンソールに出力

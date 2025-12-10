@@ -922,13 +922,15 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは日本の不動産書類（登�
 【必須ルール】
 1. 有効なJSONのみ返す（マークダウン不要、説明不要）
 2. {で始まり}で終わる
-3. ⚠️ すべての16フィールドを必ず含める（省略厳禁）
+3. ⚠️ すべての19フィールドを必ず含める（省略厳禁）
 4. 読めないフィールドはvalueをnullに、confidence: 0.0に設定
 5. 推測禁止。見えるテキストのみ抽出
 6. 元の単位とフォーマットを保持
 
-【重要】以下の16フィールドすべてをレスポンスに含めてください：
-property_name, location, station, walk_minutes, land_area, building_area, zoning, building_coverage, floor_area_ratio, price, structure, built_year, road_info, current_status, yield, occupancy, overall_confidence
+【重要】以下の19フィールドすべてをレスポンスに含めてください：
+property_name, location, station, walk_minutes, land_area, building_area, zoning, building_coverage, floor_area_ratio, price, structure, built_year, road_info, height_district, fire_zone, frontage, current_status, yield, occupancy, overall_confidence
+
+⚠️ 特に height_district, fire_zone, frontage は必須フィールドです。欠落厳禁。
 
 欠落したフィールドがあるとシステムエラーになります。すべてのフィールドを必ず出力してください。`;
 

@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = 'v3.153.39';
+export const APP_VERSION = 'v3.153.40';
 export const BUILD_DATE = '2025-12-10';
-export const BUILD_DESCRIPTION = 'CRITICAL FIX - Added height_district, fire_zone, frontage to OCR prompt and normalize/merge functions';
+export const BUILD_DESCRIPTION = 'CRITICAL OCR FIX - Fixed PROPERTY_EXTRACTION_PROMPT to explicitly require all 19 fields including height_district, fire_zone, frontage in mandatory rules';
 
 /**
  * バージョン情報をコンソールに出力

@@ -4585,6 +4585,8 @@ app.get('/deals/new', (c) => {
   <title>案件作成 - 200棟土地仕入れ管理システム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- CRITICAL FIX v3.153.39: Load global functions BEFORE HTML -->
+  <script src="/static/global-functions-v3153-39.js"></script>
   <!-- イベント委譲パターンスクリプトは</body>直前に移動 -->
   <style>
     /* iOS Safari対応: Safe Area Insets */

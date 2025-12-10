@@ -856,16 +856,35 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは日本の不動産書類（登�
     - 探す場所: 接道状況、道路
     - 例: 「北側 幅員4.0m 公道」
 
-14. current_status（現況）
+14. height_district（高度地区）⭐重要⭐
+    - 探す場所: 高度地区、高度制限、高度
+    - 形式: 正式名称
+    - 例: 「第一種高度地区」「第二種高度地区」「第三種高度地区」「第四種高度地区」
+    - ない場合: nullを返す
+
+15. fire_zone（防火地域）⭐重要⭐
+    - 探す場所: 防火地域、防火指定、防火
+    - 形式: 正式名称
+    - 例: 「防火地域」「準防火地域」「22条区域」「指定なし」
+    - ない場合: nullを返す
+
+16. frontage（間口）⭐重要⭐
+    - 探す場所: 間口、接道幅員、道路情報の中の数値
+    - 形式: 数値+単位（mまたはメートル）
+    - 抽出方法: 「東側 幅員4.14m」→「4.14m」（数値部分のみ抽出）
+    - 例: 「4.14m」「7.5m」「10.2m」
+    - ない場合: nullを返す
+
+17. current_status（現況）
     - 探す場所: 現況、引渡条件
     - 例: 「空家」「居住中」「更地」
 
-15. yield（利回り）
+18. yield（利回り）
     - 探す場所: 表面利回り、想定利回り
     - 形式: 数値のみ
     - 例: 「5.2」（「利回り5.2%」→「5.2」）
 
-16. occupancy（入居状況）
+19. occupancy（入居状況）
     - 探す場所: 稼働率、入居率
     - 例: 「満室」「8戸中7戸入居」
 
@@ -885,6 +904,9 @@ const PROPERTY_EXTRACTION_PROMPT = `あなたは日本の不動産書類（登�
   "structure": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
   "built_year": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
   "road_info": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "height_district": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "fire_zone": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
+  "frontage": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
   "current_status": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
   "yield": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
   "occupancy": {"value": "テキストまたはnull", "confidence": 0.0-1.0},
@@ -921,7 +943,8 @@ function normalizePropertyData(rawData: any): any {
     'property_name', 'location', 'station', 'walk_minutes',
     'land_area', 'building_area', 'zoning', 'building_coverage',
     'floor_area_ratio', 'price', 'structure', 'built_year',
-    'road_info', 'current_status', 'yield', 'occupancy', 'overall_confidence'
+    'road_info', 'height_district', 'fire_zone', 'frontage',
+    'current_status', 'yield', 'occupancy', 'overall_confidence'
   ];
   
   for (const field of fields) {
@@ -991,7 +1014,8 @@ function mergePropertyData(results: any[]): any {
     'property_name', 'location', 'station', 'walk_minutes',
     'land_area', 'building_area', 'zoning', 'building_coverage',
     'floor_area_ratio', 'price', 'structure', 'built_year',
-    'road_info', 'current_status', 'yield', 'occupancy'
+    'road_info', 'height_district', 'fire_zone', 'frontage',
+    'current_status', 'yield', 'occupancy'
   ];
   
   for (const field of fields) {

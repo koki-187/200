@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = 'v3.154.5';
-export const BUILD_DATE = '2025-12-09';
-export const BUILD_DESCRIPTION = 'Critical Bug Fixes - Fixed comprehensive-check response format, added seller_id to deal creation form';
+export const APP_VERSION = 'v3.153.39';
+export const BUILD_DATE = '2025-12-10';
+export const BUILD_DESCRIPTION = 'CRITICAL FIX - Added height_district, fire_zone, frontage to OCR prompt and normalize/merge functions';
 
 /**
  * バージョン情報をコンソールに出力

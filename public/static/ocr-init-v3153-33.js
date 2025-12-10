@@ -681,12 +681,13 @@ async function runComprehensiveRiskCheck(address) {
     // 結果表示（簡易版：アラートで表示）
     const result = response.data;
     const judgment = result.financingJudgment;
-    const propertyInfo = result.propertyInfo;
+    // 🔥 CRITICAL FIX v3.153.46: Use 'location' instead of 'propertyInfo'
+    const locationInfo = result.location || {};
     
     let message = `📊 包括的リスクチェック結果 (${result.version || 'v3.152'})\n\n`;
     message += `住所: ${result.address}\n`;
-    message += `都道府県: ${propertyInfo.prefecture || 'N/A'}\n`;
-    message += `市区町村: ${propertyInfo.city || 'N/A'}\n\n`;
+    message += `都道府県: ${locationInfo.prefecture || 'N/A'}\n`;
+    message += `市区町村: ${locationInfo.city || 'N/A'}\n\n`;
     message += `【総合判定】\n`;
     message += `${judgment.message}\n\n`;
     

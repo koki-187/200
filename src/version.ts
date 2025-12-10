@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = 'v3.153.42';
+export const APP_VERSION = 'v3.153.43';
 export const BUILD_DATE = '2025-12-10';
-export const BUILD_DESCRIPTION = 'CRITICAL OCR FIX - Fixed hardcoded 16-field user message to 19 fields with height_district, fire_zone, frontage explicitly listed';
+export const BUILD_DESCRIPTION = 'CRITICAL OCR FIX - Enhanced location extraction with prefecture requirement and detailed scanning instructions';
 
 /**
  * バージョン情報をコンソールに出力

@@ -1355,7 +1355,7 @@ app.get('/comprehensive-check', async (c) => {
       return c.json({ 
         success: false,
         error: '住所が指定されていません',
-        version: 'v3.154.4 - User-Friendly Error Messages'
+        version: 'v3.153.38 - Improved Geocoding with Fallback'
       }, 200);
     }
 
@@ -1364,7 +1364,7 @@ app.get('/comprehensive-check', async (c) => {
       return c.json({ 
         success: false,
         error: 'MLIT API Keyが設定されていません',
-        version: 'v3.154.4 - User-Friendly Error Messages'
+        version: 'v3.153.38 - Improved Geocoding with Fallback'
       }, 500);
     }
     
@@ -1375,44 +1375,94 @@ app.get('/comprehensive-check', async (c) => {
         success: false,
         error: '住所の解析に失敗しました',
         address: address,
-        version: 'v3.154.4 - User-Friendly Error Messages'
+        version: 'v3.153.38 - Improved Geocoding with Fallback'
       }, 200);
     }
     
     const { prefectureName, cityName } = locationCodes;
     
-    // ジオコーディング
+    // ジオコーディング (複数の方法を試す)
     console.log('[COMPREHENSIVE] Geocoding address:', address);
-    const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
     
-    const geocodeResponse = await fetch(geocodeUrl, {
-      headers: {
-        'User-Agent': 'Real-Estate-200units-v2/1.0'
+    let latitude, longitude;
+    let geocodeData = [];
+    
+    // 方法1: Nominatim API (詳細住所)
+    try {
+      const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
+      
+      const geocodeResponse = await fetch(geocodeUrl, {
+        headers: {
+          'User-Agent': 'Real-Estate-200units-v2/1.0'
+        }
+      });
+      
+      if (geocodeResponse.ok) {
+        geocodeData = await geocodeResponse.json();
       }
-    });
-    
-    if (!geocodeResponse.ok) {
-      return c.json({
-        success: false,
-        error: 'ジオコーディングに失敗しました',
-        address: address,
-        version: 'v3.154.4 - User-Friendly Error Messages'
-      }, 200);
+    } catch (err) {
+      console.warn('[COMPREHENSIVE] Nominatim error:', err);
     }
     
-    const geocodeData = await geocodeResponse.json();
+    // 方法2: 番地を除いた住所で再試行
+    if (!geocodeData || geocodeData.length === 0) {
+      console.log('[COMPREHENSIVE] Retrying without detailed address');
+      const simplifiedAddress = address.replace(/\d+-?\d*-?\d*$/, '').trim(); // 番地を削除
+      console.log('[COMPREHENSIVE] Simplified address:', simplifiedAddress);
+      
+      try {
+        const geocodeUrl2 = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(simplifiedAddress)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
+        
+        const geocodeResponse2 = await fetch(geocodeUrl2, {
+          headers: {
+            'User-Agent': 'Real-Estate-200units-v2/1.0'
+          }
+        });
+        
+        if (geocodeResponse2.ok) {
+          geocodeData = await geocodeResponse2.json();
+        }
+      } catch (err) {
+        console.warn('[COMPREHENSIVE] Simplified geocoding error:', err);
+      }
+    }
+    
+    // 方法3: 市区町村レベルで再試行
+    if (!geocodeData || geocodeData.length === 0) {
+      console.log('[COMPREHENSIVE] Retrying with city-level address');
+      const cityAddress = `${prefectureName}${cityName}`;
+      console.log('[COMPREHENSIVE] City address:', cityAddress);
+      
+      try {
+        const geocodeUrl3 = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityAddress)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
+        
+        const geocodeResponse3 = await fetch(geocodeUrl3, {
+          headers: {
+            'User-Agent': 'Real-Estate-200units-v2/1.0'
+          }
+        });
+        
+        if (geocodeResponse3.ok) {
+          geocodeData = await geocodeResponse3.json();
+        }
+      } catch (err) {
+        console.warn('[COMPREHENSIVE] City-level geocoding error:', err);
+      }
+    }
     
     if (!geocodeData || geocodeData.length === 0) {
       return c.json({
         success: false,
-        error: '住所が見つかりませんでした',
+        error: '住所が見つかりませんでした。都道府県、市区町村までの住所を入力してください。',
         address: address,
-        version: 'v3.154.4 - User-Friendly Error Messages'
+        version: 'v3.153.38 - Improved Geocoding with Fallback'
       }, 200);
     }
     
-    const latitude = geocodeData[0].lat;
-    const longitude = geocodeData[0].lon;
+    latitude = geocodeData[0].lat;
+    longitude = geocodeData[0].lon;
+    
+    console.log('[COMPREHENSIVE] Geocoding success - Lat:', latitude, 'Lon:', longitude);
     
     // ① 洪水浸水想定区域チェック
     const floodData = await getFloodDepth(latitude, longitude, apiKey);
@@ -1480,7 +1530,7 @@ app.get('/comprehensive-check', async (c) => {
     // フロントエンド互換性のため、簡易形式でレスポンスを返す
     const result = {
       success: true,
-      version: 'v3.154.4 - User-Friendly Error Messages',
+      version: 'v3.153.38 - Improved Geocoding with Fallback',
       address: address,
       coordinates: {
         latitude: parseFloat(latitude),

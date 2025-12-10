@@ -1,11 +1,12 @@
 /**
  * 案件作成ページのイベント委譲ハンドラー
  * Cloudflare Pages/Workers環境でも確実に動作するイベント委譲パターン
+ * VERSION: v3.153.33 (2025-12-10)
  */
 
 // イベント委譲の初期化関数
 function initializeEventDelegation() {
-  console.log('[Event Delegation] Initializing event delegation');
+  console.log('[Event Delegation] v3.153.33 - Initializing event delegation');
   
   // ボディ全体にイベント委譲を設定
   document.body.addEventListener('click', function(event) {

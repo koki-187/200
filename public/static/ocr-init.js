@@ -849,7 +849,7 @@ window.autoRunRiskCheck = autoRunRiskCheck;
 window.ocrInitLoaded = true;
 
 console.log('[OCR Init] ========================================');
-console.log('[OCR Init] 🆕 VERSION: v3.153.4 (2025-12-08)');
+console.log('[OCR Init] 🆕 VERSION: v3.153.33 (2025-12-10) - CRITICAL: height_district and fire_zone field mapping added');
 console.log('[OCR Init] ✅ window.processMultipleOCR function created (complete with PDF support)');
 console.log('[OCR Init] ✅ window.runComprehensiveRiskCheck function created');
 console.log('[OCR Init] ✅ PDF.js preload initiated for iOS Safari');

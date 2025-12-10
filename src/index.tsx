@@ -11030,9 +11030,9 @@ app.get('/deals/new', (c) => {
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
   <!-- This ensures window.processMultipleOCR placeholder exists even if main script has errors -->
-  <script src="/static/ocr-init.js?v=3.153.31">
+  <script src="/static/ocr-init.js?v=3.153.33&t=20251210"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
-  <script src="/static/deals-new-events.js?v=3.153.31">
+  <script src="/static/deals-new-events.js?v=3.153.33&t=20251210"></script>
   
   <!-- CRITICAL FIX v3.153.31: Button event listeners setup after external scripts -->
   <script>

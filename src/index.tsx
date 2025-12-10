@@ -5248,6 +5248,7 @@ app.get('/deals/new', (c) => {
               placeholder="例: 東京都港区六本木1-1-1"
               style="min-height: 44px;">
             <button type="button" id="auto-fill-btn"
+              onclick="if(typeof window.autoFillFromReinfolib === 'function'){window.autoFillFromReinfolib()}else{console.error('autoFillFromReinfolib not found')}"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
               style="min-height: 44px; -webkit-tap-highlight-color: rgba(0,0,0,0.1);">
               <i class="fas fa-magic"></i>
@@ -5255,6 +5256,7 @@ app.get('/deals/new', (c) => {
               <span class="inline sm:hidden">自動補足</span>
             </button>
             <button type="button" id="comprehensive-check-btn"
+              onclick="if(typeof window.manualComprehensiveRiskCheck === 'function'){window.manualComprehensiveRiskCheck()}else{console.error('manualComprehensiveRiskCheck not found')}"
               class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:bg-purple-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
               style="min-height: 44px; -webkit-tap-highlight-color: rgba(0,0,0,0.1);">
               <i class="fas fa-shield-alt"></i>

@@ -11027,22 +11027,39 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ボタンリスナー設定をwindow.loadイベント後に実行
-    window.addEventListener('load', function() {
-      console.log('[Init] window.load event fired! Scheduling setupButtonListeners...');
+    // ボタンリスナー設定を即座に実行（トップレベルスクリプトとして）
+    // CRITICAL: <script>タグのトップレベルで実行されるため、ページロード時に確実に呼び出される
+    (function() {
+      console.log('[Init] ===== BUTTON LISTENER SETUP (Top-level script) =====');
       console.log('[Init] typeof setupButtonListeners:', typeof setupButtonListeners);
       console.log('[Init] document.readyState:', document.readyState);
       
-      // さらに500ms遅延させて、グローバル関数が確実に定義されるのを待つ
-      setTimeout(function() {
-        console.log('[Init] setTimeout callback fired! About to call setupButtonListeners');
-        try {
-          setupButtonListeners();
-        } catch (err) {
-          console.error('[Init] ❌ ERROR calling setupButtonListeners:', err);
-        }
-      }, 500);
-    });
+      // 外部スクリプト（ocr-init.js, deals-new-events.js）のロード完了を待つ
+      if (document.readyState === 'loading') {
+        console.log('[Init] Document still loading, waiting for DOMContentLoaded...');
+        document.addEventListener('DOMContentLoaded', function() {
+          console.log('[Init] DOMContentLoaded fired! Scheduling setupButtonListeners in 2000ms...');
+          setTimeout(function() {
+            console.log('[Init] About to call setupButtonListeners (after 2000ms delay)');
+            try {
+              setupButtonListeners();
+            } catch (err) {
+              console.error('[Init] ❌ ERROR calling setupButtonListeners:', err);
+            }
+          }, 2000);
+        });
+      } else {
+        console.log('[Init] Document already loaded! Scheduling setupButtonListeners in 2000ms...');
+        setTimeout(function() {
+          console.log('[Init] About to call setupButtonListeners (after 2000ms delay)');
+          try {
+            setupButtonListeners();
+          } catch (err) {
+            console.error('[Init] ❌ ERROR calling setupButtonListeners:', err);
+          }
+        }, 2000);
+      }
+    })();
 
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->

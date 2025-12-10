@@ -11027,19 +11027,22 @@ app.get('/deals/new', (c) => {
       }
     }
     
-    // ボタンリスナー設定を遅延実行（確実に呼び出されるよう）
-    // CRITICAL: この時点でDOMContentLoadedは既に発火済みのため、setTimeoutで確実に実行
-    console.log('[Init] Scheduling setupButtonListeners in 1000ms (readyState:', document.readyState, ')');
-    console.log('[Init] typeof setupButtonListeners:', typeof setupButtonListeners);
-    var buttonListenerTimer = setTimeout(function() {
-      console.log('[Init] setTimeout callback fired! About to call setupButtonListeners');
-      try {
-        setupButtonListeners();
-      } catch (err) {
-        console.error('[Init] ❌ ERROR calling setupButtonListeners:', err);
-      }
-    }, 1000);
-    console.log('[Init] setTimeout scheduled, timer ID:', buttonListenerTimer);
+    // ボタンリスナー設定をwindow.loadイベント後に実行
+    window.addEventListener('load', function() {
+      console.log('[Init] window.load event fired! Scheduling setupButtonListeners...');
+      console.log('[Init] typeof setupButtonListeners:', typeof setupButtonListeners);
+      console.log('[Init] document.readyState:', document.readyState);
+      
+      // さらに500ms遅延させて、グローバル関数が確実に定義されるのを待つ
+      setTimeout(function() {
+        console.log('[Init] setTimeout callback fired! About to call setupButtonListeners');
+        try {
+          setupButtonListeners();
+        } catch (err) {
+          console.error('[Init] ❌ ERROR calling setupButtonListeners:', err);
+        }
+      }, 500);
+    });
 
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->

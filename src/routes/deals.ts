@@ -196,9 +196,14 @@ deals.post('/', adminOnly, async (c) => {
   try {
     const body = await c.req.json();
     const userId = c.get('userId') as string;
+    
+    console.log('[CREATE DEAL] Starting deal creation');
+    console.log('[CREATE DEAL] User ID:', userId);
+    console.log('[CREATE DEAL] Request body keys:', Object.keys(body));
 
     // seller_idの早期チェック
     if (!body.seller_id || body.seller_id.trim() === '') {
+      console.error('[CREATE DEAL] Seller ID missing');
       return c.json({ 
         error: '売主を選択してください',
         details: [{ path: 'seller_id', message: '売主を選択してください' }]
@@ -209,11 +214,14 @@ deals.post('/', adminOnly, async (c) => {
     const validation = validateData(dealCreateSchema, body);
     
     if (!validation.success) {
+      console.error('[CREATE DEAL] Validation failed:', validation.errors);
       return c.json({ 
         error: '初回必須情報が不足しています。以下の項目を入力してください。', 
         details: validation.errors || []
       }, 400);
     }
+
+    console.log('[CREATE DEAL] Validation passed');
 
     const db = new Database(c.env.DB);
     const settings = await db.getSettings();
@@ -251,13 +259,20 @@ deals.post('/', adminOnly, async (c) => {
       reply_deadline: deadline.toISOString()
     };
 
+    console.log('[CREATE DEAL] New deal object created with ID:', newDeal.id);
+    
     await db.createDeal(newDeal);
+    
+    console.log('[CREATE DEAL] ✅ Deal created successfully in database');
 
     // 新規案件通知（メール + D1通知）
     // 通知処理でエラーが発生しても案件作成自体は成功させる
+    console.log('[CREATE DEAL] Starting notification process');
     try {
+      console.log('[CREATE DEAL] Fetching seller and buyer info');
       const seller = await db.getUserById(body.seller_id);
       const buyer = await db.getUserById(userId);
+      console.log('[CREATE DEAL] Seller:', seller?.name, 'Buyer:', buyer?.name);
       
       // D1データベースに通知を保存（管理者用）
       const { createNotification } = await import('./notifications');
@@ -364,10 +379,20 @@ deals.post('/', adminOnly, async (c) => {
       }
     }
 
+    console.log('[CREATE DEAL] ✅ All processing completed successfully');
     return c.json({ deal: newDeal }, 201);
   } catch (error) {
-    console.error('Create deal error:', error);
-    return c.json({ error: 'Internal server error' }, 500);
+    console.error('❌ [CREATE DEAL ERROR] Critical error occurred:', error);
+    if (error instanceof Error) {
+      console.error('[CREATE DEAL ERROR] Error name:', error.name);
+      console.error('[CREATE DEAL ERROR] Error message:', error.message);
+      console.error('[CREATE DEAL ERROR] Stack trace:', error.stack);
+    }
+    return c.json({ 
+      error: 'Internal server error', 
+      message: error instanceof Error ? error.message : 'Unknown error',
+      type: error instanceof Error ? error.name : typeof error
+    }, 500);
   }
 });
 

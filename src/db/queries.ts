@@ -81,27 +81,34 @@ export class Database {
   }
 
   async createDeal(deal: Omit<Deal, 'created_at' | 'updated_at'>): Promise<void> {
-    await this.db
-      .prepare(`
-        INSERT INTO deals (
-          id, title, status, buyer_id, seller_id, location, station, walk_minutes,
-          land_area, building_area, zoning, building_coverage, floor_area_ratio, height_district,
-          fire_zone, road_info, frontage, structure, built_year, yield_rate, occupancy_status,
-          current_status, desired_price, remarks, missing_fields, reply_deadline
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `)
-      .bind(
-        deal.id, deal.title, deal.status, deal.buyer_id, deal.seller_id,
-        deal.location || null, deal.station || null, deal.walk_minutes || null,
-        deal.land_area || null, deal.building_area || null, deal.zoning || null, 
-        deal.building_coverage || null, deal.floor_area_ratio || null, deal.height_district || null,
-        deal.fire_zone || null, deal.road_info || null, deal.frontage || null,
-        deal.structure || null, deal.built_year || null, deal.yield_rate || null, 
-        deal.occupancy_status || null, deal.current_status || null,
-        deal.desired_price || null, deal.remarks || null,
-        deal.missing_fields, deal.reply_deadline || null
-      )
-      .run();
+    console.log('[DB createDeal] Starting database insert for deal:', deal.id);
+    try {
+      await this.db
+        .prepare(`
+          INSERT INTO deals (
+            id, title, status, buyer_id, seller_id, location, station, walk_minutes,
+            land_area, building_area, zoning, building_coverage, floor_area_ratio, height_district,
+            fire_zone, road_info, frontage, structure, built_year, yield_rate, occupancy_status,
+            current_status, desired_price, remarks, missing_fields, reply_deadline
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `)
+        .bind(
+          deal.id, deal.title, deal.status, deal.buyer_id, deal.seller_id,
+          deal.location || null, deal.station || null, deal.walk_minutes || null,
+          deal.land_area || null, deal.building_area || null, deal.zoning || null, 
+          deal.building_coverage || null, deal.floor_area_ratio || null, deal.height_district || null,
+          deal.fire_zone || null, deal.road_info || null, deal.frontage || null,
+          deal.structure || null, deal.built_year || null, deal.yield_rate || null, 
+          deal.occupancy_status || null, deal.current_status || null,
+          deal.desired_price || null, deal.remarks || null,
+          deal.missing_fields, deal.reply_deadline || null
+        )
+        .run();
+      console.log('[DB createDeal] ✅ Database insert successful');
+    } catch (error) {
+      console.error('[DB createDeal] ❌ Database insert failed:', error);
+      throw error;
+    }
   }
 
   async updateDeal(id: string, updates: Partial<Deal>): Promise<void> {

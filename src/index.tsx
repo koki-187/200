@@ -8424,6 +8424,7 @@ app.get('/deals/new', (c) => {
         return;
       }
 
+      // CRITICAL FIX v3.153.52: Enhanced validation for required fields
       // seller_idのバリデーション
       const sellerIdInput = document.getElementById('seller_id');
       if (!sellerIdInput || !sellerIdInput.value) {
@@ -8433,8 +8434,36 @@ app.get('/deals/new', (c) => {
         } else if (typeof window.showMessage === 'function') {
           window.showMessage(errorMsg, 'error');
         } else {
-          // alert removed per user requirement - see console for errors
-        console.error(errorMsg);
+          console.error(errorMsg);
+        }
+        return;
+      }
+
+      // 必須フィールドのバリデーション（物件名、所在地、土地面積）
+      const titleInput = document.getElementById('title');
+      const locationInput = document.getElementById('location');
+      const landAreaInput = document.getElementById('land_area');
+      
+      const missingFields = [];
+      if (!titleInput || !titleInput.value.trim()) {
+        missingFields.push('物件名');
+      }
+      if (!locationInput || !locationInput.value.trim()) {
+        missingFields.push('所在地');
+      }
+      if (!landAreaInput || !landAreaInput.value.trim()) {
+        missingFields.push('土地面積');
+      }
+      
+      if (missingFields.length > 0) {
+        const errorMsg = '以下の必須項目を入力してください：\n' + missingFields.join('、');
+        console.error('[DEAL CREATE] ❌ Validation failed:', missingFields);
+        if (typeof showMessage === 'function') {
+          showMessage(errorMsg, 'error');
+        } else if (typeof window.showMessage === 'function') {
+          window.showMessage(errorMsg, 'error');
+        } else {
+          console.error(errorMsg);
         }
         return;
       }

@@ -1,6 +1,12 @@
 /**
  * OCR Processor - Complete Standalone Implementation
- * v3.153.4 - CRITICAL FIX: Removed automatic risk check after OCR
+ * v3.153.50 (2025-12-11 08:00 JST)
+ * 
+ * CRITICAL FIXES in v3.153.50:
+ * - Browser cache issue resolved (JS file versioning)
+ * - Comprehensive judgment displays in Japanese (✅融資可能/❌融資不可/⚠️手動確認が必要)
+ * - Fixed "undefined" display in risk check results
+ * - Enhanced debug logs for deal creation errors
  * 
  * This standalone file provides a complete processMultipleOCR implementation
  * with PDF conversion support, bypassing main script syntax errors.
@@ -12,6 +18,7 @@
 
 console.log('[OCR Init] ========================================');
 console.log('[OCR Init] VERSION: v3.153.34 (2025-12-10) - CRITICAL: height_district/fire_zone field mapping added');
+console.log('🚀 [OCR Init] v3.153.50 loaded at', new Date().toISOString());
 console.log('[OCR Init] ocr-init.js loaded - complete implementation with PDF support');
 console.log('[OCR Init] Creating window.processMultipleOCR function...');
 

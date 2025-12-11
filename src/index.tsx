@@ -2318,6 +2318,20 @@ app.get('/dashboard', (c) => {
         document.getElementById('stats-total-files').textContent = stats.total_files.toLocaleString();
         document.getElementById('stats-total-size').textContent = formatFileSize(stats.total_size);
         document.getElementById('stats-user-count').textContent = stats.user_stats.length.toLocaleString();
+        
+        // 🔥 CRITICAL FIX v3.153.53: ファイルが0件の場合は説明メッセージを表示
+        if (stats.total_files === 0) {
+          console.warn('[File Management] No files found in database');
+          const emptyMessage = '<div class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">' +
+            '<i class="fas fa-folder-open text-5xl text-gray-400 mb-4"></i>' +
+            '<p class="text-lg font-medium text-gray-700 mb-2">アップロードされたファイルがありません</p>' +
+            '<p class="text-sm text-gray-500 mb-4">案件作成ページからファイルをアップロードしてください。</p>' +
+            '<a href="/deals/create" class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">' +
+            '<i class="fas fa-plus mr-2"></i>案件を作成する' +
+            '</a>' +
+            '</div>';
+          document.getElementById('admin-files-list').innerHTML = emptyMessage;
+        }
 
         // ユーザー別統計を表示
         displayUserStats(stats.user_stats);
@@ -2326,8 +2340,29 @@ app.get('/dashboard', (c) => {
         displayAdminFiles(allFiles);
       } catch (error) {
         console.error('Failed to load admin files:', error);
-        document.getElementById('admin-files-list').innerHTML = 
-          '<div class="text-center py-8 text-red-600"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><p>ファイル読み込みに失敗しました</p></div>';
+        console.error('[File Management] Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        });
+        
+        // エラー種別に応じた表示
+        let errorMessage = 'ファイル読み込みに失敗しました';
+        if (error.response?.status === 401) {
+          errorMessage = '認証エラー：再度ログインしてください';
+        } else if (error.response?.status === 403) {
+          errorMessage = 'アクセス権限がありません（管理者のみアクセス可能）';
+        } else if (!error.response) {
+          errorMessage = 'ネットワークエラー：接続を確認してください';
+        }
+        
+        const errorHTML = '<div class="text-center py-8 text-red-600">' +
+          '<i class="fas fa-exclamation-triangle text-2xl mb-2"></i>' +
+          '<p class="font-medium">' + errorMessage + '</p>' +
+          '<p class="text-sm text-gray-500 mt-2">詳細はコンソールログを確認してください</p>' +
+          '</div>';
+        document.getElementById('admin-files-list').innerHTML = errorHTML;
       }
     }
 
@@ -6607,19 +6642,21 @@ app.get('/deals/new', (c) => {
         if (storageText) {
           // 認証エラーの場合は明確に表示
           if (error.response?.status === 401) {
-            storageText.textContent = '認証エラー';
+            storageText.textContent = '認証エラー（再ログインが必要です）';
             if (storageDisplay) {
-              storageDisplay.className = 'text-sm bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium border border-red-200';
+              storageDisplay.className = 'text-xs md:text-sm bg-red-50 text-red-700 px-3 py-2 rounded-lg font-medium border border-red-200 w-full sm:w-auto';
             }
             console.warn('[Storage Quota] Authentication error - token may be expired');
+            // ユーザーに通知を表示
+            if (typeof window.showMessage === 'function') {
+              window.showMessage('認証の有効期限が切れました。再度ログインしてください。', 'error');
+            }
             // 5秒後にログイン画面にリダイレクト
             setTimeout(() => {
-              if (confirm('認証の有効期限が切れています。ログインページに移動しますか？')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/';
-              }
-            }, 2000);
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              window.location.href = '/';
+            }, 3000);
           } else if (!error.response) {
             // ネットワークエラーまたはCORS問題
             storageText.textContent = 'ネットワークエラー';

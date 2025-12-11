@@ -267,10 +267,21 @@ deals.post('/', authMiddleware, async (c) => {
     };
 
     console.log('[CREATE DEAL] New deal object created with ID:', newDeal.id);
+    console.log('[CREATE DEAL] Deal data:', JSON.stringify(newDeal, null, 2));
     
-    await db.createDeal(newDeal);
-    
-    console.log('[CREATE DEAL] ✅ Deal created successfully in database');
+    try {
+      await db.createDeal(newDeal);
+      console.log('[CREATE DEAL] ✅ Deal created successfully in database');
+    } catch (dbError) {
+      console.error('[CREATE DEAL] ❌ Database insert error:', dbError);
+      console.error('[CREATE DEAL] Error message:', dbError instanceof Error ? dbError.message : String(dbError));
+      console.error('[CREATE DEAL] Stack:', dbError instanceof Error ? dbError.stack : 'No stack');
+      
+      return c.json({
+        error: '案件作成中にデータベースエラーが発生しました',
+        details: dbError instanceof Error ? dbError.message : String(dbError)
+      }, 500);
+    }
 
     // 新規案件通知（メール + D1通知）
     // 通知処理でエラーが発生しても案件作成自体は成功させる

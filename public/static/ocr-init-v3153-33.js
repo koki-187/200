@@ -709,16 +709,32 @@ async function runComprehensiveRiskCheck(address) {
     
     // 結果表示（簡易版：アラートで表示）
     const result = response.data;
-    const judgment = result.financingJudgment;
     // 🔥 CRITICAL FIX v3.153.46: Use 'location' instead of 'propertyInfo'
     const locationInfo = result.location || {};
+    
+    // 🔥 CRITICAL FIX v3.153.50: Use financingMessage instead of financingJudgment.message
+    const judgmentCode = result.financingJudgment || 'UNKNOWN';
+    const judgmentMessage = result.financingMessage || '判定結果を取得できませんでした';
+    
+    // 判定コードを日本語に変換
+    let judgmentText = '';
+    if (judgmentCode === 'OK') {
+      judgmentText = '✅ 融資可能（問題なし）';
+    } else if (judgmentCode === 'NG') {
+      judgmentText = '❌ 融資不可（要注意）';
+    } else if (judgmentCode === 'MANUAL_CHECK_REQUIRED') {
+      judgmentText = '⚠️ 手動確認が必要';
+    } else {
+      judgmentText = '❓ 判定不明';
+    }
     
     let message = `📊 包括的リスクチェック結果 (${result.version || 'v3.152'})\n\n`;
     message += `住所: ${result.address}\n`;
     message += `都道府県: ${locationInfo.prefecture || 'N/A'}\n`;
     message += `市区町村: ${locationInfo.city || 'N/A'}\n\n`;
     message += `【総合判定】\n`;
-    message += `${judgment.message}\n\n`;
+    message += `${judgmentText}\n`;
+    message += `${judgmentMessage}\n\n`;
     
     if (result.processingTime) {
       message += `処理時間: ${result.processingTime}`;

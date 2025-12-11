@@ -8463,6 +8463,14 @@ app.get('/deals/new', (c) => {
         remarks: document.getElementById('remarks').value || null
       };
 
+      // CRITICAL DEBUG v3.153.51: Log all form data before submission
+      console.log('[DEAL CREATE] 📝 Submitting deal data:', JSON.stringify(dealData, null, 2));
+      console.log('[DEAL CREATE] Required fields check:');
+      console.log('  - title:', dealData.title || '(empty)');
+      console.log('  - location:', dealData.location || '(empty)');
+      console.log('  - seller_id:', dealData.seller_id || '(empty)');
+      console.log('  - desired_price:', dealData.desired_price || '(empty)');
+
       // ボタン無効化とローディング表示
       const submitBtn = document.querySelector('#deal-form button[type="submit"]');
       const originalBtnText = submitBtn.innerHTML;
@@ -11046,7 +11054,7 @@ app.get('/deals/new', (c) => {
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
   <!-- This ensures window.processMultipleOCR placeholder exists even if main script has errors -->
-  <script src="/static/ocr-init-v3153-33.js"></script>
+  <script src="/static/ocr-init-v3153-50.js"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
   <script src="/static/deals-new-events-v3153-33.js"></script>
   

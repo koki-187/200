@@ -6500,6 +6500,12 @@ app.get('/deals/new', (c) => {
           console.log('[Sellers] Added option:', seller.name, '(' + seller.company_name + ')');
         });
         
+        // CRITICAL FIX v3.153.48: Auto-select first seller to prevent HTTP 500 error
+        if (sellers.length > 0) {
+          select.selectedIndex = 1; // Select first seller (index 0 is "選択してください")
+          console.log('[Sellers] ✅ Auto-selected first seller:', sellers[0].name);
+        }
+        
         console.log('[Sellers] ✅ Successfully loaded', sellers.length, 'sellers');
       } catch (error) {
         console.error('[Sellers] ❌ Failed to load sellers:', error);

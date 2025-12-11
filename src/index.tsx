@@ -40,6 +40,7 @@ import monitoring from './routes/monitoring';
 // import reports from './routes/reports'; // DELETED: レポート機能削除
 import investmentSimulator from './routes/investment-simulator';
 import health from './routes/health';
+import healthCheck from './routes/health-check';
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -167,6 +168,9 @@ app.route('/api/monitoring', monitoring);
 
 // ヘルスチェック（詳細版）
 app.route('/api/health', health);
+
+// 🛡️ 自動エラー改善システム - ヘルスチェックAPI
+app.route('/api/health-check', healthCheck);
 
 // デバッグ用エンドポイント - 環境変数とバインディング確認
 app.get('/api/debug/env', (c) => {
@@ -3922,6 +3926,456 @@ app.get('/showcase', (c) => {
       btn.classList.remove('active');
       document.body.style.overflow = '';
     }
+  </script>
+</body>
+</html>
+  `);
+});
+
+// 🛡️ 管理者用システムヘルスチェックページ
+app.get('/admin/health-check', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🛡️ システムヘルスチェック - 自動エラー改善システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+    }
+    .health-card {
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    .health-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    .health-card.checking {
+      border-color: #3b82f6;
+      animation: pulse 1.5s infinite;
+    }
+    .health-card.success {
+      border-color: #10b981;
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    }
+    .health-card.error {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    }
+    .health-card.warning {
+      border-color: #f59e0b;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+    .status-badge.clear {
+      background: #10b981;
+      color: white;
+    }
+    .status-badge.error {
+      background: #ef4444;
+      color: white;
+    }
+    .status-badge.warning {
+      background: #f59e0b;
+      color: white;
+    }
+    .status-badge.checking {
+      background: #3b82f6;
+      color: white;
+    }
+  </style>
+</head>
+<body class="p-6">
+  <div class="max-w-7xl mx-auto">
+    <!-- ヘッダー -->
+    <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 mb-8 text-white">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-4xl font-bold mb-2">
+            <i class="fas fa-shield-alt mr-3"></i>
+            システムヘルスチェック
+          </h1>
+          <p class="text-blue-100 text-lg">Auto Error Recovery System - v1.0</p>
+        </div>
+        <button id="check-all" class="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold text-lg hover:bg-blue-50 transition">
+          <i class="fas fa-play-circle mr-2"></i>
+          全機能チェック
+        </button>
+      </div>
+    </div>
+
+    <!-- システムステータス -->
+    <div id="system-status" class="bg-white rounded-2xl p-6 mb-8 shadow-xl">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-gray-800 mb-2">システム全体ステータス</h2>
+          <p class="text-gray-600">最終チェック: <span id="last-check-time">未実施</span></p>
+        </div>
+        <div id="overall-status" class="status-badge checking">
+          <i class="fas fa-clock"></i>
+          <span>待機中</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- チェック機能グリッド -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      
+      <!-- 1. OCR機能 -->
+      <div id="card-ocr" class="health-card bg-white rounded-2xl p-6 shadow-lg">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-file-pdf text-blue-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-gray-800">OCR機能</h3>
+              <p class="text-sm text-gray-500">PDF/画像解析</p>
+            </div>
+          </div>
+          <div id="status-ocr" class="status-badge checking">
+            <i class="fas fa-clock"></i>
+          </div>
+        </div>
+        <button id="check-ocr" class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition">
+          <i class="fas fa-check-circle mr-2"></i>
+          チェック実行
+        </button>
+        <div id="result-ocr" class="mt-4 text-sm text-gray-600 hidden">
+          <div class="bg-gray-50 rounded-lg p-3">
+            <div class="font-semibold mb-1">チェック結果:</div>
+            <div id="message-ocr"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 物件情報自動補完 -->
+      <div id="card-property" class="health-card bg-white rounded-2xl p-6 shadow-lg">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-building text-green-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-gray-800">物件情報補完</h3>
+              <p class="text-sm text-gray-500">住所→詳細情報</p>
+            </div>
+          </div>
+          <div id="status-property" class="status-badge checking">
+            <i class="fas fa-clock"></i>
+          </div>
+        </div>
+        <button id="check-property" class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition">
+          <i class="fas fa-check-circle mr-2"></i>
+          チェック実行
+        </button>
+        <div id="result-property" class="mt-4 text-sm text-gray-600 hidden">
+          <div class="bg-gray-50 rounded-lg p-3">
+            <div class="font-semibold mb-1">チェック結果:</div>
+            <div id="message-property"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. リスクチェック -->
+      <div id="card-risk" class="health-card bg-white rounded-2xl p-6 shadow-lg">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-gray-800">リスクチェック</h3>
+              <p class="text-sm text-gray-500">災害・融資判定</p>
+            </div>
+          </div>
+          <div id="status-risk" class="status-badge checking">
+            <i class="fas fa-clock"></i>
+          </div>
+        </div>
+        <button id="check-risk" class="w-full bg-yellow-600 text-white py-3 rounded-xl font-semibold hover:bg-yellow-700 transition">
+          <i class="fas fa-check-circle mr-2"></i>
+          チェック実行
+        </button>
+        <div id="result-risk" class="mt-4 text-sm text-gray-600 hidden">
+          <div class="bg-gray-50 rounded-lg p-3">
+            <div class="font-semibold mb-1">チェック結果:</div>
+            <div id="message-risk"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 案件作成 -->
+      <div id="card-deal" class="health-card bg-white rounded-2xl p-6 shadow-lg">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-plus-circle text-purple-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-gray-800">案件作成</h3>
+              <p class="text-sm text-gray-500">必須項目検証</p>
+            </div>
+          </div>
+          <div id="status-deal" class="status-badge checking">
+            <i class="fas fa-clock"></i>
+          </div>
+        </div>
+        <button id="check-deal" class="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition">
+          <i class="fas fa-check-circle mr-2"></i>
+          チェック実行
+        </button>
+        <div id="result-deal" class="mt-4 text-sm text-gray-600 hidden">
+          <div class="bg-gray-50 rounded-lg p-3">
+            <div class="font-semibold mb-1">チェック結果:</div>
+            <div id="message-deal"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 書類管理 -->
+      <div id="card-files" class="health-card bg-white rounded-2xl p-6 shadow-lg">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-folder-open text-red-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-gray-800">書類管理</h3>
+              <p class="text-sm text-gray-500">ファイルストレージ</p>
+            </div>
+          </div>
+          <div id="status-files" class="status-badge checking">
+            <i class="fas fa-clock"></i>
+          </div>
+        </div>
+        <button id="check-files" class="w-full bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition">
+          <i class="fas fa-check-circle mr-2"></i>
+          チェック実行
+        </button>
+        <div id="result-files" class="mt-4 text-sm text-gray-600 hidden">
+          <div class="bg-gray-50 rounded-lg p-3">
+            <div class="font-semibold mb-1">チェック結果:</div>
+            <div id="message-files"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. 案件一覧 -->
+      <div id="card-list" class="health-card bg-white rounded-2xl p-6 shadow-lg">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-list text-indigo-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-gray-800">案件一覧</h3>
+              <p class="text-sm text-gray-500">ステータス確認</p>
+            </div>
+          </div>
+          <div id="status-list" class="status-badge checking">
+            <i class="fas fa-clock"></i>
+          </div>
+        </div>
+        <button id="check-list" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition">
+          <i class="fas fa-check-circle mr-2"></i>
+          チェック実行
+        </button>
+        <div id="result-list" class="mt-4 text-sm text-gray-600 hidden">
+          <div class="bg-gray-50 rounded-lg p-3">
+            <div class="font-semibold mb-1">チェック結果:</div>
+            <div id="message-list"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- エラー時の問い合わせ先 -->
+    <div class="mt-8 bg-red-50 border-2 border-red-200 rounded-2xl p-6">
+      <h3 class="font-bold text-red-800 text-lg mb-2">
+        <i class="fas fa-phone-alt mr-2"></i>
+        修復不可能なエラー発生時
+      </h3>
+      <p class="text-red-700">
+        自動修復が3回失敗した場合、下記へ問い合わせください:<br>
+        📧 <a href="mailto:info@my-agent.work" class="font-bold underline">info@my-agent.work</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    
+    // ヘルスチェック実行関数
+    async function runHealthCheck(functionName) {
+      const card = document.getElementById(\`card-\${functionName}\`);
+      const status = document.getElementById(\`status-\${functionName}\`);
+      const result = document.getElementById(\`result-\${functionName}\`);
+      const message = document.getElementById(\`message-\${functionName}\`);
+      
+      // チェック中の状態にする
+      card.className = 'health-card bg-white rounded-2xl p-6 shadow-lg checking';
+      status.className = 'status-badge checking';
+      status.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>チェック中...</span>';
+      result.classList.add('hidden');
+      
+      try {
+        console.log(\`[Health Check] Starting check for: \${functionName}\`);
+        
+        const response = await axios.post(\`/api/health-check/\${functionName}\`, {}, {
+          headers: {
+            'Authorization': \`Bearer \${token}\`
+          },
+          timeout: 30000
+        });
+        
+        console.log(\`[Health Check] Response for \${functionName}:\`, response.data);
+        
+        if (response.data.status === 'success') {
+          // ✅ CLEAR
+          card.className = 'health-card bg-white rounded-2xl p-6 shadow-lg success';
+          status.className = 'status-badge clear';
+          status.innerHTML = '<i class="fas fa-check-circle"></i><span>CLEAR</span>';
+          message.innerHTML = \`
+            <div class="text-green-600 font-semibold">✅ 正常動作</div>
+            <div class="text-gray-600 mt-2">\${response.data.message || '問題なし'}</div>
+            \${response.data.details ? \`<pre class="mt-2 text-xs bg-white p-2 rounded">\${JSON.stringify(response.data.details, null, 2)}</pre>\` : ''}
+          \`;
+        } else if (response.data.status === 'warning') {
+          // ⚠️ PARTIAL
+          card.className = 'health-card bg-white rounded-2xl p-6 shadow-lg warning';
+          status.className = 'status-badge warning';
+          status.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>PARTIAL</span>';
+          message.innerHTML = \`
+            <div class="text-yellow-600 font-semibold">⚠️ 手動確認が必要</div>
+            <div class="text-gray-600 mt-2">\${response.data.message || '一部の機能で問題が検出されました'}</div>
+            \${response.data.action ? \`<div class="mt-2 text-blue-600">推奨アクション: \${response.data.action}</div>\` : ''}
+          \`;
+        } else {
+          throw new Error(response.data.message || 'Unknown error');
+        }
+        
+        result.classList.remove('hidden');
+        
+      } catch (error) {
+        console.error(\`[Health Check] Error for \${functionName}:\`, error);
+        
+        // ❌ ERROR
+        card.className = 'health-card bg-white rounded-2xl p-6 shadow-lg error';
+        status.className = 'status-badge error';
+        status.innerHTML = '<i class="fas fa-times-circle"></i><span>ERROR</span>';
+        
+        let errorMsg = 'エラーが発生しました';
+        let autoRecovery = '';
+        
+        if (error.response) {
+          errorMsg = error.response.data?.message || \`HTTP \${error.response.status}\`;
+          
+          // 自動修復試行
+          if (error.response.data?.auto_recovery_attempted) {
+            autoRecovery = \`
+              <div class="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                <div class="font-semibold text-blue-800">🔧 自動修復を試行しました</div>
+                <div class="text-sm text-blue-700 mt-1">\${error.response.data.recovery_action || '自動修復アクションを実行'}</div>
+                \${error.response.data.recovery_success ? 
+                  '<div class="text-green-600 mt-1">✅ 修復成功</div>' : 
+                  '<div class="text-red-600 mt-1">❌ 修復失敗 - 手動対応が必要です</div>'}
+              </div>
+            \`;
+          }
+        } else if (error.request) {
+          errorMsg = 'ネットワークエラー（サーバーに接続できません）';
+        } else {
+          errorMsg = error.message;
+        }
+        
+        message.innerHTML = \`
+          <div class="text-red-600 font-semibold">❌ エラー検出</div>
+          <div class="text-gray-700 mt-2">\${errorMsg}</div>
+          \${autoRecovery}
+          <div class="mt-3 text-xs text-gray-500">
+            修復が失敗した場合は info@my-agent.work へ問い合わせください
+          </div>
+        \`;
+        result.classList.remove('hidden');
+      }
+    }
+    
+    // 個別チェックボタン
+    document.getElementById('check-ocr').addEventListener('click', () => runHealthCheck('ocr'));
+    document.getElementById('check-property').addEventListener('click', () => runHealthCheck('property-info'));
+    document.getElementById('check-risk').addEventListener('click', () => runHealthCheck('risk-check'));
+    document.getElementById('check-deal').addEventListener('click', () => runHealthCheck('deal-creation'));
+    document.getElementById('check-files').addEventListener('click', () => runHealthCheck('file-management'));
+    document.getElementById('check-list').addEventListener('click', () => runHealthCheck('deal-list'));
+    
+    // 全機能チェック
+    document.getElementById('check-all').addEventListener('click', async () => {
+      const functions = ['ocr', 'property-info', 'risk-check', 'deal-creation', 'file-management', 'deal-list'];
+      const startTime = new Date();
+      
+      document.getElementById('overall-status').className = 'status-badge checking';
+      document.getElementById('overall-status').innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>全機能チェック中...</span>';
+      
+      let successCount = 0;
+      let errorCount = 0;
+      let warningCount = 0;
+      
+      for (const func of functions) {
+        await runHealthCheck(func);
+        
+        // 結果を集計
+        const status = document.getElementById(\`status-\${func}\`);
+        if (status.classList.contains('clear')) successCount++;
+        else if (status.classList.contains('error')) errorCount++;
+        else if (status.classList.contains('warning')) warningCount++;
+        
+        // 次のチェックまで1秒待機
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      // 全体ステータスを更新
+      const overallStatus = document.getElementById('overall-status');
+      const lastCheckTime = document.getElementById('last-check-time');
+      
+      lastCheckTime.textContent = new Date().toLocaleString('ja-JP');
+      
+      if (errorCount === 0 && warningCount === 0) {
+        overallStatus.className = 'status-badge clear';
+        overallStatus.innerHTML = '<i class="fas fa-check-circle"></i><span>全機能正常</span>';
+      } else if (errorCount > 0) {
+        overallStatus.className = 'status-badge error';
+        overallStatus.innerHTML = \`<i class="fas fa-times-circle"></i><span>エラー検出 (\${errorCount}件)</span>\`;
+      } else {
+        overallStatus.className = 'status-badge warning';
+        overallStatus.innerHTML = \`<i class="fas fa-exclamation-triangle"></i><span>要確認 (\${warningCount}件)</span>\`;
+      }
+      
+      console.log(\`[Health Check] All checks completed in \${((new Date() - startTime) / 1000).toFixed(1)}s\`);
+      console.log(\`[Health Check] Results: ✅ \${successCount} | ⚠️ \${warningCount} | ❌ \${errorCount}\`);
+    });
+    
+    console.log('[Health Check] System initialized - v1.0');
   </script>
 </body>
 </html>

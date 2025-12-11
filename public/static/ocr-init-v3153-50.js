@@ -17,7 +17,7 @@
  */
 
 console.log('[OCR Init] ========================================');
-console.log('[OCR Init] VERSION: v3.153.34 (2025-12-10) - CRITICAL: height_district/fire_zone field mapping added');
+console.log('[OCR Init] 🚀 VERSION: v3.153.50 loaded (2025-12-11) - CRITICAL: Browser cache fixed + Japanese judgment');
 console.log('🚀 [OCR Init] v3.153.50 loaded at', new Date().toISOString());
 console.log('[OCR Init] ocr-init.js loaded - complete implementation with PDF support');
 console.log('[OCR Init] Creating window.processMultipleOCR function...');

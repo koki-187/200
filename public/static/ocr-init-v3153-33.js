@@ -660,7 +660,12 @@ async function runComprehensiveRiskCheck(address) {
   if (!address || typeof address !== 'string' || address.trim().length === 0) {
     console.error('[COMPREHENSIVE CHECK] ❌ Invalid address - empty or not a string');
     console.error('[COMPREHENSIVE CHECK] User needs to input valid address');
-    // alert removed per user requirement - errors logged to console only
+    
+    // 🔥 CRITICAL FIX v3.153.49: Display error to user
+    if (typeof window.showMessage === 'function') {
+      window.showMessage('住所を入力してください', 'error');
+    }
+    alert('住所を入力してください');
     return;
   }
   
@@ -672,7 +677,12 @@ async function runComprehensiveRiskCheck(address) {
     if (!token) {
       console.error('[COMPREHENSIVE CHECK] No auth token');
       console.error('[COMPREHENSIVE CHECK] User should reload page and re-login');
-      // alert removed per user requirement - errors logged to console only
+      
+      // 🔥 CRITICAL FIX v3.153.49: Display error to user
+      if (typeof window.showMessage === 'function') {
+        window.showMessage('認証トークンがありません。再度ログインしてください。', 'error');
+      }
+      alert('認証トークンがありません。再度ログインしてください。');
       return;
     }
     
@@ -718,6 +728,12 @@ async function runComprehensiveRiskCheck(address) {
     console.log(message);
     console.log('[COMPREHENSIVE CHECK] ✅ Check completed');
     
+    // 🔥 CRITICAL FIX v3.153.49: Display result to user
+    if (typeof window.showMessage === 'function') {
+      window.showMessage('リスクチェックが完了しました', 'success');
+    }
+    alert(message); // Show detailed result in alert
+    
   } catch (error) {
     console.error('[COMPREHENSIVE CHECK] ❌ Error:', error);
     console.error('[COMPREHENSIVE CHECK] Error message:', error.message);
@@ -732,7 +748,12 @@ async function runComprehensiveRiskCheck(address) {
       errorMessage += '\n\n' + error.message;
     }
     console.error('[COMPREHENSIVE CHECK] Error to display:', errorMessage);
-    // alert removed per user requirement - errors logged to console only
+    
+    // 🔥 CRITICAL FIX v3.153.49: Display error to user
+    if (typeof window.showMessage === 'function') {
+      window.showMessage('リスクチェックエラー: ' + (error.response?.data?.error || error.message || '不明なエラー'), 'error');
+    }
+    alert(errorMessage); // Show error in alert
   }
   
   console.log('[COMPREHENSIVE CHECK] ========================================');

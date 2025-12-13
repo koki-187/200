@@ -7,6 +7,8 @@
 
 import { Hono } from 'hono';
 import type { D1Database, KVNamespace, R2Bucket } from '@cloudflare/workers-types';
+import { ErrorLogger } from '../utils/error-logger';
+import { getEnvStatus } from '../utils/env-validator';
 
 type Bindings = {
   DB: D1Database;
@@ -28,6 +30,12 @@ const authMiddleware = async (c: any, next: any) => {
 };
 
 app.use('*', authMiddleware);
+
+// Initialize error logger for all health check routes
+app.use('*', async (c, next) => {
+  ErrorLogger.init(c.env.DB);
+  await next();
+});
 
 /**
  * 1. OCR機能チェック
@@ -412,6 +420,88 @@ app.post('/deal-list', async (c) => {
       status: 'error',
       message: `案件一覧チェック中にエラーが発生しました: ${error.message}`,
       auto_recovery_attempted: false,
+    }, 500);
+  }
+});
+
+/**
+ * 7. 環境変数チェック
+ */
+app.post('/environment', async (c) => {
+  try {
+    console.log('[Health Check] Environment variables check started');
+
+    const { env } = c;
+    const envStatus = getEnvStatus(env);
+
+    if (envStatus.valid) {
+      return c.json({
+        status: 'success',
+        message: '全ての必須環境変数が正しく設定されています',
+        details: {
+          configured: envStatus.configured,
+          warnings: envStatus.warnings,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } else {
+      return c.json({
+        status: 'error',
+        message: '必須環境変数が不足しています',
+        auto_recovery_attempted: false,
+        details: {
+          configured: envStatus.configured,
+          errors: envStatus.errors,
+          warnings: envStatus.warnings,
+        },
+      }, 500);
+    }
+  } catch (error: any) {
+    console.error('[Health Check] Environment check error:', error);
+    
+    return c.json({
+      status: 'error',
+      message: `環境変数チェック中にエラーが発生しました: ${error.message}`,
+      auto_recovery_attempted: false,
+    }, 500);
+  }
+});
+
+/**
+ * 8. エラーログレポート取得
+ */
+app.get('/error-report', async (c) => {
+  try {
+    console.log('[Health Check] Error report requested');
+
+    const stats = await ErrorLogger.getErrorStats();
+    const recentErrors = await ErrorLogger.getRecentErrors(50);
+
+    const totalErrors = stats.reduce((sum: number, s: any) => sum + parseInt(s.count || '0'), 0);
+    const totalRecovered = stats.reduce((sum: number, s: any) => sum + parseInt(s.recovered || '0'), 0);
+    const avgRecoveryRate = stats.length > 0
+      ? stats.reduce((sum: number, s: any) => sum + (parseInt(s.recovery_rate_percent || '0') / 100), 0) / stats.length
+      : 0;
+
+    return c.json({
+      status: 'success',
+      message: 'エラーレポートを取得しました',
+      summary: {
+        total_errors: totalErrors,
+        auto_recovered: totalRecovered,
+        recovery_rate: Math.round(avgRecoveryRate * 100),
+        last_7_days: true,
+      },
+      stats,
+      recent_errors: recentErrors,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    console.error('[Health Check] Error report generation failed:', error);
+    
+    return c.json({
+      status: 'error',
+      message: `エラーレポート取得中にエラーが発生しました: ${error.message}`,
     }, 500);
   }
 });

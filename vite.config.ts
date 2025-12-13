@@ -21,7 +21,25 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: 'dist'
+    outDir: 'dist',
+    // ビルドパフォーマンス最適化
+    target: 'esnext',
+    minify: 'esbuild',
+    sourcemap: false,
+    // Cloudflare Workers用: チャンク分割を無効化
+    rollupOptions: {
+      output: {
+        inlineDynamicImports: false
+      }
+    }
   },
-  publicDir: 'public'
+  publicDir: 'public',
+  // 最適化設定
+  optimizeDeps: {
+    include: ['hono', 'react', 'react-dom']
+  },
+  esbuild: {
+    target: 'esnext',
+    treeShaking: true
+  }
 })

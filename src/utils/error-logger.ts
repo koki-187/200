@@ -120,3 +120,6 @@ export class ErrorLogger {
     return `${error_type}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
   }
 }
+
+// Named export for getErrorStats
+export const getErrorStats = ErrorLogger.getErrorStats.bind(ErrorLogger);

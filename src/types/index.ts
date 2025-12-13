@@ -122,6 +122,7 @@ export interface Proposal {
 export type Bindings = {
   DB: D1Database;
   FILES_BUCKET: R2Bucket;
+  FILES_BUCKET_BACKUP: R2Bucket;
   OPENAI_API_KEY: string;
   JWT_SECRET: string;
   RESEND_API_KEY?: string;

@@ -4,6 +4,7 @@ import { authMiddleware } from '../utils/auth'
 import { nanoid } from 'nanoid'
 import { uploadToR2, getFromR2, deleteFromR2 } from '../utils/r2-helpers'
 import { validateFileUpload, sanitizeFilename } from '../utils/file-validators'
+import { uploadWithBackup, getWithFallback, deleteWithBackup } from '../utils/file-validator'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -32,14 +33,33 @@ app.post('/upload', async (c) => {
 
     // Generate unique file ID
     const fileId = nanoid()
-
-    // Upload to R2
-    const objectKey = await uploadToR2(c.env.FILES_BUCKET, fileId, file, {
-      folder,
-      dealId: dealId || undefined,
-      userId: c.get('userId'),
-      contentType: file.type
-    })
+    
+    // Generate storage key
+    const timestamp = Date.now()
+    const objectKey = `${folder}/${timestamp}-${fileId}-${sanitizedFilename}`
+    
+    // Get file data
+    const fileData = await file.arrayBuffer()
+    
+    // 🔒 バックアップシステム: 二重アップロード (メイン + バックアップ)
+    const uploadResult = await uploadWithBackup(
+      objectKey,
+      fileData,
+      c.env.FILES_BUCKET,
+      c.env.FILES_BUCKET_BACKUP,
+      file.type,
+      3 // 最大3回リトライ
+    )
+    
+    if (!uploadResult.success) {
+      console.error('[R2 Upload] バックアップアップロード失敗:', uploadResult.error)
+      return c.json({ 
+        error: 'ファイルアップロードに失敗しました',
+        details: uploadResult.error
+      }, 500)
+    }
+    
+    console.log(`[R2 Upload] ✅ 二重アップロード成功: ${objectKey} (リトライ回数: ${uploadResult.retries})`)
 
     // Save file record to database
     const db = c.env.DB
@@ -93,20 +113,41 @@ app.get('/download/:fileId', async (c) => {
       return c.json({ error: 'ファイルが見つかりません' }, 404)
     }
 
-    // Get file from R2
-    const object = await getFromR2(c.env.FILES_BUCKET, fileRecord.storage_path as string)
+    // 🔒 バックアップシステム: 自動フォールバック機能付き取得
+    const getResult = await getWithFallback(
+      fileRecord.storage_path as string,
+      c.env.FILES_BUCKET,
+      c.env.FILES_BUCKET_BACKUP
+    )
 
-    if (!object) {
-      return c.json({ error: 'ファイルが見つかりません' }, 404)
+    if (!getResult.success || !getResult.data) {
+      console.error('[R2 Download] ファイル取得失敗:', getResult.error)
+      return c.json({ 
+        error: 'ファイルが見つかりません',
+        details: getResult.error
+      }, 404)
+    }
+    
+    // バックアップから復旧した場合はログ出力
+    if (getResult.source === 'backup') {
+      console.log(`[R2 Download] ⚠️ バックアップから復旧: ${fileRecord.storage_path}`)
+      if (getResult.recovered) {
+        console.log(`[R2 Download] ✅ メインバケットに復旧完了`)
+      }
     }
 
     // Return file
     const headers = new Headers()
-    headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream')
+    headers.set('Content-Type', getResult.contentType || 'application/octet-stream')
     headers.set('Content-Disposition', `attachment; filename="${fileRecord.filename}"`)
-    headers.set('Content-Length', object.size.toString())
+    headers.set('Content-Length', getResult.data.byteLength.toString())
+    
+    // バックアップから復旧したことを示すヘッダー (デバッグ用)
+    if (getResult.source === 'backup') {
+      headers.set('X-Recovered-From-Backup', 'true')
+    }
 
-    return new Response(object.body, { headers })
+    return new Response(getResult.data, { headers })
   } catch (error) {
     console.error('Download error:', error)
     return c.json({ error: 'ダウンロードに失敗しました' }, 500)
@@ -190,8 +231,17 @@ app.delete('/permanent/:fileId', async (c) => {
       return c.json({ error: 'ファイルが見つかりません' }, 404)
     }
 
-    // Delete from R2
-    await deleteFromR2(c.env.FILES_BUCKET, fileRecord.storage_path as string)
+    // 🔒 バックアップシステム: 二重削除 (メイン + バックアップ)
+    const deleteResult = await deleteWithBackup(
+      fileRecord.storage_path as string,
+      c.env.FILES_BUCKET,
+      c.env.FILES_BUCKET_BACKUP
+    )
+    
+    if (!deleteResult.success) {
+      console.error('[R2 Delete] 二重削除失敗:', deleteResult.error)
+      // エラーでも続行（DB削除は実行）
+    }
 
     // Delete from database
     await db

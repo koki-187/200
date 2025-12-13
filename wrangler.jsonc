@@ -17,6 +17,10 @@
     {
       "binding": "FILES_BUCKET",
       "bucket_name": "real-estate-files"
+    },
+    {
+      "binding": "FILES_BUCKET_BACKUP",
+      "bucket_name": "real-estate-files-backup"
     }
   ]
 

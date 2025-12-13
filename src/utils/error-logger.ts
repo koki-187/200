@@ -7,15 +7,23 @@ import type { D1Database } from '@cloudflare/workers-types';
 
 export interface ErrorLog {
   id: string;
-  timestamp: string;
-  level: 'error' | 'warning' | 'info';
-  category: string;
-  message: string;
-  stack?: string;
-  context?: any;
   user_id?: string;
-  recovery_attempted: boolean;
-  recovery_success: boolean;
+  error_type: string;
+  error_code: string;
+  error_message: string;
+  stack_trace?: string;
+  severity: 'error' | 'warning' | 'info';
+  endpoint?: string;
+  method?: string;
+  request_data?: any;
+  context_data?: any;
+  ip_address?: string;
+  user_agent?: string;
+  environment?: string;
+  resolved?: boolean;
+  resolved_at?: string;
+  resolved_by?: string;
+  notes?: string;
 }
 
 export class ErrorLogger {
@@ -35,23 +43,29 @@ export class ErrorLogger {
     try {
       await this.db.prepare(`
         INSERT INTO error_logs (
-          id, timestamp, level, category, message, stack, context,
-          user_id, recovery_attempted, recovery_success
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          user_id, error_type, error_code, error_message, stack_trace,
+          severity, endpoint, method, request_data, context_data,
+          ip_address, user_agent, environment, resolved, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        error.id,
-        error.timestamp,
-        error.level,
-        error.category,
-        error.message,
-        error.stack || null,
-        JSON.stringify(error.context || {}),
         error.user_id || null,
-        error.recovery_attempted ? 1 : 0,
-        error.recovery_success ? 1 : 0
+        error.error_type,
+        error.error_code,
+        error.error_message,
+        error.stack_trace || null,
+        error.severity || 'error',
+        error.endpoint || null,
+        error.method || null,
+        JSON.stringify(error.request_data || {}),
+        JSON.stringify(error.context_data || {}),
+        error.ip_address || null,
+        error.user_agent || null,
+        error.environment || 'production',
+        error.resolved ? 1 : 0,
+        error.notes || null
       ).run();
       
-      console.log(`[Error Logger] 📝 Logged ${error.level}: ${error.id}`);
+      console.log(`[Error Logger] 📝 Logged ${error.severity}: ${error.error_type}`);
     } catch (err: any) {
       console.error('[Error Logger] Failed to log error:', err.message);
     }
@@ -65,7 +79,7 @@ export class ErrorLogger {
     try {
       const results = await this.db.prepare(`
         SELECT * FROM error_logs
-        ORDER BY timestamp DESC
+        ORDER BY created_at DESC
         LIMIT ?
       `).bind(limit).all();
       
@@ -84,14 +98,14 @@ export class ErrorLogger {
     try {
       const stats = await this.db.prepare(`
         SELECT 
-          category,
-          level,
+          error_type,
+          severity,
           COUNT(*) as count,
-          SUM(CASE WHEN recovery_success = 1 THEN 1 ELSE 0 END) as recovered,
-          CAST(AVG(CASE WHEN recovery_attempted = 1 THEN recovery_success ELSE NULL END) * 100 AS INTEGER) as recovery_rate_percent
+          SUM(CASE WHEN resolved = 1 THEN 1 ELSE 0 END) as resolved,
+          CAST((SUM(CASE WHEN resolved = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) AS INTEGER) as resolution_rate_percent
         FROM error_logs
-        WHERE timestamp >= datetime('now', '-7 days')
-        GROUP BY category, level
+        WHERE created_at >= datetime('now', '-7 days')
+        GROUP BY error_type, severity
         ORDER BY count DESC
       `).all();
       
@@ -102,7 +116,7 @@ export class ErrorLogger {
     }
   }
   
-  static generateId(category: string): string {
-    return `${category}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  static generateId(error_type: string): string {
+    return `${error_type}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
   }
 }

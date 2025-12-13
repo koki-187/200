@@ -5071,7 +5071,7 @@ app.get('/deals/new', (c) => {
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <!-- CRITICAL FIX v3.153.39: Load global functions BEFORE HTML -->
-  <script src="/static/global-functions-v3153-39.js"></script>
+  <script src="/static/global-functions.js"></script>
   <!-- イベント委譲パターンスクリプトは</body>直前に移動 -->
   <style>
     /* iOS Safari対応: Safe Area Insets */
@@ -11574,9 +11574,9 @@ app.get('/deals/new', (c) => {
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
   <!-- This ensures window.processMultipleOCR placeholder exists even if main script has errors -->
-  <script src="/static/ocr-init-v3153-50.js"></script>
+  <script src="/static/ocr-init.js"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
-  <script src="/static/deals-new-events-v3153-33.js"></script>
+  <script src="/static/deals-new-events.js"></script>
   
   <!-- CRITICAL FIX v3.153.31: Button event listeners setup after external scripts -->
   <script>

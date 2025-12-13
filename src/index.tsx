@@ -2140,6 +2140,11 @@ app.get('/dashboard', (c) => {
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <!-- Phase 1 Error Improvement System (v3.153.68) -->
+  <script src="/static/network-resilience.js"></script>
+  <script src="/static/memory-monitor.js"></script>
+  <script src="/static/adaptive-rate-limiter.js"></script>
+  <script src="/static/predictive-monitor.js"></script>
   <script>
     // 認証チェック
     const token = localStorage.getItem('token');
@@ -12753,6 +12758,11 @@ app.get('/', (c) => {
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <!-- Phase 1 Error Improvement System (v3.153.68) -->
+  <script src="/static/network-resilience.js"></script>
+  <script src="/static/memory-monitor.js"></script>
+  <script src="/static/adaptive-rate-limiter.js"></script>
+  <script src="/static/predictive-monitor.js"></script>
   <script>
     const loginForm = document.getElementById('login-form');
     const loginButton = document.getElementById('login-button');

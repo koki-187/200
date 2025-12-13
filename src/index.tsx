@@ -377,7 +377,7 @@ app.get('/register', (c) => {
             <label class="block text-sm font-medium text-gray-700 mb-2">
               氏名 <span class="text-red-500">*</span>
             </label>
-            <input type="text" id="name" required
+            <input type="text" id="name" autocomplete="name" required
                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                    placeholder="山田 太郎">
           </div>
@@ -385,7 +385,7 @@ app.get('/register', (c) => {
             <label class="block text-sm font-medium text-gray-700 mb-2">
               メールアドレス <span class="text-red-500">*</span>
             </label>
-            <input type="email" id="email" required
+            <input type="email" id="email" autocomplete="email" required
                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                    placeholder="yamada@example.com">
           </div>
@@ -393,7 +393,7 @@ app.get('/register', (c) => {
             <label class="block text-sm font-medium text-gray-700 mb-2">
               パスワード <span class="text-red-500">*</span>
             </label>
-            <input type="password" id="password" required
+            <input type="password" id="password" autocomplete="new-password" required
                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                    placeholder="8文字以上、大小英数字を含む">
           </div>
@@ -12686,6 +12686,7 @@ app.get('/', (c) => {
             type="email" 
             id="email" 
             name="email"
+            autocomplete="email"
             required
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-gray-50 focus:bg-white"
             placeholder="example@company.co.jp"
@@ -12701,6 +12702,7 @@ app.get('/', (c) => {
             type="password" 
             id="password" 
             name="password"
+            autocomplete="current-password"
             required
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-gray-50 focus:bg-white"
             placeholder="8文字以上のパスワード"

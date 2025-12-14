@@ -173,8 +173,9 @@ app.get('/test-property-info', async (c) => {
       }, 200);
     }
     
-    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001?from=${year}${quarter}&to=${year}${quarter}&area=${locationCodes.prefCode}`;
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001?from=${year}${quarter}&to=${year}${quarter}&area=${locationCodes.prefectureCode}`;
     console.log('[DEBUG] Calling MLIT API:', url);
+    console.log('[DEBUG] Parameters:', { from: `${year}${quarter}`, to: `${year}${quarter}`, area: locationCodes.prefectureCode });
     
     const response = await fetch(url, {
       headers: { 'Ocp-Apim-Subscription-Key': apiKey }

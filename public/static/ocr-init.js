@@ -132,7 +132,7 @@ window.processMultipleOCR = async function(files) {
   console.log('[OCR] ========================================');
   
   // Get auth token (optional - server will validate)
-  const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem('token');
   
   if (!token) {
     console.warn('[OCR] ⚠️ No auth token found in localStorage');
@@ -647,7 +647,7 @@ async function runComprehensiveRiskCheck(address) {
   console.log('[COMPREHENSIVE CHECK] Trimmed address:', trimmedAddress);
   
   try {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     if (!token) {
       console.error('[COMPREHENSIVE CHECK] No auth token');
       console.error('[COMPREHENSIVE CHECK] User should reload page and re-login');
@@ -726,7 +726,7 @@ async function autoFetchPropertyInfo(address) {
   console.log('[Auto Property Info] Address:', address);
   
   try {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     if (!token) {
       console.warn('[Auto Property Info] ⚠️ No auth token, skipping');
       return;
@@ -801,7 +801,7 @@ async function autoRunRiskCheck(address) {
   console.log('[Auto Risk Check] Address:', address);
   
   try {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     if (!token) {
       console.warn('[Auto Risk Check] ⚠️ No auth token, skipping');
       return;

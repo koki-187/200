@@ -553,26 +553,16 @@ window.processMultipleOCR = async function(files) {
         isValid: isValidAddress
       });
       
+      // 🔥 CRITICAL FIX v3.153.83: 自動実行機能を完全に無効化
+      // ユーザー報告により、この自動実行機能がエラーの原因であることが判明
+      // OCR処理後は、ユーザーが手動でボタンをクリックする方式に変更
       if (isValidAddress) {
-        console.log('[OCR] ✅ Valid location found, starting automatic processes...');
-        
-        try {
-          // Step 1: 物件情報自動取得
-          console.log('[OCR] Step 1: Fetching property info from MLIT API...');
-          await autoFetchPropertyInfo(locationValue);
-          
-          // Step 2: リスクチェック（物件情報取得後に実行）
-          console.log('[OCR] Step 2: Running comprehensive risk check...');
-          await autoRunRiskCheck(locationValue);
-          
-          console.log('[OCR] ✅ All automatic processes completed successfully');
-        } catch (autoError) {
-          console.error('[OCR] ⚠️ Automatic process error (non-critical):', autoError.message);
-          // エラーが発生してもOCR処理は成功として扱う
-        }
+        console.log('[OCR] ✅ Valid location extracted:', locationValue);
+        console.log('[OCR] ℹ️ Auto-execution DISABLED - User must manually click buttons');
+        console.log('[OCR] ℹ️ Available buttons: 物件情報補足, リスクチェック');
       } else {
-        console.warn('[OCR] ⚠️ No valid location extracted, skipping automatic processes');
-        console.warn('[OCR] User can manually use buttons if needed');
+        console.warn('[OCR] ⚠️ No valid location extracted');
+        console.warn('[OCR] ℹ️ User can enter location manually and use buttons');
       }
       
       console.log('[OCR] ========================================');
@@ -851,6 +841,6 @@ console.log('[OCR Init] 🆕 VERSION: v3.153.34 (2025-12-10) - CRITICAL: height_
 console.log('[OCR Init] ✅ window.processMultipleOCR function created (complete with PDF support)');
 console.log('[OCR Init] ✅ window.runComprehensiveRiskCheck function created');
 console.log('[OCR Init] ✅ PDF.js preload initiated for iOS Safari');
-console.log('[OCR Init] ⚠️ NO AUTOMATIC RISK CHECK - User must click button manually');
+console.log('[OCR Init] ⚠️ v3.153.83: AUTO-EXECUTION DISABLED - User must manually click buttons for property info and risk check');
 console.log('[OCR Init] window.ocrInitLoaded = true');
 console.log('[OCR Init] ========================================');

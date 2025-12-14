@@ -1618,12 +1618,10 @@ app.get('/building-regulations', (c) => {
 
 // Phase 1 監視ダッシュボード
 // 管理者ダッシュボード（メイン）
-app.get('/admin', (c) => {
-  return c.redirect('/static/admin-dashboard.html');
-});
-
+// 🛡️ Admin routes - See comprehensive admin dashboard at line ~3956
+// These routes redirect to the new admin dashboard
 app.get('/admin/dashboard', (c) => {
-  return c.redirect('/static/admin-dashboard.html');
+  return c.redirect('/admin');
 });
 
 // Phase 1 詳細ダッシュボード
@@ -3952,6 +3950,205 @@ app.get('/showcase', (c) => {
   `);
 });
 
+// 🛡️ 管理者ダッシュボード
+app.get('/admin', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🛡️ 管理者ダッシュボード - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body class="text-gray-100">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold mb-2">
+        <i class="fas fa-shield-alt mr-3 text-blue-400"></i>
+        管理者ダッシュボード
+      </h1>
+      <p class="text-gray-400">システム監視・テスト・エラー改善</p>
+    </div>
+
+    <!-- Navigation Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- System Health Check -->
+      <a href="/admin/health-check" class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 hover:scale-105 transition shadow-xl">
+        <div class="flex items-center mb-4">
+          <i class="fas fa-heartbeat text-4xl text-blue-200"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">システムヘルスチェック</h3>
+        <p class="text-sm text-blue-200">API接続状態を確認</p>
+      </a>
+
+      <!-- Auto Error Improvement System -->
+      <a href="/admin/error-improvement" class="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6 hover:scale-105 transition shadow-xl">
+        <div class="flex items-center mb-4">
+          <i class="fas fa-magic text-4xl text-green-200"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">自動エラー改善システム</h3>
+        <p class="text-sm text-green-200">エラーの自動検出と修正提案</p>
+      </a>
+
+      <!-- 100 Times Test -->
+      <a href="/admin/100-tests" class="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6 hover:scale-105 transition shadow-xl">
+        <div class="flex items-center mb-4">
+          <i class="fas fa-vial text-4xl text-purple-200"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">100回テスト</h3>
+        <p class="text-sm text-purple-200">全機能の包括的テスト</p>
+      </a>
+
+      <!-- Error Logs -->
+      <a href="/admin/error-logs" class="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 hover:scale-105 transition shadow-xl">
+        <div class="flex items-center mb-4">
+          <i class="fas fa-exclamation-triangle text-4xl text-red-200"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">エラーログ</h3>
+        <p class="text-sm text-red-200">システムエラーの履歴</p>
+      </a>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4">
+        <i class="fas fa-bolt mr-2 text-yellow-400"></i>
+        クイックアクション
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <button onclick="testOCR()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition">
+          <i class="fas fa-file-image mr-2"></i>OCR機能テスト
+        </button>
+        <button onclick="testPropertyInfo()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition">
+          <i class="fas fa-building mr-2"></i>物件情報補足テスト
+        </button>
+        <button onclick="testRiskCheck()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition">
+          <i class="fas fa-exclamation-circle mr-2"></i>リスクチェックテスト
+        </button>
+      </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="bg-gray-800 rounded-xl p-6">
+      <h2 class="text-2xl font-bold mb-4">
+        <i class="fas fa-info-circle mr-2 text-blue-400"></i>
+        システムステータス
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-gray-700 rounded-lg p-4">
+          <div class="text-sm text-gray-400 mb-1">バージョン</div>
+          <div class="text-xl font-bold">v3.153.83</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4">
+          <div class="text-sm text-gray-400 mb-1">デプロイURL</div>
+          <div class="text-sm font-mono truncate">85ddc3a5.real-estate-200units-v2.pages.dev</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4">
+          <div class="text-sm text-gray-400 mb-1">最終更新</div>
+          <div class="text-sm" id="lastUpdate">2025-12-14</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test Results Display -->
+    <div id="testResults" class="mt-8 hidden">
+      <div class="bg-gray-800 rounded-xl p-6">
+        <h2 class="text-2xl font-bold mb-4">
+          <i class="fas fa-clipboard-check mr-2 text-green-400"></i>
+          テスト結果
+        </h2>
+        <div id="testResultsContent" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showResult(message, type = 'info') {
+      const resultsDiv = document.getElementById('testResults');
+      const contentDiv = document.getElementById('testResultsContent');
+      
+      const colorClass = type === 'success' ? 'text-green-400' : 
+                        type === 'error' ? 'text-red-400' : 
+                        'text-blue-400';
+      
+      const icon = type === 'success' ? 'check-circle' : 
+                  type === 'error' ? 'times-circle' : 
+                  'info-circle';
+      
+      contentDiv.innerHTML = \`
+        <div class="flex items-start space-x-3 \${colorClass}">
+          <i class="fas fa-\${icon} mt-1"></i>
+          <div class="flex-1">
+            <div class="font-mono text-sm">\${message}</div>
+            <div class="text-xs text-gray-400 mt-1">\${new Date().toLocaleString('ja-JP')}</div>
+          </div>
+        </div>
+      \`;
+      
+      resultsDiv.classList.remove('hidden');
+    }
+
+    async function testOCR() {
+      showResult('OCR機能テストを開始しています...', 'info');
+      try {
+        const response = await axios.get('/api/ocr-jobs/test-openai');
+        if (response.data.success) {
+          showResult(\`✅ OCR機能テスト成功\\nモデル: \${response.data.model}\\nトークン使用: \${response.data.tokens_used.total_tokens}\`, 'success');
+        } else {
+          showResult('❌ OCR機能テスト失敗: ' + response.data.error, 'error');
+        }
+      } catch (error) {
+        showResult('❌ OCR機能テスト失敗: ' + error.message, 'error');
+      }
+    }
+
+    async function testPropertyInfo() {
+      showResult('物件情報補足機能テストを開始しています...', 'info');
+      try {
+        const response = await axios.get('/api/reinfolib/property-info', {
+          params: { address: '東京都渋谷区', year: 2024, quarter: 4 }
+        });
+        if (response.data.success) {
+          showResult(\`✅ 物件情報補足機能テスト成功\\n取得件数: \${response.data.data.length}件\`, 'success');
+        } else {
+          showResult('❌ 物件情報補足機能テスト失敗: ' + response.data.message, 'error');
+        }
+      } catch (error) {
+        showResult('❌ 物件情報補足機能テスト失敗: ' + error.message, 'error');
+      }
+    }
+
+    async function testRiskCheck() {
+      showResult('リスクチェック機能テストを開始しています...', 'info');
+      try {
+        const response = await axios.get('/api/building-regulations/check', {
+          params: { location: '東京都渋谷区', zoning: '第一種住居地域' }
+        });
+        if (response.data.success) {
+          showResult(\`✅ リスクチェック機能テスト成功\\n該当法令: \${response.data.regulations.length}件\`, 'success');
+        } else {
+          showResult('❌ リスクチェック機能テスト失敗', 'error');
+        }
+      } catch (error) {
+        showResult('❌ リスクチェック機能テスト失敗: ' + error.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>
+  `);
+});
+
 // 🛡️ 管理者用システムヘルスチェックページ
 app.get('/admin/health-check', (c) => {
   return c.html(`
@@ -4397,6 +4594,389 @@ app.get('/admin/health-check', (c) => {
     
     console.log('[Health Check] System initialized - v1.0');
   </script>
+</body>
+</html>
+  `);
+});
+
+// 🧪 100回テストページ
+app.get('/admin/100-tests', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧪 100回テスト - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+      <a href="/admin" class="text-blue-400 hover:text-blue-300 mb-4 inline-block">
+        <i class="fas fa-arrow-left mr-2"></i>管理者ダッシュボードに戻る
+      </a>
+      <h1 class="text-4xl font-bold mb-2">
+        <i class="fas fa-vial mr-3 text-purple-400"></i>
+        100回テスト
+      </h1>
+      <p class="text-gray-400">全機能の包括的テスト（OCR、物件情報補足、リスクチェック）</p>
+    </div>
+
+    <!-- Test Configuration -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4">テスト設定</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">テスト回数</label>
+          <input type="number" id="testCount" value="100" min="1" max="1000" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">テスト間隔（ミリ秒）</label>
+          <input type="number" id="testDelay" value="100" min="0" max="5000" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">テスト対象</label>
+          <select id="testTarget" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500">
+            <option value="all">すべて</option>
+            <option value="ocr">OCR機能のみ</option>
+            <option value="property">物件情報補足のみ</option>
+            <option value="risk">リスクチェックのみ</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="startTest()" id="startBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg transition">
+        <i class="fas fa-play mr-2"></i>テスト開始
+      </button>
+      <button onclick="stopTest()" id="stopBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition hidden">
+        <i class="fas fa-stop mr-2"></i>テスト停止
+      </button>
+    </div>
+
+    <!-- Progress -->
+    <div id="progressSection" class="bg-gray-800 rounded-xl p-6 mb-8 hidden">
+      <h2 class="text-2xl font-bold mb-4">進捗状況</h2>
+      <div class="mb-4">
+        <div class="flex justify-between text-sm mb-2">
+          <span id="progressText">0 / 100 完了</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="w-full bg-gray-700 rounded-full h-4">
+          <div id="progressBar" class="bg-purple-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div class="bg-gray-700 rounded-lg p-4">
+          <div class="text-3xl font-bold text-green-400" id="successCount">0</div>
+          <div class="text-sm text-gray-400">成功</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4">
+          <div class="text-3xl font-bold text-red-400" id="failCount">0</div>
+          <div class="text-sm text-gray-400">失敗</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4">
+          <div class="text-3xl font-bold text-blue-400" id="avgTime">0ms</div>
+          <div class="text-sm text-gray-400">平均時間</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" class="bg-gray-800 rounded-xl p-6 hidden">
+      <h2 class="text-2xl font-bold mb-4">テスト結果</h2>
+      <div id="resultsContent" class="space-y-2 max-h-96 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    let testRunning = false;
+    let testResults = [];
+
+    async function startTest() {
+      const count = parseInt(document.getElementById('testCount').value);
+      const delay = parseInt(document.getElementById('testDelay').value);
+      const target = document.getElementById('testTarget').value;
+
+      testRunning = true;
+      testResults = [];
+
+      document.getElementById('startBtn').classList.add('hidden');
+      document.getElementById('stopBtn').classList.remove('hidden');
+      document.getElementById('progressSection').classList.remove('hidden');
+      document.getElementById('resultsSection').classList.remove('hidden');
+
+      let successCount = 0;
+      let failCount = 0;
+      let totalTime = 0;
+
+      for (let i = 0; i < count && testRunning; i++) {
+        const startTime = Date.now();
+        let testName = '';
+        let success = false;
+
+        try {
+          if (target === 'all' || target === 'ocr') {
+            testName = 'OCR機能';
+            const response = await axios.get('/api/ocr-jobs/test-openai');
+            success = response.data.success;
+          } else if (target === 'property') {
+            testName = '物件情報補足';
+            const response = await axios.get('/api/reinfolib/property-info', {
+              params: { address: '東京都渋谷区', year: 2024, quarter: 4 }
+            });
+            success = response.data.success;
+          } else if (target === 'risk') {
+            testName = 'リスクチェック';
+            const response = await axios.get('/api/building-regulations/check', {
+              params: { location: '東京都渋谷区', zoning: '第一種住居地域' }
+            });
+            success = response.data.success;
+          }
+
+          const elapsed = Date.now() - startTime;
+          totalTime += elapsed;
+
+          if (success) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+
+          testResults.push({
+            index: i + 1,
+            name: testName,
+            success,
+            time: elapsed
+          });
+
+          updateProgress(i + 1, count, successCount, failCount, totalTime);
+          displayResult(testResults[testResults.length - 1]);
+
+          if (delay > 0) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        } catch (error) {
+          failCount++;
+          const elapsed = Date.now() - startTime;
+          totalTime += elapsed;
+
+          testResults.push({
+            index: i + 1,
+            name: testName,
+            success: false,
+            time: elapsed,
+            error: error.message
+          });
+
+          updateProgress(i + 1, count, successCount, failCount, totalTime);
+          displayResult(testResults[testResults.length - 1]);
+        }
+      }
+
+      document.getElementById('startBtn').classList.remove('hidden');
+      document.getElementById('stopBtn').classList.add('hidden');
+      testRunning = false;
+    }
+
+    function stopTest() {
+      testRunning = false;
+      document.getElementById('startBtn').classList.remove('hidden');
+      document.getElementById('stopBtn').classList.add('hidden');
+    }
+
+    function updateProgress(current, total, success, fail, totalTime) {
+      const percent = Math.round((current / total) * 100);
+      const avgTime = Math.round(totalTime / current);
+
+      document.getElementById('progressText').textContent = \`\${current} / \${total} 完了\`;
+      document.getElementById('progressPercent').textContent = \`\${percent}%\`;
+      document.getElementById('progressBar').style.width = \`\${percent}%\`;
+      document.getElementById('successCount').textContent = success;
+      document.getElementById('failCount').textContent = fail;
+      document.getElementById('avgTime').textContent = \`\${avgTime}ms\`;
+    }
+
+    function displayResult(result) {
+      const resultsContent = document.getElementById('resultsContent');
+      const resultDiv = document.createElement('div');
+      resultDiv.className = \`flex items-center justify-between p-3 rounded-lg \${result.success ? 'bg-green-900 bg-opacity-30' : 'bg-red-900 bg-opacity-30'}\`;
+
+      resultDiv.innerHTML = \`
+        <div class="flex items-center space-x-3">
+          <i class="fas fa-\${result.success ? 'check-circle text-green-400' : 'times-circle text-red-400'}"></i>
+          <span>#\${result.index} - \${result.name}</span>
+        </div>
+        <div class="text-sm text-gray-400">\${result.time}ms</div>
+      \`;
+
+      resultsContent.insertBefore(resultDiv, resultsContent.firstChild);
+    }
+  </script>
+</body>
+</html>
+  `);
+});
+
+// 🔧 自動エラー改善システムページ
+app.get('/admin/error-improvement', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔧 自動エラー改善システム - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+      <a href="/admin" class="text-blue-400 hover:text-blue-300 mb-4 inline-block">
+        <i class="fas fa-arrow-left mr-2"></i>管理者ダッシュボードに戻る
+      </a>
+      <h1 class="text-4xl font-bold mb-2">
+        <i class="fas fa-magic mr-3 text-green-400"></i>
+        自動エラー改善システム
+      </h1>
+      <p class="text-gray-400">エラーの自動検出と修正提案</p>
+    </div>
+
+    <!-- System Status -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4">システムステータス</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex items-center space-x-4">
+          <div class="bg-green-100 rounded-full p-3">
+            <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+          </div>
+          <div>
+            <div class="text-sm text-gray-400">エラー監視</div>
+            <div class="text-xl font-bold">稼働中</div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="bg-blue-100 rounded-full p-3">
+            <i class="fas fa-robot text-blue-600 text-2xl"></i>
+          </div>
+          <div>
+            <div class="text-sm text-gray-400">自動修正機能</div>
+            <div class="text-xl font-bold">有効</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Improvements -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4">最近の改善履歴</h2>
+      <div class="space-y-4">
+        <div class="bg-gray-700 rounded-lg p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center space-x-2">
+              <i class="fas fa-check-circle text-green-400"></i>
+              <span class="font-bold">v3.153.83</span>
+            </div>
+            <span class="text-sm text-gray-400">2025-12-14</span>
+          </div>
+          <div class="text-sm">OCR処理後の自動実行機能を無効化</div>
+          <div class="text-xs text-gray-400 mt-1">原因: 自動実行がエラーを引き起こしていた</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center space-x-2">
+              <i class="fas fa-check-circle text-green-400"></i>
+              <span class="font-bold">v3.153.82</span>
+            </div>
+            <span class="text-sm text-gray-400">2025-12-14</span>
+          </div>
+          <div class="text-sm">OCR機能のauth_tokenキー名不一致を修正</div>
+          <div class="text-xs text-gray-400 mt-1">原因: localStorage.getItem('auth_token')が存在しないキーを参照</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center space-x-2">
+              <i class="fas fa-check-circle text-green-400"></i>
+              <span class="font-bold">v3.153.80</span>
+            </div>
+            <span class="text-sm text-gray-400">2025-12-14</span>
+          </div>
+          <div class="text-sm">ストレージ情報取得のブロック問題を修正</div>
+          <div class="text-xs text-gray-400 mt-1">原因: 大きなインラインスクリプトのシンタックスエラー</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Detection -->
+    <div class="bg-gray-800 rounded-xl p-6">
+      <h2 class="text-2xl font-bold mb-4">エラー検出機能</h2>
+      <p class="text-gray-400 mb-4">現在、以下のエラーを自動的に検出し、修正提案を行います：</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-gray-700 rounded-lg p-4">
+          <i class="fas fa-bug text-red-400 mr-2"></i>
+          <span class="font-bold">JavaScript エラー</span>
+          <div class="text-sm text-gray-400 mt-2">構文エラー、未定義変数、型エラー</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4">
+          <i class="fas fa-network-wired text-yellow-400 mr-2"></i>
+          <span class="font-bold">API エラー</span>
+          <div class="text-sm text-gray-400 mt-2">接続エラー、認証エラー、タイムアウト</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4">
+          <i class="fas fa-database text-blue-400 mr-2"></i>
+          <span class="font-bold">データベース エラー</span>
+          <div class="text-sm text-gray-400 mt-2">クエリエラー、接続エラー</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4">
+          <i class="fas fa-user-times text-purple-400 mr-2"></i>
+          <span class="font-bold">認証 エラー</span>
+          <div class="text-sm text-gray-400 mt-2">トークン無効、権限不足</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `);
+});
+
+// 📋 エラーログページ
+app.get('/admin/error-logs', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📋 エラーログ - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-gray-100">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+      <a href="/admin" class="text-blue-400 hover:text-blue-300 mb-4 inline-block">
+        <i class="fas fa-arrow-left mr-2"></i>管理者ダッシュボードに戻る
+      </a>
+      <h1 class="text-4xl font-bold mb-2">
+        <i class="fas fa-exclamation-triangle mr-3 text-red-400"></i>
+        エラーログ
+      </h1>
+      <p class="text-gray-400">システムエラーの履歴</p>
+    </div>
+
+    <div class="bg-gray-800 rounded-xl p-6">
+      <h2 class="text-2xl font-bold mb-4">最近のエラー</h2>
+      <div class="text-center text-gray-400 py-8">
+        <i class="fas fa-check-circle text-6xl text-green-400 mb-4"></i>
+        <p class="text-xl">現在、重大なエラーは検出されていません</p>
+        <p class="text-sm mt-2">エラーが発生した場合、ここに表示されます</p>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
   `);

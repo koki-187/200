@@ -149,8 +149,12 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
     const token = localStorage.getItem('token');
     if (!token) {
       console.error('[COMPREHENSIVE CHECK] ❌ No token');
+      // CRITICAL FIX v3.153.81: Show user-visible error message
+      alert('ログインが必要です。\n\nこの機能を使用するには、先にログインしてください。\n\n「OK」をクリックするとログインページに移動します。');
       btn.disabled = false;
       btn.innerHTML = originalHTML;
+      // Redirect to login page
+      window.location.href = '/login';
       return;
     }
     

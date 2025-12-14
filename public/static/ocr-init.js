@@ -608,22 +608,20 @@ window.processMultipleOCR = async function(files) {
     } else if (!error.response) {
       errorMessage = 'サーバーに接続できませんでした。\n\nインターネット接続を確認してください。';
     } else if (error.response?.status === 401) {
-      errorMessage = '認証トークンが無効です。\n\nページを再読み込みしてログインし直してください。';
+      errorMessage = 'ログインが必要です。\n\nこの機能を使用するには、先にログインしてください。\n\n「OK」をクリックするとログインページに移動します。';
     } else if (error.response?.status === 400) {
       errorMessage = 'リクエストエラー: ' + (error.response?.data?.error || 'ファイル形式またはサイズを確認してください');
     } else if (error.response?.status >= 500) {
       errorMessage = 'サーバーエラーが発生しました。\n\n時間をおいて再度お試しください。';
     }
     
-    // iOS specific error alert
-    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-    if (isIOS) {
-      console.error('[OCR] ❌ OCR processing error (iOS):', errorMessage);
-      console.error('[OCR] If problem persists on iOS, try desktop version');
-      // alert removed per user requirement - errors logged to console only
-    } else {
-      console.error('[OCR] ❌ OCR processing error:', errorMessage);
-      // alert removed per user requirement - errors logged to console only
+    // CRITICAL FIX v3.153.81: Always show error messages to user
+    console.error('[OCR] ❌ OCR processing error:', errorMessage);
+    alert(errorMessage);
+    
+    // Redirect to login for 401 errors
+    if (error.response?.status === 401) {
+      window.location.href = '/login';
     }
   }
 };

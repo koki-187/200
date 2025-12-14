@@ -9505,25 +9505,61 @@ app.get('/deals/new', (c) => {
       console.log('[Init] storageText element:', storageText ? 'found' : 'NOT found');
       console.log('[Init] token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL');
       
+      // CRITICAL FIX v3.153.79: Force storage info to complete or hide within 3 seconds
       if (storageText) {
-        console.log('[Init] Calling loadStorageQuota() immediately');
-        loadStorageQuota();
+        console.log('[Init] Calling loadStorageQuota() with 3-second safety timeout');
+        
+        // Set a safety timeout to hide storage info if it takes too long
+        const storageDisplay = document.getElementById('storage-quota-display');
+        const safetyTimeout = setTimeout(() => {
+          console.warn('[Init] ⚠️ Storage quota load exceeded 3 seconds - hiding display');
+          if (storageDisplay) {
+            storageDisplay.style.display = 'none';
+          }
+        }, 3000);
+        
+        // Call loadStorageQuota and clear timeout if it completes
+        loadStorageQuota().then(() => {
+          clearTimeout(safetyTimeout);
+          console.log('[Init] ✅ loadStorageQuota completed successfully');
+        }).catch((err) => {
+          clearTimeout(safetyTimeout);
+          console.error('[Init] ❌ loadStorageQuota failed:', err);
+          if (storageDisplay) {
+            storageDisplay.style.display = 'none';
+          }
+        });
       } else {
         console.warn('[Init] storageText NOT found, will retry in 500ms');
         // DOM要素がまだ存在しない場合は再試行
         setTimeout(() => {
           const storageTextRetry = document.getElementById('storage-usage-text');
+          const storageDisplay = document.getElementById('storage-quota-display');
           console.log('[Init] Retry: storageText element:', storageTextRetry ? 'found' : 'STILL NOT found');
           if (storageTextRetry) {
-            console.log('[Init] Calling loadStorageQuota() after retry');
-            loadStorageQuota();
+            console.log('[Init] Calling loadStorageQuota() after retry with 3-second safety timeout');
+            
+            const safetyTimeout = setTimeout(() => {
+              console.warn('[Init] ⚠️ Storage quota load (retry) exceeded 3 seconds - hiding display');
+              if (storageDisplay) {
+                storageDisplay.style.display = 'none';
+              }
+            }, 3000);
+            
+            loadStorageQuota().then(() => {
+              clearTimeout(safetyTimeout);
+              console.log('[Init] ✅ loadStorageQuota (retry) completed successfully');
+            }).catch((err) => {
+              clearTimeout(safetyTimeout);
+              console.error('[Init] ❌ loadStorageQuota (retry) failed:', err);
+              if (storageDisplay) {
+                storageDisplay.style.display = 'none';
+              }
+            });
           } else {
-            console.error('[Init] CRITICAL: storageText element never found!');
-            // 強制的にエラー表示
-            const storageDisplay = document.getElementById('storage-quota-display');
+            console.error('[Init] CRITICAL: storageText element never found - hiding storage display');
             if (storageDisplay) {
-              storageDisplay.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i><span>要素エラー</span>';
-              storageDisplay.className = 'text-sm bg-red-50 text-red-700 px-3 py-1 rounded-full font-medium border border-red-200';
+              storageDisplay.style.display = 'none';
             }
           }
         }, 500);
@@ -11576,6 +11612,10 @@ app.get('/deals/new', (c) => {
   <script src="/static/ocr-init.js"></script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
   <script src="/static/deals-new-events.js"></script>
+  
+  <!-- CRITICAL FIX v3.153.80: Load page initialization from separate file to ensure execution -->
+  <!-- This includes storage quota loading and page initialization logic -->
+  <script src="/static/page-init.js"></script>
   
   <!-- CRITICAL FIX v3.153.77: Load button listeners from separate file to avoid scope issues -->
   <script src="/static/button-listeners.js"></script>

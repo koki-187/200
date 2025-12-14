@@ -173,9 +173,10 @@ app.get('/test-property-info', async (c) => {
       }, 200);
     }
     
-    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001?from=${year}${quarter}&to=${year}${quarter}&area=${locationCodes.prefectureCode}`;
+    // MLIT API正しいパラメータ形式: year=2024&quarter=3&area=13&city=13101
+    const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001?year=${year}&quarter=${quarter}&area=${locationCodes.prefectureCode}&city=${locationCodes.cityCode}&priceClassification=01&language=ja`;
     console.log('[DEBUG] Calling MLIT API:', url);
-    console.log('[DEBUG] Parameters:', { from: `${year}${quarter}`, to: `${year}${quarter}`, area: locationCodes.prefectureCode });
+    console.log('[DEBUG] Parameters:', { year, quarter, area: locationCodes.prefectureCode, city: locationCodes.cityCode });
     
     const response = await fetch(url, {
       headers: { 'Ocp-Apim-Subscription-Key': apiKey }

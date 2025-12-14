@@ -1616,6 +1616,11 @@ app.get('/building-regulations', (c) => {
   `);
 });
 
+// Phase 1 監視ダッシュボード
+app.get('/admin/phase1-dashboard', (c) => {
+  return c.redirect('/static/phase1-dashboard.html');
+});
+
 // ダッシュボードページ
 app.get('/dashboard', (c) => {
   return c.html(`

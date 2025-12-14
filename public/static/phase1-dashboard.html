@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 1 監視ダッシュボード - 200棟土地仕入れ管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      min-height: 100vh;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .metric-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+    .status-ok {
+      color: #10b981;
+    }
+    .status-warning {
+      color: #f59e0b;
+    }
+    .status-error {
+      color: #ef4444;
+    }
+    .refresh-btn {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <!-- ヘッダー -->
+  <div class="max-w-7xl mx-auto mb-8">
+    <div class="card p-6">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-chart-line text-blue-600 mr-2"></i>
+            Phase 1 監視ダッシュボード
+          </h1>
+          <p class="text-gray-600">自動エラー改善システムのリアルタイム状態監視</p>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="refreshAll()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition shadow-lg refresh-btn">
+            <i class="fas fa-sync-alt mr-2"></i>
+            更新
+          </button>
+          <a href="/dashboard" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition shadow-lg">
+            <i class="fas fa-arrow-left mr-2"></i>
+            戻る
+          </a>
+        </div>
+      </div>
+      <div class="mt-4 text-sm text-gray-500">
+        最終更新: <span id="last-update">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- メトリクスカード -->
+  <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- ネットワーク分断対策 -->
+    <div class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-700">
+          <i class="fas fa-network-wired text-blue-600 mr-2"></i>
+          ネットワーク
+        </h3>
+        <span id="network-status" class="text-2xl">
+          <i class="fas fa-circle status-ok"></i>
+        </span>
+      </div>
+      <div class="metric-value text-gray-900" id="network-queue">0</div>
+      <p class="text-gray-600 text-sm">保留中リクエスト</p>
+      <div class="mt-4 text-xs text-gray-500">
+        オンライン状態: <span id="network-online" class="font-semibold">確認中...</span>
+      </div>
+    </div>
+
+    <!-- メモリ監視 -->
+    <div class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-700">
+          <i class="fas fa-memory text-green-600 mr-2"></i>
+          メモリ
+        </h3>
+        <span id="memory-status" class="text-2xl">
+          <i class="fas fa-circle status-ok"></i>
+        </span>
+      </div>
+      <div class="metric-value text-gray-900" id="memory-usage">0%</div>
+      <p class="text-gray-600 text-sm">使用率</p>
+      <div class="mt-4 text-xs text-gray-500">
+        使用量: <span id="memory-used" class="font-semibold">-- MB</span> / 
+        <span id="memory-limit" class="font-semibold">-- MB</span>
+      </div>
+    </div>
+
+    <!-- レート制限 -->
+    <div class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-700">
+          <i class="fas fa-gauge text-yellow-600 mr-2"></i>
+          レート制限
+        </h3>
+        <span id="rate-status" class="text-2xl">
+          <i class="fas fa-circle status-ok"></i>
+        </span>
+      </div>
+      <div class="metric-value text-gray-900" id="rate-remaining">100</div>
+      <p class="text-gray-600 text-sm">残りリクエスト</p>
+      <div class="mt-4 text-xs text-gray-500">
+        ブロック数: <span id="rate-blocked" class="font-semibold">0</span>
+      </div>
+    </div>
+
+    <!-- 予防的監視 -->
+    <div class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-700">
+          <i class="fas fa-shield-alt text-purple-600 mr-2"></i>
+          予防監視
+        </h3>
+        <span id="predict-status" class="text-2xl">
+          <i class="fas fa-circle status-ok"></i>
+        </span>
+      </div>
+      <div class="metric-value text-gray-900" id="predict-risk">LOW</div>
+      <p class="text-gray-600 text-sm">リスクレベル</p>
+      <div class="mt-4 text-xs text-gray-500">
+        アラート数: <span id="predict-alerts" class="font-semibold">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 詳細情報セクション -->
+  <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- ネットワーク詳細 -->
+    <div class="card p-6">
+      <h3 class="text-xl font-bold text-gray-900 mb-4">
+        <i class="fas fa-network-wired text-blue-600 mr-2"></i>
+        ネットワーク分断対策
+      </h3>
+      <div class="space-y-3">
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">キュー件数</span>
+          <span id="network-queue-detail" class="font-semibold">0</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">処理中</span>
+          <span id="network-processing" class="font-semibold">いいえ</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">接続状態</span>
+          <span id="network-online-detail" class="font-semibold">オンライン</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- メモリ詳細 -->
+    <div class="card p-6">
+      <h3 class="text-xl font-bold text-gray-900 mb-4">
+        <i class="fas fa-memory text-green-600 mr-2"></i>
+        メモリ監視
+      </h3>
+      <div class="space-y-3">
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">監視状態</span>
+          <span id="memory-monitoring" class="font-semibold">アクティブ</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">DOM要素数</span>
+          <span id="memory-dom-nodes" class="font-semibold">--</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">測定回数</span>
+          <span id="memory-measurements" class="font-semibold">--</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">リーク検出</span>
+          <span id="memory-leak-detected" class="font-semibold text-green-600">なし</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- レート制限詳細 -->
+    <div class="card p-6">
+      <h3 class="text-xl font-bold text-gray-900 mb-4">
+        <i class="fas fa-gauge text-yellow-600 mr-2"></i>
+        適応的レート制限
+      </h3>
+      <div class="space-y-3">
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">現在の制限</span>
+          <span id="rate-limit" class="font-semibold">100</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">総リクエスト数</span>
+          <span id="rate-total-requests" class="font-semibold">0</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">ブロック数</span>
+          <span id="rate-blocked-detail" class="font-semibold">0</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">平均レイテンシ</span>
+          <span id="rate-latency" class="font-semibold">-- ms</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 予防的監視詳細 -->
+    <div class="card p-6">
+      <h3 class="text-xl font-bold text-gray-900 mb-4">
+        <i class="fas fa-shield-alt text-purple-600 mr-2"></i>
+        予防的監視システム
+      </h3>
+      <div class="space-y-3">
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">エラー率増加</span>
+          <span id="predict-error-rate" class="font-semibold text-green-600">いいえ</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">レイテンシ増加</span>
+          <span id="predict-latency" class="font-semibold text-green-600">いいえ</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">メモリ圧力</span>
+          <span id="predict-memory" class="font-semibold text-green-600">いいえ</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">ネットワーク不安定</span>
+          <span id="predict-network" class="font-semibold text-green-600">いいえ</span>
+        </div>
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-gray-600">最近のエラー</span>
+          <span id="predict-errors" class="font-semibold">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- アラート履歴 -->
+  <div class="max-w-7xl mx-auto mt-6">
+    <div class="card p-6">
+      <h3 class="text-xl font-bold text-gray-900 mb-4">
+        <i class="fas fa-bell text-red-600 mr-2"></i>
+        アラート履歴
+      </h3>
+      <div id="alerts-list" class="space-y-2">
+        <p class="text-gray-500 text-center py-4">アラートはありません</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script src="/static/network-resilience.js"></script>
+  <script src="/static/memory-monitor.js"></script>
+  <script src="/static/adaptive-rate-limiter.js"></script>
+  <script src="/static/predictive-monitor.js"></script>
+
+  <script>
+    function updateNetworkStatus() {
+      try {
+        const status = window.networkResilience.getQueueStatus();
+        status.then(data => {
+          document.getElementById('network-queue').textContent = data.count;
+          document.getElementById('network-queue-detail').textContent = data.count;
+          document.getElementById('network-online').textContent = navigator.onLine ? 'オンライン' : 'オフライン';
+          document.getElementById('network-online-detail').textContent = navigator.onLine ? 'オンライン' : 'オフライン';
+          document.getElementById('network-processing').textContent = window.networkResilience.processingQueue ? 'はい' : 'いいえ';
+          
+          const statusIcon = document.getElementById('network-status');
+          if (data.count === 0 && navigator.onLine) {
+            statusIcon.innerHTML = '<i class="fas fa-circle status-ok"></i>';
+          } else if (!navigator.onLine) {
+            statusIcon.innerHTML = '<i class="fas fa-circle status-error"></i>';
+          } else {
+            statusIcon.innerHTML = '<i class="fas fa-circle status-warning"></i>';
+          }
+        });
+      } catch (error) {
+        console.error('Network status error:', error);
+      }
+    }
+
+    function updateMemoryStatus() {
+      try {
+        const status = window.memoryMonitor.getStatus();
+        
+        if (status.memory) {
+          document.getElementById('memory-usage').textContent = status.memory.usagePercent + '%';
+          document.getElementById('memory-used').textContent = status.memory.usedMB;
+          document.getElementById('memory-limit').textContent = status.memory.limitMB;
+        } else {
+          document.getElementById('memory-usage').textContent = 'N/A';
+        }
+        
+        document.getElementById('memory-monitoring').textContent = status.isMonitoring ? 'アクティブ' : '停止';
+        document.getElementById('memory-dom-nodes').textContent = status.domNodes || '--';
+        document.getElementById('memory-measurements').textContent = status.measurementCount || '--';
+        document.getElementById('memory-leak-detected').textContent = status.leakDetected ? 'あり' : 'なし';
+        
+        if (status.leakDetected) {
+          document.getElementById('memory-leak-detected').className = 'font-semibold text-red-600';
+        } else {
+          document.getElementById('memory-leak-detected').className = 'font-semibold text-green-600';
+        }
+        
+        const statusIcon = document.getElementById('memory-status');
+        const usage = parseFloat(status.memory?.usagePercent || 0);
+        if (usage < 70) {
+          statusIcon.innerHTML = '<i class="fas fa-circle status-ok"></i>';
+        } else if (usage < 85) {
+          statusIcon.innerHTML = '<i class="fas fa-circle status-warning"></i>';
+        } else {
+          statusIcon.innerHTML = '<i class="fas fa-circle status-error"></i>';
+        }
+      } catch (error) {
+        console.error('Memory status error:', error);
+      }
+    }
+
+    function updateRateLimitStatus() {
+      try {
+        const status = window.adaptiveRateLimiter.getStatus();
+        
+        document.getElementById('rate-remaining').textContent = status.remaining || 0;
+        document.getElementById('rate-blocked').textContent = status.blocked || 0;
+        document.getElementById('rate-limit').textContent = status.currentLimit || 100;
+        document.getElementById('rate-total-requests').textContent = status.totalRequests || 0;
+        document.getElementById('rate-blocked-detail').textContent = status.blocked || 0;
+        document.getElementById('rate-latency').textContent = 
+          status.globalStats?.averageLatency ? status.globalStats.averageLatency.toFixed(0) : '--';
+        
+        const statusIcon = document.getElementById('rate-status');
+        const remaining = status.remaining || 100;
+        if (remaining > 50) {
+          statusIcon.innerHTML = '<i class="fas fa-circle status-ok"></i>';
+        } else if (remaining > 20) {
+          statusIcon.innerHTML = '<i class="fas fa-circle status-warning"></i>';
+        } else {
+          statusIcon.innerHTML = '<i class="fas fa-circle status-error"></i>';
+        }
+      } catch (error) {
+        console.error('Rate limit status error:', error);
+      }
+    }
+
+    function updatePredictiveStatus() {
+      try {
+        const status = window.predictiveMonitor.getStatus();
+        
+        const riskLevel = status.riskAssessment?.level || 'low';
+        document.getElementById('predict-risk').textContent = riskLevel.toUpperCase();
+        document.getElementById('predict-alerts').textContent = status.alerts?.length || 0;
+        
+        document.getElementById('predict-error-rate').textContent = 
+          status.predictions?.errorRateIncreasing ? 'はい' : 'いいえ';
+        document.getElementById('predict-latency').textContent = 
+          status.predictions?.latencyIncreasing ? 'はい' : 'いいえ';
+        document.getElementById('predict-memory').textContent = 
+          status.predictions?.memoryPressure ? 'はい' : 'いいえ';
+        document.getElementById('predict-network').textContent = 
+          status.predictions?.networkUnstable ? 'はい' : 'いいえ';
+        document.getElementById('predict-errors').textContent = 
+          status.metrics?.errorCount || 0;
+        
+        // Update colors
+        const predictions = status.predictions || {};
+        Object.keys(predictions).forEach(key => {
+          const elementId = 'predict-' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
+          const element = document.getElementById(elementId);
+          if (element) {
+            element.className = predictions[key] ? 
+              'font-semibold text-red-600' : 
+              'font-semibold text-green-600';
+          }
+        });
+        
+        const statusIcon = document.getElementById('predict-status');
+        if (riskLevel === 'low') {
+          statusIcon.innerHTML = '<i class="fas fa-circle status-ok"></i>';
+        } else if (riskLevel === 'medium' || riskLevel === 'high') {
+          statusIcon.innerHTML = '<i class="fas fa-circle status-warning"></i>';
+        } else {
+          statusIcon.innerHTML = '<i class="fas fa-circle status-error"></i>';
+        }
+        
+        // Update alerts list
+        updateAlertsList(status.alerts || []);
+      } catch (error) {
+        console.error('Predictive status error:', error);
+      }
+    }
+
+    function updateAlertsList(alerts) {
+      const alertsList = document.getElementById('alerts-list');
+      
+      if (alerts.length === 0) {
+        alertsList.innerHTML = '<p class="text-gray-500 text-center py-4">アラートはありません</p>';
+        return;
+      }
+      
+      alertsList.innerHTML = alerts.slice(0, 10).map(alert => {
+        const levelClass = 
+          alert.level === 'critical' ? 'bg-red-100 border-red-500 text-red-800' :
+          alert.level === 'warning' ? 'bg-yellow-100 border-yellow-500 text-yellow-800' :
+          'bg-blue-100 border-blue-500 text-blue-800';
+        
+        const levelIcon = 
+          alert.level === 'critical' ? 'fa-exclamation-triangle' :
+          alert.level === 'warning' ? 'fa-exclamation-circle' :
+          'fa-info-circle';
+        
+        const time = new Date(alert.timestamp).toLocaleString('ja-JP');
+        
+        return `
+          <div class="border-l-4 p-3 ${levelClass}">
+            <div class="flex items-start">
+              <i class="fas ${levelIcon} mt-1 mr-2"></i>
+              <div class="flex-1">
+                <p class="font-semibold">${alert.message}</p>
+                <p class="text-xs mt-1">${time}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function refreshAll() {
+      updateNetworkStatus();
+      updateMemoryStatus();
+      updateRateLimitStatus();
+      updatePredictiveStatus();
+      
+      document.getElementById('last-update').textContent = new Date().toLocaleString('ja-JP');
+    }
+
+    // Initial load
+    refreshAll();
+
+    // Auto refresh every 5 seconds
+    setInterval(refreshAll, 5000);
+  </script>
+</body>
+</html>

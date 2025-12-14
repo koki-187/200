@@ -174,6 +174,16 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
     const risks = response.data.risks;
     const riskDetails = response.data.riskDetails;
     
+    // CRITICAL FIX v3.153.77: Improve MANUAL_CHECK_REQUIRED message display
+    let financingStatus = response.data.financingJudgment;
+    if (financingStatus === 'MANUAL_CHECK_REQUIRED') {
+      financingStatus = '⚠️ 手動確認必要';
+    } else if (financingStatus === 'OK') {
+      financingStatus = '✅ 問題なし';
+    } else if (financingStatus === 'NG') {
+      financingStatus = '❌ 融資制限あり';
+    }
+    
     let message = '=== 総合リスクチェック結果 ===\n\n';
     message += `住所: ${response.data.address}\n`;
     message += `座標: 緯度${response.data.coordinates.latitude}, 経度${response.data.coordinates.longitude}\n\n`;
@@ -181,7 +191,7 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
     message += `洪水リスク: ${risks.floodRisk}\n`;
     message += `津波リスク: ${risks.tsunamiRisk}\n`;
     message += `高潮リスク: ${risks.stormSurgeRisk}\n\n`;
-    message += `融資判定: ${response.data.financingJudgment}\n`;
+    message += `融資判定: ${financingStatus}\n`;
     message += `メッセージ: ${response.data.financingMessage}\n\n`;
     message += `ハザードマップ: ${response.data.hazardMapUrl}`;
     

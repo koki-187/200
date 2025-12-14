@@ -7026,8 +7026,10 @@ app.get('/deals/new', (c) => {
       
       try {
         console.log('[Storage Quota] Calling API: /api/storage-quota');
+        // CRITICAL FIX v3.153.77: Add 10-second timeout to prevent eternal "取得中..."
         const response = await axios.get('/api/storage-quota', {
-          headers: { 'Authorization': 'Bearer ' + token }
+          headers: { 'Authorization': 'Bearer ' + token },
+          timeout: 10000 // 10 seconds
         });
         
         console.log('[Storage Quota] API Response received:', response.status);
@@ -7121,6 +7123,13 @@ app.get('/deals/new', (c) => {
               localStorage.removeItem('user');
               window.location.href = '/';
             }, 3000);
+          } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+            // CRITICAL FIX v3.153.77: Timeout error - don't block OCR functionality
+            storageText.textContent = 'タイムアウト（機能は利用可能）';
+            if (storageDisplay) {
+              storageDisplay.className = 'text-xs md:text-sm bg-gray-50 text-gray-600 px-3 py-2 rounded-lg font-medium border border-gray-300 w-full sm:w-auto';
+            }
+            console.warn('[Storage Quota] Timeout - OCR and other functions remain usable');
           } else if (!error.response) {
             // ネットワークエラーまたはCORS問題
             storageText.textContent = 'ネットワークエラー';
@@ -11526,60 +11535,8 @@ app.get('/deals/new', (c) => {
 
     // ============================================================
     // イベントリスナー設定（グローバル関数定義後に実行）
+    // REMOVED v3.153.77: Moved setupButtonListeners to separate file /static/button-listeners.js
     // ============================================================
-    
-    /**
-     * ボタンイベントリスナー設定
-     * CRITICAL FIX: グローバル関数定義後に実行する
-     */
-    function setupButtonListeners(retryCount = 0) {
-      const autoFillBtn = document.getElementById('auto-fill-btn');
-      const riskCheckBtn = document.getElementById('comprehensive-check-btn');
-      
-      let needsRetry = false;
-      
-      if (autoFillBtn && !autoFillBtn.dataset.listenerAttached) {
-        console.log('[Init] Setting up auto-fill button event listener');
-        autoFillBtn.addEventListener('click', function() {
-          if (typeof window.autoFillFromReinfolib === 'function') {
-            window.autoFillFromReinfolib();
-          } else {
-            console.error('[Init] autoFillFromReinfolib function not found');
-          }
-        });
-        autoFillBtn.dataset.listenerAttached = 'true';
-      } else if (!autoFillBtn) {
-        console.warn('[Init] auto-fill-btn not found (attempt ' + retryCount + ')');
-        needsRetry = true;
-      }
-      
-      if (riskCheckBtn && !riskCheckBtn.dataset.listenerAttached) {
-        console.log('[Init] Setting up risk check button event listener');
-        riskCheckBtn.addEventListener('click', function() {
-          if (typeof window.manualComprehensiveRiskCheck === 'function') {
-            window.manualComprehensiveRiskCheck();
-          } else {
-            console.error('[Init] manualComprehensiveRiskCheck function not found');
-          }
-        });
-        riskCheckBtn.dataset.listenerAttached = 'true';
-      } else if (!riskCheckBtn) {
-        console.warn('[Init] comprehensive-check-btn not found (attempt ' + retryCount + ')');
-        needsRetry = true;
-      }
-      
-      // Retry if buttons not found and we haven't exceeded max retries
-      if (needsRetry && retryCount < 5) {
-        console.log('[Init] Retrying button setup in 300ms...');
-        setTimeout(function() {
-          setupButtonListeners(retryCount + 1);
-        }, 300);
-      } else if (needsRetry) {
-        console.error('[Init] ❌ CRITICAL: Failed to find buttons after 5 retries');
-      } else {
-        console.log('[Init] ✅ All button listeners successfully attached');
-      }
-    }
 
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
@@ -11588,24 +11545,27 @@ app.get('/deals/new', (c) => {
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
   <script src="/static/deals-new-events.js"></script>
   
-  <!-- CRITICAL FIX v3.153.31: Button event listeners setup after external scripts -->
+  <!-- CRITICAL FIX v3.153.77: Load button listeners from separate file to avoid scope issues -->
+  <script src="/static/button-listeners.js"></script>
+  
+  <!-- CRITICAL FIX v3.153.77: Call setupButtonListeners after all functions are loaded -->
   <script>
     (function() {
-      console.log('[ButtonListeners] ===== INITIALIZING AFTER EXTERNAL SCRIPTS =====');
-      console.log('[ButtonListeners] typeof setupButtonListeners:', typeof setupButtonListeners);
+      console.log('[ButtonListeners] ===== INITIALIZING AFTER ALL SCRIPTS LOADED =====');
+      console.log('[ButtonListeners] typeof window.setupButtonListeners:', typeof window.setupButtonListeners);
       console.log('[ButtonListeners] typeof window.autoFillFromReinfolib:', typeof window.autoFillFromReinfolib);
       console.log('[ButtonListeners] typeof window.manualComprehensiveRiskCheck:', typeof window.manualComprehensiveRiskCheck);
       
-      // setupButtonListeners is defined in the previous <script> tag (main page script)
-      if (typeof setupButtonListeners === 'function') {
-        console.log('[ButtonListeners] Calling setupButtonListeners NOW (no delay)');
+      if (typeof window.setupButtonListeners === 'function') {
+        console.log('[ButtonListeners] Calling window.setupButtonListeners NOW');
         try {
-          setupButtonListeners();
+          window.setupButtonListeners();
         } catch (err) {
           console.error('[ButtonListeners] ❌ ERROR:', err);
         }
       } else {
-        console.error('[ButtonListeners] ❌ setupButtonListeners function not found!');
+        console.error('[ButtonListeners] ❌ window.setupButtonListeners function not found!');
+        console.error('[ButtonListeners] All window functions:', Object.keys(window).filter(k => k.includes('setup') || k.includes('Fill') || k.includes('Check')));
       }
     })();
   </script>

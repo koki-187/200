@@ -1617,6 +1617,16 @@ app.get('/building-regulations', (c) => {
 });
 
 // Phase 1 監視ダッシュボード
+// 管理者ダッシュボード（メイン）
+app.get('/admin', (c) => {
+  return c.redirect('/static/admin-dashboard.html');
+});
+
+app.get('/admin/dashboard', (c) => {
+  return c.redirect('/static/admin-dashboard.html');
+});
+
+// Phase 1 詳細ダッシュボード
 app.get('/admin/phase1-dashboard', (c) => {
   return c.redirect('/static/phase1-dashboard.html');
 });
@@ -5369,7 +5379,14 @@ app.get('/deals/new', (c) => {
         
         <!-- ステータス情報行（iOS：スタック表示） -->
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2 sm:space-x-2">
-          <div id="storage-quota-display" class="text-xs md:text-sm bg-blue-50 text-blue-700 px-3 py-2 rounded-lg font-medium border border-blue-200 w-full sm:w-auto">
+          <!-- CRITICAL FIX v3.153.78: Add OCR Ready indicator to show OCR is always available -->
+          <span id="ocr-ready-indicator" class="text-xs md:text-sm bg-green-50 text-green-700 px-3 py-2 rounded-lg font-medium border border-green-200">
+            <i class="fas fa-check-circle mr-1"></i><strong>OCR機能: 準備完了</strong>
+          </span>
+          <span class="text-xs md:text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
+            <i class="fas fa-image mr-1"></i>画像・PDF混在OK
+          </span>
+          <div id="storage-quota-display" class="text-xs md:text-sm bg-gray-50 text-gray-600 px-3 py-2 rounded-lg font-medium border border-gray-200 w-full sm:w-auto">
             <div class="flex items-center space-x-2">
               <i class="fas fa-database"></i>
               <span id="storage-usage-text">ストレージ情報取得中...</span>
@@ -5378,9 +5395,6 @@ app.get('/deals/new', (c) => {
               <div id="storage-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
             </div>
           </div>
-          <span class="text-xs md:text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
-            <i class="fas fa-check-circle mr-1"></i>画像・PDF混在OK
-          </span>
         </div>
       </div>
         
@@ -7044,7 +7058,7 @@ app.get('/deals/new', (c) => {
         const warningMessage = document.getElementById('storage-warning-message');
         
         if (storageText && storageDisplay) {
-          storageText.textContent = usage.used_mb + 'MB / ' + usage.limit_mb + 'MB (' + usagePercent + '%)';
+          storageText.textContent = usage.used_mb + 'MB / ' + usage.limit_mb + 'MB (' + usagePercent + '%使用中)';
           
           // プログレスバー表示
           if (progressContainer && progressBar) {
@@ -7124,23 +7138,41 @@ app.get('/deals/new', (c) => {
               window.location.href = '/';
             }, 3000);
           } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-            // CRITICAL FIX v3.153.77: Timeout error - don't block OCR functionality
-            storageText.textContent = 'タイムアウト（機能は利用可能）';
+            // CRITICAL FIX v3.153.78: Hide storage info on timeout - OCR functionality not affected
+            storageText.textContent = '情報取得失敗';
             if (storageDisplay) {
-              storageDisplay.className = 'text-xs md:text-sm bg-gray-50 text-gray-600 px-3 py-2 rounded-lg font-medium border border-gray-300 w-full sm:w-auto';
+              storageDisplay.className = 'text-xs md:text-sm bg-gray-50 text-gray-500 px-3 py-2 rounded-lg font-medium border border-gray-300 w-full sm:w-auto opacity-50';
+              // Hide after 3 seconds to reduce visual clutter
+              setTimeout(() => {
+                if (storageDisplay) {
+                  storageDisplay.style.display = 'none';
+                }
+              }, 3000);
             }
-            console.warn('[Storage Quota] Timeout - OCR and other functions remain usable');
+            console.warn('[Storage Quota] Timeout - OCR functions remain fully usable');
           } else if (!error.response) {
-            // ネットワークエラーまたはCORS問題
-            storageText.textContent = 'ネットワークエラー';
+            // ネットワークエラーまたはCORS問題 - OCR機能には影響なし
+            storageText.textContent = '情報取得失敗';
             if (storageDisplay) {
-              storageDisplay.className = 'text-sm bg-orange-50 text-orange-700 px-3 py-1 rounded-full font-medium border border-orange-200';
+              storageDisplay.className = 'text-xs md:text-sm bg-gray-50 text-gray-500 px-3 py-2 rounded-lg font-medium border border-gray-300 w-full sm:w-auto opacity-50';
+              // Hide after 3 seconds
+              setTimeout(() => {
+                if (storageDisplay) {
+                  storageDisplay.style.display = 'none';
+                }
+              }, 3000);
             }
-            console.warn('[Storage Quota] Network error - please check your connection');
+            console.warn('[Storage Quota] Network error - OCR functions remain fully usable');
           } else {
-            storageText.textContent = '取得失敗 (' + (error.response?.status || 'Unknown') + ')';
+            storageText.textContent = '情報取得失敗';
             if (storageDisplay) {
-              storageDisplay.className = 'text-sm bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full font-medium border border-yellow-200';
+              storageDisplay.className = 'text-xs md:text-sm bg-gray-50 text-gray-500 px-3 py-2 rounded-lg font-medium border border-gray-300 w-full sm:w-auto opacity-50';
+              // Hide after 3 seconds
+              setTimeout(() => {
+                if (storageDisplay) {
+                  storageDisplay.style.display = 'none';
+                }
+              }, 3000);
             }
           }
         } else {

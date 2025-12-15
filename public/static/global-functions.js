@@ -108,6 +108,27 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
     
   } catch (error) {
     console.error('[不動産情報ライブラリ] ❌ Error:', error);
+    
+    // CRITICAL FIX v3.153.91: ユーザーにエラーを通知
+    let errorMessage = '物件情報の取得に失敗しました。';
+    
+    if (error.response) {
+      if (error.response.status === 401) {
+        errorMessage = 'ログインが必要です。再度ログインしてください。';
+        // 401エラーの場合はログインページにリダイレクト
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else if (error.response.status === 400) {
+        errorMessage = '住所の形式が正しくありません。都道府県・市区町村を入力してください。';
+      } else {
+        errorMessage = `エラーが発生しました (HTTP ${error.response.status})`;
+      }
+    } else if (error.request) {
+      errorMessage = 'ネットワークエラー: サーバーに接続できません。';
+    }
+    
+    alert(errorMessage);
   } finally {
     btn.disabled = false;
     btn.innerHTML = originalHTML;
@@ -205,12 +226,30 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
     
   } catch (error) {
     console.error('[COMPREHENSIVE CHECK] ❌ Error:', error);
+    
+    // CRITICAL FIX v3.153.91: 詳細なエラーメッセージ
+    let errorMessage = 'リスクチェックに失敗しました。';
+    
     if (error.response) {
       console.error('[COMPREHENSIVE CHECK] Response error:', error.response.data);
-      alert('リスクチェックエラー: ' + (error.response.data.error || error.message));
+      
+      if (error.response.status === 401) {
+        errorMessage = 'ログインが必要です。再度ログインしてください。';
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else if (error.response.status === 400) {
+        errorMessage = '住所の解析に失敗しました。正しい住所を入力してください。\n例: 東京都渋谷区';
+      } else {
+        errorMessage = 'リスクチェックエラー: ' + (error.response.data.error || error.message);
+      }
+    } else if (error.request) {
+      errorMessage = 'ネットワークエラー: サーバーに接続できません。';
     } else {
-      alert('リスクチェックエラー: ' + error.message);
+      errorMessage = 'リスクチェックエラー: ' + error.message;
     }
+    
+    alert(errorMessage);
   } finally {
     btn.disabled = false;
     btn.innerHTML = originalHTML;

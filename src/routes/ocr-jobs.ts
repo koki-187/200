@@ -101,13 +101,20 @@ async function performOCRSync(files: File[], apiKey: string): Promise<any> {
       if (!openaiResponse.ok) {
         const errorText = await openaiResponse.text();
         console.error(`[OCR Sync] OpenAI API error for ${file.name}:`, errorText);
+        console.error(`[OCR Sync] Status code:`, openaiResponse.status);
         
-        // 401エラー（認証失敗）の場合は処理を中断
+        // CRITICAL FIX v3.153.92: Provide detailed error messages to frontend
         if (openaiResponse.status === 401) {
           throw new Error(`OpenAI APIキーが無効です。管理者にAPIキーの更新を依頼してください。エラー: ${errorText}`);
+        } else if (openaiResponse.status === 429) {
+          throw new Error(`OpenAI APIのレート制限に達しました。しばらく待ってから再試行してください。`);
+        } else if (openaiResponse.status === 500) {
+          throw new Error(`OpenAI APIサーバーエラーが発生しました。時間をおいて再試行してください。`);
+        } else {
+          // その他のエラーも収集して最終的に報告
+          console.warn(`[OCR Sync] Skipping file ${file.name} due to API error (${openaiResponse.status})`);
+          continue; // その他のエラーはスキップして次へ
         }
-        
-        continue; // その他のエラーはスキップして次へ
       }
       
       const result = await openaiResponse.json();

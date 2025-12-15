@@ -1370,15 +1370,23 @@ app.get('/comprehensive-check', async (c) => {
       }, 500);
     }
     
-    // 住所解析
+    // CRITICAL FIX v3.153.92: 住所解析 - Improved error messages
     const locationCodes = parseAddress(address);
     if (!locationCodes) {
       return c.json({
         success: false,
-        error: '住所の解析に失敗しました',
+        error: '住所を認識できませんでした',
         address: address,
-        version: 'v3.153.38 - Improved Geocoding with Fallback'
-      }, 200);
+        suggestion: '都道府県と市区町村を入力してください',
+        examples: [
+          '東京都渋谷区',
+          '埼玉県さいたま市',
+          '神奈川県横浜市',
+          '千葉県千葉市'
+        ],
+        supported_prefectures: ['東京都', '埼玉県', '千葉県', '神奈川県'],
+        version: 'v3.153.92 - Enhanced Error Messages'
+      }, 400);
     }
     
     const { prefectureName, cityName } = locationCodes;

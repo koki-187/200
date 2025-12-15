@@ -42,13 +42,19 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 取得中...';
   
   try {
+    // CRITICAL FIX v3.153.92: Check token and show user-friendly error
     const token = localStorage.getItem('token');
     console.log('[不動産情報ライブラリ] トークン取得:', !!token);
     
     if (!token) {
       console.error('[不動産情報ライブラリ] ❌ トークンなし');
+      alert('ログインが必要です。\n\n物件情報補足機能を使用するには、先にログインしてください。\n\n「OK」をクリックするとログインページに移動します。');
       btn.disabled = false;
       btn.innerHTML = originalHTML;
+      // Redirect to login
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
       return;
     }
     
@@ -109,8 +115,9 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
   } catch (error) {
     console.error('[不動産情報ライブラリ] ❌ Error:', error);
     
-    // CRITICAL FIX v3.153.91: ユーザーにエラーを通知
+    // CRITICAL FIX v3.153.92: 詳細なエラーメッセージを表示
     let errorMessage = '物件情報の取得に失敗しました。';
+    let details = '';
     
     if (error.response) {
       if (error.response.status === 401) {
@@ -120,15 +127,23 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
           window.location.href = '/';
         }, 2000);
       } else if (error.response.status === 400) {
-        errorMessage = '住所の形式が正しくありません。都道府県・市区町村を入力してください。';
+        errorMessage = '住所を認識できませんでした。';
+        if (error.response.data && error.response.data.examples) {
+          details = '\\n\\n入力例:\\n' + error.response.data.examples.join('\\n');
+        } else {
+          details = '\\n\\n入力例:\\n東京都渋谷区\\n埼玉県さいたま市\\n神奈川県横浜市';
+        }
       } else {
         errorMessage = `エラーが発生しました (HTTP ${error.response.status})`;
+        if (error.response.data && error.response.data.error) {
+          details = '\\n\\n詳細: ' + error.response.data.error;
+        }
       }
     } else if (error.request) {
       errorMessage = 'ネットワークエラー: サーバーに接続できません。';
     }
     
-    alert(errorMessage);
+    alert(errorMessage + details);
   } finally {
     btn.disabled = false;
     btn.innerHTML = originalHTML;
@@ -167,15 +182,17 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> チェック中...';
   
   try {
+    // CRITICAL FIX v3.153.92: Check token and redirect to root
     const token = localStorage.getItem('token');
     if (!token) {
       console.error('[COMPREHENSIVE CHECK] ❌ No token');
-      // CRITICAL FIX v3.153.81: Show user-visible error message
-      alert('ログインが必要です。\n\nこの機能を使用するには、先にログインしてください。\n\n「OK」をクリックするとログインページに移動します。');
+      alert('ログインが必要です。\n\nリスクチェック機能を使用するには、先にログインしてください。\n\n「OK」をクリックするとログインページに移動します。');
       btn.disabled = false;
       btn.innerHTML = originalHTML;
-      // Redirect to login page
-      window.location.href = '/login';
+      // Redirect to login page (root path)
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
       return;
     }
     
@@ -227,8 +244,9 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
   } catch (error) {
     console.error('[COMPREHENSIVE CHECK] ❌ Error:', error);
     
-    // CRITICAL FIX v3.153.91: 詳細なエラーメッセージ
+    // CRITICAL FIX v3.153.92: 詳細なエラーメッセージと入力例
     let errorMessage = 'リスクチェックに失敗しました。';
+    let details = '';
     
     if (error.response) {
       console.error('[COMPREHENSIVE CHECK] Response error:', error.response.data);
@@ -239,9 +257,17 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
           window.location.href = '/';
         }, 2000);
       } else if (error.response.status === 400) {
-        errorMessage = '住所の解析に失敗しました。正しい住所を入力してください。\n例: 東京都渋谷区';
+        errorMessage = '住所を認識できませんでした。';
+        if (error.response.data && error.response.data.examples) {
+          details = '\\n\\n入力例:\\n' + error.response.data.examples.join('\\n');
+        } else {
+          details = '\\n\\n入力例:\\n東京都渋谷区\\n埼玉県さいたま市北区\\n神奈川県横浜市\\n千葉県千葉市';
+        }
       } else {
         errorMessage = 'リスクチェックエラー: ' + (error.response.data.error || error.message);
+        if (error.response.data && error.response.data.suggestion) {
+          details = '\\n\\n' + error.response.data.suggestion;
+        }
       }
     } else if (error.request) {
       errorMessage = 'ネットワークエラー: サーバーに接続できません。';
@@ -249,7 +275,7 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
       errorMessage = 'リスクチェックエラー: ' + error.message;
     }
     
-    alert(errorMessage);
+    alert(errorMessage + details);
   } finally {
     btn.disabled = false;
     btn.innerHTML = originalHTML;

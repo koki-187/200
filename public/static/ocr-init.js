@@ -100,10 +100,13 @@ async function convertPdfToImages(pdfFile) {
 }
 
 // Display OCR Error Function
+// CRITICAL FIX v3.153.92: Re-enable alert for user-facing errors
 function displayOCRError(title, message) {
   console.error('[OCR Error] ' + title + ':', message);
   console.error('[OCR Error] Message:', message);
-  // alert removed per user requirement - errors logged to console only
+  
+  // CRITICAL: Display alert to user
+  alert('OCRエラー: ' + title + '\n\n' + message + '\n\n詳細はコンソールログを確認してください。');
   
   // Hide progress UI
   const progressSection = document.getElementById('ocr-progress-section');
@@ -131,15 +134,22 @@ window.processMultipleOCR = async function(files) {
   console.log('[OCR] iOS Detection:', /iPhone|iPad|iPod/.test(navigator.userAgent));
   console.log('[OCR] ========================================');
   
-  // Get auth token (optional - server will validate)
+  // CRITICAL FIX v3.153.92: Get auth token - REQUIRED for OCR
   const token = localStorage.getItem('token');
   
   if (!token) {
-    console.warn('[OCR] ⚠️ No auth token found in localStorage');
-    console.log('[OCR] Attempting OCR without explicit token (server-side auth will be checked)');
-  } else {
-    console.log('[OCR] ✅ Auth token found');
+    console.error('[OCR] ❌ No auth token found - OCR requires login');
+    alert('ログインが必要です。\n\nOCR機能を使用するには、先にログインしてください。\n\n「OK」をクリックするとログインページに移動します。');
+    // Hide progress UI
+    if (progressSection) progressSection.classList.add('hidden');
+    // Redirect to login page
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 500);
+    return;
   }
+  
+  console.log('[OCR] ✅ Auth token found');
   
   // Separate PDF and image files
   const pdfFiles = files.filter(f => f.type === 'application/pdf');

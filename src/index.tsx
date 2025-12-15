@@ -7618,8 +7618,27 @@ app.get('/deals/new', (c) => {
       console.log('[Storage Quota] Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL/UNDEFINED');
       console.log('[Storage Quota] Current URL:', window.location.href);
       
+      // CRITICAL FIX v3.153.90: Skip if no token (user not logged in)
+      if (!token) {
+        console.warn('[Storage Quota] ⚠️ No token - user not logged in, aborting API call');
+        const storageText = document.getElementById('storage-usage-text');
+        const storageDisplay = document.getElementById('storage-quota-display');
+        if (storageText) {
+          storageText.textContent = 'ログインが必要です';
+        }
+        if (storageDisplay) {
+          storageDisplay.className = 'text-xs md:text-sm bg-gray-50 text-gray-500 px-3 py-2 rounded-lg font-medium border border-gray-300 w-full sm:w-auto opacity-50';
+          setTimeout(() => {
+            if (storageDisplay) {
+              storageDisplay.style.display = 'none';
+            }
+          }, 2000);
+        }
+        return; // Abort - do not call API
+      }
+      
       try {
-        console.log('[Storage Quota] Calling API: /api/storage-quota');
+        console.log('[Storage Quota] Token exists, calling API: /api/storage-quota');
         // CRITICAL FIX v3.153.77: Add 10-second timeout to prevent eternal "取得中..."
         const response = await axios.get('/api/storage-quota', {
           headers: { 'Authorization': 'Bearer ' + token },

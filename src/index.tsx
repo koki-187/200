@@ -10085,12 +10085,31 @@ app.get('/deals/new', (c) => {
       console.log('[Init] storageText element:', storageText ? 'found' : 'NOT found');
       console.log('[Init] token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL');
       
-      // CRITICAL FIX v3.153.79: Force storage info to complete or hide within 3 seconds
+      // CRITICAL FIX v3.153.90: Skip loadStorageQuota if no token (not logged in)
       if (storageText) {
-        console.log('[Init] Calling loadStorageQuota() with 3-second safety timeout');
+        const storageDisplay = document.getElementById('storage-quota-display');
+        
+        // Check if user is logged in
+        if (!token) {
+          console.warn('[Init] ⚠️ No token - user not logged in, skipping storage quota load');
+          if (storageText) {
+            storageText.textContent = 'ログインが必要です';
+          }
+          if (storageDisplay) {
+            storageDisplay.className = 'text-xs md:text-sm bg-gray-50 text-gray-500 px-3 py-2 rounded-lg font-medium border border-gray-300 w-full sm:w-auto opacity-50';
+            // Hide after 2 seconds
+            setTimeout(() => {
+              if (storageDisplay) {
+                storageDisplay.style.display = 'none';
+              }
+            }, 2000);
+          }
+          return; // Skip loadStorageQuota
+        }
+        
+        console.log('[Init] Token exists, calling loadStorageQuota() with 3-second safety timeout');
         
         // Set a safety timeout to hide storage info if it takes too long
-        const storageDisplay = document.getElementById('storage-quota-display');
         const safetyTimeout = setTimeout(() => {
           console.warn('[Init] ⚠️ Storage quota load exceeded 3 seconds - hiding display');
           if (storageDisplay) {
@@ -10117,7 +10136,24 @@ app.get('/deals/new', (c) => {
           const storageDisplay = document.getElementById('storage-quota-display');
           console.log('[Init] Retry: storageText element:', storageTextRetry ? 'found' : 'STILL NOT found');
           if (storageTextRetry) {
-            console.log('[Init] Calling loadStorageQuota() after retry with 3-second safety timeout');
+            // CRITICAL FIX v3.153.90: Skip loadStorageQuota if no token (not logged in)
+            if (!token) {
+              console.warn('[Init] ⚠️ (Retry) No token - user not logged in, skipping storage quota load');
+              if (storageTextRetry) {
+                storageTextRetry.textContent = 'ログインが必要です';
+              }
+              if (storageDisplay) {
+                storageDisplay.className = 'text-xs md:text-sm bg-gray-50 text-gray-500 px-3 py-2 rounded-lg font-medium border border-gray-300 w-full sm:w-auto opacity-50';
+                setTimeout(() => {
+                  if (storageDisplay) {
+                    storageDisplay.style.display = 'none';
+                  }
+                }, 2000);
+              }
+              return; // Skip loadStorageQuota
+            }
+            
+            console.log('[Init] Token exists, calling loadStorageQuota() after retry with 3-second safety timeout');
             
             const safetyTimeout = setTimeout(() => {
               console.warn('[Init] ⚠️ Storage quota load (retry) exceeded 3 seconds - hiding display');

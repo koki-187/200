@@ -151,6 +151,50 @@ window.processMultipleOCR = async function(files) {
   
   console.log('[OCR] ✅ Auth token found');
   
+  // v3.153.96: 月間コスト情報を取得
+  let monthlyUsage = null;
+  try {
+    const costResponse = await fetch('/api/ocr-jobs/monthly-cost', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (costResponse.ok) {
+      monthlyUsage = await costResponse.json();
+      console.log('[OCR] 💰 Monthly usage:', monthlyUsage);
+    }
+  } catch (error) {
+    console.warn('[OCR] ⚠️ Could not fetch monthly usage (will continue):', error);
+  }
+  
+  // v3.153.96: OCR実行前の確認ダイアログ
+  const estimatedCostPerFile = 0.02; // 推定: $0.02/ファイル（実際はトークン数に依存）
+  const totalEstimatedCost = files.length * estimatedCostPerFile;
+  
+  let confirmMessage = `【OCR実行確認】\n\n`;
+  confirmMessage += `ファイル数: ${files.length}件\n`;
+  confirmMessage += `推定コスト: $${totalEstimatedCost.toFixed(2)}\n\n`;
+  
+  if (monthlyUsage) {
+    const remainingBudget = monthlyUsage.monthly_limit - monthlyUsage.monthly_used;
+    confirmMessage += `今月の使用状況:\n`;
+    confirmMessage += `- 使用済み: $${monthlyUsage.monthly_used.toFixed(2)} / $${monthlyUsage.monthly_limit.toFixed(2)}\n`;
+    confirmMessage += `- 残高: $${remainingBudget.toFixed(2)}\n\n`;
+    
+    // 残高不足の警告
+    if (remainingBudget < totalEstimatedCost) {
+      confirmMessage += `⚠️ 警告: 残高が不足する可能性があります。\n\n`;
+    }
+  }
+  
+  confirmMessage += `実行しますか？`;
+  
+  if (!confirm(confirmMessage)) {
+    console.log('[OCR] ❌ User canceled OCR execution');
+    return;
+  }
+  
   // Separate PDF and image files
   const pdfFiles = files.filter(f => f.type === 'application/pdf');
   const imageFiles = files.filter(f => f.type.startsWith('image/'));

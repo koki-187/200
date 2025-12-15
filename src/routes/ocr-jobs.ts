@@ -46,13 +46,53 @@ class Semaphore {
 }
 
 /**
+ * OpenAI使用量追跡とコスト計算
+ * v3.153.96 - $20/月コスト上限保護機能
+ */
+interface OpenAIUsageTracking {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  estimatedCostUSD: number;
+}
+
+/**
+ * OpenAI gpt-4o料金計算（2024年12月時点）
+ * Input: $2.50/1M tokens
+ * Output: $10.00/1M tokens
+ */
+function calculateOpenAICost(usage: { prompt_tokens: number; completion_tokens: number }): OpenAIUsageTracking {
+  const INPUT_COST_PER_1M = 2.50;
+  const OUTPUT_COST_PER_1M = 10.00;
+  
+  const inputCost = (usage.prompt_tokens / 1_000_000) * INPUT_COST_PER_1M;
+  const outputCost = (usage.completion_tokens / 1_000_000) * OUTPUT_COST_PER_1M;
+  
+  return {
+    promptTokens: usage.prompt_tokens,
+    completionTokens: usage.completion_tokens,
+    totalTokens: usage.prompt_tokens + usage.completion_tokens,
+    estimatedCostUSD: inputCost + outputCost
+  };
+}
+
+/**
  * 同期的にOCR処理を実行（Cloudflare Workers対応）
  * リクエスト内で完了し、結果を直接返す
+ * v3.153.96: OpenAI使用量追跡を追加
  */
-async function performOCRSync(files: File[], apiKey: string): Promise<any> {
+async function performOCRSync(
+  files: File[], 
+  apiKey: string, 
+  db: D1Database, 
+  userId: number, 
+  jobId: string
+): Promise<{ data: any; totalCost: number; totalTokens: number }> {
   console.log('[OCR Sync] Starting synchronous OCR for', files.length, 'files');
   
   const extractionResults: any[] = [];
+  let totalCost = 0;
+  let totalTokens = 0;
   
   // 各ファイルを順次処理（並列ではなく直列でタイムアウト回避）
   for (let i = 0; i < files.length; i++) {
@@ -117,11 +157,43 @@ async function performOCRSync(files: File[], apiKey: string): Promise<any> {
         } else {
           // その他のエラーも収集して最終的に報告
           console.warn(`[OCR Sync] Skipping file ${file.name} due to API error (${openaiResponse.status})`);
+          
+          // エラーでも使用量を記録（失敗として）
+          await db.prepare(`
+            INSERT INTO openai_usage (user_id, job_id, endpoint, model, prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd, status, error_message)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(userId, jobId, '/api/ocr-jobs', 'gpt-4o', 0, 0, 0, 0, 'failed', errorText.substring(0, 500)).run();
+          
           continue; // その他のエラーはスキップして次へ
         }
       }
       
       const result = await openaiResponse.json();
+      
+      // v3.153.96: 使用量を追跡
+      if (result.usage) {
+        const usage = calculateOpenAICost(result.usage);
+        totalCost += usage.estimatedCostUSD;
+        totalTokens += usage.totalTokens;
+        
+        console.log(`[OCR Sync] Usage for ${file.name}: ${usage.totalTokens} tokens, $${usage.estimatedCostUSD.toFixed(4)}`);
+        
+        // DB に使用量を記録
+        await db.prepare(`
+          INSERT INTO openai_usage (user_id, job_id, endpoint, model, prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          userId, 
+          jobId, 
+          '/api/ocr-jobs', 
+          'gpt-4o', 
+          usage.promptTokens, 
+          usage.completionTokens, 
+          usage.totalTokens, 
+          usage.estimatedCostUSD, 
+          'success'
+        ).run();
+      }
       
       if (result.choices && result.choices.length > 0) {
         const content = result.choices[0].message.content;
@@ -147,16 +219,25 @@ async function performOCRSync(files: File[], apiKey: string): Promise<any> {
   if (extractionResults.length === 0) {
     console.error('[OCR Sync] No data extracted from any files');
     return {
-      property_name: { value: null, confidence: 0 },
-      location: { value: null, confidence: 0 },
-      overall_confidence: 0
+      data: {
+        property_name: { value: null, confidence: 0 },
+        location: { value: null, confidence: 0 },
+        overall_confidence: 0
+      },
+      totalCost,
+      totalTokens
     };
   }
   
   const mergedData = mergePropertyData(extractionResults);
   console.log('[OCR Sync] ✅ Completed. Merged data:', JSON.stringify(mergedData).substring(0, 200));
+  console.log(`[OCR Sync] 💰 Total cost: $${totalCost.toFixed(4)}, Total tokens: ${totalTokens}`);
   
-  return mergedData;
+  return {
+    data: mergedData,
+    totalCost,
+    totalTokens
+  };
 }
 
 /**
@@ -264,6 +345,43 @@ ocrJobs.post('/', async (c) => {
     
     console.log('[OCR API] Authenticated user:', userId);
     
+    // v3.153.96: 月間コスト上限チェック（全ユーザー共通）
+    const costLimitResult = await c.env.DB.prepare(`
+      SELECT monthly_limit_usd, alert_threshold FROM cost_limits WHERE id = 1
+    `).first();
+    
+    const monthlyLimit = costLimitResult?.monthly_limit_usd || 20.0;
+    const alertThreshold = costLimitResult?.alert_threshold || 0.8;
+    
+    // 今月の使用量を取得
+    const currentMonth = new Date().toISOString().substring(0, 7); // 'YYYY-MM'
+    const monthlyUsageResult = await c.env.DB.prepare(`
+      SELECT SUM(estimated_cost_usd) as total_cost 
+      FROM openai_usage 
+      WHERE strftime('%Y-%m', created_at) = ?
+    `).bind(currentMonth).first();
+    
+    const currentCost = monthlyUsageResult?.total_cost || 0;
+    const remainingBudget = monthlyLimit - currentCost;
+    
+    console.log(`[OCR API] 💰 Monthly budget: $${monthlyLimit}, Used: $${currentCost.toFixed(4)}, Remaining: $${remainingBudget.toFixed(4)}`);
+    
+    // コスト上限に達している場合はエラー
+    if (remainingBudget <= 0) {
+      return c.json({
+        error: '月間コスト上限に達しています',
+        details: `今月のOpenAI API使用料が上限額$${monthlyLimit}に達しました。来月まで待つか、管理者に上限引き上げを依頼してください。`,
+        current_cost: currentCost,
+        monthly_limit: monthlyLimit,
+        remaining_budget: 0
+      }, 429); // 429 Too Many Requests
+    }
+    
+    // 警告閾値を超えている場合は警告
+    if (currentCost >= monthlyLimit * alertThreshold) {
+      console.warn(`[OCR API] ⚠️ Warning: ${(currentCost / monthlyLimit * 100).toFixed(1)}% of monthly budget used`);
+    }
+    
     // ジョブIDを生成
     const jobId = nanoid(16);
     
@@ -280,10 +398,11 @@ ocrJobs.post('/', async (c) => {
       }, 500);
     }
     
-    // OCR処理を同期実行
-    const extracted_data = await performOCRSync(files, c.env.OPENAI_API_KEY);
+    // OCR処理を同期実行（v3.153.96: 使用量追跡を追加）
+    const result = await performOCRSync(files, c.env.OPENAI_API_KEY, c.env.DB, userId, jobId);
     
     // 結果を直接返す（ポーリング不要）
+    // v3.153.96: コスト情報を追加
     return c.json({
       success: true,
       job_id: jobId,
@@ -291,8 +410,15 @@ ocrJobs.post('/', async (c) => {
       total_files: files.length,
       processed_files: files.length,
       file_names: files.map(f => f.name),
-      extracted_data: extracted_data,
-      message: 'OCR処理が完了しました'
+      extracted_data: result.data,
+      message: 'OCR処理が完了しました',
+      usage: {
+        estimated_cost_usd: result.totalCost,
+        total_tokens: result.totalTokens,
+        monthly_used: currentCost + result.totalCost,
+        monthly_limit: monthlyLimit,
+        remaining_budget: remainingBudget - result.totalCost
+      }
     });
     
   } catch (error) {
@@ -1145,5 +1271,58 @@ function mergePropertyData(results: any[]): any {
   
   return merged;
 }
+
+/**
+ * 月間OpenAI使用量取得API
+ * GET /api/ocr-jobs/monthly-cost
+ * v3.153.96 - フロントエンドでコスト確認ダイアログ表示用
+ */
+ocrJobs.get('/monthly-cost', async (c) => {
+  try {
+    // 認証済みユーザー（authMiddleware適用済み）
+    const user = c.get('user');
+    const userId = user?.id || 'unknown';
+    
+    // コスト上限を取得
+    const costLimitResult = await c.env.DB.prepare(`
+      SELECT monthly_limit_usd, alert_threshold FROM cost_limits WHERE id = 1
+    `).first();
+    
+    const monthlyLimit = costLimitResult?.monthly_limit_usd || 20.0;
+    const alertThreshold = costLimitResult?.alert_threshold || 0.8;
+    
+    // 今月の使用量を取得
+    const currentMonth = new Date().toISOString().substring(0, 7); // 'YYYY-MM'
+    const monthlyUsageResult = await c.env.DB.prepare(`
+      SELECT SUM(estimated_cost_usd) as total_cost, COUNT(*) as total_requests
+      FROM openai_usage 
+      WHERE strftime('%Y-%m', created_at) = ?
+    `).bind(currentMonth).first();
+    
+    const monthlyUsed = monthlyUsageResult?.total_cost || 0;
+    const totalRequests = monthlyUsageResult?.total_requests || 0;
+    const remainingBudget = monthlyLimit - monthlyUsed;
+    const usagePercentage = (monthlyUsed / monthlyLimit) * 100;
+    
+    return c.json({
+      success: true,
+      month: currentMonth,
+      monthly_limit: monthlyLimit,
+      monthly_used: monthlyUsed,
+      remaining_budget: remainingBudget,
+      usage_percentage: usagePercentage,
+      total_requests: totalRequests,
+      alert_threshold: alertThreshold,
+      is_over_threshold: usagePercentage >= (alertThreshold * 100)
+    });
+    
+  } catch (error) {
+    console.error('[Monthly Cost API] Error:', error);
+    return c.json({
+      error: '月間コスト情報の取得に失敗しました',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
 
 export default ocrJobs;

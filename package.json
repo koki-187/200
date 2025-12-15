@@ -27,7 +27,10 @@
     "git:init": "git init && git add . && git commit -m 'Initial commit'",
     "git:commit": "git add . && git commit -m",
     "git:status": "git status",
-    "git:log": "git log --oneline"
+    "git:log": "git log --oneline",
+    "check:env": "./scripts/check-env-vars.sh",
+    "test:post-deploy": "./scripts/post-deploy-test.sh",
+    "deploy:safe": "npm run check:env && npm run build && npx wrangler pages deploy dist --project-name real-estate-200units-v2 && npm run test:post-deploy"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.4",

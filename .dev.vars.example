@@ -1,0 +1,25 @@
+# 環境変数テンプレート
+# このファイルをコピーして .dev.vars を作成し、実際のAPIキーを設定してください
+# .dev.vars はGitにコミットされません（.gitignore で除外済み）
+
+# JWT Secret（認証用）
+# 任意の長い文字列を設定（例: openssl rand -base64 32）
+JWT_SECRET=your_jwt_secret_here_replace_with_actual_secret
+
+# OpenAI API Key（OCR機能用）
+# 取得方法: https://platform.openai.com/account/api-keys
+# 形式: sk-proj-...
+OPENAI_API_KEY=sk-proj-your_openai_api_key_here_replace_with_actual_key
+
+# Resend API Key（メール通知用）
+# 取得方法: https://resend.com/api-keys
+# 形式: re_...
+RESEND_API_KEY=re_your_resend_api_key_here_replace_with_actual_key
+
+# MLIT API Key（物件情報補足・リスクチェック用）
+# 取得方法: [MLITのAPIキー取得ページURL]
+MLIT_API_KEY=your_mlit_api_key_here_replace_with_actual_key
+
+# Sentry DSN（エラートラッキング用、オプション）
+# 取得方法: https://sentry.io/
+# SENTRY_DSN=your_sentry_dsn_here_replace_with_actual_dsn

@@ -1,419 +1,445 @@
-# 🚀 本番デプロイメントガイド
+# 🚀 デプロイメントガイド - 200棟土地仕入れ管理システム
 
-## 📋 デプロイ前チェックリスト
-
-### 必須作業
-- [ ] Cloudflare Pagesプロジェクト作成
-- [ ] D1データベース作成・マイグレーション実行
-- [ ] 環境変数（Secrets）設定
-- [ ] GitHub連携設定
-- [ ] デプロイテスト
+**最終更新**: 2025-12-15  
+**対象**: Cloudflare Pages本番環境
 
 ---
 
-## 🔧 ステップ1: Cloudflare Pages プロジェクト作成
+## 📋 目次
 
-### 1-1. Cloudflare API Key設定（ローカル環境）
-
-```bash
-# setup_cloudflare_api_key ツールを使用
-# または手動で設定
-export CLOUDFLARE_API_TOKEN=your-token-here
-```
-
-### 1-2. プロジェクト作成
-
-```bash
-cd /home/user/webapp
-
-# プロジェクト作成（mainブランチを本番ブランチに設定）
-npx wrangler pages project create webapp \
-  --production-branch main \
-  --compatibility-date 2024-01-01
-```
-
-**注意**: プロジェクト名が重複している場合は別名（例: `webapp-2`, `land-acquisition-app`）を使用してください。
+1. [必須環境変数の設定](#必須環境変数の設定)
+2. [デプロイ前チェックリスト](#デプロイ前チェックリスト)
+3. [デプロイ手順](#デプロイ手順)
+4. [デプロイ後テスト](#デプロイ後テスト)
+5. [トラブルシューティング](#トラブルシューティング)
 
 ---
 
-## 💾 ステップ2: D1データベース作成
+## 🔑 必須環境変数の設定
 
-### 2-1. 本番用D1データベース作成
+### ⚠️ 重要な注意事項
 
+**`.dev.vars` ファイルはローカル開発専用です！**
+- `.dev.vars` の内容は本番環境に**一切反映されません**
+- 本番環境にはCloudflare Pages Secretsを使用して手動で設定が必要
+
+### 環境変数の設定方法
+
+#### 1. OPENAI_API_KEY（OCR機能用）
+
+**取得方法**:
+1. https://platform.openai.com/account/api-keys にアクセス
+2. 「Create new secret key」をクリック
+3. キーをコピー（形式: `sk-proj-...`）
+
+**設定コマンド**:
 ```bash
-# D1データベース作成
-npx wrangler d1 create webapp-production
-
-# 出力例：
-# ✅ Successfully created DB 'webapp-production'!
-# 
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "webapp-production"
-# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+echo "YOUR_OPENAI_API_KEY" | npx wrangler pages secret put OPENAI_API_KEY --project-name real-estate-200units-v2
 ```
 
-### 2-2. wrangler.jsonc 更新
+**テスト方法**:
+```bash
+curl https://20c655ab.real-estate-200units-v2.pages.dev/api/ocr-jobs/test-openai
+```
 
-`database_id` を実際の値に更新：
-
-```jsonc
+成功時のレスポンス:
+```json
 {
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "webapp-production",
-      "database_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", // 実際のIDに変更
-      "migrations_dir": "migrations"
-    }
-  ]
+  "success": true,
+  "model": "gpt-4o"
 }
 ```
 
-### 2-3. マイグレーション実行
+---
 
+#### 2. MLIT_API_KEY（物件情報補足・リスクチェック用）
+
+**取得方法**:
+1. MLIT（国土交通省）のAPI利用登録ページにアクセス
+2. 利用規約に同意してAPIキーを取得
+3. キーをコピー
+
+**設定コマンド**:
 ```bash
-# 本番データベースにマイグレーション実行
-npx wrangler d1 migrations apply webapp-production
-
-# 確認
-npx wrangler d1 execute webapp-production \
-  --command="SELECT name FROM sqlite_master WHERE type='table'"
+echo "YOUR_MLIT_API_KEY" | npx wrangler pages secret put MLIT_API_KEY --project-name real-estate-200units-v2
 ```
 
-### 2-4. 初期ユーザー作成（本番用）
-
-**重要**: 本番環境では安全なパスワードを使用してください。
-
+**テスト方法**:
 ```bash
-# bcryptハッシュを生成（Nodeスクリプト）
-node -e "const bcrypt = require('bcryptjs'); bcrypt.hash('YOUR_SECURE_PASSWORD', 10).then(console.log)"
+curl https://20c655ab.real-estate-200units-v2.pages.dev/api/reinfolib/test
+```
 
-# 出力されたハッシュを使用してユーザー作成
-npx wrangler d1 execute webapp-production \
-  --command="INSERT INTO users (id, email, password_hash, name, role) 
-             VALUES ('admin-prod', 'admin@yourcompany.com', 
-             '\$2a\$10\$...', '管理者', 'ADMIN')"
+成功時のレスポンス:
+```json
+{
+  "success": true,
+  "message": "REINFOLIB API is working"
+}
 ```
 
 ---
 
-## 🔐 ステップ3: 環境変数（Secrets）設定
+#### 3. JWT_SECRET（認証用）
 
-### 3-1. 必須シークレット
-
+**生成方法**:
 ```bash
-# OpenAI API Key（OCR・AI提案機能に必要）
-npx wrangler pages secret put OPENAI_API_KEY --project-name webapp
-# 入力: sk-proj-...
-
-# JWT Secret（認証に必要）
-npx wrangler pages secret put JWT_SECRET --project-name webapp
-# 入力: ランダムな長い文字列（32文字以上推奨）
-
-# Resend API Key（メール通知に必要）
-npx wrangler pages secret put RESEND_API_KEY --project-name webapp
-# 入力: re_...
-```
-
-### 3-2. シークレット確認
-
-```bash
-# 設定済みシークレット一覧表示
-npx wrangler pages secret list --project-name webapp
-```
-
-### 3-3. シークレット生成例
-
-**JWT_SECRET生成**:
-```bash
-# Linuxの場合
 openssl rand -base64 32
+```
 
-# または
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+**設定コマンド**:
+```bash
+echo "YOUR_JWT_SECRET" | npx wrangler pages secret put JWT_SECRET --project-name real-estate-200units-v2
 ```
 
 ---
 
-## 🏗️ ステップ4: ビルドとデプロイ
+#### 4. RESEND_API_KEY（メール通知用）
 
-### 4-1. ローカルビルドテスト
+**取得方法**:
+1. https://resend.com/api-keys にアクセス
+2. APIキーを作成（形式: `re_...`）
+
+**設定コマンド**:
+```bash
+echo "YOUR_RESEND_API_KEY" | npx wrangler pages secret put RESEND_API_KEY --project-name real-estate-200units-v2
+```
+
+---
+
+#### 5. SENTRY_DSN（エラートラッキング用、オプション）
+
+**取得方法**:
+1. https://sentry.io/ にアクセス
+2. プロジェクトを作成してDSNを取得
+
+**設定コマンド**:
+```bash
+echo "YOUR_SENTRY_DSN" | npx wrangler pages secret put SENTRY_DSN --project-name real-estate-200units-v2
+```
+
+---
+
+### 環境変数の確認方法
+
+**すべての設定済み環境変数を確認**:
+```bash
+npx wrangler pages secret list --project-name real-estate-200units-v2 --env production
+```
+
+**期待される出力**:
+```
+The "production" environment of your Pages project "real-estate-200units-v2" has access to the following secrets:
+  - JWT_SECRET: Value Encrypted
+  - MLIT_API_KEY: Value Encrypted
+  - OPENAI_API_KEY: Value Encrypted
+  - RESEND_API_KEY: Value Encrypted
+  - SENTRY_DSN: Value Encrypted
+```
+
+---
+
+## ✅ デプロイ前チェックリスト
+
+デプロイを実行する前に、以下の項目をすべて確認してください：
+
+### ローカル環境での確認
+
+- [ ] `.dev.vars` ファイルに最新のAPIキーが設定されている
+- [ ] `npm install` で依存関係がインストール済み
+- [ ] `npm run dev` でローカルサーバーが起動できる
+- [ ] ローカル環境でOCR機能が動作する（ファイルアップロード→自動入力）
+- [ ] ローカル環境で物件情報補足機能が動作する
+- [ ] ローカル環境でリスクチェック機能が動作する
+- [ ] すべてのコード変更がGitにコミット済み
+
+### 本番環境の確認
+
+- [ ] Cloudflare Pages Secretsがすべて設定されている（上記コマンドで確認）
+- [ ] 本番環境のURLが正しい
+- [ ] 前回のデプロイが正常に動作している
+
+### コードの確認
+
+- [ ] エラーハンドリングが適切に実装されている
+- [ ] コンソールエラーがない（開発者ツールで確認）
+- [ ] TypeScriptのコンパイルエラーがない
+- [ ] `npm run build` が成功する
+
+---
+
+## 🚀 デプロイ手順
+
+### 1. ビルド
 
 ```bash
-# ビルド実行
+cd /home/user/webapp
 npm run build
-
-# dist/ディレクトリの確認
-ls -lh dist/
-
-# 必須ファイル確認
-# - _worker.js (メインアプリケーション)
-# - static/ (静的ファイル)
 ```
 
-### 4-2. 初回デプロイ
+**確認ポイント**:
+- `dist/` ディレクトリが生成される
+- `dist/_worker.js` が存在する
+- `dist/_routes.json` が存在する
+- ビルドエラーがない
+
+### 2. デプロイ
 
 ```bash
-# ビルドしてデプロイ
-npm run deploy:prod
-
-# または手動
-npm run build
-npx wrangler pages deploy dist --project-name webapp
+npx wrangler pages deploy dist --project-name real-estate-200units-v2
 ```
 
-### 4-3. デプロイ確認
+**確認ポイント**:
+- ファイルアップロードが成功する
+- Workerのコンパイルが成功する
+- デプロイURLが表示される（例: `https://XXXXXXXX.real-estate-200units-v2.pages.dev`）
 
-デプロイが成功すると以下のURLが表示されます：
+### 3. デプロイURLの記録
 
+デプロイ成功後、表示されたURLをメモしてください。
+
+**例**:
 ```
-✨ Deployment complete!
-🌎 https://webapp.pages.dev
-🌎 https://main.webapp.pages.dev
+✨ Deployment complete! Take a peek over at https://20c655ab.real-estate-200units-v2.pages.dev
 ```
 
 ---
 
-## ✅ ステップ5: デプロイ後の動作確認
+## 🧪 デプロイ後テスト
 
-### 5-1. ヘルスチェック
+デプロイ完了後、**必ず**以下のテストを実施してください。
+
+### テスト1: Health Check（最優先）
 
 ```bash
-curl https://webapp.pages.dev/api/health
-# 期待される出力: {"status":"ok","timestamp":"..."}
+curl https://20c655ab.real-estate-200units-v2.pages.dev/api/health | jq .
 ```
 
-### 5-2. ログイン機能テスト
-
-```bash
-# ログインAPIテスト
-curl -X POST https://webapp.pages.dev/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@yourcompany.com","password":"YOUR_PASSWORD"}'
-
-# 期待される出力:
-# {"token":"...","user":{"id":"...","email":"...","role":"ADMIN"}}
+**期待される結果**:
+```json
+{
+  "status": "healthy",
+  "services": {
+    "environment_variables": {
+      "status": "healthy",
+      "details": {
+        "OPENAI_API_KEY": "set",
+        "JWT_SECRET": "set",
+        "MLIT_API_KEY": "set"
+      }
+    },
+    "openai_api": {
+      "status": "healthy",
+      "response_time_ms": "fast"
+    },
+    "d1_database": {
+      "status": "healthy"
+    }
+  }
+}
 ```
 
-### 5-3. Cron動作確認
+**❌ エラーの場合**:
+- `"status": "unhealthy"` → 環境変数が正しく設定されていない
+- `"openai_api": {"status": "error"}` → OPENAI_API_KEYが無効
+- 環境変数を再確認して設定し直す
+
+---
+
+### テスト2: OCR機能
 
 ```bash
-# Cronトリガーをテスト実行
-npx wrangler pages deployment tail --project-name webapp
+curl https://20c655ab.real-estate-200units-v2.pages.dev/api/ocr-jobs/test-openai | jq .
+```
 
-# 別のターミナルで手動トリガー（テスト用）
-# Cloudflareダッシュボードから「Trigger」ボタンをクリック
+**期待される結果**:
+```json
+{
+  "success": true,
+  "model": "gpt-4o"
+}
+```
+
+**❌ エラーの場合**:
+```json
+{
+  "error": "401 Unauthorized - Incorrect API key provided"
+}
+```
+→ OPENAI_API_KEYを再設定
+
+---
+
+### テスト3: MLIT API（物件情報補足）
+
+```bash
+curl https://20c655ab.real-estate-200units-v2.pages.dev/api/reinfolib/test | jq .
+```
+
+**期待される結果**:
+```json
+{
+  "success": true,
+  "message": "REINFOLIB API is working"
+}
+```
+
+**❌ エラーの場合**:
+```json
+{
+  "error": "MLIT_API_KEYが設定されていません"
+}
+```
+→ MLIT_API_KEYを再設定
+
+---
+
+### テスト4: 管理者ダッシュボード
+
+ブラウザで以下のURLにアクセス:
+
+1. **メインダッシュボード**: https://20c655ab.real-estate-200units-v2.pages.dev/admin
+2. **ヘルスチェック**: https://20c655ab.real-estate-200units-v2.pages.dev/admin/health-check
+3. **100回テスト**: https://20c655ab.real-estate-200units-v2.pages.dev/admin/100-tests
+4. **自動エラー改善**: https://20c655ab.real-estate-200units-v2.pages.dev/admin/error-improvement
+
+**確認ポイント**:
+- ページが正常にロードされる
+- コンソールエラーがない（開発者ツールで確認）
+- 各機能が動作する
+
+---
+
+### テスト5: 実際のログイン・OCR実行
+
+1. https://20c655ab.real-estate-200units-v2.pages.dev にアクセス
+2. テストアカウントでログイン
+3. `/deals/new` で案件作成ページにアクセス
+4. PDFファイルをアップロードしてOCR実行
+5. 物件情報補足ボタンをクリック
+6. リスクチェックボタンをクリック
+
+**確認ポイント**:
+- すべての機能がエラーなく動作する
+- フォームに情報が自動入力される
+- エラーダイアログが表示されない
+
+---
+
+## 🔧 トラブルシューティング
+
+### 問題1: Health Checkが `unhealthy` を返す
+
+**原因**: 環境変数が設定されていない
+
+**解決方法**:
+```bash
+# 環境変数を確認
+npx wrangler pages secret list --project-name real-estate-200units-v2
+
+# 不足している環境変数を設定
+echo "YOUR_API_KEY" | npx wrangler pages secret put ENV_VAR_NAME --project-name real-estate-200units-v2
+
+# 再デプロイ
+npx wrangler pages deploy dist --project-name real-estate-200units-v2
 ```
 
 ---
 
-## 🔄 継続的デプロイ（CD）設定
+### 問題2: OCR機能が `401 Unauthorized` を返す
 
-### GitHub Actions連携
+**原因**: OPENAI_API_KEYが無効または期限切れ
 
-`.github/workflows/deploy.yml`:
-
-```yaml
-name: Deploy to Cloudflare Pages
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
-      
-      - name: Build
-        run: npm run build
-      
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: pages deploy dist --project-name webapp
-```
-
-**GitHubシークレット設定**:
-1. GitHubリポジトリ → Settings → Secrets and variables → Actions
-2. `CLOUDFLARE_API_TOKEN` を追加
-
----
-
-## 🌐 カスタムドメイン設定（オプション）
-
-### ドメイン追加
-
+**解決方法**:
+1. https://platform.openai.com/account/api-keys で新しいAPIキーを作成
+2. 新しいキーを設定:
 ```bash
-# カスタムドメイン追加
-npx wrangler pages domain add yourdomain.com --project-name webapp
-
-# サブドメイン追加
-npx wrangler pages domain add app.yourdomain.com --project-name webapp
+echo "NEW_OPENAI_API_KEY" | npx wrangler pages secret put OPENAI_API_KEY --project-name real-estate-200units-v2
 ```
-
-### DNS設定
-
-Cloudflareダッシュボードで以下のレコードを追加：
-
-```
-Type: CNAME
-Name: app (またはルートドメイン用に@)
-Target: webapp.pages.dev
-Proxy status: Proxied (オレンジクラウド)
-```
+3. 再デプロイ
 
 ---
 
-## 🔍 トラブルシューティング
+### 問題3: MLIT APIが動作しない
 
-### デプロイエラー
+**原因**: MLIT_API_KEYが設定されていない、または無効
 
-**エラー**: `Build failed`
+**解決方法**:
 ```bash
-# ローカルでビルドテスト
-npm run build
+# キーを再設定
+echo "YOUR_MLIT_API_KEY" | npx wrangler pages secret put MLIT_API_KEY --project-name real-estate-200units-v2
 
-# エラーログ確認
-npx wrangler pages deployment tail --project-name webapp
+# テスト
+curl https://20c655ab.real-estate-200units-v2.pages.dev/api/reinfolib/test
 ```
 
-**エラー**: `Database binding not found`
+---
+
+### 問題4: デプロイが失敗する
+
+**原因**: Gitコミットメッセージに日本語が含まれている
+
+**解決方法**:
 ```bash
-# D1バインディング確認
-npx wrangler d1 list
+# 英語のみでコミット
+git commit -m "Deploy version X.X.X - Bug fixes and improvements"
 
-# wrangler.jsonc のdatabase_idが正しいか確認
-```
-
-### Cron実行エラー
-
-```bash
-# Cronログ確認
-npx wrangler pages deployment tail --project-name webapp --format json | grep "Cron"
-
-# 手動テスト実行
-# Cloudflareダッシュボード → Workers & Pages → webapp → Triggers → Crons → Run now
-```
-
-### メール送信失敗
-
-```bash
-# Resend APIキー確認
-npx wrangler pages secret list --project-name webapp | grep RESEND
-
-# ローカルでテスト
-curl -X POST https://webapp.pages.dev/api/email/test/deadline \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"deal_id":"test-id","recipient_email":"test@example.com"}'
+# デプロイ
+npx wrangler pages deploy dist --project-name real-estate-200units-v2 --commit-dirty=true
 ```
 
 ---
 
-## 📊 本番環境監視
+## 📊 デプロイ後の運用
 
-### Cloudflareダッシュボード
+### 毎回のデプロイ後に実施すること
 
-1. **Analytics**:
-   - リクエスト数
-   - エラーレート
-   - レスポンスタイム
+1. ✅ Health Check APIを実行
+2. ✅ OCR APIテストを実行
+3. ✅ MLIT APIテストを実行
+4. ✅ 管理者ダッシュボードにアクセス
+5. ✅ 実際のログイン・OCR実行テスト
 
-2. **Logs**:
-   - リアルタイムログ確認
-   - エラートラッキング
+### 定期的に実施すること（月1回推奨）
 
-3. **Cron Triggers**:
-   - 実行履歴
-   - 成功/失敗ステータス
-
-### Sentryエラー追跡（オプション）
-
-```bash
-npm install @sentry/browser --legacy-peer-deps
-
-# src/index.tsx にSentry初期化コード追加
-```
+1. ✅ すべての環境変数が最新かつ有効であることを確認
+2. ✅ APIキーのローテーション（セキュリティベストプラクティス）
+3. ✅ 管理者ダッシュボードの100回テストを実行
+4. ✅ エラーログを確認
 
 ---
 
-## 🔄 ロールバック手順
+## 🎯 重要なポイント
 
-### 以前のデプロイに戻す
+### ⚠️ 絶対に忘れないこと
 
-```bash
-# デプロイ履歴確認
-npx wrangler pages deployments list --project-name webapp
+1. **`.dev.vars` は本番環境に反映されない！**
+   - 必ずCloudflare Pages Secretsで設定する
 
-# 特定のデプロイIDにロールバック
-npx wrangler pages deployments promote <DEPLOYMENT_ID> --project-name webapp
-```
+2. **デプロイ後は必ずテストを実施！**
+   - Health Check APIを最優先で実行
+   - すべてのAPI疎通テストを実施
 
-### 緊急時の対応
+3. **環境変数は定期的に棚卸し**
+   - APIキーの有効期限を確認
+   - 不要な環境変数を削除
 
-1. Cloudflareダッシュボードからロールバック
-2. デプロイメント履歴から「Rollback to this deployment」をクリック
-
----
-
-## 📝 デプロイ後のチェックリスト
-
-- [ ] ヘルスチェックAPI動作確認
-- [ ] ログイン機能テスト
-- [ ] 案件CRUD操作テスト
-- [ ] ファイルアップロード/ダウンロードテスト
-- [ ] OCR機能テスト
-- [ ] AI提案生成テスト
-- [ ] PDFレポート生成テスト
-- [ ] メール通知テスト（管理者向けテストAPI）
-- [ ] Cronトリガー動作確認
-- [ ] レスポンスタイム確認（< 500ms目標）
-- [ ] エラーログ確認（異常なエラーがないか）
+4. **エラーが発生したら即座に対応**
+   - Health Check APIで問題を特定
+   - 環境変数を再設定
+   - 再デプロイ＆再テスト
 
 ---
 
-## 🔐 セキュリティチェックリスト
+## 📞 サポート
 
-- [ ] 本番環境のパスワードが安全（12文字以上、複雑）
-- [ ] JWT_SECRETがランダムで長い（32文字以上）
-- [ ] APIキーがシークレットとして設定（コードに直接記載なし）
-- [ ] CORS設定が適切（本番ドメインのみ許可）
-- [ ] レート制限設定（Cloudflare）
-- [ ] HTTPS強制（Cloudflareデフォルト）
-- [ ] 定期的なセキュリティ監査
+問題が解決しない場合は、以下の情報を含めて報告してください：
 
----
-
-## 📞 サポート情報
-
-### Cloudflare
-- Dashboard: https://dash.cloudflare.com
-- Docs: https://developers.cloudflare.com/pages
-- Community: https://community.cloudflare.com
-
-### プロジェクト
-- GitHub: https://github.com/koki-187/200
-- README: `/home/user/webapp/README.md`
-- API Docs: `/home/user/webapp/API.md`（要作成）
+1. デプロイURL
+2. エラーメッセージ
+3. Health Check APIの結果
+4. 環境変数の設定状況（キーの値は含めない）
+5. 実施したトラブルシューティング手順
 
 ---
 
-## 🎉 デプロイ完了！
-
-本番環境が正常に動作していることを確認したら、チームメンバーに通知してください。
-
-**本番URL**: https://webapp.pages.dev（または https://yourdomain.com）
-
-初期ログイン情報をチームと共有（セキュアな方法で）し、運用を開始してください。
+**デプロイガイド v1.0 - 2025-12-15**

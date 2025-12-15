@@ -7618,7 +7618,14 @@ app.get('/deals/new', (c) => {
       console.log('[Storage Quota] Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL/UNDEFINED');
       console.log('[Storage Quota] Current URL:', window.location.href);
       
-      // CRITICAL FIX v3.153.90: Skip if no token (user not logged in)
+      // CRITICAL FIX v3.153.91: Skip if no token (user not logged in)
+      console.log('[Storage Quota] DEBUG: Checking token...');
+      console.log('[Storage Quota] DEBUG: token value:', token);
+      console.log('[Storage Quota] DEBUG: typeof token:', typeof token);
+      console.log('[Storage Quota] DEBUG: !token:', !token);
+      console.log('[Storage Quota] DEBUG: token === null:', token === null);
+      console.log('[Storage Quota] DEBUG: token === undefined:', token === undefined);
+      
       if (!token) {
         console.warn('[Storage Quota] ⚠️ No token - user not logged in, aborting API call');
         const storageText = document.getElementById('storage-usage-text');

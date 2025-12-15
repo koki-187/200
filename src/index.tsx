@@ -6,6 +6,7 @@ import { APP_VERSION, getVersionQuery } from './version';
 
 // ルートのインポート
 import auth from './routes/auth';
+import { adminOnly } from './utils/auth';
 import deals from './routes/deals';
 import messages from './routes/messages';
 import users from './routes/users';
@@ -1619,13 +1620,13 @@ app.get('/building-regulations', (c) => {
 // Phase 1 監視ダッシュボード
 // 管理者ダッシュボード（メイン）
 // 🛡️ Admin routes - See comprehensive admin dashboard at line ~3956
-// These routes redirect to the new admin dashboard
-app.get('/admin/dashboard', (c) => {
+// These routes redirect to the new admin dashboard (v3.153.94 - 管理者のみアクセス可)
+app.get('/admin/dashboard', adminOnly, (c) => {
   return c.redirect('/admin');
 });
 
-// Phase 1 詳細ダッシュボード
-app.get('/admin/phase1-dashboard', (c) => {
+// Phase 1 詳細ダッシュボード (v3.153.94 - 管理者のみアクセス可)
+app.get('/admin/phase1-dashboard', adminOnly, (c) => {
   return c.redirect('/static/phase1-dashboard.html');
 });
 
@@ -1856,6 +1857,11 @@ app.get('/dashboard', (c) => {
         <i class="fas fa-plus-circle"></i>
         <span>新規案件作成</span>
       </a>
+      <!-- 管理者ページ (管理者のみ表示) v3.153.94 -->
+      <a href="/admin/dashboard" id="mobile-admin-link" class="mobile-menu-item" style="display: none;">
+        <i class="fas fa-shield-alt"></i>
+        <span>管理者ページ</span>
+      </a>
       <button onclick="logout()" class="mobile-menu-item w-full text-left">
         <i class="fas fa-sign-out-alt"></i>
         <span>ログアウト</span>
@@ -1944,6 +1950,19 @@ app.get('/dashboard', (c) => {
           <div>
             <h3 class="text-xl font-bold">建築基準法</h3>
             <p class="text-sm text-orange-100 mt-1">規制チェック</p>
+          </div>
+        </div>
+      </a>
+
+      <!-- 管理者ページ (管理者のみ表示) -->
+      <a href="/admin/dashboard" id="admin-page-card" class="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-xl shadow-lg hover:shadow-2xl transition p-6 text-white hover:scale-105" style="display: none;">
+        <div class="flex items-center space-x-4">
+          <div class="bg-white bg-opacity-20 rounded-full p-3">
+            <i class="fas fa-shield-alt text-3xl"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold">管理者ページ</h3>
+            <p class="text-sm text-indigo-100 mt-1">システム管理・監視</p>
           </div>
         </div>
       </a>
@@ -2659,7 +2678,7 @@ app.get('/dashboard', (c) => {
         if (mobileUserName) mobileUserName.textContent = user.name;
         if (mobileUserRole) mobileUserRole.textContent = user.role === 'ADMIN' ? '管理者' : 'ユーザー';
         
-        // 管理者の場合、ファイル管理タブとログイン履歴タブを表示
+        // 管理者の場合、ファイル管理タブ、ログイン履歴タブ、管理者ページカードを表示
         if (user.role === 'ADMIN') {
           const filesTab = document.getElementById('tab-files-admin');
           if (filesTab) {
@@ -2669,6 +2688,18 @@ app.get('/dashboard', (c) => {
           const loginHistoryTab = document.getElementById('tab-login-history');
           if (loginHistoryTab) {
             loginHistoryTab.style.display = 'block';
+          }
+          
+          // CRITICAL FIX v3.153.94 - 管理者ページカードを表示
+          const adminCard = document.getElementById('admin-page-card');
+          if (adminCard) {
+            adminCard.style.display = 'flex';
+          }
+          
+          // CRITICAL FIX v3.153.94 - モバイルメニューに管理者ページリンクを表示
+          const mobileAdminLink = document.getElementById('mobile-admin-link');
+          if (mobileAdminLink) {
+            mobileAdminLink.style.display = 'flex';
           }
         }
       }
@@ -3950,8 +3981,8 @@ app.get('/showcase', (c) => {
   `);
 });
 
-// 🛡️ 管理者ダッシュボード
-app.get('/admin', (c) => {
+// 🛡️ 管理者ダッシュボード (v3.153.94 - 管理者のみアクセス可)
+app.get('/admin', adminOnly, (c) => {
   return c.html(`
 <!DOCTYPE html>
 <html lang="ja">
@@ -4149,8 +4180,8 @@ app.get('/admin', (c) => {
   `);
 });
 
-// 🛡️ 管理者用システムヘルスチェックページ
-app.get('/admin/health-check', (c) => {
+// 🛡️ 管理者用システムヘルスチェックページ (v3.153.94 - 管理者のみアクセス可)
+app.get('/admin/health-check', adminOnly, (c) => {
   return c.html(`
 <!DOCTYPE html>
 <html lang="ja">
@@ -4606,8 +4637,8 @@ app.get('/admin/health-check', (c) => {
   `);
 });
 
-// 🧪 100回テストページ
-app.get('/admin/100-tests', (c) => {
+// 🧪 100回テストページ (v3.153.94 - 管理者のみアクセス可)
+app.get('/admin/100-tests', adminOnly, (c) => {
   return c.html(`
 <!DOCTYPE html>
 <html lang="ja">
@@ -4827,8 +4858,8 @@ app.get('/admin/100-tests', (c) => {
   `);
 });
 
-// 🔧 自動エラー改善システムページ
-app.get('/admin/error-improvement', (c) => {
+// 🔧 自動エラー改善システムページ (v3.153.94 - 管理者のみアクセス可)
+app.get('/admin/error-improvement', adminOnly, (c) => {
   return c.html(`
 <!DOCTYPE html>
 <html lang="ja">
@@ -4951,8 +4982,8 @@ app.get('/admin/error-improvement', (c) => {
   `);
 });
 
-// 📋 エラーログページ
-app.get('/admin/error-logs', (c) => {
+// 📋 エラーログページ (v3.153.94 - 管理者のみアクセス可)
+app.get('/admin/error-logs', adminOnly, (c) => {
   return c.html(`
 <!DOCTYPE html>
 <html lang="ja">
@@ -12301,8 +12332,8 @@ app.get('/deals/new', (c) => {
   `);
 });
 
-// 🛡️ 管理者ダッシュボードページ
-app.get('/admin', (c) => {
+// 🛡️ 管理者ダッシュボードページ (v3.153.94 - 管理者のみアクセス可)
+app.get('/admin', adminOnly, (c) => {
   return c.html(`
 <!DOCTYPE html>
 <html lang="ja">

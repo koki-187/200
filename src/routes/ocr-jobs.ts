@@ -2,8 +2,12 @@ import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { Bindings } from '../types';
 import { verifyToken } from '../utils/crypto';
+import { authMiddleware } from '../utils/auth';
 
 const ocrJobs = new Hono<{ Bindings: Bindings }>();
+
+// CRITICAL FIX v3.153.95: Require authentication for all OCR endpoints
+ocrJobs.use('*', authMiddleware);
 
 /**
  * セマフォクラス - 並列実行数を制限
@@ -254,23 +258,11 @@ ocrJobs.post('/', async (c) => {
     // OCR対象ファイルで処理を続行（filesを上書き）
     files = ocrTargetFiles;
     
-    // ユーザーIDを取得（認証ヘッダーから）
-    const authHeader = c.req.header('Authorization');
-    let userId = 'anonymous';
+    // CRITICAL FIX v3.153.95: Get authenticated user (authMiddleware ensures this exists)
+    const user = c.get('user');
+    const userId = user?.id || 'unknown';
     
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      try {
-        const secret = c.env.JWT_SECRET;
-        const payload = await verifyToken(token, secret);
-        if (payload && payload.userId) {
-          userId = payload.userId;
-        }
-      } catch (err) {
-        // トークン検証失敗でも続行（匿名として処理）
-        console.warn('JWT verification failed:', err);
-      }
-    }
+    console.log('[OCR API] Authenticated user:', userId);
     
     // ジョブIDを生成
     const jobId = nanoid(16);

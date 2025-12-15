@@ -16,11 +16,12 @@ type Variables = {
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// 認証必須（テストエンドポイントを除く）
+// CRITICAL FIX v3.153.95: 認証必須（テストエンドポイントを除く）
 app.use('/property-info', authMiddleware);
 app.use('/zoning-info', authMiddleware);
 app.use('/hazard-info', authMiddleware);
 app.use('/check-financing-restrictions', authMiddleware);
+app.use('/comprehensive-check', authMiddleware); // CRITICAL: 認証必須
 // テストエンドポイントは認証不要
 
 /**
@@ -1346,7 +1347,7 @@ function parseAddress(address: string): {
  * - year: 取得年（オプション、デフォルト: 現在年）
  * - quarter: 四半期（オプション、デフォルト: 現在四半期）
  * 
- * NOTE: 認証を一時的に無効化（デバッグ用）
+ * CRITICAL FIX v3.153.95: 認証必須（authMiddleware適用済み）
  */
 app.get('/comprehensive-check', async (c) => {
   const startTime = Date.now();

@@ -133,6 +133,14 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
         } else {
           details = '\\n\\n入力例:\\n東京都渋谷区\\n埼玉県さいたま市\\n神奈川県横浜市';
         }
+      } else if (error.response.status === 404) {
+        // CRITICAL FIX v3.153.93: 404エラーの詳細を表示
+        errorMessage = '物件情報が見つかりませんでした。';
+        if (error.response.data && error.response.data.message) {
+          details = '\\n\\n' + error.response.data.message;
+        } else {
+          details = '\\n\\n指定された住所・年・四半期のデータがMLIT APIに存在しません。\\n別の年や四半期で再試行してください。';
+        }
       } else {
         errorMessage = `エラーが発生しました (HTTP ${error.response.status})`;
         if (error.response.data && error.response.data.error) {

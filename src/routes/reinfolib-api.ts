@@ -340,7 +340,8 @@ app.get('/property-info', async (c) => {
         return c.json({
           success: false,
           error: 'データが見つかりません',
-          message: '指定された条件に一致するデータがMLIT APIに存在しません。',
+          message: `指定された条件に一致するデータがMLIT APIに存在しません。\n\n住所: ${prefectureName}${cityName}\n年: ${year}\n四半期: ${quarter}\n\n別の年や四半期で再試行してください。`,
+          suggestion: '最新の四半期（第4四半期）または前年のデータを試してください。',
           details: {
             address,
             year,

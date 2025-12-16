@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = 'v3.153.108';
+export const APP_VERSION = 'v3.153.109';
 export const BUILD_DATE = '2025-12-16';
-export const BUILD_DESCRIPTION = 'Property Info API Fix: Enhanced error messages, hazard map links, seller dropdown automation';
+export const BUILD_DESCRIPTION = 'CRITICAL FIX: Property Info 10-Pattern Improvement - API unification, error messages, hazard map, fallback (Re-deploy)';
 
 /**
  * バージョン情報をコンソールに出力

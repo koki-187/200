@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
+import { APP_VERSION } from '../version';
 
 const health = new Hono<{ Bindings: Bindings }>();
 
@@ -13,7 +14,7 @@ health.get('/', async (c) => {
   const checks: any = {
     timestamp: new Date().toISOString(),
     status: 'healthy',
-    version: 'v3.153.0',
+    version: APP_VERSION,
     services: {}
   };
 

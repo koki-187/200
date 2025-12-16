@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import { Bindings } from '../types';
 import { verifyToken } from '../utils/crypto';
 import { authMiddleware } from '../utils/auth';
+import { retryOpenAI, RetryError } from '../utils/retry';
 
 const ocrJobs = new Hono<{ Bindings: Bindings }>();
 
@@ -105,69 +106,61 @@ async function performOCRSync(
       const base64Data = arrayBufferToBase64(arrayBuffer);
       const mimeType = file.type;
       
-      // OpenAI APIに送信
-      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: PROPERTY_EXTRACTION_PROMPT
+      // OpenAI APIに送信（v3.153.97: リトライ機能追加）
+      const openaiResponse = await retryOpenAI(
+        async () => {
+          console.log(`[OCR Sync] Calling OpenAI API for ${file.name}...`);
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
             },
-            {
-              role: 'user',
-              content: [
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
                 {
-                  type: 'text',
-                  text: 'Extract property information from this Japanese real estate document. Read all text carefully. Return ONLY a JSON object.'
+                  role: 'system',
+                  content: PROPERTY_EXTRACTION_PROMPT
                 },
                 {
-                  type: 'image_url',
-                  image_url: {
-                    url: `data:${mimeType};base64,${base64Data}`,
-                    detail: 'high'
-                  }
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: 'Extract property information from this Japanese real estate document. Read all text carefully. Return ONLY a JSON object.'
+                    },
+                    {
+                      type: 'image_url',
+                      image_url: {
+                        url: `data:${mimeType};base64,${base64Data}`,
+                        detail: 'high'
+                      }
+                    }
+                  ]
                 }
-              ]
-            }
-          ],
-          max_tokens: 2000,
-          temperature: 0.1,
-          response_format: { type: "json_object" }
-        })
-      });
-      
-      if (!openaiResponse.ok) {
-        const errorText = await openaiResponse.text();
-        console.error(`[OCR Sync] OpenAI API error for ${file.name}:`, errorText);
-        console.error(`[OCR Sync] Status code:`, openaiResponse.status);
-        
-        // CRITICAL FIX v3.153.92: Provide detailed error messages to frontend
-        if (openaiResponse.status === 401) {
-          throw new Error(`OpenAI APIキーが無効です。管理者にAPIキーの更新を依頼してください。エラー: ${errorText}`);
-        } else if (openaiResponse.status === 429) {
-          throw new Error(`OpenAI APIのレート制限に達しました。しばらく待ってから再試行してください。`);
-        } else if (openaiResponse.status === 500) {
-          throw new Error(`OpenAI APIサーバーエラーが発生しました。時間をおいて再試行してください。`);
-        } else {
-          // その他のエラーも収集して最終的に報告
-          console.warn(`[OCR Sync] Skipping file ${file.name} due to API error (${openaiResponse.status})`);
+              ],
+              max_tokens: 2000,
+              temperature: 0.1,
+              response_format: { type: "json_object" }
+            })
+          });
           
-          // エラーでも使用量を記録（失敗として）
-          await db.prepare(`
-            INSERT INTO openai_usage (user_id, job_id, endpoint, model, prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd, status, error_message)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(userId, jobId, '/api/ocr-jobs', 'gpt-4o', 0, 0, 0, 0, 'failed', errorText.substring(0, 500)).run();
+          // リトライ判定のため、非OKレスポンスは例外をスロー
+          if (!response.ok) {
+            const error: any = new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+            error.response = { status: response.status };
+            throw error;
+          }
           
-          continue; // その他のエラーはスキップして次へ
+          return response;
+        },
+        (attempt, error, delayMs) => {
+          console.warn(`[OCR Sync] Retry ${attempt}/3 for ${file.name} after ${delayMs}ms due to:`, error.message);
         }
-      }
+      );
       
+      // v3.153.97: retryOpenAIが成功を保証するため、ここでは常にokと想定
       const result = await openaiResponse.json();
       
       // v3.153.96: 使用量を追跡
@@ -211,7 +204,31 @@ async function performOCRSync(
       }
     } catch (fileError) {
       console.error(`[OCR Sync] Error processing ${file.name}:`, fileError);
-      // 続行
+      
+      // v3.153.97: リトライ失敗時のエラーハンドリング
+      if (fileError instanceof RetryError) {
+        console.error(`[OCR Sync] ❌ All retries failed for ${file.name} after ${fileError.attempts} attempts`);
+        console.error(`[OCR Sync] Last error:`, fileError.lastError);
+        
+        // DBにリトライ失敗を記録
+        await db.prepare(`
+          INSERT INTO openai_usage (user_id, job_id, endpoint, model, prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd, status, error_message)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          userId, 
+          jobId, 
+          '/api/ocr-jobs', 
+          'gpt-4o', 
+          0, 
+          0, 
+          0, 
+          0, 
+          'rate_limit', 
+          `Retry failed after ${fileError.attempts} attempts: ${fileError.lastError.message}`.substring(0, 500)
+        ).run();
+      }
+      
+      // 続行（他のファイルの処理を継続）
     }
   }
   

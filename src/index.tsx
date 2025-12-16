@@ -6040,10 +6040,10 @@ app.get('/deals/new', (c) => {
         <p class="text-gray-700 font-medium mb-2">登記簿謄本や物件資料を複数まとめてアップロード</p>
         <p class="text-sm text-gray-500 mb-2">PNG、JPG、WEBP、PDF形式に対応</p>
         <p class="text-sm text-gray-500 mb-4">画像とPDFを混在してアップロードできます（最大10ファイル）</p>
-        <span class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 cursor-pointer inline-block transition font-medium shadow-lg touch-manipulation">
+        <input type="file" id="ocr-file-input" accept="image/*,application/pdf" style="display: none;" multiple>
+        <label for="ocr-file-input" class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 cursor-pointer inline-block transition font-medium shadow-lg touch-manipulation">
           <i class="fas fa-folder-open mr-2"></i>ファイルを選択またはドラッグ＆ドロップ
-        </span>
-        <input type="file" id="ocr-file-input" accept="image/*,application/pdf" class="hidden" multiple>
+        </label>
         <p class="text-sm text-gray-600 mt-2">
           <i class="fas fa-info-circle mr-1"></i>
           対応形式: PNG, JPG, JPEG, WEBP, PDF

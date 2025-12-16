@@ -919,19 +919,50 @@ function initializeOCREventListeners() {
   }
   
   // Click event for drop zone
+  // CRITICAL FIX v3.153.107: Remove preventDefault to allow fileInput.click()
   dropZone.addEventListener('click', (e) => {
     console.log('[OCR Init] 🖱️ Drop zone clicked');
-    e.preventDefault();
+    // e.preventDefault() removed - it blocks fileInput.click()
     e.stopPropagation();
-    fileInput.click();
+    console.log('[OCR Init] Triggering file input click...');
+    
+    // Try multiple methods to trigger file dialog
+    try {
+      // Method 1: Direct click (most browsers)
+      fileInput.click();
+      console.log('[OCR Init] ✅ File input clicked (method 1)');
+    } catch (err) {
+      console.error('[OCR Init] ❌ Method 1 failed:', err);
+      
+      // Method 2: Create new click event
+      try {
+        const clickEvent = new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          view: window
+        });
+        fileInput.dispatchEvent(clickEvent);
+        console.log('[OCR Init] ✅ File input clicked (method 2)');
+      } catch (err2) {
+        console.error('[OCR Init] ❌ Method 2 failed:', err2);
+      }
+    }
   });
   
   // Touch event for iOS Safari
   dropZone.addEventListener('touchend', (e) => {
     console.log('[OCR Init] 📱 Drop zone touched (iOS)');
-    e.preventDefault();
+    // e.preventDefault() removed for iOS compatibility
     e.stopPropagation();
-    fileInput.click();
+    console.log('[OCR Init] Triggering file input click (iOS)...');
+    
+    // iOS Safari requires direct click in same event context
+    try {
+      fileInput.click();
+      console.log('[OCR Init] ✅ File input clicked (iOS)');
+    } catch (err) {
+      console.error('[OCR Init] ❌ iOS click failed:', err);
+    }
   });
   
   // Drag and drop events

@@ -370,13 +370,24 @@ async function fetchPropertyInfoWithFallback(address, year, quarter, token) {
 /**
  * 総合リスクチェック実施
  */
+// CRITICAL FIX v3.153.110: 無限ループ防止フラグ
+window._riskCheckInProgress = window._riskCheckInProgress || false;
+
 window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskCheck() {
+  // 無限ループ防止: 既に実行中の場合は処理をスキップ
+  if (window._riskCheckInProgress) {
+    console.warn('[COMPREHENSIVE CHECK] ⚠️ Already in progress, skipping duplicate call');
+    return;
+  }
+  
+  window._riskCheckInProgress = true;
   console.log('[COMPREHENSIVE CHECK] ========================================');
   console.log('[COMPREHENSIVE CHECK] Manual risk check initiated');
   
   const locationInput = document.getElementById('location');
   if (!locationInput) {
     console.error('[COMPREHENSIVE CHECK] ❌ location input not found');
+    window._riskCheckInProgress = false; // Reset flag
     return;
   }
   
@@ -517,6 +528,9 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
     }
     btn.disabled = false;
     btn.innerHTML = originalHTML;
+    // CRITICAL FIX v3.153.110: Reset flag on exit
+    window._riskCheckInProgress = false;
+    console.log('[COMPREHENSIVE CHECK] ✅ Flag reset, ready for next execution');
   }
 };
 

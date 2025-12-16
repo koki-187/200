@@ -113,8 +113,20 @@ function displayOCRError(title, message) {
   if (progressSection) progressSection.classList.add('hidden');
 }
 
+// CRITICAL FIX v3.153.112: OCR実行中フラグ（リコール防止）
+window._ocrProcessingInProgress = window._ocrProcessingInProgress || false;
+
 // Complete processMultipleOCR Implementation
 window.processMultipleOCR = async function(files) {
+  // リコール防止: 既に実行中の場合は処理をスキップ
+  if (window._ocrProcessingInProgress) {
+    console.warn('[OCR] ⚠️ Already processing, skipping duplicate call');
+    console.warn('[OCR] This prevents multiple OCR executions from overlapping');
+    return;
+  }
+  
+  window._ocrProcessingInProgress = true;
+  
   console.log('[OCR] ========================================');
   console.log('[OCR] processMultipleOCR CALLED (complete standalone version with PDF support)');
   console.log('[OCR] Arguments:', arguments);
@@ -126,6 +138,7 @@ window.processMultipleOCR = async function(files) {
   if (!files || !Array.isArray(files) || files.length === 0) {
     console.warn('[OCR] ⚠️ Invalid or empty files parameter, ignoring call');
     console.warn('[OCR] This may be an unintended call from page initialization');
+    window._ocrProcessingInProgress = false; // Reset flag
     return;
   }
   
@@ -630,7 +643,10 @@ window.processMultipleOCR = async function(files) {
     console.log('[OCR] Data extracted and filled into form');
     console.log('[OCR] User should verify content before saving');
     // alert removed per user requirement - success messages logged to console only
-
+    
+    // CRITICAL FIX v3.153.112: Reset flag on success
+    window._ocrProcessingInProgress = false;
+    console.log('[OCR] ✅ Flag reset, ready for next execution');
     
   } catch (error) {
     console.error('[OCR] ========================================');
@@ -662,6 +678,10 @@ window.processMultipleOCR = async function(files) {
     // CRITICAL FIX v3.153.81: Always show error messages to user
     console.error('[OCR] ❌ OCR processing error:', errorMessage);
     alert(errorMessage);
+    
+    // CRITICAL FIX v3.153.112: Reset flag on error
+    window._ocrProcessingInProgress = false;
+    console.log('[OCR] ✅ Flag reset after error, ready for retry');
     
     // Redirect to login for 401 errors
     if (error.response?.status === 401) {

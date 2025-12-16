@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = 'v3.153.49';
-export const BUILD_DATE = '2025-12-10';
-export const BUILD_DESCRIPTION = 'CRITICAL FIX - Error④ Backend middleware (adminOnly→authMiddleware+role check) for AGENT deal creation';
+export const APP_VERSION = 'v3.153.104';
+export const BUILD_DATE = '2025-12-16';
+export const BUILD_DESCRIPTION = 'OCR PRECISION IMPROVEMENT - 10-pattern optimization (prompt, types, validation, error handling)';
 
 /**
  * バージョン情報をコンソールに出力

@@ -49,6 +49,108 @@ export interface Deal {
   updated_at: string;
 }
 
+/**
+ * OCR抽出データの標準フォーマット
+ * @version v3.153.104 - Pattern 2実装
+ */
+export interface OCRExtractedField {
+  value: string | null;
+  confidence: number; // 0.0 - 1.0
+}
+
+export interface OCRExtractedData {
+  property_name: OCRExtractedField;
+  location: OCRExtractedField;
+  station: OCRExtractedField;
+  walk_minutes: OCRExtractedField;
+  land_area: OCRExtractedField;
+  building_area: OCRExtractedField;
+  zoning: OCRExtractedField;
+  building_coverage: OCRExtractedField;
+  floor_area_ratio: OCRExtractedField;
+  price: OCRExtractedField;
+  structure: OCRExtractedField;
+  built_year: OCRExtractedField;
+  road_info: OCRExtractedField;
+  height_district: OCRExtractedField;
+  fire_zone: OCRExtractedField;
+  frontage: OCRExtractedField;
+  current_status: OCRExtractedField;
+  yield: OCRExtractedField;
+  occupancy: OCRExtractedField;
+  overall_confidence: number; // 全体の信頼度スコア（数値）
+}
+
+/**
+ * OCRバリデーション結果
+ */
+export interface OCRValidationResult {
+  isValid: boolean;
+  missingFields: string[];
+  invalidFields: string[];
+  errors: string[];
+}
+
+/**
+ * OCRレスポンスの型ガード
+ */
+export function isOCRExtractedField(value: any): value is OCRExtractedField {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'value' in value &&
+    'confidence' in value &&
+    (value.value === null || typeof value.value === 'string') &&
+    typeof value.confidence === 'number' &&
+    value.confidence >= 0 &&
+    value.confidence <= 1
+  );
+}
+
+/**
+ * OCRデータの完全性検証
+ */
+export function validateOCRExtractedData(data: any): OCRValidationResult {
+  const requiredFields = [
+    'property_name', 'location', 'station', 'walk_minutes',
+    'land_area', 'building_area', 'zoning', 'building_coverage',
+    'floor_area_ratio', 'price', 'structure', 'built_year',
+    'road_info', 'height_district', 'fire_zone', 'frontage',
+    'current_status', 'yield', 'occupancy', 'overall_confidence'
+  ];
+
+  const missingFields: string[] = [];
+  const invalidFields: string[] = [];
+  const errors: string[] = [];
+
+  // フィールド存在チェック
+  for (const field of requiredFields) {
+    if (!(field in data)) {
+      missingFields.push(field);
+      errors.push(`Missing field: ${field}`);
+    } else if (field === 'overall_confidence') {
+      // overall_confidenceは数値であるべき
+      if (typeof data[field] !== 'number') {
+        invalidFields.push(field);
+        errors.push(`Invalid field: ${field} (expected number, got ${typeof data[field]})`);
+      }
+    } else {
+      // その他のフィールドはOCRExtractedField形式であるべき
+      if (!isOCRExtractedField(data[field])) {
+        invalidFields.push(field);
+        errors.push(`Invalid field: ${field} (expected {value, confidence} format)`);
+      }
+    }
+  }
+
+  return {
+    isValid: missingFields.length === 0 && invalidFields.length === 0,
+    missingFields,
+    invalidFields,
+    errors
+  };
+}
+
 export interface Message {
   id: string;
   deal_id: string;

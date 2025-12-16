@@ -195,7 +195,7 @@ ocr.post('/extract', async (c) => {
                 content: [
                   {
                     type: 'text',
-                    text: 'この不動産物件資料から情報を抽出してください。'
+                    text: 'この日本の不動産資料から情報を抽出してください。小さな文字も含め、画像内のすべてのテキストを注意深く読み取ってください。完全なJSON形式で返してください（マークダウン記法不要）。'
                   },
                   {
                     type: 'image_url',
@@ -207,8 +207,9 @@ ocr.post('/extract', async (c) => {
                 ]
               }
             ],
-            max_tokens: 1500,
-            temperature: 0.1
+            max_tokens: 2000,
+            temperature: 0.05,
+            response_format: { type: "json_object" }
           })
         });
 

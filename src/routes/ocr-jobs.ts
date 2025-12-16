@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
-import { Bindings } from '../types';
+import { Bindings, OCRExtractedData, OCRExtractedField, validateOCRExtractedData } from '../types';
 import { verifyToken } from '../utils/crypto';
 import { authMiddleware } from '../utils/auth';
 import { retryOpenAI, RetryError } from '../utils/retry';
@@ -128,7 +128,7 @@ async function performOCRSync(
                   content: [
                     {
                       type: 'text',
-                      text: 'Extract property information from this Japanese real estate document. Read all text carefully. Return ONLY a JSON object.'
+                      text: 'この日本の不動産資料から情報を抽出してください。小さな文字も含め、画像内のすべてのテキストを注意深く読み取ってください。完全なJSON形式で返してください（マークダウン記法不要）。'
                     },
                     {
                       type: 'image_url',
@@ -141,7 +141,7 @@ async function performOCRSync(
                 }
               ],
               max_tokens: 2000,
-              temperature: 0.1,
+              temperature: 0.05,
               response_format: { type: "json_object" }
             })
           });
@@ -1132,7 +1132,59 @@ property_name, location, station, walk_minutes, land_area, building_area, zoning
 
 ⚠️ 特に height_district, fire_zone, frontage は必須フィールドです。欠落厳禁。
 
-欠落したフィールドがあるとシステムエラーになります。すべてのフィールドを必ず出力してください。`;
+欠落したフィールドがあるとシステムエラーになります。すべてのフィールドを必ず出力してください。
+
+【Few-Shot Examples】成功例:
+
+Example 1: 物件概要書（完全な情報）
+{
+  "property_name": {"value": "川崎物件", "confidence": 0.9},
+  "location": {"value": "神奈川県川崎市幸区塚越四丁目328番1", "confidence": 0.95},
+  "station": {"value": "矢向", "confidence": 0.9},
+  "walk_minutes": {"value": "13", "confidence": 0.9},
+  "land_area": {"value": "218.14㎡", "confidence": 0.95},
+  "building_area": {"value": "104.34㎡", "confidence": 0.95},
+  "zoning": {"value": "第一種住居地域", "confidence": 0.9},
+  "building_coverage": {"value": "60", "confidence": 0.9},
+  "floor_area_ratio": {"value": "200", "confidence": 0.9},
+  "price": {"value": "3,980万円", "confidence": 0.95},
+  "structure": {"value": "木造3階建", "confidence": 0.9},
+  "built_year": {"value": "平成28年3月", "confidence": 0.9},
+  "road_info": {"value": "東側 幅員4.14m 公道", "confidence": 0.85},
+  "height_district": {"value": "第二種高度地区", "confidence": 0.85},
+  "fire_zone": {"value": "準防火地域", "confidence": 0.9},
+  "frontage": {"value": "4.14m", "confidence": 0.85},
+  "current_status": {"value": "空家", "confidence": 0.9},
+  "yield": {"value": null, "confidence": 0.0},
+  "occupancy": {"value": null, "confidence": 0.0},
+  "overall_confidence": 0.88
+}
+
+Example 2: 不明瞭な資料（部分的な情報のみ）
+{
+  "property_name": {"value": "幸手市物件", "confidence": 0.7},
+  "location": {"value": "埼玉県幸手市北二丁目1-8", "confidence": 0.85},
+  "station": {"value": "幸手", "confidence": 0.8},
+  "walk_minutes": {"value": "7", "confidence": 0.8},
+  "land_area": {"value": "110.50㎡", "confidence": 0.75},
+  "building_area": {"value": null, "confidence": 0.0},
+  "zoning": {"value": "第一種低層住居専用地域", "confidence": 0.7},
+  "building_coverage": {"value": "50", "confidence": 0.65},
+  "floor_area_ratio": {"value": "100", "confidence": 0.65},
+  "price": {"value": "1,580万円", "confidence": 0.8},
+  "structure": {"value": null, "confidence": 0.0},
+  "built_year": {"value": null, "confidence": 0.0},
+  "road_info": {"value": "北側 幅員4.0m", "confidence": 0.6},
+  "height_district": {"value": null, "confidence": 0.0},
+  "fire_zone": {"value": null, "confidence": 0.0},
+  "frontage": {"value": "4.0m", "confidence": 0.6},
+  "current_status": {"value": "空家", "confidence": 0.7},
+  "yield": {"value": null, "confidence": 0.0},
+  "occupancy": {"value": null, "confidence": 0.0},
+  "overall_confidence": 0.62
+}
+
+上記の例を参考に、同様の形式でJSONを返してください。`;
 
 /**
  * OpenAI APIレスポンスを正規化

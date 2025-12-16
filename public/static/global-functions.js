@@ -6,7 +6,7 @@
  */
 
 console.log('[Global Functions] ========================================');
-console.log('[Global Functions] VERSION: v3.153.39 (2025-12-10)');
+console.log('[Global Functions] VERSION: v3.153.98 (2025-12-16) - Task A4: Retry notifications');
 console.log('[Global Functions] Defining window.autoFillFromReinfolib and window.manualComprehensiveRiskCheck');
 console.log('[Global Functions] ========================================');
 
@@ -41,6 +41,9 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 取得中...';
   
+  // v3.153.98: Task A4 - リトライ中メッセージ表示
+  let retryMessageTimer = null;
+  
   try {
     // CRITICAL FIX v3.153.92: Check token and show user-friendly error
     const token = localStorage.getItem('token');
@@ -62,6 +65,11 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
     const quarter = Math.ceil((new Date().getMonth() + 1) / 3);
     
     console.log('[不動産情報ライブラリ] リクエスト送信:', { address, year, quarter });
+    
+    // v3.153.98: 5秒後にリトライ中メッセージを表示
+    retryMessageTimer = setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> 時間がかかっています...';
+    }, 5000);
     
     const response = await axios.get('/api/reinfolib/property-info', {
       params: { address, year, quarter },
@@ -153,6 +161,10 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
     
     alert(errorMessage + details);
   } finally {
+    // v3.153.98: タイマーをクリア
+    if (retryMessageTimer) {
+      clearTimeout(retryMessageTimer);
+    }
     btn.disabled = false;
     btn.innerHTML = originalHTML;
   }
@@ -189,6 +201,9 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> チェック中...';
   
+  // v3.153.98: Task A4 - リトライ中メッセージ表示
+  let retryMessageTimer = null;
+  
   try {
     // CRITICAL FIX v3.153.92: Check token and redirect to root
     const token = localStorage.getItem('token');
@@ -205,6 +220,11 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
     }
     
     console.log('[COMPREHENSIVE CHECK] Sending request...');
+    
+    // v3.153.98: 8秒後にリトライ中メッセージを表示（comprehensive-checkは時間がかかるため）
+    retryMessageTimer = setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> 時間がかかっています...';
+    }, 8000);
     
     const response = await axios.get('/api/reinfolib/comprehensive-check', {
       params: { address },
@@ -285,6 +305,10 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
     
     alert(errorMessage + details);
   } finally {
+    // v3.153.98: タイマーをクリア
+    if (retryMessageTimer) {
+      clearTimeout(retryMessageTimer);
+    }
     btn.disabled = false;
     btn.innerHTML = originalHTML;
   }

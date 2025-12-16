@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { JWTPayload } from 'hono/utils/jwt/types';
 import { handleAPIError, retryAsync, withTimeout, logError, createErrorResponse } from '../utils/error-handler';
 import { authMiddleware } from '../utils/auth';
+import { retryMLIT, retryNominatim } from '../utils/retry';
 
 type Bindings = {
   DB: D1Database;
@@ -293,15 +294,32 @@ app.get('/property-info', async (c) => {
 
     console.log('🔍 Fetching REINFOLIB API:', url);
 
-    // 不動産情報ライブラリAPIへリクエスト
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Ocp-Apim-Subscription-Key': apiKey,
-        'Accept': 'application/json',
-        'Accept-Encoding': 'gzip, deflate, br'
+    // 不動産情報ライブラリAPIへリクエスト（リトライ付き）
+    // v3.153.97: Task A4 - リトライ機能実装
+    const response = await retryMLIT(
+      async () => {
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Ocp-Apim-Subscription-Key': apiKey,
+            'Accept': 'application/json',
+            'Accept-Encoding': 'gzip, deflate, br'
+          }
+        });
+        
+        // リトライ可能なエラーの場合は例外をスロー
+        if (!res.ok && [408, 500, 502, 503, 504].includes(res.status)) {
+          const error: any = new Error(`MLIT API error: ${res.status}`);
+          error.response = { status: res.status };
+          throw error;
+        }
+        
+        return res;
+      },
+      (attempt, error, delayMs) => {
+        console.warn(`[MLIT API] Retry ${attempt}/3 for ${address} after ${delayMs}ms`, error);
       }
-    });
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -513,13 +531,31 @@ app.get('/hazard-info', async (c) => {
     if (!latitude || !longitude) {
       console.log('[HAZARD] Geocoding address:', address);
       
+      // Nominatim APIで住所→座標変換（リトライ付き）
+      // v3.153.97: Task A4 - リトライ機能実装
       const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
       
-      const geocodeResponse = await fetch(geocodeUrl, {
-        headers: {
-          'User-Agent': 'Real-Estate-200units-v2/1.0'
+      const geocodeResponse = await retryNominatim(
+        async () => {
+          const res = await fetch(geocodeUrl, {
+            headers: {
+              'User-Agent': 'Real-Estate-200units-v2/1.0'
+            }
+          });
+          
+          // リトライ可能なエラーの場合は例外をスロー
+          if (!res.ok && [408, 429, 500, 502, 503, 504].includes(res.status)) {
+            const error: any = new Error(`Nominatim API error: ${res.status}`);
+            error.response = { status: res.status };
+            throw error;
+          }
+          
+          return res;
+        },
+        (attempt, error, delayMs) => {
+          console.warn(`[Nominatim API] Retry ${attempt}/3 for hazard-info after ${delayMs}ms`, error);
         }
-      });
+      );
       
       if (!geocodeResponse.ok) {
         return c.json({ 
@@ -917,13 +953,31 @@ app.get('/check-financing-restrictions', async (c) => {
     if (!latitude || !longitude) {
       console.log('[FINANCING_CHECK] Geocoding address:', address);
       
+      // Nominatim APIで住所→座標変換（リトライ付き）
+      // v3.153.97: Task A4 - リトライ機能実装
       const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
       
-      const geocodeResponse = await fetch(geocodeUrl, {
-        headers: {
-          'User-Agent': 'Real-Estate-200units-v2/1.0'
+      const geocodeResponse = await retryNominatim(
+        async () => {
+          const res = await fetch(geocodeUrl, {
+            headers: {
+              'User-Agent': 'Real-Estate-200units-v2/1.0'
+            }
+          });
+          
+          // リトライ可能なエラーの場合は例外をスロー
+          if (!res.ok && [408, 429, 500, 502, 503, 504].includes(res.status)) {
+            const error: any = new Error(`Nominatim API error: ${res.status}`);
+            error.response = { status: res.status };
+            throw error;
+          }
+          
+          return res;
+        },
+        (attempt, error, delayMs) => {
+          console.warn(`[Nominatim API] Retry ${attempt}/3 for financing-check after ${delayMs}ms`, error);
         }
-      });
+      );
       
       if (!geocodeResponse.ok) {
         return c.json({ 
@@ -1075,14 +1129,31 @@ app.get('/zoning-info', async (c) => {
     if (!latitude || !longitude) {
       console.log('[ZONING] Geocoding address:', address);
       
-      // OpenStreetMap Nominatim APIで住所→座標変換
+      // OpenStreetMap Nominatim APIで住所→座標変換（リトライ付き）
+      // v3.153.97: Task A4 - リトライ機能実装
       const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1&accept-language=ja`;
       
-      const geocodeResponse = await fetch(geocodeUrl, {
-        headers: {
-          'User-Agent': 'Real-Estate-200units-v2/1.0'
+      const geocodeResponse = await retryNominatim(
+        async () => {
+          const res = await fetch(geocodeUrl, {
+            headers: {
+              'User-Agent': 'Real-Estate-200units-v2/1.0'
+            }
+          });
+          
+          // リトライ可能なエラーの場合は例外をスロー
+          if (!res.ok && [408, 429, 500, 502, 503, 504].includes(res.status)) {
+            const error: any = new Error(`Nominatim API error: ${res.status}`);
+            error.response = { status: res.status };
+            throw error;
+          }
+          
+          return res;
+        },
+        (attempt, error, delayMs) => {
+          console.warn(`[Nominatim API] Retry ${attempt}/3 for ${address} after ${delayMs}ms`, error);
         }
-      });
+      );
       
       if (!geocodeResponse.ok) {
         return c.json({ 
@@ -1115,15 +1186,32 @@ app.get('/zoning-info', async (c) => {
 
     console.log('[ZONING] Tile coordinates:', { zoom, tileX, tileY });
 
-    // 用途地域API（XKT002）
+    // 用途地域API（XKT002）（リトライ付き）
+    // v3.153.97: Task A4 - リトライ機能実装
     const url = `https://www.reinfolib.mlit.go.jp/ex-api/external/XKT002?response_format=geojson&z=${zoom}&x=${tileX}&y=${tileY}`;
     
-    const response = await fetch(url, {
-      headers: {
-        'Ocp-Apim-Subscription-Key': apiKey,
-        'Accept': 'application/json'
+    const response = await retryMLIT(
+      async () => {
+        const res = await fetch(url, {
+          headers: {
+            'Ocp-Apim-Subscription-Key': apiKey,
+            'Accept': 'application/json'
+          }
+        });
+        
+        // リトライ可能なエラーの場合は例外をスロー
+        if (!res.ok && [408, 500, 502, 503, 504].includes(res.status)) {
+          const error: any = new Error(`MLIT API XKT002 error: ${res.status}`);
+          error.response = { status: res.status };
+          throw error;
+        }
+        
+        return res;
+      },
+      (attempt, error, delayMs) => {
+        console.warn(`[MLIT API XKT002] Retry ${attempt}/3 after ${delayMs}ms`, error);
       }
-    });
+    );
 
     if (!response.ok) {
       return c.json({ 

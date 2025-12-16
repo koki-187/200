@@ -8530,8 +8530,9 @@ app.get('/deals/new', (c) => {
         }
       }
     }
-    // NOTE: window.processMultipleOCR is already defined above (Line 6783)
-    // No need to reassign here
+    */
+    // NOTE: window.processMultipleOCR is defined in /static/ocr-init.js (loaded at Line 12469)
+    // Inline definition above is commented out to use external file instead
 
     // OCR結果編集UIの表示
     function displayOCRResultEditor(extractedData) {
@@ -12466,7 +12467,16 @@ app.get('/deals/new', (c) => {
   </script>
   <!-- CRITICAL FIX v3.115.0: Load OCR initialization before deals-new-events.js -->
   <!-- This ensures window.processMultipleOCR placeholder exists even if main script has errors -->
+  <script>
+    console.log('[DEBUG v3.153.105] About to load ocr-init.js');
+    console.log('[DEBUG v3.153.105] Current processMultipleOCR:', typeof window.processMultipleOCR);
+  </script>
   <script src="/static/ocr-init.js"></script>
+  <script>
+    console.log('[DEBUG v3.153.105] ocr-init.js loaded');
+    console.log('[DEBUG v3.153.105] processMultipleOCR after load:', typeof window.processMultipleOCR);
+    console.log('[DEBUG v3.153.105] ocrInitLoaded:', window.ocrInitLoaded);
+  </script>
   <!-- イベント委譲パターン - インラインロジックより前に実行 -->
   <script src="/static/deals-new-events.js"></script>
   
@@ -14545,6 +14555,15 @@ app.onError((err, c) => {
     message: err.message || 'Unknown error',
     ...(process.env.NODE_ENV === 'development' && {
       stack: err.stack?.substring(0, 500)
+    })
+  };
+  
+  return c.json(errorResponse, 500);
+});
+
+export default app;
+
+err.stack?.substring(0, 500)
     })
   };
   

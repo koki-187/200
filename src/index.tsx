@@ -60,13 +60,14 @@ app.use('*', async (c, next) => {
   await next();
   
   // Content Security Policy
+  // CRITICAL FIX v3.153.111: Add nominatim.openstreetmap.org and api.openai.com to connect-src
   c.header('Content-Security-Policy', 
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.tailwindcss.com cdn.jsdelivr.net unpkg.com cdnjs.cloudflare.com; " +
     "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com unpkg.com; " +
     "font-src 'self' cdn.jsdelivr.net fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
-    "connect-src 'self' cdn.jsdelivr.net cdnjs.cloudflare.com; " +
+    "connect-src 'self' cdn.jsdelivr.net cdnjs.cloudflare.com nominatim.openstreetmap.org api.openai.com *.gsi.go.jp *.mlit.go.jp; " +
     "worker-src 'self' blob: cdnjs.cloudflare.com;"
   );
   
@@ -6575,6 +6576,24 @@ app.get('/deals/new', (c) => {
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <option value="">選択してください</option>
           </select>
+          <!-- CRITICAL FIX v3.153.111: Failsafe to load sellers if initializePage() doesn't execute -->
+          <script>
+            console.log('[Seller Failsafe] Checking if sellers need to be loaded...');
+            setTimeout(function() {
+              const sellerSelect = document.getElementById('seller_id');
+              if (sellerSelect && sellerSelect.options.length === 1) {
+                console.warn('[Seller Failsafe] Only default option exists, forcing loadSellers()');
+                if (typeof window.loadSellers === 'function') {
+                  console.log('[Seller Failsafe] Calling window.loadSellers()');
+                  window.loadSellers();
+                } else {
+                  console.error('[Seller Failsafe] window.loadSellers not found');
+                }
+              } else {
+                console.log('[Seller Failsafe] Sellers already loaded or element not found');
+              }
+            }, 1500); // Wait 1.5s for normal initialization to complete
+          </script>
         </div>
 
         <!-- 備考 -->

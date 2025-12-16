@@ -891,10 +891,99 @@ window.autoRunRiskCheck = autoRunRiskCheck;
 window.ocrInitLoaded = true;
 
 console.log('[OCR Init] ========================================');
-console.log('[OCR Init] 🆕 VERSION: v3.153.34 (2025-12-10) - CRITICAL: height_district and fire_zone field mapping added');
+console.log('[OCR Init] 🆕 VERSION: v3.153.106 (2025-12-16) - CRITICAL FIX: Event listeners registration added');
 console.log('[OCR Init] ✅ window.processMultipleOCR function created (complete with PDF support)');
 console.log('[OCR Init] ✅ window.runComprehensiveRiskCheck function created');
 console.log('[OCR Init] ✅ PDF.js preload initiated for iOS Safari');
 console.log('[OCR Init] ⚠️ v3.153.83: AUTO-EXECUTION DISABLED - User must manually click buttons for property info and risk check');
 console.log('[OCR Init] window.ocrInitLoaded = true');
 console.log('[OCR Init] ========================================');
+
+// CRITICAL FIX v3.153.106: DOM Event Listener Registration
+// This ensures OCR button/drop-zone work correctly
+function initializeOCREventListeners() {
+  console.log('[OCR Init] Initializing event listeners...');
+  
+  // Get DOM elements
+  const dropZone = document.getElementById('ocr-drop-zone');
+  const fileInput = document.getElementById('ocr-file-input');
+  
+  console.log('[OCR Init] dropZone element:', dropZone);
+  console.log('[OCR Init] fileInput element:', fileInput);
+  
+  if (!dropZone || !fileInput) {
+    console.error('[OCR Init] ❌ CRITICAL: DOM elements not found!');
+    console.error('[OCR Init] dropZone:', dropZone);
+    console.error('[OCR Init] fileInput:', fileInput);
+    return;
+  }
+  
+  // Click event for drop zone
+  dropZone.addEventListener('click', (e) => {
+    console.log('[OCR Init] 🖱️ Drop zone clicked');
+    e.preventDefault();
+    e.stopPropagation();
+    fileInput.click();
+  });
+  
+  // Touch event for iOS Safari
+  dropZone.addEventListener('touchend', (e) => {
+    console.log('[OCR Init] 📱 Drop zone touched (iOS)');
+    e.preventDefault();
+    e.stopPropagation();
+    fileInput.click();
+  });
+  
+  // Drag and drop events
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.add('ocr-drop-zone-active');
+  });
+  
+  dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('ocr-drop-zone-active');
+  });
+  
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('ocr-drop-zone-active');
+    
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+      file.type.startsWith('image/') || file.type === 'application/pdf'
+    );
+    
+    if (files.length > 0) {
+      console.log('[OCR Init] 📁 Files dropped:', files.length);
+      window.processMultipleOCR(files);
+    }
+  });
+  
+  // File input change event
+  fileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    console.log('[OCR Init] 📂 Files selected:', files.length);
+    
+    if (files.length > 0) {
+      window.processMultipleOCR(files);
+    }
+    
+    // Reset file input
+    fileInput.value = '';
+  });
+  
+  console.log('[OCR Init] ✅ Event listeners registered successfully');
+}
+
+// Wait for DOM to be ready
+if (document.readyState === 'loading') {
+  console.log('[OCR Init] Waiting for DOM content loaded...');
+  document.addEventListener('DOMContentLoaded', initializeOCREventListeners);
+} else {
+  console.log('[OCR Init] DOM already loaded, initializing immediately...');
+  // DOM is already loaded
+  setTimeout(initializeOCREventListeners, 100);
+}

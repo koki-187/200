@@ -5,9 +5,9 @@
  * 複数箇所での手動更新を避け、メンテナンス性を向上
  */
 
-export const APP_VERSION = 'v3.153.105';
+export const APP_VERSION = 'v3.153.106';
 export const BUILD_DATE = '2025-12-16';
-export const BUILD_DESCRIPTION = 'CRITICAL FIX - OCR button not responding: investigate console logs, fix script conflicts';
+export const BUILD_DESCRIPTION = 'CRITICAL FIX - OCR button unresponsive: Added complete event listener registration in ocr-init.js';
 
 /**
  * バージョン情報をコンソールに出力

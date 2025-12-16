@@ -6,7 +6,7 @@
  */
 
 console.log('[Global Functions] ========================================');
-console.log('[Global Functions] VERSION: v3.153.98 (2025-12-16) - Task A4: Retry notifications');
+console.log('[Global Functions] VERSION: v3.153.99 (2025-12-16) - Task A5: Human intervention flow');
 console.log('[Global Functions] Defining window.autoFillFromReinfolib and window.manualComprehensiveRiskCheck');
 console.log('[Global Functions] ========================================');
 
@@ -142,13 +142,21 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
           details = '\\n\\n入力例:\\n東京都渋谷区\\n埼玉県さいたま市\\n神奈川県横浜市';
         }
       } else if (error.response.status === 404) {
-        // CRITICAL FIX v3.153.93: 404エラーの詳細を表示
+        // v3.153.99: Task A5 - 404エラー時の代替入力ガイド
         errorMessage = '物件情報が見つかりませんでした。';
         if (error.response.data && error.response.data.message) {
           details = '\\n\\n' + error.response.data.message;
         } else {
           details = '\\n\\n指定された住所・年・四半期のデータがMLIT APIに存在しません。\\n別の年や四半期で再試行してください。';
         }
+        
+        // 代替手段の提示
+        details += '\\n\\n【代替手段】';
+        details += '\\n1. 不動産情報ライブラリで直接検索';
+        details += '\\n   → https://www.reinfolib.mlit.go.jp/';
+        details += '\\n2. 各自治体の不動産取引価格情報';
+        details += '\\n3. 手動で入力（下記参照）';
+        
       } else {
         errorMessage = `エラーが発生しました (HTTP ${error.response.status})`;
         if (error.response.data && error.response.data.error) {
@@ -157,9 +165,20 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
       }
     } else if (error.request) {
       errorMessage = 'ネットワークエラー: サーバーに接続できません。';
+      details = '\\n\\n【対処方法】';
+      details += '\\n1. インターネット接続を確認してください';
+      details += '\\n2. しばらく待ってから再試行してください';
+      details += '\\n3. それでも解決しない場合は管理者に連絡してください';
     }
     
-    alert(errorMessage + details);
+    // v3.153.99: Task A5 - より詳細なエラーダイアログ
+    const shouldShowLink = error.response && (error.response.status === 404 || error.response.status === 400);
+    
+    if (shouldShowLink && confirm(errorMessage + details + '\\n\\n外部サイトを開きますか？')) {
+      window.open('https://www.reinfolib.mlit.go.jp/', '_blank');
+    } else if (!shouldShowLink) {
+      alert(errorMessage + details);
+    }
   } finally {
     // v3.153.98: タイマーをクリア
     if (retryMessageTimer) {
@@ -303,7 +322,16 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
       errorMessage = 'リスクチェックエラー: ' + error.message;
     }
     
-    alert(errorMessage + details);
+    // v3.153.99: Task A5-3 - リスクチェックエラー時の外部サイトリンク
+    details += '\\n\\n【代替手段: ハザードマップで直接確認】';
+    details += '\\n1. 国土交通省ハザードマップポータルサイト';
+    details += '\\n   → https://disaportal.gsi.go.jp/';
+    details += '\\n2. 各自治体のハザードマップ';
+    details += '\\n3. 不動産会社に直接確認';
+    
+    if (confirm(errorMessage + details + '\\n\\nハザードマップポータルサイトを開きますか？')) {
+      window.open('https://disaportal.gsi.go.jp/', '_blank');
+    }
   } finally {
     // v3.153.98: タイマーをクリア
     if (retryMessageTimer) {

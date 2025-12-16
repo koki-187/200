@@ -6099,9 +6099,12 @@ app.get('/deals/new', (c) => {
                 <h4 class="font-semibold text-red-800 mb-2">OCR処理エラー</h4>
                 <p id="ocr-error-message" class="text-sm text-red-700 mb-2"></p>
                 <div id="ocr-error-solution" class="text-sm text-red-600 bg-red-100 rounded p-2 mb-3"></div>
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2 flex-wrap gap-2">
                   <button id="ocr-retry-btn" type="button" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm font-medium">
                     <i class="fas fa-redo mr-2"></i>再試行
+                  </button>
+                  <button id="ocr-manual-input-btn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+                    <i class="fas fa-edit mr-2"></i>手動入力
                   </button>
                   <button id="ocr-error-dismiss-btn" type="button" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
                     閉じる
@@ -10371,6 +10374,176 @@ app.get('/deals/new', (c) => {
     });
 
     // ============================================================
+    // v3.153.99: Task A5 - OCR手動入力モーダル
+    // ============================================================
+    
+    // モーダル開閉処理
+    function openManualInputModal() {
+      const modal = document.getElementById('ocr-manual-input-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // 背景スクロール防止
+      }
+    }
+    
+    function closeManualInputModal() {
+      const modal = document.getElementById('ocr-manual-input-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = ''; // スクロール復元
+      }
+    }
+    
+    // 手動入力ボタンのイベントリスナー
+    window.addEventListener('load', function() {
+      const manualInputBtn = document.getElementById('ocr-manual-input-btn');
+      const closeBtn = document.getElementById('ocr-manual-input-close');
+      const cancelBtn = document.getElementById('ocr-manual-input-cancel');
+      const form = document.getElementById('ocr-manual-input-form');
+      
+      // 手動入力ボタン
+      if (manualInputBtn) {
+        manualInputBtn.addEventListener('click', function() {
+          console.log('[Manual Input] Opening modal');
+          openManualInputModal();
+        });
+      }
+      
+      // 閉じるボタン
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeManualInputModal);
+      }
+      
+      // キャンセルボタン
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeManualInputModal);
+      }
+      
+      // モーダル背景クリックで閉じる
+      const modal = document.getElementById('ocr-manual-input-modal');
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) {
+            closeManualInputModal();
+          }
+        });
+      }
+      
+      // フォーム送信処理
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          console.log('[Manual Input] Form submitted');
+          
+          // 入力値を取得
+          const manualData = {
+            location: document.getElementById('manual-location')?.value || '',
+            nearest_station: document.getElementById('manual-nearest-station')?.value || '',
+            land_area: document.getElementById('manual-land-area')?.value || '',
+            zoning: document.getElementById('manual-zoning')?.value || '',
+            building_coverage: document.getElementById('manual-building-coverage')?.value || '',
+            floor_area_ratio: document.getElementById('manual-floor-area-ratio')?.value || '',
+            fire_zone: document.getElementById('manual-fire-zone')?.value || '',
+            road_info: document.getElementById('manual-road-info')?.value || '',
+            frontage: document.getElementById('manual-frontage')?.value || '',
+            current_status: document.getElementById('manual-current-status')?.value || '',
+            desired_price: document.getElementById('manual-desired-price')?.value || '',
+            building_area: document.getElementById('manual-building-area')?.value || '',
+            structure: document.getElementById('manual-structure')?.value || '',
+            built_year: document.getElementById('manual-built-year')?.value || ''
+          };
+          
+          console.log('[Manual Input] Data:', manualData);
+          
+          // メインフォームに値を設定
+          if (manualData.location) {
+            const locationInput = document.getElementById('location');
+            if (locationInput) locationInput.value = manualData.location;
+          }
+          
+          if (manualData.nearest_station) {
+            const stationInput = document.getElementById('nearest_station');
+            if (stationInput) stationInput.value = manualData.nearest_station;
+          }
+          
+          if (manualData.land_area) {
+            const landAreaInput = document.getElementById('land_area');
+            if (landAreaInput) landAreaInput.value = manualData.land_area;
+          }
+          
+          if (manualData.zoning) {
+            const zoningInput = document.getElementById('zoning');
+            if (zoningInput) zoningInput.value = manualData.zoning;
+          }
+          
+          if (manualData.building_coverage) {
+            const coverageInput = document.getElementById('building_coverage');
+            if (coverageInput) coverageInput.value = manualData.building_coverage;
+          }
+          
+          if (manualData.floor_area_ratio) {
+            const floorAreaInput = document.getElementById('floor_area_ratio');
+            if (floorAreaInput) floorAreaInput.value = manualData.floor_area_ratio;
+          }
+          
+          if (manualData.fire_zone) {
+            const fireZoneInput = document.getElementById('fire_zone');
+            if (fireZoneInput) fireZoneInput.value = manualData.fire_zone;
+          }
+          
+          if (manualData.road_info) {
+            const roadInfoInput = document.getElementById('road_info');
+            if (roadInfoInput) roadInfoInput.value = manualData.road_info;
+          }
+          
+          if (manualData.frontage) {
+            const frontageInput = document.getElementById('frontage');
+            if (frontageInput) frontageInput.value = manualData.frontage;
+          }
+          
+          if (manualData.current_status) {
+            const statusInput = document.getElementById('current_status');
+            if (statusInput) statusInput.value = manualData.current_status;
+          }
+          
+          if (manualData.desired_price) {
+            const priceInput = document.getElementById('desired_price');
+            if (priceInput) priceInput.value = manualData.desired_price;
+          }
+          
+          if (manualData.building_area) {
+            const buildingAreaInput = document.getElementById('building_area');
+            if (buildingAreaInput) buildingAreaInput.value = manualData.building_area;
+          }
+          
+          if (manualData.structure) {
+            const structureInput = document.getElementById('structure');
+            if (structureInput) structureInput.value = manualData.structure;
+          }
+          
+          if (manualData.built_year) {
+            const builtYearInput = document.getElementById('built_year');
+            if (builtYearInput) builtYearInput.value = manualData.built_year;
+          }
+          
+          // モーダルを閉じる
+          closeManualInputModal();
+          
+          // 成功メッセージ
+          alert('✅ 手動入力データをフォームに適用しました。\\n\\n必要に応じて内容を確認・修正してください。');
+          
+          // OCRエラーセクションを非表示
+          const errorSection = document.getElementById('ocr-error-section');
+          if (errorSection) {
+            errorSection.classList.add('hidden');
+          }
+          
+          console.log('[Manual Input] ✅ Data applied to form');
+        });
+      }
+    });
+
+    // ============================================================
     // 不動産情報ライブラリAPI自動入力機能
     // ============================================================
     
@@ -12325,6 +12498,164 @@ app.get('/deals/new', (c) => {
       }
     })();
   </script>
+  
+  <!-- v3.153.99: Task A5 - OCR手動入力モーダル -->
+  <div id="ocr-manual-input-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" style="backdrop-filter: blur(4px);">
+    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- モーダルヘッダー -->
+      <div class="bg-blue-600 text-white px-6 py-4 rounded-t-xl flex items-center justify-between">
+        <h3 class="text-xl font-bold flex items-center">
+          <i class="fas fa-edit mr-3"></i>
+          手動入力フォーム
+        </h3>
+        <button id="ocr-manual-input-close" type="button" class="text-white hover:text-gray-200 transition">
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+      
+      <!-- モーダル本文 -->
+      <div class="p-6">
+        <p class="text-gray-600 mb-6">
+          <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+          OCRで自動取得できなかった情報を手動で入力してください。入力後、「適用」ボタンでフォームに反映されます。
+        </p>
+        
+        <form id="ocr-manual-input-form">
+          <!-- 初回6情報：所在地 -->
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-map-marker-alt mr-1 text-red-500"></i>
+              <span class="text-red-500">*</span> 所在地・最寄駅
+            </label>
+            <input type="text" id="manual-location" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 東京都渋谷区道玄坂1-2-3">
+            <p class="text-xs text-gray-500 mt-1">住所を入力してください</p>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-train mr-1 text-blue-500"></i>
+              最寄駅
+            </label>
+            <input type="text" id="manual-nearest-station" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: JR山手線 渋谷駅">
+          </div>
+          
+          <!-- 初回6情報：土地面積 -->
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-ruler-combined mr-1 text-green-500"></i>
+              <span class="text-red-500">*</span> 土地面積（m²）
+            </label>
+            <input type="number" id="manual-land-area" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 150.50" step="0.01">
+          </div>
+          
+          <!-- 初回6情報：用途地域・建蔽率・容積率・防火地域 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-building mr-1 text-purple-500"></i>
+                <span class="text-red-500">*</span> 用途地域
+              </label>
+              <input type="text" id="manual-zoning" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 第一種住居地域">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-percentage mr-1 text-orange-500"></i>
+                建蔽率（%）
+              </label>
+              <input type="number" id="manual-building-coverage" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 60">
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-chart-line mr-1 text-teal-500"></i>
+                容積率（%）
+              </label>
+              <input type="number" id="manual-floor-area-ratio" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 200">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-fire mr-1 text-red-500"></i>
+                防火地域
+              </label>
+              <input type="text" id="manual-fire-zone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 準防火地域">
+            </div>
+          </div>
+          
+          <!-- 初回6情報：接道・間口 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-road mr-1 text-gray-500"></i>
+                <span class="text-red-500">*</span> 接道情報
+              </label>
+              <input type="text" id="manual-road-info" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 南側 公道 幅員6m">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-arrows-alt-h mr-1 text-indigo-500"></i>
+                間口（m）
+              </label>
+              <input type="number" id="manual-frontage" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 8.5" step="0.1">
+            </div>
+          </div>
+          
+          <!-- 初回6情報：現況 -->
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-home mr-1 text-yellow-500"></i>
+              <span class="text-red-500">*</span> 現況
+            </label>
+            <input type="text" id="manual-current-status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 更地、古家あり、駐車場">
+          </div>
+          
+          <!-- 初回6情報：希望価格 -->
+          <div class="mb-6">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-yen-sign mr-1 text-green-600"></i>
+              <span class="text-red-500">*</span> 希望価格（万円）
+            </label>
+            <input type="number" id="manual-desired-price" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 5000" step="1">
+          </div>
+          
+          <!-- 追加情報 -->
+          <div class="border-t pt-4 mb-4">
+            <h4 class="font-semibold text-gray-800 mb-3">
+              <i class="fas fa-plus-circle mr-2 text-blue-500"></i>
+              追加情報（任意）
+            </h4>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">建物面積（m²）</label>
+                <input type="number" id="manual-building-area" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 80" step="0.01">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">構造</label>
+                <input type="text" id="manual-structure" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 木造2階建">
+              </div>
+            </div>
+            
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">築年月</label>
+              <input type="text" id="manual-built-year" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例: 1995年3月">
+            </div>
+          </div>
+          
+          <!-- ボタン -->
+          <div class="flex items-center justify-end space-x-3 pt-4 border-t">
+            <button type="button" id="ocr-manual-input-cancel" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium">
+              <i class="fas fa-times mr-2"></i>キャンセル
+            </button>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+              <i class="fas fa-check mr-2"></i>フォームに適用
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
   
   <!-- REMOVED v3.153.15: Emergency script caused duplicate loadSellers calls -->
 </body>

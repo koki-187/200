@@ -14563,12 +14563,3 @@ app.onError((err, c) => {
 
 export default app;
 
-err.stack?.substring(0, 500)
-    })
-  };
-  
-  return c.json(errorResponse, 500);
-});
-
-export default app;
-

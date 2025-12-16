@@ -6,9 +6,61 @@
  */
 
 console.log('[Global Functions] ========================================');
-console.log('[Global Functions] VERSION: v3.153.99 (2025-12-16) - Task A5: Human intervention flow');
+console.log('[Global Functions] VERSION: v3.153.108 (2025-12-16) - Property Info Enhancement');
+console.log('[Global Functions] Pattern 1-5: API統一, エラー詳細化, フォールバック, ハザードリンク');
+console.log('[Global Functions] Pattern 6-10: 住所正規化, 年四半期推定, リトライ最適化, ログ強化, UI改善');
 console.log('[Global Functions] Defining window.autoFillFromReinfolib and window.manualComprehensiveRiskCheck');
 console.log('[Global Functions] ========================================');
+
+/**
+ * v3.153.108: Pattern 6 - 住所の正規化と補完
+ */
+function normalizeAddress(address) {
+  let normalized = address.trim();
+  
+  // 全角・半角の統一
+  normalized = normalized.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+  normalized = normalized.replace(/[ー−]/g, '-');
+  
+  // 略称の補完
+  const abbreviations = {
+    '横浜': '横浜市',
+    'さいたま': 'さいたま市',
+    '川崎': '川崎市',
+    '千葉': '千葉市'
+  };
+  
+  for (const [abbr, full] of Object.entries(abbreviations)) {
+    if (normalized.includes(abbr) && !normalized.includes(full)) {
+      normalized = normalized.replace(abbr, full);
+    }
+  }
+  
+  console.log('[Address Normalization] Original:', address, '→ Normalized:', normalized);
+  return normalized;
+}
+
+/**
+ * v3.153.108: Pattern 7 - 年・四半期の自動推定
+ */
+function estimateLatestQuarter() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const quarter = Math.ceil(month / 3);
+  
+  // データは通常1四半期遅れで公開されるため、前四半期を推定
+  let estimatedQuarter = quarter - 1;
+  let estimatedYear = year;
+  
+  if (estimatedQuarter < 1) {
+    estimatedQuarter = 4;
+    estimatedYear = year - 1;
+  }
+  
+  console.log('[Quarter Estimation] Latest available:', `${estimatedYear}年第${estimatedQuarter}四半期`);
+  return { year: estimatedYear, quarter: estimatedQuarter };
+}
 
 /**
  * 不動産情報ライブラリAPIから物件情報を取得して自動入力
@@ -23,7 +75,8 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
     return;
   }
   
-  const address = locationInput.value.trim();
+  // v3.153.108: Pattern 6 - 住所の正規化
+  const address = normalizeAddress(locationInput.value);
   console.log('[不動産情報ライブラリ] Address from input:', address);
   
   if (!address) {
@@ -61,8 +114,8 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
       return;
     }
     
-    const year = new Date().getFullYear();
-    const quarter = Math.ceil((new Date().getMonth() + 1) / 3);
+    // v3.153.108: Pattern 7 - 年・四半期の自動推定
+    const { year, quarter } = estimateLatestQuarter();
     
     console.log('[不動産情報ライブラリ] リクエスト送信:', { address, year, quarter });
     
@@ -71,13 +124,30 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
       btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> 時間がかかっています...';
     }, 5000);
     
-    const response = await axios.get('/api/reinfolib/property-info', {
-      params: { address, year, quarter },
-      headers: { 'Authorization': 'Bearer ' + token },
-      timeout: 15000
-    });
+    // v3.153.108: Pattern 4 - フォールバック処理を使用
+    const result = await fetchPropertyInfoWithFallback(address, year, quarter, token);
+    
+    if (!result.success) {
+      // 全てのフォールバックが失敗
+      throw {
+        response: {
+          status: 404,
+          data: {
+            message: '指定された住所のデータが見つかりませんでした。',
+            details: { address, year: result.attemptInfo.year, quarter: result.attemptInfo.quarter }
+          }
+        }
+      };
+    }
+    
+    const response = { data: result.data };
     
     console.log('[不動産情報ライブラリ] ✅ レスポンス受信:', response.data);
+    
+    // フォールバックで取得できた場合は通知
+    if (result.attemptInfo.year !== year || result.attemptInfo.quarter !== quarter) {
+      console.log(`[不動産情報ライブラリ] ℹ️ ${result.attemptInfo.label}のデータを使用しています`);
+    }
     
     if (!response.data.success) {
       console.error('[不動産情報ライブラリ] ❌ Data fetch failed:', response.data.message);
@@ -120,6 +190,9 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
     
     console.log(`[不動産情報ライブラリ] ✅ 自動入力完了: ${filledCount}項目`);
     
+    // v3.153.108: Pattern 5 - ハザードマップリンク常時表示
+    showHazardMapLink(address);
+    
   } catch (error) {
     console.error('[不動産情報ライブラリ] ❌ Error:', error);
     
@@ -142,20 +215,35 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
           details = '\\n\\n入力例:\\n東京都渋谷区\\n埼玉県さいたま市\\n神奈川県横浜市';
         }
       } else if (error.response.status === 404) {
-        // v3.153.99: Task A5 - 404エラー時の代替入力ガイド
-        errorMessage = '物件情報が見つかりませんでした。';
-        if (error.response.data && error.response.data.message) {
-          details = '\\n\\n' + error.response.data.message;
-        } else {
-          details = '\\n\\n指定された住所・年・四半期のデータがMLIT APIに存在しません。\\n別の年や四半期で再試行してください。';
-        }
+        // v3.153.108: Pattern 2 - エラーメッセージの詳細化と明確化
+        errorMessage = '📋 物件情報が見つかりませんでした';
         
-        // 代替手段の提示
+        // APIレスポンスから詳細情報を取得
+        const responseData = error.response.data || {};
+        const address = responseData.details?.address || locationInput.value;
+        const year = responseData.details?.year || new Date().getFullYear();
+        const quarter = responseData.details?.quarter || Math.ceil((new Date().getMonth() + 1) / 3);
+        
+        details = '\\n\\n【入力された情報】';
+        details += '\\n📍 住所: ' + address;
+        details += '\\n📅 年: ' + year;
+        details += '\\n📊 四半期: 第' + quarter + '四半期';
+        
+        details += '\\n\\n【推奨する対応】';
+        details += '\\n✅ 最新の四半期（第4四半期）または前年（' + (year - 1) + '年）のデータを試す';
+        details += '\\n✅ 住所を市区町村レベルまで簡略化（例: 神奈川県横浜市）';
+        details += '\\n✅ 国土交通省ハザードマップポータルで手動確認';
+        details += '\\n   → https://disaportal.gsi.go.jp/';
+        
+        details += '\\n\\n【注意事項】';
+        details += '\\n⚠️ 郵便番号での検索には対応していません';
+        details += '\\n⚠️ 番地まで含む詳細住所では見つからない場合があります';
+        
         details += '\\n\\n【代替手段】';
-        details += '\\n1. 不動産情報ライブラリで直接検索';
+        details += '\\n1️⃣ 不動産情報ライブラリ（MLIT）で直接検索';
         details += '\\n   → https://www.reinfolib.mlit.go.jp/';
-        details += '\\n2. 各自治体の不動産取引価格情報';
-        details += '\\n3. 手動で入力（下記参照）';
+        details += '\\n2️⃣ 各自治体の不動産取引価格情報サイト';
+        details += '\\n3️⃣ 手動入力（下記のフォームに直接入力）';
         
       } else {
         errorMessage = `エラーが発生しました (HTTP ${error.response.status})`;
@@ -188,6 +276,96 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
     btn.innerHTML = originalHTML;
   }
 };
+
+/**
+ * v3.153.108: Pattern 5 - ハザードマップリンク常時表示
+ */
+async function showHazardMapLink(address) {
+  try {
+    // 住所から座標を取得（Nominatim API）
+    const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+    const geocodeResponse = await axios.get(geocodeUrl, {
+      headers: { 'User-Agent': 'Real-Estate-200units-v2/1.0' },
+      timeout: 10000
+    });
+    
+    if (geocodeResponse.data && geocodeResponse.data.length > 0) {
+      const { lat, lon } = geocodeResponse.data[0];
+      const hazardMapUrl = `https://disaportal.gsi.go.jp/maps/?ll=${lat},${lon}&z=15&base=pale&vs=c1j0l0u0`;
+      
+      // リンクを表示（既存の要素があれば更新、なければ作成）
+      let linkContainer = document.getElementById('hazard-map-link-container');
+      if (!linkContainer) {
+        linkContainer = document.createElement('div');
+        linkContainer.id = 'hazard-map-link-container';
+        linkContainer.className = 'mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg';
+        
+        // 所在地フィールドの後に挿入
+        const locationInput = document.getElementById('location');
+        if (locationInput && locationInput.parentElement) {
+          locationInput.parentElement.insertAdjacentElement('afterend', linkContainer);
+        }
+      }
+      
+      linkContainer.innerHTML = `
+        <div class="flex items-center gap-3">
+          <i class="fas fa-map-marked-alt text-blue-600 text-xl"></i>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-blue-800 mb-1">
+              🗺️ 国土交通省ハザードマップで詳細確認
+            </p>
+            <a href="${hazardMapUrl}" target="_blank" rel="noopener" 
+               class="text-sm text-blue-600 hover:text-blue-800 underline">
+              洪水・土砂災害・津波・液状化リスクを確認 →
+            </a>
+          </div>
+        </div>
+      `;
+      
+      console.log('[Hazard Map Link] ✅ Link displayed:', hazardMapUrl);
+    }
+  } catch (error) {
+    console.warn('[Hazard Map Link] ⚠️ Failed to generate link:', error.message);
+  }
+}
+
+/**
+ * v3.153.108: Pattern 4 - 404エラー時の自動フォールバック処理
+ * 前年・前四半期で自動リトライ
+ */
+async function fetchPropertyInfoWithFallback(address, year, quarter, token) {
+  const attempts = [
+    { year, quarter, label: `${year}年第${quarter}四半期` },
+    { year: year - 1, quarter, label: `${year - 1}年第${quarter}四半期（前年）` },
+    { year, quarter: quarter > 1 ? quarter - 1 : 4, label: `${year}年第${quarter > 1 ? quarter - 1 : 4}四半期（前四半期）` }
+  ];
+  
+  for (const attempt of attempts) {
+    try {
+      console.log(`[Property Info Fallback] Trying: ${attempt.label}`);
+      
+      const response = await axios.get('/api/reinfolib/property-info', {
+        params: { address, year: attempt.year, quarter: attempt.quarter },
+        headers: { 'Authorization': 'Bearer ' + token },
+        timeout: 15000
+      });
+      
+      if (response.data.success && response.data.data && response.data.data.length > 0) {
+        console.log(`[Property Info Fallback] ✅ Success with: ${attempt.label}`);
+        return { success: true, data: response.data, attemptInfo: attempt };
+      }
+    } catch (error) {
+      console.warn(`[Property Info Fallback] ⚠️ Failed: ${attempt.label}`, error.message);
+      // 404以外のエラーは即座に終了
+      if (error.response && error.response.status !== 404) {
+        throw error;
+      }
+    }
+  }
+  
+  // 全てのフォールバックが失敗
+  return { success: false, attemptInfo: attempts[attempts.length - 1] };
+}
 
 /**
  * 総合リスクチェック実施

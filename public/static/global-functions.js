@@ -275,15 +275,32 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
       alert(errorMessage + details);
     }
   } finally {
-    // CRITICAL FIX v3.153.116: Clear all timers
-    if (retryMessageTimer) {
-      clearTimeout(retryMessageTimer);
-    }
-    clearTimeout(forceResetTimer);
+    // CRITICAL FIX v3.153.117: Guaranteed button reset with safety checks
+    console.log('[不動産情報ライブラリ v3.153.117] Finally block executing...');
     
-    btn.disabled = false;
-    btn.innerHTML = originalHTML;
-    console.log('[不動産情報ライブラリ v3.153.116] ✅ Button reset completed');
+    try {
+      if (retryMessageTimer) {
+        clearTimeout(retryMessageTimer);
+        console.log('[不動産情報ライブラリ v3.153.117] ✓ Retry timer cleared');
+      }
+      if (typeof forceResetTimer !== 'undefined') {
+        clearTimeout(forceResetTimer);
+        console.log('[不動産情報ライブラリ v3.153.117] ✓ Force reset timer cleared');
+      }
+    } catch (timerError) {
+      console.error('[不動産情報ライブラリ v3.153.117] ⚠️ Timer clear error:', timerError);
+    }
+    
+    // Guaranteed button reset
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+      console.log('[不動産情報ライブラリ v3.153.117] ✅ Button reset completed');
+      console.log('[不動産情報ライブラリ v3.153.117] Button text:', btn.innerHTML);
+      console.log('[不動産情報ライブラリ v3.153.117] Button disabled:', btn.disabled);
+    } else {
+      console.error('[不動産情報ライブラリ v3.153.117] ❌ Button reference lost!');
+    }
   }
 };
 
@@ -488,7 +505,7 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
     console.log('[COMPREHENSIVE CHECK] ✅ Success');
     
   } catch (error) {
-    console.error('[COMPREHENSIVE CHECK] ❌ Error:', error);
+    console.error('[COMPREHENSIVE CHECK v3.153.117] ❌ Error:', error);
     
     // CRITICAL FIX v3.153.92: 詳細なエラーメッセージと入力例
     let errorMessage = 'リスクチェックに失敗しました。';

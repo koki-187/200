@@ -114,7 +114,12 @@ function displayOCRError(title, message) {
 }
 
 // CRITICAL FIX v3.153.112: OCR実行中フラグ（リコール防止）
-window._ocrProcessingInProgress = window._ocrProcessingInProgress || false;
+// CRITICAL FIX v3.153.117: Force reset flag on script load to prevent stuck state
+console.log('[OCR Init v3.153.117] Initializing OCR processing flag...');
+console.log('[OCR Init v3.153.117] Previous flag value:', window._ocrProcessingInProgress);
+window._ocrProcessingInProgress = false; // Always reset to FALSE on page load
+window._ocrProcessingStartTime = null;
+console.log('[OCR Init v3.153.117] ✅ Flag forcefully reset to FALSE');
 
 // Complete processMultipleOCR Implementation
 window.processMultipleOCR = async function(files) {

@@ -7584,23 +7584,40 @@ app.get('/deals/new', (c) => {
       newCancelBtn.addEventListener('click', cancelHandler);
     }
 
-    // CRITICAL FIX v3.153.116: Robust seller loading with timeout & fallback
+    // CRITICAL FIX v3.153.117: Ultra-robust seller loading with comprehensive error handling
     async function loadSellers() {
-      console.log('[Sellers v3.153.116] ========== START ==========');
+      console.log('[Sellers v3.153.117] ========================================');
+      console.log('[Sellers v3.153.117] ========== LOAD SELLERS START ==========');
+      console.log('[Sellers v3.153.117] Timestamp:', new Date().toISOString());
+      console.log('[Sellers v3.153.117] ========================================');
       
       const select = document.getElementById('seller_id');
       if (!select) {
-        console.error('[Sellers v3.153.116] ❌ seller_id not found');
+        console.error('[Sellers v3.153.117] ❌ CRITICAL: seller_id element not found');
+        console.error('[Sellers v3.153.117] Available select elements:', document.querySelectorAll('select').length);
         return;
       }
+      
+      console.log('[Sellers v3.153.117] ✓ seller_id element found');
+      console.log('[Sellers v3.153.117] Current options:', select.options.length);
       
       // Show loading state
       select.innerHTML = '<option value="">読み込み中...</option>';
       select.disabled = true;
+      console.log('[Sellers v3.153.117] ✓ Loading state activated');
       
-      // Get fresh token
+      // Get fresh token with detailed logging
       const currentToken = localStorage.getItem('token');
-      console.log('[Sellers v3.153.116] Token:', currentToken ? 'EXISTS (' + currentToken.length + ' chars)' : '❌ NULL');
+      console.log('[Sellers v3.153.117] localStorage check:', typeof localStorage);
+      console.log('[Sellers v3.153.117] Token exists:', !!currentToken);
+      if (currentToken) {
+        console.log('[Sellers v3.153.117] Token length:', currentToken.length, 'chars');
+        console.log('[Sellers v3.153.117] Token preview:', currentToken.substring(0, 40) + '...');
+      } else {
+        console.error('[Sellers v3.153.117] ❌ TOKEN IS NULL');
+        console.error('[Sellers v3.153.117] localStorage.token:', localStorage.getItem('token'));
+        console.error('[Sellers v3.153.117] localStorage.user:', localStorage.getItem('user'));
+      }
       
       if (!currentToken) {
         console.error('[Sellers v3.153.116] ❌ NO TOKEN');
@@ -7737,9 +7754,32 @@ app.get('/deals/new', (c) => {
         
         console.log('[Sellers] ✅ Successfully loaded', sellers.length, 'sellers');
       } catch (error) {
-        console.error('[Sellers] ❌ Failed to load sellers:', error);
-        console.error('[Sellers] Error details:', error.response?.data || error.message);
-        console.error('[Sellers] Error status:', error.response?.status);
+        console.error('[Sellers v3.153.117] ❌ Failed to load sellers:', error);
+        console.error('[Sellers v3.153.117] Error details:', error.response?.data || error.message);
+        console.error('[Sellers v3.153.117] Error status:', error.response?.status);
+        
+        // CRITICAL FIX v3.153.117: Visual feedback for user
+        const select = document.getElementById('seller_id');
+        if (select) {
+          select.style.borderColor = '#ef4444'; // Red border
+          select.style.backgroundColor = '#fef2f2'; // Light red background
+          
+          // Show error message near dropdown
+          const errorDiv = document.createElement('div');
+          errorDiv.id = 'seller-load-error';
+          errorDiv.style.cssText = 'color: #dc2626; font-size: 0.875rem; margin-top: 0.25rem;';
+          errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 売主リストの読み込みに失敗しました。フォールバック売主を使用しています。';
+          
+          // Insert error message after select element
+          const parentDiv = select.parentElement;
+          if (parentDiv) {
+            const existingError = document.getElementById('seller-load-error');
+            if (existingError) {
+              existingError.remove();
+            }
+            parentDiv.appendChild(errorDiv);
+          }
+        }
         console.error('[Sellers] This may affect seller selection functionality');
         
         // CRITICAL FIX v3.153.113: Add fallback sellers on API error
@@ -10244,12 +10284,15 @@ app.get('/deals/new', (c) => {
 
     // 初期化 - DOM要素が存在する場合のみ実行
     function initializePage() {
-      console.log('[Init] ========== INITIALIZE PAGE (deals/new) ==========');
-      console.log('[Init] Document ready state:', document.readyState);
-      console.log('[Init] Token exists:', !!token);
-      console.log('[Init] User:', user);
-      console.log('[Init] Current URL:', window.location.href);
-      console.log('[Init] Axios loaded:', typeof axios !== 'undefined');
+      console.log('[Init v3.153.117] ========== INITIALIZE PAGE (deals/new) ==========');
+      console.log('[Init v3.153.117] Document ready state:', document.readyState);
+      console.log('[Init v3.153.117] Token exists:', !!token);
+      console.log('[Init v3.153.117] Token value:', token ? 'Valid (length: ' + token.length + ')' : 'NULL');
+      console.log('[Init v3.153.117] User:', user);
+      console.log('[Init v3.153.117] User role:', user?.role);
+      console.log('[Init v3.153.117] Current URL:', window.location.href);
+      console.log('[Init v3.153.117] Axios loaded:', typeof axios !== 'undefined');
+      console.log('[Init v3.153.117] Axios version:', typeof axios !== 'undefined' ? 'Available' : 'NOT LOADED');
       
       // CRITICAL FIX v3.153.16: Call immediately instead of setTimeout
       // Reason: setTimeout may not fire if page redirects or context changes
@@ -10258,10 +10301,32 @@ app.get('/deals/new', (c) => {
       console.log('[Init] typeof loadOCRExtractedData:', typeof loadOCRExtractedData);
       
       if (typeof loadSellers === 'function') {
-        console.log('[Init] Calling loadSellers() NOW...');
-        loadSellers();
+        console.log('[Init v3.153.117] Calling loadSellers() NOW...');
+        loadSellers().catch(error => {
+          console.error('[Init v3.153.117] ❌ loadSellers() failed:', error);
+          console.error('[Init v3.153.117] Attempting manual fallback...');
+          
+          // Manual fallback - ensure dropdown is not stuck
+          const select = document.getElementById('seller_id');
+          if (select && select.options.length === 1 && select.options[0].value === '') {
+            console.error('[Init v3.153.117] Dropdown still empty - adding emergency sellers');
+            select.innerHTML = '<option value="">選択してください</option>';
+            const emergencySellers = [
+              { id: 'init-fallback-1', name: '初期化エラー売主A', company_name: '自動生成' },
+              { id: 'init-fallback-2', name: '初期化エラー売主B', company_name: '自動生成' }
+            ];
+            emergencySellers.forEach(seller => {
+              const opt = document.createElement('option');
+              opt.value = seller.id;
+              opt.textContent = seller.name + ' (' + seller.company_name + ')';
+              select.appendChild(opt);
+            });
+            select.selectedIndex = 1;
+            console.log('[Init v3.153.117] ✅ Emergency sellers added');
+          }
+        });
       } else {
-        console.error('[Init] ❌ loadSellers is not a function!');
+        console.error('[Init v3.153.117] ❌ loadSellers is not a function!');
       }
       
       if (typeof loadOCRExtractedData === 'function') {

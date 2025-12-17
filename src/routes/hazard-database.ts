@@ -106,6 +106,38 @@ app.get('/info', async (c) => {
       WHERE prefecture = ? AND city = ?
     `).bind(prefecture, city).all();
 
+    // v3.153.120: 用途地域制限を取得
+    const zoningResults = await c.env.DB.prepare(`
+      SELECT 
+        is_urbanization_control_area,
+        urbanization_note,
+        is_fire_prevention_area,
+        fire_prevention_note,
+        loan_decision,
+        loan_reason
+      FROM zoning_restrictions
+      WHERE prefecture = ? AND city = ?
+    `).bind(prefecture, city).all();
+
+    // v3.153.120: 地理的リスクを取得
+    const geographyResults = await c.env.DB.prepare(`
+      SELECT 
+        is_cliff_area,
+        cliff_height,
+        cliff_note,
+        is_river_adjacent,
+        river_name,
+        river_distance,
+        is_building_collapse_area,
+        collapse_type,
+        max_flood_depth,
+        is_over_10m_flood,
+        loan_decision,
+        loan_reason
+      FROM geography_risks
+      WHERE prefecture = ? AND city = ?
+    `).bind(prefecture, city).all();
+
     // データが見つからない場合
     if (!hazardResults.results || hazardResults.results.length === 0) {
       return c.json({
@@ -134,20 +166,83 @@ app.get('/info', async (c) => {
       details: row.restriction_details,
     })) || [];
 
-    // ローン判定
+    // v3.153.120: 用途地域制限情報
+    const zoningRestrictions: any[] = [];
+    if (zoningResults.results && zoningResults.results.length > 0) {
+      const zoning = zoningResults.results[0] as any;
+      if (zoning.is_urbanization_control_area === 1) {
+        zoningRestrictions.push({
+          type: 'urbanization_control',
+          name: '市街化調整区域',
+          is_restricted: true,
+          details: zoning.urbanization_note || '市街化を抑制すべき区域のため、原則として建築分制限されます',
+        });
+      }
+      if (zoning.is_fire_prevention_area > 0) {
+        zoningRestrictions.push({
+          type: 'fire_prevention',
+          name: zoning.is_fire_prevention_area === 1 ? '防火地域' : '準防火地域',
+          is_restricted: true,
+          details: zoning.fire_prevention_note || '建築コストが高くなるため、対象外としています',
+        });
+      }
+    }
+
+    // v3.153.120: 地理的リスク情報
+    const geographyRestrictions: any[] = [];
+    if (geographyResults.results && geographyResults.results.length > 0) {
+      geographyResults.results.forEach((geo: any) => {
+        if (geo.is_cliff_area === 1) {
+          geographyRestrictions.push({
+            type: 'cliff_area',
+            name: '崖地域',
+            is_restricted: true,
+            details: `${geo.cliff_note || '地盤の安定性や擁壁工事費用の問題から、対象外としています'}（崖の高さ: ${geo.cliff_height}m）`,
+          });
+        }
+        if (geo.is_river_adjacent === 1) {
+          geographyRestrictions.push({
+            type: 'river_adjacent',
+            name: '河川隣接',
+            is_restricted: true,
+            details: `${geo.river_name}に隣接（距離: ${geo.river_distance}m）。洪水リスクが高く、対象外としています`,
+          });
+        }
+        if (geo.is_building_collapse_area === 1) {
+          geographyRestrictions.push({
+            type: 'building_collapse',
+            name: '家屋倒壊エリア',
+            is_restricted: true,
+            details: `家屋倒壊等氾濫想定区域（${geo.collapse_type}）。の融資限定対象`,
+          });
+        }
+        if (geo.is_over_10m_flood === 1) {
+          geographyRestrictions.push({
+            type: 'over_10m_flood',
+            name: '10m以上の浸水',
+            is_restricted: true,
+            details: `浸水想定区域（${geo.max_flood_depth}m）は融資制限の対象となります`,
+          });
+        }
+      });
+    }
+
+    // ローン判定（統合）
     const hasFloodRestriction = loanRestrictions.some(
       (r: any) => r.type === 'flood_restricted' && r.is_restricted
     );
     const hasLandslideRestriction = loanRestrictions.some(
       (r: any) => r.type === 'landslide_restricted' && r.is_restricted
     );
+    const hasZoningRestriction = zoningRestrictions.some((r: any) => r.is_restricted);
+    const hasGeographyRestriction = geographyRestrictions.some((r: any) => r.is_restricted);
 
     let loanJudgment = 'OK';
     let loanJudgmentText = '融資制限なし';
     
-    if (hasFloodRestriction || hasLandslideRestriction) {
-      loanJudgment = 'RESTRICTED';
-      loanJudgmentText = '融資制限の可能性あり';
+    if (hasFloodRestriction || hasLandslideRestriction || hasZoningRestriction || hasGeographyRestriction) {
+      loanJudgment = 'NG';
+      loanJudgmentText = '融資制限あり（金融機関NG）';
     }
 
     return c.json({
@@ -162,7 +257,11 @@ app.get('/info', async (c) => {
         loan: {
           judgment: loanJudgment,
           judgment_text: loanJudgmentText,
-          restrictions: loanRestrictions,
+          restrictions: {
+            basic: loanRestrictions,            // 基本ローン制限（洪水・土砂）
+            zoning: zoningRestrictions,         // 用途地域制限
+            geography: geographyRestrictions,   // 地理的リスク
+          },
         },
         external_links: [
           {

@@ -6,11 +6,11 @@
  */
 
 console.log('[Global Functions] ========================================');
-console.log('[Global Functions] VERSION: v3.153.120 (2025-12-18) - Progress UI Enhancement');
+console.log('[Global Functions] VERSION: v3.153.121 (2025-12-18) - Hazard DB Auto Display');
 console.log('[Global Functions] Pattern 1-5: API統一, エラー詳細化, フォールバック, ハザードリンク');
 console.log('[Global Functions] Pattern 6-10: 住所正規化, 年四半期推定, リトライ最適化, ログ強化, UI改善');
-console.log('[Global Functions] v3.153.120: Progress display added to property info fallback');
-console.log('[Global Functions] Defining window.autoFillFromReinfolib and window.manualComprehensiveRiskCheck');
+console.log('[Global Functions] v3.153.121: 住所入力時ハザード情報自動表示（ローカルDB、API不要）');
+console.log('[Global Functions] Defining window.autoFillFromReinfolib and window.autoDisplayHazardInfo');
 console.log('[Global Functions] ========================================');
 
 /**
@@ -655,13 +655,16 @@ function displayHazardInfo(hazardData) {
     return 'fa-question-circle text-gray-600';
   };
   
-  // ローン判定バッジ
+  // v3.153.121: ローン判定バッジ（NG対応）
   let loanBadgeClass = 'bg-green-100 text-green-800 border-green-300';
   let loanBadgeIcon = 'fa-check-circle';
-  if (loan.judgment === 'RESTRICTED') {
+  if (loan.judgment === 'NG') {
+    loanBadgeClass = 'bg-red-100 text-red-800 border-red-300';
+    loanBadgeIcon = 'fa-ban';
+  } else if (loan.judgment === 'RESTRICTED') {
     loanBadgeClass = 'bg-red-100 text-red-800 border-red-300';
     loanBadgeIcon = 'fa-exclamation-triangle';
-  } else if (loan.judgment === 'MANUAL_CHECK') {
+  } else if (loan.judgment === 'WARNING' || loan.judgment === 'MANUAL_CHECK') {
     loanBadgeClass = 'bg-yellow-100 text-yellow-800 border-yellow-300';
     loanBadgeIcon = 'fa-clipboard-check';
   }
@@ -714,8 +717,53 @@ function displayHazardInfo(hazardData) {
   
   html += `
     </div>
-    
-    <!-- 外部リンク -->
+  `;
+  
+  // v3.153.121: 融資制限詳細（用途地域・地理的リスク）
+  const restrictions = loan.restrictions || {};
+  
+  if (restrictions.zoning && restrictions.zoning.length > 0) {
+    html += `
+      <div class="border-t pt-4 mt-4">
+        <h4 class="font-semibold mb-3 text-red-700 flex items-center">
+          <i class="fas fa-map-marked-alt mr-2"></i>用途地域制限
+        </h4>
+    `;
+    restrictions.zoning.forEach((r) => {
+      html += `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-2">
+          <p class="font-medium text-red-800 flex items-center">
+            <i class="fas fa-ban mr-2"></i>${r.name}
+          </p>
+          <p class="text-sm text-red-700 mt-1">${r.details}</p>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+  
+  if (restrictions.geography && restrictions.geography.length > 0) {
+    html += `
+      <div class="border-t pt-4 mt-4">
+        <h4 class="font-semibold mb-3 text-red-700 flex items-center">
+          <i class="fas fa-mountain mr-2"></i>地理的リスク
+        </h4>
+    `;
+    restrictions.geography.forEach((r) => {
+      html += `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-2">
+          <p class="font-medium text-red-800 flex items-center">
+            <i class="fas fa-exclamation-triangle mr-2"></i>${r.name}
+          </p>
+          <p class="text-sm text-red-700 mt-1">${r.details}</p>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+  
+  // 外部リンク
+  html += `
     <div class="mt-4 pt-4 border-t border-gray-200">
       <a href="https://disaportal.gsi.go.jp/" target="_blank" 
          class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline">
@@ -728,7 +776,7 @@ function displayHazardInfo(hazardData) {
   resultDiv.innerHTML = html;
   container.classList.remove('hidden');
   
-  console.log('[Hazard Display] ✅ UI rendered successfully');
+  console.log('[Hazard Display] ✅ UI rendered successfully (v3.153.121: with zoning & geography restrictions)');
 }
 
 /**

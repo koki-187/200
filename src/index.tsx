@@ -6402,7 +6402,7 @@ app.get('/deals/new', (c) => {
             <i class="fas fa-info-circle mr-1"></i><strong>自動補足可能な情報:</strong> 土地面積、建蔽率、容積率、道路情報、間口、建物面積、構造、築年月、過去取引価格
           </p>
           <p class="text-xs text-amber-600 mt-1 bg-amber-50 p-2 rounded">
-            <i class="fas fa-exclamation-triangle mr-1"></i><strong>注意:</strong> 用途地域・ハザード情報は別途「リスクチェック」ボタンから確認してください。取得される価格情報は過去の取引事例であり、現在の販売価格ではありません。
+            <i class="fas fa-exclamation-triangle mr-1"></i><strong>注意:</strong> 取得される価格情報は過去の取引事例であり、現在の販売価格ではありません。
           </p>
         </div>
 
@@ -10465,6 +10465,25 @@ app.get('/deals/new', (c) => {
       
       // 不足項目チェック（案件IDがある場合のみ）
       checkMissingItems();
+      
+      // v3.153.121: 住所入力時のハザード情報自動表示
+      console.log('[Init v3.153.121] Setting up location input event listener for auto hazard display');
+      const locationInput = document.getElementById('location');
+      if (locationInput) {
+        locationInput.addEventListener('change', function() {
+          const address = this.value.trim();
+          console.log('[Init v3.153.121] Location changed:', address);
+          if (address && address.length >= 8 && typeof window.autoShowHazardInfo === 'function') {
+            console.log('[Init v3.153.121] Calling autoShowHazardInfo()');
+            window.autoShowHazardInfo(address);
+          } else {
+            console.log('[Init v3.153.121] Address too short or autoShowHazardInfo not available');
+          }
+        });
+        console.log('[Init v3.153.121] ✅ Location event listener attached');
+      } else {
+        console.warn('[Init v3.153.121] ⚠️ Location input element not found');
+      }
       
       // イベントリスナー設定は後で行う（グローバル関数定義後）
       // setupButtonListeners()はwindow.loadイベント後に実行される

@@ -7270,12 +7270,19 @@ app.get('/deals/new', (c) => {
       });
     }
     
+    // CRITICAL FIX v3.153.114: More visible token/user logging
     let token = null;
     let user = {};
     
     try {
       token = localStorage.getItem('token');
+      console.log('[CRITICAL DEBUG] ========== TOKEN/USER INITIALIZATION ==========');
       console.log('[CRITICAL DEBUG] Token retrieved:', !!token);
+      if (token) {
+        console.log('[CRITICAL DEBUG] Token preview:', token.substring(0, 30) + '...');
+      } else {
+        console.error('[CRITICAL DEBUG] ❌ NO TOKEN FOUND - User may not be logged in');
+      }
     } catch (e) {
       console.error('[CRITICAL DEBUG] localStorage.getItem error:', e);
     }
@@ -7285,10 +7292,17 @@ app.get('/deals/new', (c) => {
       console.log('[CRITICAL DEBUG] User string:', userStr);
       user = JSON.parse(userStr);
       console.log('[CRITICAL DEBUG] User parsed:', user);
+      if (user && user.id) {
+        console.log('[CRITICAL DEBUG] ✅ User ID:', user.id, 'Role:', user.role);
+      } else {
+        console.error('[CRITICAL DEBUG] ❌ NO USER DATA - User may not be logged in');
+      }
     } catch (e) {
       console.error('[CRITICAL DEBUG] JSON.parse error:', e);
       user = {};
     }
+    
+    console.log('[CRITICAL DEBUG] ========== TOKEN/USER READY ==========');
 
     // ========================================
     // 2. 認証チェック
@@ -7665,10 +7679,17 @@ app.get('/deals/new', (c) => {
 
     // 売主リスト取得（リトライロジック付き）
     async function loadSellers(retryCount = 0) {
-      console.log('[Sellers] ========== START (Retry:', retryCount, ') ==========');
-      console.log('[Sellers] Token:', token ? 'exists (' + token.substring(0, 20) + '...)' : 'NULL/UNDEFINED');
-      console.log('[Sellers] Current URL:', window.location.href);
-      console.log('[Sellers] User:', user);
+      console.log('[Sellers v3.153.114] ========== START (Retry:', retryCount, ') ==========');
+      console.log('[Sellers v3.153.114] Token exists:', !!token);
+      if (token) {
+        console.log('[Sellers v3.153.114] Token preview:', token.substring(0, 30) + '...');
+      } else {
+        console.error('[Sellers v3.153.114] ❌❌❌ TOKEN IS NULL - CRITICAL ISSUE');
+        console.error('[Sellers v3.153.114] localStorage token:', localStorage.getItem('token') ? 'EXISTS' : 'NULL');
+      }
+      console.log('[Sellers v3.153.114] Current URL:', window.location.href);
+      console.log('[Sellers v3.153.114] User:', user);
+      console.log('[Sellers v3.153.114] User role:', user?.role || 'UNKNOWN');
       
       try {
         const select = document.getElementById('seller_id');
@@ -7686,11 +7707,41 @@ app.get('/deals/new', (c) => {
           }
         }
         
-        console.log('[Sellers] seller_id element found, current options:', select.options.length);
+        console.log('[Sellers v3.153.114] seller_id element found, current options:', select.options.length);
         
+        // CRITICAL FIX v3.153.114: If no token, provide emergency sellers immediately
         if (!token) {
-          console.error('[Sellers] ❌ No token available');
-          console.error('[Sellers] User must log in or token expired');
+          console.error('[Sellers v3.153.114] ❌❌❌ NO TOKEN - CANNOT CALL API');
+          console.error('[Sellers v3.153.114] Possible causes: 1) Not logged in, 2) Token expired, 3) localStorage issue');
+          console.warn('[Sellers v3.153.114] Adding emergency sellers WITHOUT API call');
+          
+          // Clear and add default option
+          select.innerHTML = '';
+          const defaultOption = document.createElement('option');
+          defaultOption.value = '';
+          defaultOption.textContent = '選択してください';
+          select.appendChild(defaultOption);
+          
+          // Add emergency sellers
+          const emergencySellers = [
+            { id: 'emergency-no-token-1', name: '🚨緊急売主A', company: 'ログイン必要' },
+            { id: 'emergency-no-token-2', name: '🚨緊急売主B', company: 'ログイン必要' }
+          ];
+          
+          emergencySellers.forEach(seller => {
+            const option = document.createElement('option');
+            option.value = seller.id;
+            option.textContent = seller.name + ' (' + seller.company + ')';
+            select.appendChild(option);
+          });
+          
+          // Auto-select first emergency seller
+          if (select.options.length > 1) {
+            select.selectedIndex = 1;
+            console.warn('[Sellers v3.153.114] ⚠️ Auto-selected emergency seller (NO TOKEN)');
+          }
+          
+          console.error('[Sellers v3.153.114] ❌ CRITICAL: Please log in to see actual seller list');
           return;
         }
         

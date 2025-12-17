@@ -655,10 +655,13 @@ function displayHazardInfo(hazardData) {
     return 'fa-question-circle text-gray-600';
   };
   
-  // v3.153.121: ローン判定バッジ（NG対応）
+  // v3.153.122: ローン判定バッジ（要調査対応）
   let loanBadgeClass = 'bg-green-100 text-green-800 border-green-300';
   let loanBadgeIcon = 'fa-check-circle';
-  if (loan.judgment === 'NG') {
+  if (loan.judgment === 'REQUIRES_INVESTIGATION') {
+    loanBadgeClass = 'bg-orange-100 text-orange-800 border-orange-300';
+    loanBadgeIcon = 'fa-search';
+  } else if (loan.judgment === 'NG') {
     loanBadgeClass = 'bg-red-100 text-red-800 border-red-300';
     loanBadgeIcon = 'fa-ban';
   } else if (loan.judgment === 'RESTRICTED') {
@@ -762,6 +765,85 @@ function displayHazardInfo(hazardData) {
     html += `</div>`;
   }
   
+  // v3.153.122: 要調査の場合の詳細指示
+  if (loan.requires_investigation && loan.investigation_instructions && loan.investigation_instructions.length > 0) {
+    html += `
+      <div class="mt-4 pt-4 border-t border-gray-200 bg-orange-50 border border-orange-300 rounded-lg p-4">
+        <h4 class="font-semibold mb-3 text-orange-800 flex items-center">
+          <i class="fas fa-clipboard-list mr-2"></i>詳細調査が必要な項目
+        </h4>
+        <div class="text-sm text-orange-900 mb-3">
+          <p class="font-medium mb-2">以下の項目について詳細調査を実施し、<span class="text-red-600 font-bold">備考欄に必ず記入</span>してください:</p>
+        </div>
+        <ul class="space-y-2">
+    `;
+    
+    loan.investigation_instructions.forEach((instruction, index) => {
+      html += `
+        <li class="flex items-start text-sm text-orange-800">
+          <span class="font-semibold mr-2">${index + 1}.</span>
+          <span>${instruction}</span>
+        </li>
+      `;
+    });
+    
+    html += `
+        </ul>
+        <div class="mt-4 p-3 bg-red-50 border border-red-300 rounded-lg">
+          <p class="text-sm text-red-800 font-semibold flex items-center">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            案件作成時の注意事項
+          </p>
+          <p class="text-xs text-red-700 mt-2">
+            上記の調査を実施せず、備考欄が空欄の場合は案件を作成できません。調査結果を必ず備考欄に記入してください。
+          </p>
+        </div>
+      </div>
+    `;
+    
+    // v3.153.122: 備考欄を必須化（グローバル変数に保存 + UI更新）
+    window._hazardInvestigationRequired = true;
+    window._hazardNgConditions = loan.ng_conditions || [];
+    console.log('[Hazard Display] ⚠️ Investigation required, remarks field will be mandatory');
+    console.log('[Hazard Display] NG Conditions:', window._hazardNgConditions);
+    
+    // 備考欄の必須表示を更新
+    const remarksIndicator = document.getElementById('remarks-required-indicator');
+    const remarksWarningBanner = document.getElementById('remarks-warning-banner');
+    const remarksTextarea = document.getElementById('remarks');
+    
+    if (remarksIndicator) {
+      remarksIndicator.classList.remove('hidden');
+    }
+    if (remarksWarningBanner) {
+      remarksWarningBanner.classList.remove('hidden');
+    }
+    if (remarksTextarea) {
+      // プレースホルダーに調査項目のヒントを追加
+      const conditions = loan.ng_conditions.join('、');
+      remarksTextarea.placeholder = `以下の項目について調査結果を記入してください（必須）：\n${conditions}\n\n例: 市街化調整区域について◯◯市都市計画課に確認済み。当該地は既存宅地で建築可能との回答を得た。`;
+    }
+  } else {
+    // 要調査フラグをリセット
+    window._hazardInvestigationRequired = false;
+    window._hazardNgConditions = [];
+    
+    // 備考欄の必須表示をクリア
+    const remarksIndicator = document.getElementById('remarks-required-indicator');
+    const remarksWarningBanner = document.getElementById('remarks-warning-banner');
+    const remarksTextarea = document.getElementById('remarks');
+    
+    if (remarksIndicator) {
+      remarksIndicator.classList.add('hidden');
+    }
+    if (remarksWarningBanner) {
+      remarksWarningBanner.classList.add('hidden');
+    }
+    if (remarksTextarea && remarksTextarea.placeholder.includes('必須')) {
+      remarksTextarea.placeholder = '備考がある場合は入力してください';
+    }
+  }
+  
   // 外部リンク
   html += `
     <div class="mt-4 pt-4 border-t border-gray-200">
@@ -776,7 +858,7 @@ function displayHazardInfo(hazardData) {
   resultDiv.innerHTML = html;
   container.classList.remove('hidden');
   
-  console.log('[Hazard Display] ✅ UI rendered successfully (v3.153.121: with zoning & geography restrictions)');
+  console.log('[Hazard Display] ✅ UI rendered successfully (v3.153.122: with investigation instructions)');
 }
 
 /**

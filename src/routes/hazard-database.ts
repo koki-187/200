@@ -227,7 +227,8 @@ app.get('/info', async (c) => {
       });
     }
 
-    // ローン判定（統合）
+    // v3.153.122: ローン判定（柔軟化）
+    // 完全NGではなく「要調査」として扱う
     const hasFloodRestriction = loanRestrictions.some(
       (r: any) => r.type === 'flood_restricted' && r.is_restricted
     );
@@ -237,12 +238,49 @@ app.get('/info', async (c) => {
     const hasZoningRestriction = zoningRestrictions.some((r: any) => r.is_restricted);
     const hasGeographyRestriction = geographyRestrictions.some((r: any) => r.is_restricted);
 
+    // 該当条件をリスト化
+    const ngConditions: string[] = [];
+    if (hasFloodRestriction) ngConditions.push('洪水浸水想定区域');
+    if (hasLandslideRestriction) ngConditions.push('土砂災害警戒区域');
+    if (zoningRestrictions.length > 0) {
+      zoningRestrictions.forEach(z => ngConditions.push(z.name));
+    }
+    if (geographyRestrictions.length > 0) {
+      geographyRestrictions.forEach(g => ngConditions.push(g.name));
+    }
+
     let loanJudgment = 'OK';
     let loanJudgmentText = '融資制限なし';
+    let requiresInvestigation = false;
+    let investigationInstructions: string[] = [];
     
-    if (hasFloodRestriction || hasLandslideRestriction || hasZoningRestriction || hasGeographyRestriction) {
-      loanJudgment = 'NG';
-      loanJudgmentText = '融資制限あり（金融機関NG）';
+    if (ngConditions.length > 0) {
+      loanJudgment = 'REQUIRES_INVESTIGATION';
+      loanJudgmentText = '要調査（融資制限の可能性あり）';
+      requiresInvestigation = true;
+      
+      // 調査指示を生成
+      if (hasFloodRestriction || hasLandslideRestriction) {
+        investigationInstructions.push('ハザードマップで詳細な影響範囲を確認してください');
+      }
+      if (zoningRestrictions.some((z: any) => z.type === 'urbanization_control')) {
+        investigationInstructions.push('市街化調整区域における建築許可の可否を市区町村の都市計画課に確認してください');
+      }
+      if (zoningRestrictions.some((z: any) => z.type === 'fire_prevention')) {
+        investigationInstructions.push('防火地域における建築コスト増加の見積もりを建築業者に確認してください');
+      }
+      if (geographyRestrictions.some((g: any) => g.type === 'cliff_area')) {
+        investigationInstructions.push('崖地の安全性と擁壁工事の必要性について地盤調査会社に確認してください');
+      }
+      if (geographyRestrictions.some((g: any) => g.type === 'river_adjacent')) {
+        investigationInstructions.push('河川管理者（国土交通省または都道府県）に河川氾濫リスクについて確認してください');
+      }
+      if (geographyRestrictions.some((g: any) => g.type === 'building_collapse')) {
+        investigationInstructions.push('家屋倒壊等氾濫想定区域について、詳細な浸水シミュレーション結果を確認してください');
+      }
+      if (geographyRestrictions.some((g: any) => g.type === 'over_10m_flood')) {
+        investigationInstructions.push('10m以上の浸水想定について、発生確率と対策の可否を専門家に確認してください');
+      }
     }
 
     return c.json({
@@ -257,6 +295,9 @@ app.get('/info', async (c) => {
         loan: {
           judgment: loanJudgment,
           judgment_text: loanJudgmentText,
+          requires_investigation: requiresInvestigation,  // v3.153.122: 要調査フラグ
+          ng_conditions: ngConditions,                    // v3.153.122: 該当条件リスト
+          investigation_instructions: investigationInstructions,  // v3.153.122: 調査指示
           restrictions: {
             basic: loanRestrictions,            // 基本ローン制限（洪水・土砂）
             zoning: zoningRestrictions,         // 用途地域制限
@@ -269,7 +310,9 @@ app.get('/info', async (c) => {
             url: 'https://disaportal.gsi.go.jp/',
           },
         ],
-        note: '詳細な情報は国土交通省ハザードマップポータルサイトをご確認ください',
+        note: requiresInvestigation 
+          ? '⚠️ 融資制限の可能性があるため、詳細調査が必要です。調査結果を備考欄に必ず記入してください。'
+          : '詳細な情報は国土交通省ハザードマップポータルサイトをご確認ください',
         timestamp: new Date().toISOString(),
       },
     });

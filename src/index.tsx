@@ -6577,9 +6577,25 @@ app.get('/deals/new', (c) => {
 
         <!-- 備考 -->
         <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            備考 <span id="remarks-required-indicator" class="text-red-500 hidden">*</span>
+          </label>
+          <div id="remarks-warning-banner" class="hidden mb-3 p-3 bg-orange-50 border border-orange-300 rounded-lg">
+            <p class="text-sm text-orange-800 font-semibold flex items-center">
+              <i class="fas fa-exclamation-triangle mr-2"></i>
+              ハザード情報の調査結果を必ず記入してください
+            </p>
+            <p class="text-xs text-orange-700 mt-1">
+              融資制限の可能性がある条件に該当しています。上記の「詳細調査が必要な項目」を確認し、調査結果をこの欄に記入してください。
+            </p>
+          </div>
           <textarea id="remarks" rows="4"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="備考がある場合は入力してください"></textarea>
+          <p id="remarks-error-message" class="hidden text-xs text-red-600 mt-1 flex items-center">
+            <i class="fas fa-exclamation-circle mr-1"></i>
+            ハザード情報の調査結果を記入してください（必須）
+          </p>
         </div>
       </div>
 
@@ -9758,6 +9774,48 @@ app.get('/deals/new', (c) => {
       }
       if (!landAreaInput || !landAreaInput.value.trim()) {
         missingFields.push('土地面積');
+      }
+      
+      // v3.153.122: ハザード情報で要調査の場合、備考欄必須
+      const remarksInput = document.getElementById('remarks');
+      const remarksErrorMsg = document.getElementById('remarks-error-message');
+      
+      if (window._hazardInvestigationRequired) {
+        console.log('[DEAL CREATE] Hazard investigation required, checking remarks field...');
+        console.log('[DEAL CREATE] Remarks value:', remarksInput?.value || '(empty)');
+        
+        if (!remarksInput || !remarksInput.value.trim()) {
+          const errorMsg = 'ハザード情報の調査結果を備考欄に記入してください';
+          console.error('[DEAL CREATE] ❌ Remarks validation failed: Investigation required but remarks empty');
+          
+          // 備考欄にフォーカスとエラー表示
+          if (remarksInput) {
+            remarksInput.classList.add('border-red-500', 'focus:ring-red-500');
+            remarksInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            remarksInput.focus();
+          }
+          if (remarksErrorMsg) {
+            remarksErrorMsg.classList.remove('hidden');
+          }
+          
+          if (typeof showMessage === 'function') {
+            showMessage(errorMsg, 'error');
+          } else if (typeof window.showMessage === 'function') {
+            window.showMessage(errorMsg, 'error');
+          } else {
+            console.error(errorMsg);
+          }
+          return;
+        } else {
+          // 備考欄が記入されている場合、エラー表示をクリア
+          if (remarksInput) {
+            remarksInput.classList.remove('border-red-500', 'focus:ring-red-500');
+          }
+          if (remarksErrorMsg) {
+            remarksErrorMsg.classList.add('hidden');
+          }
+          console.log('[DEAL CREATE] ✅ Remarks validation passed');
+        }
       }
       
       if (missingFields.length > 0) {

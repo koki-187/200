@@ -687,7 +687,7 @@ async function getFloodDepth(lat: string, lon: string, apiKey: string): Promise<
     if (!response.ok) {
       console.error('[FLOOD] API Error:', response.status);
       if (response.status === 404) {
-        return { depth: null, description: '洪水浸水想定データは現在準備中です（国土交通省APIデータ整備待ち）' };
+        return { depth: null, description: '洪水浸水想定: この地域のデータはMLIT APIで提供されていません' };
       }
       return { depth: null, description: `データ取得エラー（HTTPステータス: ${response.status}）` };
     }
@@ -744,7 +744,7 @@ async function getLandslideZone(lat: string, lon: string, apiKey: string): Promi
     if (!response.ok) {
       console.error('[LANDSLIDE] API Error:', response.status);
       if (response.status === 404) {
-        return { isRedZone: false, description: '土砂災害警戒区域データは現在準備中です（国土交通省APIデータ整備待ち）' };
+        return { isRedZone: false, description: '土砂災害警戒区域: この地域のデータはMLIT APIで提供されていません' };
       }
       return { isRedZone: false, description: `データ取得エラー（HTTPステータス: ${response.status}）` };
     }
@@ -801,7 +801,7 @@ async function getTsunamiZone(lat: string, lon: string, apiKey: string): Promise
     if (!response.ok) {
       console.error('[TSUNAMI] API Error:', response.status);
       if (response.status === 404) {
-        return { inTsunamiZone: false, depth: null, description: '津波浸水想定データは現在準備中です（国土交通省APIデータ整備待ち）' };
+        return { inTsunamiZone: false, depth: null, description: '津波浸水想定: この地域のデータはMLIT APIで提供されていません' };
       }
       return { inTsunamiZone: false, depth: null, description: `データ取得エラー（HTTPステータス: ${response.status}）` };
     }
@@ -868,7 +868,7 @@ async function getStormSurgeZone(lat: string, lon: string, apiKey: string): Prom
     if (!response.ok) {
       console.error('[STORM_SURGE] API Error:', response.status);
       if (response.status === 404) {
-        return { inStormSurgeZone: false, depth: null, description: '高潮浸水想定データは現在準備中です（国土交通省APIデータ整備待ち）' };
+        return { inStormSurgeZone: false, depth: null, description: '高潮浸水想定: この地域のデータはMLIT APIで提供されていません' };
       }
       return { inStormSurgeZone: false, depth: null, description: `データ取得エラー（HTTPステータス: ${response.status}）` };
     }

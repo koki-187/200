@@ -118,14 +118,31 @@ window._ocrProcessingInProgress = window._ocrProcessingInProgress || false;
 
 // Complete processMultipleOCR Implementation
 window.processMultipleOCR = async function(files) {
+  // CRITICAL DEBUG v3.153.116: Enhanced flag status logging
+  console.log('[OCR v3.153.116] 🚩 Processing flag status:', window._ocrProcessingInProgress);
+  
   // リコール防止: 既に実行中の場合は処理をスキップ
   if (window._ocrProcessingInProgress) {
-    console.warn('[OCR] ⚠️ Already processing, skipping duplicate call');
-    console.warn('[OCR] This prevents multiple OCR executions from overlapping');
-    return;
+    console.error('[OCR v3.153.116] ❌❌❌ DUPLICATE CALL BLOCKED');
+    console.error('[OCR v3.153.116] Flag is still TRUE - previous execution may not have completed');
+    console.error('[OCR v3.153.116] This is the RECALL ISSUE user reported');
+    console.error('[OCR v3.153.116] To fix: Force reset flag after 60 seconds timeout');
+    
+    // CRITICAL FIX v3.153.116: Force reset flag if stuck
+    const flagAge = Date.now() - (window._ocrProcessingStartTime || 0);
+    if (flagAge > 60000) {
+      console.warn('[OCR v3.153.116] ⚠️ Flag stuck for ' + Math.round(flagAge/1000) + 's - FORCE RESET');
+      window._ocrProcessingInProgress = false;
+      window._ocrProcessingStartTime = null;
+    } else {
+      console.warn('[OCR v3.153.116] ⏳ Please wait... processing started ' + Math.round(flagAge/1000) + 's ago');
+      return;
+    }
   }
   
   window._ocrProcessingInProgress = true;
+  window._ocrProcessingStartTime = Date.now();
+  console.log('[OCR v3.153.116] ✅ Flag set to TRUE, processing started');
   
   console.log('[OCR] ========================================');
   console.log('[OCR] processMultipleOCR CALLED (complete standalone version with PDF support)');
@@ -136,9 +153,11 @@ window.processMultipleOCR = async function(files) {
   
   // Validate files parameter
   if (!files || !Array.isArray(files) || files.length === 0) {
-    console.warn('[OCR] ⚠️ Invalid or empty files parameter, ignoring call');
-    console.warn('[OCR] This may be an unintended call from page initialization');
-    window._ocrProcessingInProgress = false; // Reset flag
+    console.warn('[OCR v3.153.116] ⚠️ Invalid or empty files parameter, ignoring call');
+    console.warn('[OCR v3.153.116] This may be an unintended call from page initialization');
+    window._ocrProcessingInProgress = false;
+    window._ocrProcessingStartTime = null;
+    console.log('[OCR v3.153.116] ✅ Flag reset (invalid input)');
     return;
   }
   
@@ -644,9 +663,10 @@ window.processMultipleOCR = async function(files) {
     console.log('[OCR] User should verify content before saving');
     // alert removed per user requirement - success messages logged to console only
     
-    // CRITICAL FIX v3.153.112: Reset flag on success
+    // CRITICAL FIX v3.153.116: Reset flag and timestamp on success
     window._ocrProcessingInProgress = false;
-    console.log('[OCR] ✅ Flag reset, ready for next execution');
+    window._ocrProcessingStartTime = null;
+    console.log('[OCR v3.153.116] ✅ Flag reset to FALSE, ready for next execution');
     
   } catch (error) {
     console.error('[OCR] ========================================');
@@ -679,9 +699,10 @@ window.processMultipleOCR = async function(files) {
     console.error('[OCR] ❌ OCR processing error:', errorMessage);
     alert(errorMessage);
     
-    // CRITICAL FIX v3.153.112: Reset flag on error
+    // CRITICAL FIX v3.153.116: Reset flag and timestamp on error
     window._ocrProcessingInProgress = false;
-    console.log('[OCR] ✅ Flag reset after error, ready for retry');
+    window._ocrProcessingStartTime = null;
+    console.log('[OCR v3.153.116] ✅ Flag reset to FALSE after error, ready for retry');
     
     // Redirect to login for 401 errors
     if (error.response?.status === 401) {

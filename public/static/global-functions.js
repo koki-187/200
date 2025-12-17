@@ -94,6 +94,13 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 取得中...';
   
+  // CRITICAL FIX v3.153.116: Force reset button after 30 seconds
+  const forceResetTimer = setTimeout(() => {
+    console.error('[不動産情報ライブラリ v3.153.116] ⚠️ 30秒タイムアウト - ボタン強制リセット');
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }, 30000);
+  
   // v3.153.98: Task A4 - リトライ中メッセージ表示
   let retryMessageTimer = null;
   
@@ -268,12 +275,15 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
       alert(errorMessage + details);
     }
   } finally {
-    // v3.153.98: タイマーをクリア
+    // CRITICAL FIX v3.153.116: Clear all timers
     if (retryMessageTimer) {
       clearTimeout(retryMessageTimer);
     }
+    clearTimeout(forceResetTimer);
+    
     btn.disabled = false;
     btn.innerHTML = originalHTML;
+    console.log('[不動産情報ライブラリ v3.153.116] ✅ Button reset completed');
   }
 };
 

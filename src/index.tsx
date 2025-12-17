@@ -9779,7 +9779,7 @@ app.get('/deals/new', (c) => {
       // v3.153.123: 融資NG条件該当時は案件作成不可
       if (window._loanDecisionNG) {
         const ngConditions = window._loanNgConditions || [];
-        const errorMsg = `融資NG条件に該当するため、案件作成はできません。\n該当条件: ${ngConditions.join('、')}`;
+        const errorMsg = '融資NG条件に該当するため、案件作成はできません。\n該当条件: ' + ngConditions.join('、');
         console.error('[DEAL CREATE] ❌ Loan decision NG: Cannot create deal');
         console.error('[DEAL CREATE] NG Conditions:', ngConditions);
         

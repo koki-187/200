@@ -4,16 +4,25 @@
 -- Created: 2025-12-17
 -- ========================================
 
--- ハザード情報マスタテーブル
+-- ハザード情報マスタテーブル（v3.153.123: 精度向上版）
 CREATE TABLE IF NOT EXISTS hazard_info (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   prefecture TEXT NOT NULL,           -- 都道府県（東京都、神奈川県、埼玉県、千葉県）
   city TEXT NOT NULL,                  -- 市区町村（例: 渋谷区、横浜市中区）
+  district TEXT,                       -- 町丁目（詳細地域）
   hazard_type TEXT NOT NULL,           -- ハザード種別（flood/landslide/tsunami/liquefaction）
   risk_level TEXT NOT NULL,            -- リスクレベル（high/medium/low/none）
+  is_special_alert_zone INTEGER DEFAULT 0,  -- 特別警戒区域フラグ（1: レッドゾーン）
+  max_inundation_depth REAL,           -- 最大浸水深（m）
+  is_building_collapse_zone INTEGER DEFAULT 0,  -- 家屋倒壊等氾濫想定区域フラグ
   description TEXT,                    -- 詳細説明
   affected_area TEXT,                  -- 影響範囲（例: 〇〇川周辺、〇〇地区）
   data_source TEXT,                    -- データソース（国交省API等）
+  data_source_url TEXT,                -- データソースURL（トレーサビリティ）
+  confidence_level TEXT DEFAULT 'medium',  -- 信頼度（high/medium/low）
+  verification_status TEXT DEFAULT 'pending',  -- 検証状況（verified/pending/needs_review）
+  verified_by TEXT,                    -- 検証者
+  verified_at DATETIME,                -- 検証日時
   last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

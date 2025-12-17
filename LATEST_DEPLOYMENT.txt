@@ -1,0 +1,24 @@
+Latest Deployment Information
+==============================
+Version: v3.153.119
+Deployed: 2025-12-18
+URL: https://716ea6bc.real-estate-200units-v2.pages.dev
+
+Changes in v3.153.119:
+- ❌ REMOVED: Duplicate loadSellers() code (Line 7722-7833) from v3.153.113
+- ✅ ADDED: Ultra-detailed seller dropdown diagnostics (Axios availability, API response structure, error stack trace)
+- ✅ ADDED: Complete initializePage() state tracking (Promise verification, final dropdown state inspection)
+- ✅ ADDED: Property info supplementary function progress display (1/3, 2/3, 3/3 retry status)
+- ✅ IMPROVED: User can now see what's happening during data fetch operations
+- 📝 UPDATED: Global Functions version to v3.153.119
+
+Critical Fixes:
+1. Root cause fix for seller dropdown: Removed old duplicate code that was overriding v3.153.118 improvements
+2. Enhanced error diagnostics: Full error stack traces and state inspection for troubleshooting
+3. Progress UI: Users can see retry attempts instead of just "取得中..."
+
+Next Steps:
+- Production environment test #2 (Frontend UI behavior verification)
+- Check browser console logs for detailed diagnostics
+- Verify seller dropdown shows correct options
+- Confirm property info supplementary function displays progress

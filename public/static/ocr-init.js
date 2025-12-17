@@ -1,17 +1,19 @@
 /**
  * OCR Processor - Complete Standalone Implementation
- * v3.153.4 - CRITICAL FIX: Removed automatic risk check after OCR
+ * v3.153.120 - FEATURE: Re-enabled automatic risk check after OCR
  * 
  * This standalone file provides a complete processMultipleOCR implementation
  * with PDF conversion support, bypassing main script syntax errors.
  * 
- * CHANGELOG v3.153.4:
- * - Removed automatic runComprehensiveRiskCheck() call after OCR completion
- * - User must manually click "総合リスクチェック実施" button
+ * CHANGELOG v3.153.120:
+ * - Re-enabled automatic risk check after OCR completion (user request)
+ * - Added visual feedback for automatic risk check progress
+ * - Display hazard information in dedicated UI section
+ * - Silent error handling (console log only)
  */
 
 console.log('[OCR Init] ========================================');
-console.log('[OCR Init] VERSION: v3.153.34 (2025-12-10) - CRITICAL: height_district/fire_zone field mapping added');
+console.log('[OCR Init] VERSION: v3.153.120 (2025-12-18) - FEATURE: Automatic risk check re-enabled');
 console.log('[OCR Init] ocr-init.js loaded - complete implementation with PDF support');
 console.log('[OCR Init] Creating window.processMultipleOCR function...');
 
@@ -644,13 +646,38 @@ window.processMultipleOCR = async function(files) {
         isValid: isValidAddress
       });
       
-      // 🔥 CRITICAL FIX v3.153.83: 自動実行機能を完全に無効化
-      // ユーザー報告により、この自動実行機能がエラーの原因であることが判明
-      // OCR処理後は、ユーザーが手動でボタンをクリックする方式に変更
+      // 🔥 NEW v3.153.120: リスクチェック自動実行機能を再実装
+      // ユーザー要望により、OCR完了後に自動的にハザード情報を取得
       if (isValidAddress) {
         console.log('[OCR] ✅ Valid location extracted:', locationValue);
-        console.log('[OCR] ℹ️ Auto-execution DISABLED - User must manually click buttons');
-        console.log('[OCR] ℹ️ Available buttons: 物件情報補足, リスクチェック');
+        console.log('[OCR v3.153.120] 🚀 Starting automatic risk check...');
+        
+        // Display loading banner
+        const riskCheckSection = document.querySelector('[data-section="risk-check-results"]') || 
+                                document.getElementById('risk-check-section');
+        if (riskCheckSection) {
+          riskCheckSection.innerHTML = `
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-spinner fa-spin text-blue-600 text-xl"></i>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-blue-800">
+                    🔍 ハザード情報を自動取得中...
+                  </p>
+                  <p class="text-xs text-blue-600 mt-1">
+                    住所: ${locationValue}
+                  </p>
+                </div>
+              </div>
+            </div>
+          `;
+          riskCheckSection.classList.remove('hidden');
+        }
+        
+        // Call automatic risk check function
+        setTimeout(() => {
+          autoRunRiskCheck(locationValue);
+        }, 1000); // 1秒遅延で実行（フォーム入力完了を待つ）
       } else {
         console.warn('[OCR] ⚠️ No valid location extracted');
         console.warn('[OCR] ℹ️ User can enter location manually and use buttons');
@@ -1054,6 +1081,221 @@ function initializeOCREventListeners() {
   
   console.log('[OCR Init] ✅ Event listeners registered successfully');
 }
+
+/**
+ * v3.153.120: 自動リスクチェック実行関数
+ * OCR完了後に自動的にハザード情報を取得
+ */
+async function autoRunRiskCheck(address) {
+  console.log('[Auto Risk Check v3.153.120] ========================================');
+  console.log('[Auto Risk Check] Starting automatic risk check...');
+  console.log('[Auto Risk Check] Address:', address);
+  
+  try {
+    // Get token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn('[Auto Risk Check] ⚠️ No token found, skipping');
+      
+      // Update UI to show login required
+      const riskCheckSection = document.querySelector('[data-section="risk-check-results"]') || 
+                              document.getElementById('risk-check-section');
+      if (riskCheckSection) {
+        riskCheckSection.innerHTML = `
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-yellow-800">
+                  ℹ️ ハザード情報の取得にはログインが必要です
+                </p>
+                <p class="text-xs text-yellow-600 mt-1">
+                  ログイン後に「リスクチェック」ボタンをクリックしてください
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      return;
+    }
+    
+    console.log('[Auto Risk Check] Token found, calling API...');
+    
+    // Call comprehensive risk check API
+    const response = await axios.get('/api/reinfolib/comprehensive-check', {
+      params: { address: address },
+      headers: { 'Authorization': 'Bearer ' + token },
+      timeout: 30000
+    });
+    
+    console.log('[Auto Risk Check] API response received');
+    console.log('[Auto Risk Check] Response data:', response.data);
+    
+    if (!response.data.success) {
+      console.warn('[Auto Risk Check] ⚠️ API returned error:', response.data.error);
+      
+      // Update UI to show error
+      const riskCheckSection = document.querySelector('[data-section="risk-check-results"]') || 
+                              document.getElementById('risk-check-section');
+      if (riskCheckSection) {
+        riskCheckSection.innerHTML = `
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-exclamation-circle text-red-600 text-xl"></i>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-red-800">
+                  ❌ ハザード情報の取得に失敗しました
+                </p>
+                <p class="text-xs text-red-600 mt-1">
+                  ${response.data.error || '不明なエラー'}
+                </p>
+                <p class="text-xs text-red-600 mt-1">
+                  手動で「リスクチェック」ボタンをクリックしてください
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      return;
+    }
+    
+    const result = response.data;
+    console.log('[Auto Risk Check] ✅ Risk check completed successfully');
+    console.log('[Auto Risk Check] Prefecture:', result.propertyInfo?.prefecture);
+    console.log('[Auto Risk Check] City:', result.propertyInfo?.city);
+    console.log('[Auto Risk Check] Judgment:', result.financingJudgment?.judgment);
+    
+    // Display results in UI
+    const riskCheckSection = document.querySelector('[data-section="risk-check-results"]') || 
+                            document.getElementById('risk-check-section');
+    if (riskCheckSection) {
+      const risks = result.risks || {};
+      const riskDetails = result.riskDetails || {};
+      const financingJudgment = result.financingJudgment || {};
+      
+      // Determine financing status icon and message
+      let financingIcon = '✅';
+      let financingMessage = '問題なし';
+      let financingColor = 'green';
+      
+      if (financingJudgment.judgment === 'MANUAL_CHECK_REQUIRED') {
+        financingIcon = '⚠️';
+        financingMessage = '手動確認必要';
+        financingColor = 'yellow';
+      } else if (financingJudgment.judgment === 'RESTRICTED') {
+        financingIcon = '❌';
+        financingMessage = '融資制限あり';
+        financingColor = 'red';
+      }
+      
+      riskCheckSection.innerHTML = `
+        <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
+          <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-shield-alt text-blue-600"></i>
+            ハザード情報（自動取得）
+          </h3>
+          
+          <!-- Location Info -->
+          <div class="mb-4 pb-3 border-b border-gray-200">
+            <p class="text-sm text-gray-600">
+              <i class="fas fa-map-marker-alt mr-2"></i>
+              <strong>所在地:</strong> ${result.propertyInfo?.prefecture || '-'}${result.propertyInfo?.city || '-'}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              座標: ${result.propertyInfo?.latitude || '-'}, ${result.propertyInfo?.longitude || '-'}
+            </p>
+          </div>
+          
+          <!-- Financing Judgment -->
+          <div class="mb-4 p-3 bg-${financingColor}-50 border border-${financingColor}-200 rounded-lg">
+            <p class="text-sm font-medium text-${financingColor}-800">
+              ${financingIcon} <strong>融資判定:</strong> ${financingMessage}
+            </p>
+            ${financingJudgment.message ? `
+              <p class="text-xs text-${financingColor}-600 mt-1">
+                ${financingJudgment.message}
+              </p>
+            ` : ''}
+          </div>
+          
+          <!-- Risk Details -->
+          <div class="space-y-2 mb-4">
+            <div class="text-sm">
+              <strong class="text-gray-700">🌊 洪水リスク:</strong>
+              <span class="text-gray-600">${riskDetails.sedimentDisaster || '情報なし'}</span>
+            </div>
+            <div class="text-sm">
+              <strong class="text-gray-700">🏔️ 土砂災害リスク:</strong>
+              <span class="text-gray-600">${riskDetails.flood || '情報なし'}</span>
+            </div>
+            <div class="text-sm">
+              <strong class="text-gray-700">🌊 津波リスク:</strong>
+              <span class="text-gray-600">${riskDetails.tsunami || '情報なし'}</span>
+            </div>
+            <div class="text-sm">
+              <strong class="text-gray-700">🌀 高潮リスク:</strong>
+              <span class="text-gray-600">${riskDetails.stormSurge || '情報なし'}</span>
+            </div>
+          </div>
+          
+          <!-- Hazard Map Link -->
+          ${result.hazardMapUrl ? `
+            <div class="mt-4 pt-3 border-t border-gray-200">
+              <a href="${result.hazardMapUrl}" target="_blank" rel="noopener" 
+                 class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline">
+                <i class="fas fa-external-link-alt"></i>
+                国土交通省ハザードマップで詳細確認
+              </a>
+            </div>
+          ` : ''}
+          
+          <p class="text-xs text-gray-500 mt-3">
+            <i class="fas fa-info-circle mr-1"></i>
+            OCR完了後に自動取得されました
+          </p>
+        </div>
+      `;
+      riskCheckSection.classList.remove('hidden');
+    }
+    
+  } catch (error) {
+    console.error('[Auto Risk Check] ❌ Error:', error);
+    console.error('[Auto Risk Check] Error message:', error.message);
+    console.error('[Auto Risk Check] Error response:', error.response?.data);
+    
+    // Update UI to show error
+    const riskCheckSection = document.querySelector('[data-section="risk-check-results"]') || 
+                            document.getElementById('risk-check-section');
+    if (riskCheckSection) {
+      riskCheckSection.innerHTML = `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center gap-3">
+            <i class="fas fa-exclamation-circle text-red-600 text-xl"></i>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-red-800">
+                ❌ ハザード情報の取得に失敗しました
+              </p>
+              <p class="text-xs text-red-600 mt-1">
+                ${error.message || '不明なエラー'}
+              </p>
+              <p class="text-xs text-red-600 mt-1">
+                手動で「リスクチェック」ボタンをクリックしてください
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+  
+  console.log('[Auto Risk Check] ========================================');
+}
+
+// Export to global scope
+window.autoRunRiskCheck = autoRunRiskCheck;
+console.log('[OCR Init v3.153.120] ✅ autoRunRiskCheck function created');
 
 // Wait for DOM to be ready
 if (document.readyState === 'loading') {

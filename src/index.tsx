@@ -42,6 +42,7 @@ import monitoring from './routes/monitoring';
 import investmentSimulator from './routes/investment-simulator';
 import health from './routes/health';
 import healthCheck from './routes/health-check';
+import hazardDatabase from './routes/hazard-database'; // v3.153.120: 一都三県ハザード情報DB
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -167,6 +168,7 @@ app.route('/api/building-regulations', buildingRegulations);
 app.route('/api/monitoring', monitoring);
 // app.route('/api/reports', reports); // DELETED: レポート機能削除
 // app.route('/api/investment-simulator', investmentSimulator); // DELETED: 投資シミュレーター機能削除
+app.route('/api/hazard-db', hazardDatabase); // v3.153.120: 一都三県ハザード情報DB
 
 // ヘルスチェック（詳細版）
 app.route('/api/health', health);
@@ -6376,11 +6378,13 @@ app.get('/deals/new', (c) => {
             所在地 <span class="text-red-500">*</span>
           </label>
           <!-- iOS最適化：縦並び+横並びのレスポンシブレイアウト -->
+          <!-- v3.153.120: リスクチェックボタン廃止、住所入力時の自動ハザード表示に変更 -->
           <div class="flex flex-col sm:flex-row gap-2">
             <input type="text" id="location" required
               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="例: 東京都港区六本木1-1-1"
-              style="min-height: 44px;">
+              style="min-height: 44px;"
+              onchange="if(typeof window.autoShowHazardInfo === 'function'){window.autoShowHazardInfo(this.value)}">
             <button type="button" id="auto-fill-btn"
               onclick="if(typeof window.autoFillFromReinfolib === 'function'){window.autoFillFromReinfolib()}else{console.error('autoFillFromReinfolib not found')}"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
@@ -6389,17 +6393,10 @@ app.get('/deals/new', (c) => {
               <span class="hidden sm:inline">物件情報自動補足</span>
               <span class="inline sm:hidden">自動補足</span>
             </button>
-            <button type="button" id="comprehensive-check-btn"
-              onclick="if(typeof window.manualComprehensiveRiskCheck === 'function'){window.manualComprehensiveRiskCheck()}else{console.error('manualComprehensiveRiskCheck not found')}"
-              class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:bg-purple-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap font-medium"
-              style="min-height: 44px; -webkit-tap-highlight-color: rgba(0,0,0,0.1);">
-              <i class="fas fa-shield-alt"></i>
-              <span class="hidden sm:inline">リスクチェック</span>
-              <span class="inline sm:hidden">リスク</span>
-            </button>
+            <!-- v3.153.120: リスクチェックボタン削除（住所入力時に自動表示に変更） -->
           </div>
           <p class="text-xs text-gray-500 mt-1">
-            <i class="fas fa-info-circle mr-1"></i>住所を入力後、「自動補足」ボタンで物件情報を取得、「リスクチェック」ボタンで災害リスクを確認できます
+            <i class="fas fa-info-circle mr-1"></i>住所を入力すると、一都三県のハザード情報が自動で表示されます。「自動補足」ボタンで物件情報も取得できます。
           </p>
           <p class="text-xs text-blue-600 mt-1 bg-blue-50 p-2 rounded">
             <i class="fas fa-info-circle mr-1"></i><strong>自動補足可能な情報:</strong> 土地面積、建蔽率、容積率、道路情報、間口、建物面積、構造、築年月、過去取引価格
@@ -6583,6 +6580,34 @@ app.get('/deals/new', (c) => {
           <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
           <textarea id="remarks" rows="4"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+        </div>
+      </div>
+
+      <!-- v3.153.120: ハザード情報自動表示コンテナ -->
+      <div id="hazard-info-container" class="mt-6 hidden">
+        <div class="border-t border-gray-200 pt-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+            ハザード情報（災害リスク）
+          </h3>
+          
+          <!-- 説明バナー -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div class="flex items-start">
+              <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-3"></i>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-blue-900 mb-1">自動表示機能（一都三県）</p>
+                <p class="text-xs text-blue-700">
+                  住所を入力すると、ローカルデータベースから即座にハザード情報を取得します。詳細は国土交通省ハザードマップポータルサイトで確認してください。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ハザード情報結果（JavaScriptで動的生成） -->
+          <div id="hazard-info-result" class="space-y-3">
+            <!-- displayHazardInfo()関数でここに表示されます -->
+          </div>
         </div>
       </div>
 
@@ -10282,7 +10307,7 @@ app.get('/deals/new', (c) => {
             console.log('[Init v3.153.119] - Selected index:', select.selectedIndex);
             console.log('[Init v3.153.119] - Disabled:', select.disabled);
             for (let i = 0; i < select.options.length; i++) {
-              console.log(`[Init v3.153.119] - Option ${i}:`, select.options[i].textContent);
+              console.log('[Init v3.153.119] - Option ' + i + ':', select.options[i].textContent);
             }
           }
         } catch (error) {

@@ -6,9 +6,10 @@
  */
 
 console.log('[Global Functions] ========================================');
-console.log('[Global Functions] VERSION: v3.153.108 (2025-12-16) - Property Info Enhancement');
+console.log('[Global Functions] VERSION: v3.153.120 (2025-12-18) - Progress UI Enhancement');
 console.log('[Global Functions] Pattern 1-5: API統一, エラー詳細化, フォールバック, ハザードリンク');
 console.log('[Global Functions] Pattern 6-10: 住所正規化, 年四半期推定, リトライ最適化, ログ強化, UI改善');
+console.log('[Global Functions] v3.153.120: Progress display added to property info fallback');
 console.log('[Global Functions] Defining window.autoFillFromReinfolib and window.manualComprehensiveRiskCheck');
 console.log('[Global Functions] ========================================');
 
@@ -574,7 +575,174 @@ window.manualComprehensiveRiskCheck = async function manualComprehensiveRiskChec
   }
 };
 
+/**
+ * v3.153.120: 住所入力時のハザード情報自動表示（一都三県ローカルDB）
+ * リスクチェックボタン廃止に伴う代替機能
+ */
+window.autoShowHazardInfo = async function autoShowHazardInfo(address) {
+  console.log('[Hazard Auto Display] ========================================');
+  console.log('[Hazard Auto Display] v3.153.120: Auto-display from local DB');
+  console.log('[Hazard Auto Display] Address:', address);
+  
+  if (!address || address.length < 5) {
+    console.log('[Hazard Auto Display] ⚠️ Address too short, skipping');
+    hideHazardInfo();
+    return;
+  }
+  
+  // 一都三県チェック（簡易）
+  const isTargetArea = ['東京都', '神奈川県', '埼玉県', '千葉県'].some(pref => address.includes(pref));
+  if (!isTargetArea) {
+    console.log('[Hazard Auto Display] ⚠️ Not in target area (一都三県), skipping');
+    hideHazardInfo();
+    return;
+  }
+  
+  try {
+    // ローカルDBからハザード情報取得（API呼び出しは1回のみ、トークン消費なし）
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('[Hazard Auto Display] ⚠️ No token, skipping');
+      return;
+    }
+    
+    const response = await axios.get('/api/hazard-db/info', {
+      params: { address },
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    if (response.data.success) {
+      console.log('[Hazard Auto Display] ✅ Hazard info retrieved:', response.data.data);
+      displayHazardInfo(response.data.data);
+    }
+  } catch (error) {
+    console.log('[Hazard Auto Display] ⚠️ Error (silent):', error.message);
+    // エラーは無視（サイレント処理）
+    hideHazardInfo();
+  }
+};
+
+/**
+ * ハザード情報表示関数（v3.94.0からの復活・改良版）
+ */
+function displayHazardInfo(hazardData) {
+  console.log('[Hazard Display] Rendering hazard info UI');
+  
+  const container = document.getElementById('hazard-info-container');
+  const resultDiv = document.getElementById('hazard-info-result');
+  
+  if (!container || !resultDiv) {
+    console.error('[Hazard Display] ❌ Container elements not found');
+    return;
+  }
+  
+  const { location, hazards, loan } = hazardData;
+  
+  // リスクレベルに応じた色クラス
+  const getRiskClass = (level) => {
+    if (level === 'high') return 'bg-red-100 text-red-800 border-red-300';
+    if (level === 'medium') return 'bg-orange-100 text-orange-800 border-orange-300';
+    if (level === 'low') return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+    if (level === 'none') return 'bg-green-100 text-green-800 border-green-300';
+    return 'bg-gray-100 text-gray-800 border-gray-300';
+  };
+  
+  const getRiskIcon = (level) => {
+    if (level === 'high') return 'fa-exclamation-triangle text-red-600';
+    if (level === 'medium') return 'fa-exclamation-circle text-orange-600';
+    if (level === 'low') return 'fa-info-circle text-yellow-600';
+    if (level === 'none') return 'fa-check-circle text-green-600';
+    return 'fa-question-circle text-gray-600';
+  };
+  
+  // ローン判定バッジ
+  let loanBadgeClass = 'bg-green-100 text-green-800 border-green-300';
+  let loanBadgeIcon = 'fa-check-circle';
+  if (loan.judgment === 'RESTRICTED') {
+    loanBadgeClass = 'bg-red-100 text-red-800 border-red-300';
+    loanBadgeIcon = 'fa-exclamation-triangle';
+  } else if (loan.judgment === 'MANUAL_CHECK') {
+    loanBadgeClass = 'bg-yellow-100 text-yellow-800 border-yellow-300';
+    loanBadgeIcon = 'fa-clipboard-check';
+  }
+  
+  // HTML生成
+  let html = `
+    <!-- 所在地情報 -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+      <div class="flex items-center mb-2">
+        <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
+        <span class="font-semibold text-blue-900">対象エリア</span>
+      </div>
+      <p class="text-sm text-blue-800">${location.prefecture}${location.city}</p>
+    </div>
+    
+    <!-- ローン判定 -->
+    <div class="border ${loanBadgeClass} rounded-lg p-4 mb-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <i class="fas ${loanBadgeIcon} mr-2"></i>
+          <span class="font-semibold">融資判定: ${loan.judgment_text}</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ハザード情報カード -->
+    <div class="space-y-3">
+  `;
+  
+  hazards.forEach((hazard) => {
+    html += `
+      <div class="border ${getRiskClass(hazard.risk_level)} rounded-lg p-4">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <div class="flex items-center mb-2">
+              <i class="fas ${getRiskIcon(hazard.risk_level)} mr-2"></i>
+              <h4 class="font-medium">${hazard.type_name}</h4>
+            </div>
+            <p class="text-sm mb-2">${hazard.description}</p>
+            <div class="text-xs space-y-1">
+              <p><span class="font-semibold">リスクレベル:</span> ${hazard.risk_level_text}</p>
+              ${hazard.affected_area !== 'なし' ? `<p><span class="font-semibold">影響範囲:</span> ${hazard.affected_area}</p>` : ''}
+              <p class="text-gray-600"><span class="font-semibold">情報源:</span> ${hazard.data_source}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `
+    </div>
+    
+    <!-- 外部リンク -->
+    <div class="mt-4 pt-4 border-t border-gray-200">
+      <a href="https://disaportal.gsi.go.jp/" target="_blank" 
+         class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline">
+        <i class="fas fa-external-link-alt mr-2"></i>
+        国土交通省ハザードマップポータルサイトで詳細を確認
+      </a>
+    </div>
+  `;
+  
+  resultDiv.innerHTML = html;
+  container.classList.remove('hidden');
+  
+  console.log('[Hazard Display] ✅ UI rendered successfully');
+}
+
+/**
+ * ハザード情報非表示
+ */
+function hideHazardInfo() {
+  const container = document.getElementById('hazard-info-container');
+  if (container) {
+    container.classList.add('hidden');
+  }
+}
+
 console.log('[Global Functions] ✅ Functions defined successfully');
 console.log('[Global Functions] typeof window.autoFillFromReinfolib:', typeof window.autoFillFromReinfolib);
 console.log('[Global Functions] typeof window.manualComprehensiveRiskCheck:', typeof window.manualComprehensiveRiskCheck);
+console.log('[Global Functions] typeof window.autoShowHazardInfo:', typeof window.autoShowHazardInfo);
 console.log('[Global Functions] ========================================');

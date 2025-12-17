@@ -227,8 +227,8 @@ app.get('/info', async (c) => {
       });
     }
 
-    // v3.153.122: ローン判定（柔軟化）
-    // 完全NGではなく「要調査」として扱う
+    // v3.153.123: ローン判定（厳格化）
+    // NG条件に該当する場合は完全NG扱い
     const hasFloodRestriction = loanRestrictions.some(
       (r: any) => r.type === 'flood_restricted' && r.is_restricted
     );
@@ -238,49 +238,86 @@ app.get('/info', async (c) => {
     const hasZoningRestriction = zoningRestrictions.some((r: any) => r.is_restricted);
     const hasGeographyRestriction = geographyRestrictions.some((r: any) => r.is_restricted);
 
-    // 該当条件をリスト化
-    const ngConditions: string[] = [];
-    if (hasFloodRestriction) ngConditions.push('洪水浸水想定区域');
-    if (hasLandslideRestriction) ngConditions.push('土砂災害警戒区域');
-    if (zoningRestrictions.length > 0) {
-      zoningRestrictions.forEach(z => ngConditions.push(z.name));
+    // NG条件説明文マップ（金融機関基準）
+    const ngConditionDescriptions: Record<string, string> = {
+      'urbanization_control': '市街化を抑制すべき区域のため、原則として建築が制限されます',
+      'fire_prevention': '建築コストが高くなるため、対象外としています',
+      'cliff_area': '地盤の安定性や擁壁工事費用の問題から、対象外としています',
+      'over_10m_flood': '浸水想定区域（10m以上）は融資制限の対象となります',
+      'landslide': '土砂災害警戒区域・特別警戒区域は金融機関融資NGとなります',
+      'river_adjacent': '河川に隣接する土地は洪水リスクが高く、対象外としています',
+      'building_collapse': '家屋倒壊等氾濫想定区域は融資制限の対象となります'
+    };
+
+    // 該当条件を詳細リスト化
+    const ngConditions: Array<{type: string; name: string; description: string}> = [];
+    
+    if (hasLandslideRestriction) {
+      ngConditions.push({
+        type: 'landslide',
+        name: 'ハザードマップ',
+        description: ngConditionDescriptions['landslide']
+      });
     }
+    
+    if (zoningRestrictions.length > 0) {
+      zoningRestrictions.forEach((z: any) => {
+        if (z.type === 'urbanization_control') {
+          ngConditions.push({
+            type: z.type,
+            name: '市街化調整区域',
+            description: ngConditionDescriptions['urbanization_control']
+          });
+        } else if (z.type === 'fire_prevention') {
+          ngConditions.push({
+            type: z.type,
+            name: '防火地域',
+            description: ngConditionDescriptions['fire_prevention']
+          });
+        }
+      });
+    }
+    
     if (geographyRestrictions.length > 0) {
-      geographyRestrictions.forEach(g => ngConditions.push(g.name));
+      geographyRestrictions.forEach((g: any) => {
+        if (g.type === 'cliff_area') {
+          ngConditions.push({
+            type: g.type,
+            name: '崖地域',
+            description: ngConditionDescriptions['cliff_area']
+          });
+        }
+        if (g.type === 'river_adjacent') {
+          ngConditions.push({
+            type: g.type,
+            name: '河川隣接',
+            description: ngConditionDescriptions['river_adjacent']
+          });
+        }
+        if (g.type === 'building_collapse') {
+          ngConditions.push({
+            type: g.type,
+            name: '家屋倒壊エリア',
+            description: ngConditionDescriptions['building_collapse']
+          });
+        }
+        if (g.type === 'over_10m_flood') {
+          ngConditions.push({
+            type: g.type,
+            name: '10m以上の浸水',
+            description: ngConditionDescriptions['over_10m_flood']
+          });
+        }
+      });
     }
 
     let loanJudgment = 'OK';
     let loanJudgmentText = '融資制限なし';
-    let requiresInvestigation = false;
-    let investigationInstructions: string[] = [];
     
+    // v3.153.123: NG条件に該当する場合は完全NG
     if (ngConditions.length > 0) {
-      loanJudgment = 'REQUIRES_INVESTIGATION';
-      loanJudgmentText = '要調査（融資制限の可能性あり）';
-      requiresInvestigation = true;
-      
-      // 調査指示を生成
-      if (hasFloodRestriction || hasLandslideRestriction) {
-        investigationInstructions.push('ハザードマップで詳細な影響範囲を確認してください');
-      }
-      if (zoningRestrictions.some((z: any) => z.type === 'urbanization_control')) {
-        investigationInstructions.push('市街化調整区域における建築許可の可否を市区町村の都市計画課に確認してください');
-      }
-      if (zoningRestrictions.some((z: any) => z.type === 'fire_prevention')) {
-        investigationInstructions.push('防火地域における建築コスト増加の見積もりを建築業者に確認してください');
-      }
-      if (geographyRestrictions.some((g: any) => g.type === 'cliff_area')) {
-        investigationInstructions.push('崖地の安全性と擁壁工事の必要性について地盤調査会社に確認してください');
-      }
-      if (geographyRestrictions.some((g: any) => g.type === 'river_adjacent')) {
-        investigationInstructions.push('河川管理者（国土交通省または都道府県）に河川氾濫リスクについて確認してください');
-      }
-      if (geographyRestrictions.some((g: any) => g.type === 'building_collapse')) {
-        investigationInstructions.push('家屋倒壊等氾濫想定区域について、詳細な浸水シミュレーション結果を確認してください');
-      }
-      if (geographyRestrictions.some((g: any) => g.type === 'over_10m_flood')) {
-        investigationInstructions.push('10m以上の浸水想定について、発生確率と対策の可否を専門家に確認してください');
-      }
+      loanJudgment = 'NG';
+      loanJudgmentText = '融資不可（金融機関基準）';
     }
 
     return c.json({
@@ -295,9 +332,7 @@ app.get('/info', async (c) => {
         loan: {
           judgment: loanJudgment,
           judgment_text: loanJudgmentText,
-          requires_investigation: requiresInvestigation,  // v3.153.122: 要調査フラグ
-          ng_conditions: ngConditions,                    // v3.153.122: 該当条件リスト
-          investigation_instructions: investigationInstructions,  // v3.153.122: 調査指示
+          ng_conditions: ngConditions,  // v3.153.123: NG条件詳細リスト（type, name, description）
           restrictions: {
             basic: loanRestrictions,            // 基本ローン制限（洪水・土砂）
             zoning: zoningRestrictions,         // 用途地域制限
@@ -310,8 +345,8 @@ app.get('/info', async (c) => {
             url: 'https://disaportal.gsi.go.jp/',
           },
         ],
-        note: requiresInvestigation 
-          ? '⚠️ 融資制限の可能性があるため、詳細調査が必要です。調査結果を備考欄に必ず記入してください。'
+        note: loanJudgment === 'NG'
+          ? '⚠️ この物件は融資NG条件に該当するため、案件作成はできません。'
           : '詳細な情報は国土交通省ハザードマップポータルサイトをご確認ください',
         timestamp: new Date().toISOString(),
       },

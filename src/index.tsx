@@ -9776,46 +9776,21 @@ app.get('/deals/new', (c) => {
         missingFields.push('土地面積');
       }
       
-      // v3.153.122: ハザード情報で要調査の場合、備考欄必須
-      const remarksInput = document.getElementById('remarks');
-      const remarksErrorMsg = document.getElementById('remarks-error-message');
-      
-      if (window._hazardInvestigationRequired) {
-        console.log('[DEAL CREATE] Hazard investigation required, checking remarks field...');
-        console.log('[DEAL CREATE] Remarks value:', remarksInput?.value || '(empty)');
+      // v3.153.123: 融資NG条件該当時は案件作成不可
+      if (window._loanDecisionNG) {
+        const ngConditions = window._loanNgConditions || [];
+        const errorMsg = `融資NG条件に該当するため、案件作成はできません。\n該当条件: ${ngConditions.join('、')}`;
+        console.error('[DEAL CREATE] ❌ Loan decision NG: Cannot create deal');
+        console.error('[DEAL CREATE] NG Conditions:', ngConditions);
         
-        if (!remarksInput || !remarksInput.value.trim()) {
-          const errorMsg = 'ハザード情報の調査結果を備考欄に記入してください';
-          console.error('[DEAL CREATE] ❌ Remarks validation failed: Investigation required but remarks empty');
-          
-          // 備考欄にフォーカスとエラー表示
-          if (remarksInput) {
-            remarksInput.classList.add('border-red-500', 'focus:ring-red-500');
-            remarksInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            remarksInput.focus();
-          }
-          if (remarksErrorMsg) {
-            remarksErrorMsg.classList.remove('hidden');
-          }
-          
-          if (typeof showMessage === 'function') {
-            showMessage(errorMsg, 'error');
-          } else if (typeof window.showMessage === 'function') {
-            window.showMessage(errorMsg, 'error');
-          } else {
-            console.error(errorMsg);
-          }
-          return;
+        if (typeof showMessage === 'function') {
+          showMessage(errorMsg, 'error');
+        } else if (typeof window.showMessage === 'function') {
+          window.showMessage(errorMsg, 'error');
         } else {
-          // 備考欄が記入されている場合、エラー表示をクリア
-          if (remarksInput) {
-            remarksInput.classList.remove('border-red-500', 'focus:ring-red-500');
-          }
-          if (remarksErrorMsg) {
-            remarksErrorMsg.classList.add('hidden');
-          }
-          console.log('[DEAL CREATE] ✅ Remarks validation passed');
+          alert(errorMsg);
         }
+        return;  // 案件作成を中止
       }
       
       if (missingFields.length > 0) {

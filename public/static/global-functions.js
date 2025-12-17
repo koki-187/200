@@ -765,82 +765,75 @@ function displayHazardInfo(hazardData) {
     html += `</div>`;
   }
   
-  // v3.153.122: 要調査の場合の詳細指示
-  if (loan.requires_investigation && loan.investigation_instructions && loan.investigation_instructions.length > 0) {
+  // v3.153.123: 融資NG条件の厳格表示
+  if (loan.judgment === 'NG' && loan.ng_conditions && loan.ng_conditions.length > 0) {
     html += `
-      <div class="mt-4 pt-4 border-t border-gray-200 bg-orange-50 border border-orange-300 rounded-lg p-4">
-        <h4 class="font-semibold mb-3 text-orange-800 flex items-center">
-          <i class="fas fa-clipboard-list mr-2"></i>詳細調査が必要な項目
+      <div class="mt-4 pt-4 border-t border-gray-200 bg-red-50 border-2 border-red-400 rounded-lg p-4">
+        <h4 class="font-bold mb-4 text-red-900 flex items-center text-lg">
+          <i class="fas fa-ban mr-2"></i>検討外エリア・条件
         </h4>
-        <div class="text-sm text-orange-900 mb-3">
-          <p class="font-medium mb-2">以下の項目について詳細調査を実施し、<span class="text-red-600 font-bold">備考欄に必ず記入</span>してください:</p>
+        <div class="text-sm text-red-800 mb-4">
+          <p class="font-semibold mb-3">この物件は以下の融資NG条件に該当するため、<span class="text-red-600 font-bold text-base">案件作成はできません</span>:</p>
         </div>
-        <ul class="space-y-2">
+        <div class="space-y-3">
     `;
     
-    loan.investigation_instructions.forEach((instruction, index) => {
+    loan.ng_conditions.forEach((condition) => {
       html += `
-        <li class="flex items-start text-sm text-orange-800">
-          <span class="font-semibold mr-2">${index + 1}.</span>
-          <span>${instruction}</span>
-        </li>
+        <div class="bg-white border border-red-300 rounded-lg p-4">
+          <div class="flex items-start">
+            <div class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+              <i class="fas fa-times text-red-600"></i>
+            </div>
+            <div class="flex-1">
+              <h5 class="font-bold text-red-900 mb-2">${condition.name}</h5>
+              <p class="text-sm text-red-800">${condition.description}</p>
+            </div>
+          </div>
+        </div>
       `;
     });
     
     html += `
-        </ul>
-        <div class="mt-4 p-3 bg-red-50 border border-red-300 rounded-lg">
-          <p class="text-sm text-red-800 font-semibold flex items-center">
-            <i class="fas fa-exclamation-triangle mr-2"></i>
-            案件作成時の注意事項
+        </div>
+        <div class="mt-4 p-4 bg-red-100 border border-red-400 rounded-lg">
+          <p class="text-sm text-red-900 font-bold flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            重要な注意事項
           </p>
-          <p class="text-xs text-red-700 mt-2">
-            上記の調査を実施せず、備考欄が空欄の場合は案件を作成できません。調査結果を必ず備考欄に記入してください。
+          <p class="text-sm text-red-800 mt-2">
+            金融機関の融資基準により、上記の条件に該当する物件は融資対象外となります。案件作成ボタンは無効化されます。
           </p>
         </div>
       </div>
     `;
     
-    // v3.153.122: 備考欄を必須化（グローバル変数に保存 + UI更新）
-    window._hazardInvestigationRequired = true;
-    window._hazardNgConditions = loan.ng_conditions || [];
-    console.log('[Hazard Display] ⚠️ Investigation required, remarks field will be mandatory');
-    console.log('[Hazard Display] NG Conditions:', window._hazardNgConditions);
+    // v3.153.123: 融資NGフラグを設定（案件作成ボタン無効化用）
+    window._loanDecisionNG = true;
+    window._loanNgConditions = loan.ng_conditions.map(c => c.name);
+    console.log('[Hazard Display] 🚫 Loan decision: NG');
+    console.log('[Hazard Display] NG Conditions:', window._loanNgConditions);
     
-    // 備考欄の必須表示を更新
-    const remarksIndicator = document.getElementById('remarks-required-indicator');
-    const remarksWarningBanner = document.getElementById('remarks-warning-banner');
-    const remarksTextarea = document.getElementById('remarks');
-    
-    if (remarksIndicator) {
-      remarksIndicator.classList.remove('hidden');
-    }
-    if (remarksWarningBanner) {
-      remarksWarningBanner.classList.remove('hidden');
-    }
-    if (remarksTextarea) {
-      // プレースホルダーに調査項目のヒントを追加
-      const conditions = loan.ng_conditions.join('、');
-      remarksTextarea.placeholder = `以下の項目について調査結果を記入してください（必須）：\n${conditions}\n\n例: 市街化調整区域について◯◯市都市計画課に確認済み。当該地は既存宅地で建築可能との回答を得た。`;
+    // 案件作成ボタンを無効化
+    const submitBtn = document.querySelector('#deal-form button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      submitBtn.innerHTML = '<i class="fas fa-ban mr-2"></i>融資NG条件該当のため作成不可';
+      console.log('[Hazard Display] ✅ Submit button disabled due to NG conditions');
     }
   } else {
-    // 要調査フラグをリセット
-    window._hazardInvestigationRequired = false;
-    window._hazardNgConditions = [];
+    // 融資NGフラグをリセット
+    window._loanDecisionNG = false;
+    window._loanNgConditions = [];
     
-    // 備考欄の必須表示をクリア
-    const remarksIndicator = document.getElementById('remarks-required-indicator');
-    const remarksWarningBanner = document.getElementById('remarks-warning-banner');
-    const remarksTextarea = document.getElementById('remarks');
-    
-    if (remarksIndicator) {
-      remarksIndicator.classList.add('hidden');
-    }
-    if (remarksWarningBanner) {
-      remarksWarningBanner.classList.add('hidden');
-    }
-    if (remarksTextarea && remarksTextarea.placeholder.includes('必須')) {
-      remarksTextarea.placeholder = '備考がある場合は入力してください';
+    // 案件作成ボタンを有効化
+    const submitBtn = document.querySelector('#deal-form button[type="submit"]');
+    if (submitBtn && submitBtn.disabled) {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      submitBtn.innerHTML = '<i class="fas fa-plus-circle mr-2"></i>案件を作成';
+      console.log('[Hazard Display] ✅ Submit button enabled (no NG conditions)');
     }
   }
   
@@ -858,7 +851,7 @@ function displayHazardInfo(hazardData) {
   resultDiv.innerHTML = html;
   container.classList.remove('hidden');
   
-  console.log('[Hazard Display] ✅ UI rendered successfully (v3.153.122: with investigation instructions)');
+  console.log('[Hazard Display] ✅ UI rendered successfully (v3.153.123: strict NG conditions)');
 }
 
 /**

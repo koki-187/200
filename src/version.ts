@@ -2,9 +2,9 @@
  * Application Version Management
  */
 
-export const APP_VERSION = 'v3.153.114';
+export const APP_VERSION = 'v3.153.115';
 export const BUILD_DATE = '2025-12-16';
-export const BUILD_DESCRIPTION = 'CRITICAL DEBUG: Enhanced token/user logging, emergency sellers when NO TOKEN, seller dropdown diagnosis';
+export const BUILD_DESCRIPTION = 'CRITICAL FIX: Complete seller dropdown rewrite - simple, reliable, direct API call with fresh token';
 
 export function logVersion() {
   console.log(`%c========== ${APP_VERSION} ==========`, 'color: #4CAF50; font-weight: bold;');

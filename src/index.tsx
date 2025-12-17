@@ -6574,101 +6574,8 @@ app.get('/deals/new', (c) => {
           </label>
           <select id="seller_id" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <option value="">選択してください</option>
+            <option value="">読み込み中...</option>
           </select>
-          <!-- CRITICAL FIX v3.153.113: Enhanced failsafe with aggressive retries -->
-          <script>
-            console.log('[Seller Failsafe v3.153.113] Initializing aggressive seller loading...');
-            
-            // Function to attempt loading sellers with retries
-            function attemptLoadSellers(attempt) {
-              attempt = attempt || 1;
-              const maxAttempts = 10;
-              
-              console.log('[Seller Failsafe] Attempt', attempt, 'of', maxAttempts);
-              
-              const sellerSelect = document.getElementById('seller_id');
-              if (!sellerSelect) {
-                console.error('[Seller Failsafe] seller_id element not found');
-                if (attempt < maxAttempts) {
-                  setTimeout(function() { attemptLoadSellers(attempt + 1); }, 500);
-                }
-                return;
-              }
-              
-              // Check if sellers are already loaded
-              if (sellerSelect.options.length > 1) {
-                console.log('[Seller Failsafe] ✅ Sellers already loaded (', sellerSelect.options.length, 'options)');
-                return;
-              }
-              
-              // Try to call window.loadSellers()
-              if (typeof window.loadSellers === 'function') {
-                console.log('[Seller Failsafe] Calling window.loadSellers()');
-                try {
-                  window.loadSellers();
-                } catch (e) {
-                  console.error('[Seller Failsafe] loadSellers() threw error:', e);
-                }
-                
-                // Verify after 1s
-                setTimeout(function() {
-                  if (sellerSelect.options.length === 1) {
-                    console.warn('[Seller Failsafe] Still only 1 option after loadSellers(), retrying...');
-                    if (attempt < maxAttempts) {
-                      attemptLoadSellers(attempt + 1);
-                    } else {
-                      console.error('[Seller Failsafe] Max attempts reached, adding emergency sellers');
-                      addEmergencySellers();
-                    }
-                  } else {
-                    console.log('[Seller Failsafe] ✅ Sellers loaded successfully');
-                  }
-                }, 1000);
-              } else {
-                console.warn('[Seller Failsafe] window.loadSellers not available yet, waiting...');
-                if (attempt < maxAttempts) {
-                  setTimeout(function() { attemptLoadSellers(attempt + 1); }, 500);
-                } else {
-                  console.error('[Seller Failsafe] window.loadSellers never became available, adding emergency sellers');
-                  addEmergencySellers();
-                }
-              }
-            }
-            
-            // Function to add emergency sellers as last resort
-            function addEmergencySellers() {
-              const sellerSelect = document.getElementById('seller_id');
-              if (!sellerSelect) return;
-              
-              console.error('[Seller Failsafe] Adding emergency sellers as last resort');
-              
-              const emergencySellers = [
-                { id: 'failsafe-1', name: 'フェイルセーフ売主A', company: 'システム自動生成' },
-                { id: 'failsafe-2', name: 'フェイルセーフ売主B', company: 'システム自動生成' }
-              ];
-              
-              emergencySellers.forEach(function(seller) {
-                const option = document.createElement('option');
-                option.value = seller.id;
-                option.textContent = seller.name + ' (' + seller.company + ')';
-                sellerSelect.appendChild(option);
-              });
-              
-              console.log('[Seller Failsafe] ✅ Added ' + emergencySellers.length + ' emergency sellers');
-              
-              // Auto-select first emergency seller
-              if (sellerSelect.options.length > 1) {
-                sellerSelect.selectedIndex = 1;
-                console.log('[Seller Failsafe] Auto-selected first emergency seller');
-              }
-            }
-            
-            // Start attempting to load sellers after 500ms delay
-            setTimeout(function() {
-              attemptLoadSellers(1);
-            }, 500);
-          </script>
         </div>
 
         <!-- 備考 -->
@@ -7677,73 +7584,74 @@ app.get('/deals/new', (c) => {
       newCancelBtn.addEventListener('click', cancelHandler);
     }
 
-    // 売主リスト取得（リトライロジック付き）
-    async function loadSellers(retryCount = 0) {
-      console.log('[Sellers v3.153.114] ========== START (Retry:', retryCount, ') ==========');
-      console.log('[Sellers v3.153.114] Token exists:', !!token);
-      if (token) {
-        console.log('[Sellers v3.153.114] Token preview:', token.substring(0, 30) + '...');
-      } else {
-        console.error('[Sellers v3.153.114] ❌❌❌ TOKEN IS NULL - CRITICAL ISSUE');
-        console.error('[Sellers v3.153.114] localStorage token:', localStorage.getItem('token') ? 'EXISTS' : 'NULL');
+    // CRITICAL FIX v3.153.115: Completely rewritten seller loading - SIMPLE & RELIABLE
+    async function loadSellers() {
+      console.log('[Sellers v3.153.115] ========== LOAD SELLERS START ==========');
+      
+      const select = document.getElementById('seller_id');
+      if (!select) {
+        console.error('[Sellers v3.153.115] ❌ seller_id element not found');
+        return;
       }
-      console.log('[Sellers v3.153.114] Current URL:', window.location.href);
-      console.log('[Sellers v3.153.114] User:', user);
-      console.log('[Sellers v3.153.114] User role:', user?.role || 'UNKNOWN');
+      
+      // Get fresh token from localStorage
+      const currentToken = localStorage.getItem('token');
+      console.log('[Sellers v3.153.115] Token:', currentToken ? 'EXISTS (length: ' + currentToken.length + ')' : '❌ NULL');
+      
+      if (!currentToken) {
+        console.error('[Sellers v3.153.115] ❌ NO TOKEN - User not logged in');
+        select.innerHTML = '<option value="">ログインしてください</option>';
+        return;
+      }
       
       try {
-        const select = document.getElementById('seller_id');
-        if (!select) {
-          if (retryCount < 5) {
-            console.warn('[Sellers] ⚠️ seller_id element not found, retrying in 300ms... (attempt ' + (retryCount + 1) + '/5)');
-            setTimeout(() => loadSellers(retryCount + 1), 300);
-            return;
-          } else {
-            console.error('[Sellers] ❌ seller_id element not found after 5 retries');
-            console.error('[Sellers] Available select elements:', document.querySelectorAll('select').length);
-            console.error('[Sellers] This may indicate a page structure issue');
-            // alert を削除 - 不要なエラーメッセージを表示しない
-            return;
-          }
+        console.log('[Sellers v3.153.115] Calling /api/auth/users...');
+        const response = await axios.get('/api/auth/users', {
+          headers: { 'Authorization': 'Bearer ' + currentToken },
+          timeout: 15000
+        });
+        
+        console.log('[Sellers v3.153.115] ✅ API Response received');
+        console.log('[Sellers v3.153.115] Total users:', response.data.users?.length || 0);
+        
+        const sellers = (response.data.users || []).filter(u => u.role === 'AGENT');
+        console.log('[Sellers v3.153.115] ✅ AGENT users:', sellers.length);
+        
+        // Clear dropdown
+        select.innerHTML = '';
+        
+        // Add default option
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '選択してください';
+        select.appendChild(defaultOpt);
+        
+        // Add all sellers
+        sellers.forEach((seller, index) => {
+          const opt = document.createElement('option');
+          opt.value = seller.id;
+          opt.textContent = seller.name + (seller.company_name ? ' (' + seller.company_name + ')' : '');
+          select.appendChild(opt);
+          console.log('[Sellers v3.153.115] Added:', seller.name);
+        });
+        
+        // Auto-select first seller
+        if (sellers.length > 0) {
+          select.selectedIndex = 1;
+          console.log('[Sellers v3.153.115] ✅ Auto-selected:', sellers[0].name);
         }
         
-        console.log('[Sellers v3.153.114] seller_id element found, current options:', select.options.length);
+        console.log('[Sellers v3.153.115] ========== SUCCESS: ' + sellers.length + ' sellers loaded ==========');
         
-        // CRITICAL FIX v3.153.114: If no token, provide emergency sellers immediately
-        if (!token) {
-          console.error('[Sellers v3.153.114] ❌❌❌ NO TOKEN - CANNOT CALL API');
-          console.error('[Sellers v3.153.114] Possible causes: 1) Not logged in, 2) Token expired, 3) localStorage issue');
-          console.warn('[Sellers v3.153.114] Adding emergency sellers WITHOUT API call');
-          
-          // Clear and add default option
-          select.innerHTML = '';
-          const defaultOption = document.createElement('option');
-          defaultOption.value = '';
-          defaultOption.textContent = '選択してください';
-          select.appendChild(defaultOption);
-          
-          // Add emergency sellers
-          const emergencySellers = [
-            { id: 'emergency-no-token-1', name: '🚨緊急売主A', company: 'ログイン必要' },
-            { id: 'emergency-no-token-2', name: '🚨緊急売主B', company: 'ログイン必要' }
-          ];
-          
-          emergencySellers.forEach(seller => {
-            const option = document.createElement('option');
-            option.value = seller.id;
-            option.textContent = seller.name + ' (' + seller.company + ')';
-            select.appendChild(option);
-          });
-          
-          // Auto-select first emergency seller
-          if (select.options.length > 1) {
-            select.selectedIndex = 1;
-            console.warn('[Sellers v3.153.114] ⚠️ Auto-selected emergency seller (NO TOKEN)');
-          }
-          
-          console.error('[Sellers v3.153.114] ❌ CRITICAL: Please log in to see actual seller list');
-          return;
-        }
+      } catch (error) {
+        console.error('[Sellers v3.153.115] ❌ API ERROR:', error);
+        console.error('[Sellers v3.153.115] Error status:', error.response?.status);
+        console.error('[Sellers v3.153.115] Error message:', error.message);
+        
+        // Show error in dropdown
+        select.innerHTML = '<option value="">エラー: 売主リスト取得失敗</option>';
+      }
+    }
         
         console.log('[Sellers] Calling API: /api/auth/users');
         const response = await axios.get('/api/auth/users', {

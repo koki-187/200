@@ -128,13 +128,18 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
     
     console.log('[不動産情報ライブラリ] リクエスト送信:', { address, year, quarter });
     
+    // v3.153.119: 進捗表示コールバック関数
+    const updateProgress = (message) => {
+      btn.innerHTML = message;
+    };
+    
     // v3.153.98: 5秒後にリトライ中メッセージを表示
     retryMessageTimer = setTimeout(() => {
       btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> 時間がかかっています...';
     }, 5000);
     
-    // v3.153.108: Pattern 4 - フォールバック処理を使用
-    const result = await fetchPropertyInfoWithFallback(address, year, quarter, token);
+    // v3.153.119: Pattern 4 - フォールバック処理を使用（進捗表示付き）
+    const result = await fetchPropertyInfoWithFallback(address, year, quarter, token, updateProgress);
     
     if (!result.success) {
       // 全てのフォールバックが失敗
@@ -359,19 +364,25 @@ async function showHazardMapLink(address) {
 }
 
 /**
- * v3.153.108: Pattern 4 - 404エラー時の自動フォールバック処理
+ * v3.153.119: Pattern 4 - 404エラー時の自動フォールバック処理（進捗表示付き）
  * 前年・前四半期で自動リトライ
  */
-async function fetchPropertyInfoWithFallback(address, year, quarter, token) {
+async function fetchPropertyInfoWithFallback(address, year, quarter, token, updateProgressCallback) {
   const attempts = [
     { year, quarter, label: `${year}年第${quarter}四半期` },
     { year: year - 1, quarter, label: `${year - 1}年第${quarter}四半期（前年）` },
     { year, quarter: quarter > 1 ? quarter - 1 : 4, label: `${year}年第${quarter > 1 ? quarter - 1 : 4}四半期（前四半期）` }
   ];
   
-  for (const attempt of attempts) {
+  for (let i = 0; i < attempts.length; i++) {
+    const attempt = attempts[i];
     try {
-      console.log(`[Property Info Fallback] Trying: ${attempt.label}`);
+      console.log(`[Property Info Fallback] Trying ${i + 1}/${attempts.length}: ${attempt.label}`);
+      
+      // CRITICAL FIX v3.153.119: 進捗表示をユーザーにフィードバック
+      if (updateProgressCallback) {
+        updateProgressCallback(`<i class="fas fa-sync-alt fa-spin"></i> 検索中... (${i + 1}/${attempts.length})`);
+      }
       
       const response = await axios.get('/api/reinfolib/property-info', {
         params: { address, year: attempt.year, quarter: attempt.quarter },

@@ -94,12 +94,14 @@ window.autoFillFromReinfolib = async function autoFillFromReinfolib() {
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 取得中...';
   
-  // CRITICAL FIX v3.153.116: Force reset button after 30 seconds
+  // CRITICAL FIX v3.153.118: Force reset button after 60 seconds (increased from 30s)
+  // Reason: Fallback attempts can take up to 45 seconds (3 attempts × 15s each)
   const forceResetTimer = setTimeout(() => {
-    console.error('[不動産情報ライブラリ v3.153.116] ⚠️ 30秒タイムアウト - ボタン強制リセット');
+    console.error('[不動産情報ライブラリ v3.153.118] ⚠️ 60秒タイムアウト - ボタン強制リセット');
     btn.disabled = false;
     btn.innerHTML = originalHTML;
-  }, 30000);
+    alert('物件情報の取得がタイムアウトしました。\n\nネットワーク接続を確認して、再度お試しください。');
+  }, 60000);
   
   // v3.153.98: Task A4 - リトライ中メッセージ表示
   let retryMessageTimer = null;

@@ -7620,9 +7620,25 @@ app.get('/deals/new', (c) => {
       }
       
       if (!currentToken) {
-        console.error('[Sellers v3.153.116] ❌ NO TOKEN');
-        select.innerHTML = '<option value="">ログインしてください</option>';
+        console.error('[Sellers v3.153.118] ❌ NO TOKEN - User not logged in');
+        select.innerHTML = '<option value="">❌ ログインしてください</option>';
         select.disabled = false;
+        select.style.borderColor = '#ef4444'; // Red border
+        select.style.backgroundColor = '#fef2f2'; // Light red bg
+        
+        // Show error message
+        const errorDiv = document.createElement('div');
+        errorDiv.id = 'seller-token-error';
+        errorDiv.style.cssText = 'color: #dc2626; font-size: 0.875rem; margin-top: 0.25rem;';
+        errorDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ログインが必要です。<a href="/" class="underline ml-2">ログインページへ</a>';
+        
+        const parentDiv = select.parentElement;
+        if (parentDiv) {
+          const existingError = document.getElementById('seller-token-error');
+          if (existingError) existingError.remove();
+          parentDiv.appendChild(errorDiv);
+        }
+        
         return;
       }
       
@@ -10282,17 +10298,51 @@ app.get('/deals/new', (c) => {
       }
     }
 
+    // CRITICAL FIX v3.153.118: Axios読み込み待機関数
+    function waitForAxios(maxAttempts = 50, interval = 100) {
+      return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const checkAxios = () => {
+          attempts++;
+          console.log('[Init v3.153.118] Checking Axios... attempt', attempts, '/', maxAttempts);
+          
+          if (typeof axios !== 'undefined') {
+            console.log('[Init v3.153.118] ✅ Axios is ready!');
+            resolve(true);
+          } else if (attempts >= maxAttempts) {
+            console.error('[Init v3.153.118] ❌ Axios not loaded after', maxAttempts, 'attempts');
+            reject(new Error('Axios not loaded'));
+          } else {
+            setTimeout(checkAxios, interval);
+          }
+        };
+        checkAxios();
+      });
+    }
+
     // 初期化 - DOM要素が存在する場合のみ実行
-    function initializePage() {
-      console.log('[Init v3.153.117] ========== INITIALIZE PAGE (deals/new) ==========');
-      console.log('[Init v3.153.117] Document ready state:', document.readyState);
-      console.log('[Init v3.153.117] Token exists:', !!token);
-      console.log('[Init v3.153.117] Token value:', token ? 'Valid (length: ' + token.length + ')' : 'NULL');
-      console.log('[Init v3.153.117] User:', user);
-      console.log('[Init v3.153.117] User role:', user?.role);
-      console.log('[Init v3.153.117] Current URL:', window.location.href);
-      console.log('[Init v3.153.117] Axios loaded:', typeof axios !== 'undefined');
-      console.log('[Init v3.153.117] Axios version:', typeof axios !== 'undefined' ? 'Available' : 'NOT LOADED');
+    async function initializePage() {
+      console.log('[Init v3.153.118] ========== INITIALIZE PAGE (deals/new) ==========');
+      console.log('[Init v3.153.118] Document ready state:', document.readyState);
+      console.log('[Init v3.153.118] Token exists:', !!token);
+      console.log('[Init v3.153.118] Token value:', token ? 'Valid (length: ' + token.length + ')' : 'NULL');
+      console.log('[Init v3.153.118] User:', user);
+      console.log('[Init v3.153.118] User role:', user?.role);
+      console.log('[Init v3.153.118] Current URL:', window.location.href);
+      
+      // CRITICAL FIX v3.153.118: Wait for Axios to load before proceeding
+      console.log('[Init v3.153.118] 🔄 Waiting for Axios to load...');
+      try {
+        await waitForAxios();
+        console.log('[Init v3.153.118] ✅ Axios confirmed ready');
+      } catch (error) {
+        console.error('[Init v3.153.118] ❌ CRITICAL: Axios failed to load:', error);
+        alert('システムの初期化に失敗しました。ページを再読み込みしてください。');
+        return;
+      }
+      
+      console.log('[Init v3.153.118] Axios loaded:', typeof axios !== 'undefined');
+      console.log('[Init v3.153.118] Axios version:', typeof axios !== 'undefined' ? 'Available' : 'NOT LOADED');
       
       // CRITICAL FIX v3.153.16: Call immediately instead of setTimeout
       // Reason: setTimeout may not fire if page redirects or context changes

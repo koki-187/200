@@ -44,6 +44,8 @@ import health from './routes/health';
 import healthCheck from './routes/health-check';
 import hazardDatabase from './routes/hazard-database'; // v3.153.120: 一都三県ハザード情報DB
 import pinpointHazard from './routes/pinpoint-hazard'; // v3.153.131: ピンポイントハザード情報（〇丁目・〇番地レベル）
+import buildingRegulationsPinpoint from './routes/building-regulations-pinpoint'; // v3.153.132: ピンポイント建築規制情報
+import integratedPropertySearch from './routes/integrated-property-search'; // v3.153.132: 統合不動産情報検索
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -171,6 +173,8 @@ app.route('/api/monitoring', monitoring);
 // app.route('/api/investment-simulator', investmentSimulator); // DELETED: 投資シミュレーター機能削除
 app.route('/api/hazard-db', hazardDatabase); // v3.153.120: 一都三県ハザード情報DB
 app.route('/api/pinpoint-hazard', pinpointHazard); // v3.153.131: ピンポイントハザード情報（〇丁目・〇番地レベル）
+app.route('/api/building-regulations-pinpoint', buildingRegulationsPinpoint); // v3.153.132: ピンポイント建築規制情報
+app.route('/api/integrated-property-search', integratedPropertySearch); // v3.153.132: 統合不動産情報検索
 
 // ヘルスチェック（詳細版）
 app.route('/api/health', health);

@@ -300,6 +300,14 @@ async function searchBuildingRegulations(
         type: regulationData.building_restrictions,
         note: regulationData.building_restrictions_note,
       },
+      apartment_construction_feasible: regulationData.apartment_construction_feasible,
+      apartment_infeasibility_reason: regulationData.apartment_infeasibility_reason,
+      apartment_parking_ratio: regulationData.apartment_parking_ratio,
+      apartment_parking_area_per_space: regulationData.apartment_parking_area_per_space,
+      apartment_bicycle_ratio: regulationData.apartment_bicycle_ratio,
+      apartment_bicycle_area_per_space: regulationData.apartment_bicycle_area_per_space,
+      development_guideline: regulationData.development_guideline,
+      development_guideline_url: regulationData.development_guideline_url,
     },
     loan_impact: {
       level: regulationData.affects_loan, // 0: なし、1: 注意、2: 制限あり
@@ -330,6 +338,11 @@ function calculateIntegratedLoanDecision(hazardData: any, regulationData: any) {
     } else if (regulationData.loan_impact.level === 1) {
       cautionReasons.push(`建築規制: ${regulationData.loan_impact.note}`);
     }
+  }
+
+  // アパート建築可否判定
+  if (regulationData.details && regulationData.details.apartment_construction_feasible === 0) {
+    ngReasons.push(`アパート建築不可: ${regulationData.details.apartment_infeasibility_reason || '開発指導要綱により建築不可'}`);
   }
 
   // 総合判定

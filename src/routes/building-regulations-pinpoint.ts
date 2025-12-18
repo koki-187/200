@@ -71,6 +71,11 @@ app.get('/info', async (c) => {
           local_ordinance, local_ordinance_note,
           building_restrictions, building_restrictions_note,
           affects_loan, loan_impact_note,
+          apartment_restrictions, apartment_restrictions_note,
+          apartment_parking_ratio, apartment_parking_area_per_space, apartment_parking_note,
+          apartment_bicycle_ratio, apartment_bicycle_area_per_space, apartment_bicycle_note,
+          apartment_construction_feasible, apartment_infeasibility_reason,
+          development_guideline, development_guideline_url,
           data_source, confidence_level, verification_status
         FROM building_regulations
         WHERE prefecture = ? 
@@ -106,6 +111,11 @@ app.get('/info', async (c) => {
           local_ordinance, local_ordinance_note,
           building_restrictions, building_restrictions_note,
           affects_loan, loan_impact_note,
+          apartment_restrictions, apartment_restrictions_note,
+          apartment_parking_ratio, apartment_parking_area_per_space, apartment_parking_note,
+          apartment_bicycle_ratio, apartment_bicycle_area_per_space, apartment_bicycle_note,
+          apartment_construction_feasible, apartment_infeasibility_reason,
+          development_guideline, development_guideline_url,
           data_source, confidence_level, verification_status
         FROM building_regulations
         WHERE prefecture = ? 
@@ -139,6 +149,11 @@ app.get('/info', async (c) => {
           local_ordinance, local_ordinance_note,
           building_restrictions, building_restrictions_note,
           affects_loan, loan_impact_note,
+          apartment_restrictions, apartment_restrictions_note,
+          apartment_parking_ratio, apartment_parking_area_per_space, apartment_parking_note,
+          apartment_bicycle_ratio, apartment_bicycle_area_per_space, apartment_bicycle_note,
+          apartment_construction_feasible, apartment_infeasibility_reason,
+          development_guideline, development_guideline_url,
           data_source, confidence_level, verification_status
         FROM building_regulations
         WHERE prefecture = ? 
@@ -171,6 +186,11 @@ app.get('/info', async (c) => {
           local_ordinance, local_ordinance_note,
           building_restrictions, building_restrictions_note,
           affects_loan, loan_impact_note,
+          apartment_restrictions, apartment_restrictions_note,
+          apartment_parking_ratio, apartment_parking_area_per_space, apartment_parking_note,
+          apartment_bicycle_ratio, apartment_bicycle_area_per_space, apartment_bicycle_note,
+          apartment_construction_feasible, apartment_infeasibility_reason,
+          development_guideline, development_guideline_url,
           data_source, confidence_level, verification_status
         FROM building_regulations
         WHERE prefecture = ? 
@@ -247,6 +267,22 @@ app.get('/info', async (c) => {
           building_restrictions: {
             type: regulationData.building_restrictions,
             note: regulationData.building_restrictions_note,
+          },
+          apartment_restrictions: {
+            type: regulationData.apartment_restrictions,
+            note: regulationData.apartment_restrictions_note,
+            parking_ratio: regulationData.apartment_parking_ratio,
+            parking_area_per_space: regulationData.apartment_parking_area_per_space,
+            parking_note: regulationData.apartment_parking_note,
+            bicycle_ratio: regulationData.apartment_bicycle_ratio,
+            bicycle_area_per_space: regulationData.apartment_bicycle_area_per_space,
+            bicycle_note: regulationData.apartment_bicycle_note,
+            construction_feasible: regulationData.apartment_construction_feasible,
+            infeasibility_reason: regulationData.apartment_infeasibility_reason,
+          },
+          development_guideline: {
+            name: regulationData.development_guideline,
+            url: regulationData.development_guideline_url,
           },
         },
         loan_impact: {

@@ -43,6 +43,7 @@ import investmentSimulator from './routes/investment-simulator';
 import health from './routes/health';
 import healthCheck from './routes/health-check';
 import hazardDatabase from './routes/hazard-database'; // v3.153.120: 一都三県ハザード情報DB
+import pinpointHazard from './routes/pinpoint-hazard'; // v3.153.131: ピンポイントハザード情報（〇丁目・〇番地レベル）
 
 // Middleware
 import { rateLimitPresets } from './middleware/rate-limit';
@@ -169,6 +170,7 @@ app.route('/api/monitoring', monitoring);
 // app.route('/api/reports', reports); // DELETED: レポート機能削除
 // app.route('/api/investment-simulator', investmentSimulator); // DELETED: 投資シミュレーター機能削除
 app.route('/api/hazard-db', hazardDatabase); // v3.153.120: 一都三県ハザード情報DB
+app.route('/api/pinpoint-hazard', pinpointHazard); // v3.153.131: ピンポイントハザード情報（〇丁目・〇番地レベル）
 
 // ヘルスチェック（詳細版）
 app.route('/api/health', health);

@@ -1,351 +1,304 @@
-# 残タスクリスト - v3.11.0以降
+# 未完了タスク一覧（v3.153.124実装計画）
 
-**最終更新**: 2025-11-19  
-**現在のバージョン**: v3.11.0  
-**システム状態**: ✅ 全機能正常動作、エラーなし
+## 📅 作成日時
+2025-12-17
 
----
-
-## 📊 現在の実装状況
-
-### ✅ 完了済み（v3.11.0時点）
-- 認証システム（JWT、Remember Me）
-- 案件管理（CRUD、検索、フィルター）
-- ファイル管理（R2統合）
-- メッセージング（チャット、@メンション）
-- OCR機能（GPT-4 Vision、複数ファイル対応）
-- OCR履歴管理
-- OCR設定UI
-- 地図表示（Geocoding + Leaflet）
-- AI提案機能
-- メール通知（Resend API）
-- プッシュ通知
-- バックアップ機能
-- 分析・レポート機能
-- APIドキュメント（OpenAPI + Scalar）
-
-### 🗑️ 削除済み（v3.11.0）
-- ❌ テンプレート機能（土地仕入れ業務に不要と判断）
+## 🎯 目標
+国交省APIからの正確なデータ取得とファクトチェックシステムの実装
 
 ---
 
-## 🎯 高優先度タスク（次セッション推奨）
+## 📊 現在の状況
 
-### 1. 並列ファイル処理の実装 ⭐⭐⭐
-**目的**: 複数ファイルのOCR処理速度を向上
+### ✅ 完了済み（v3.153.123）
+- ハザードデータベーススキーマ構築（4テーブル）
+- サンプルデータ投入（846件）
+- NG条件厳格化（7項目）
+- フロントエンドUI実装
+- データ収集スクリプト作成（collect-hazard-data.cjs）
+- 完全なドキュメント化
 
-**現状の問題**:
+### 🔲 未完了（これから実施）
+- 国交省APIからの正確なデータ取得
+- ファクトチェックシステム実装
+- 本番環境デプロイ
+- E2Eテスト
+
+---
+
+## 📋 Phase 1: データ精度向上（最優先）
+
+### Task 1-1: 国交省APIからの正確なデータ取得
+**目的**: サンプルデータを国交省の正確なデータに置き換える
+
+**利用可能なAPI**:
+1. **ハザードマップポータルサイト API**
+   - URL: https://disaportal.gsi.go.jp/
+   - 提供データ: 洪水、土砂災害、津波、液状化
+   - 形式: REST API / GeoJSON
+
+2. **MLIT API（既に連携済み）**
+   - `XKT002`: 用途地域（市街化調整区域、防火地域）
+   - `XKT031`: 土砂災害警戒区域
+   - `XKT034`: 洪水浸水想定区域（コード実装済み）
+
+**実装方針**:
+- 現在のサンプルデータは **仮データ** であることを明示
+- 国交省APIへのアクセス方法をドキュメント化
+- APIレート制限を考慮したバッチ処理
+- エラーハンドリングと再試行ロジック
+
+**成果物**:
+- [ ] `scripts/fetch-real-hazard-data.cjs`: 国交省API連携スクリプト
+- [ ] `migrations/0035_real_hazard_data.sql`: 正確なデータ投入SQL
+- [ ] `docs/MLIT_API_INTEGRATION.md`: API連携ドキュメント
+
+---
+
+### Task 1-2: ファクトチェックシステム実装
+**目的**: 複数データソースでクロスチェックし、データの信頼性を確保
+
+**チェック項目**:
+1. **データソースの一致性**
+   - 国交省ハザードマップ
+   - 都道府県ハザードマップ
+   - 市区町村ハザードマップ
+
+2. **データの矛盾検出**
+   - リスクレベルの不一致
+   - 影響範囲の不一致
+   - 更新日時の差異
+
+3. **信頼度スコアリング**
+   - `confidence_level`: high/medium/low
+   - 一致度が高い → high
+   - 一部不一致 → medium
+   - 大きな不一致 → low（手動確認）
+
+**実装方針**:
 ```javascript
-// 現在: 順次処理（遅い）
-for (const file of files) {
-  await processOCR(file);
+// scripts/fact-check.cjs
+async function factCheck(prefecture, city, hazardType) {
+  // 1. 国交省データ取得
+  const mlitData = await fetchMLITData(prefecture, city, hazardType);
+  
+  // 2. 都道府県データ取得（可能な場合）
+  const prefectureData = await fetchPrefectureData(prefecture, city, hazardType);
+  
+  // 3. データ比較
+  const comparison = compareData(mlitData, prefectureData);
+  
+  // 4. 信頼度スコア計算
+  const confidenceLevel = calculateConfidence(comparison);
+  
+  return {
+    hazardType,
+    riskLevel: mlitData.riskLevel,
+    confidenceLevel,
+    dataSource: 'MLIT + Prefecture',
+    needsManualCheck: confidenceLevel === 'low'
+  };
 }
 ```
 
-**改善案**:
-```javascript
-// 並列処理（速い）
-const results = await Promise.all(
-  files.map(file => processOCR(file))
-);
-```
-
-**注意事項**:
-- OpenAI APIレート制限: 60リクエスト/分（無料プラン）
-- レート制限超過時の対策: セマフォまたはキュー実装
-- 推奨バッチサイズ: 最大10ファイル/バッチ
-
-**推定工数**: 2時間
-
-**実装ファイル**:
-- `src/index.tsx`: OCR処理ロジック（3600行付近）
-- `src/routes/ocr-jobs.ts`: バックエンド並列処理対応
+**成果物**:
+- [ ] `scripts/fact-check.cjs`: ファクトチェックスクリプト
+- [ ] `migrations/0036_add_confidence_level.sql`: 信頼度フィールド追加
+- [ ] `reports/fact-check-results.json`: ファクトチェック結果
 
 ---
 
-### 2. 進捗状況の永続化UI ⭐⭐⭐
-**目的**: ブラウザリロード後も進捗を継続表示
+### Task 1-3: データ更新の自動化
+**目的**: 定期的にハザードデータを最新化
 
-**現状の問題**:
-- ブラウザをリロードすると進捗表示が消える
-- 長時間OCR処理中にリロードすると状況が分からない
+**実装方針**:
+1. **更新頻度**: 月次更新
+2. **更新対象**: `last_updated`が1ヶ月以上前のデータ
+3. **差分更新**: 変更があったデータのみ更新
+4. **履歴管理**: 更新履歴をログに記録
 
-**改善案**:
+**スクリプト設計**:
 ```javascript
-// OCRジョブ開始時
-const jobId = response.data.jobId;
-localStorage.setItem('currentJobId', jobId);
-
-// ページロード時
-const savedJobId = localStorage.getItem('currentJobId');
-if (savedJobId) {
-  // ジョブステータスをチェック
-  const status = await checkJobStatus(savedJobId);
-  if (status === 'processing') {
-    resumeProgressDisplay(savedJobId);
-  } else {
-    localStorage.removeItem('currentJobId');
-  }
+// scripts/update-hazard-data.cjs
+async function updateHazardData() {
+  // 1. 古いデータを抽出
+  const oldData = await findOldData(30); // 30日以上前
+  
+  // 2. APIから最新データ取得
+  const newData = await fetchLatestData(oldData);
+  
+  // 3. 差分検出
+  const diff = detectDifferences(oldData, newData);
+  
+  // 4. 変更があるデータのみ更新
+  await updateDatabase(diff);
+  
+  // 5. 更新ログ記録
+  await logUpdate(diff);
 }
 ```
 
-**推定工数**: 1.5時間
-
-**実装ファイル**:
-- `src/index.tsx`: LocalStorage統合、ページロード時のジョブ復元
+**成果物**:
+- [ ] `scripts/update-hazard-data.cjs`: 自動更新スクリプト
+- [ ] `logs/update-history.log`: 更新履歴ログ
 
 ---
 
-### 3. ジョブキャンセルUI ⭐⭐⭐
-**目的**: 実行中のOCRジョブを停止可能にする
+## 📋 Phase 2: 本番環境デプロイ（中優先）
 
-**現状**:
-- バックエンドAPI: ✅ 実装済み（`DELETE /api/ocr-jobs/:jobId`）
-- フロントエンドUI: ❌ 未実装
+### Task 2-1: 本番DBへのマイグレーション適用
+**コマンド**:
+```bash
+# ローカルで最終確認
+npx wrangler d1 migrations list real-estate-200units-db --local
 
-**改善案**:
-```javascript
-// 進捗表示セクションに追加
-<button id="cancel-job-btn" data-job-id="${jobId}" 
-  class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
-  <i class="fas fa-times-circle mr-2"></i>キャンセル
-</button>
-
-// イベントハンドラー
-async function cancelJob(jobId) {
-  if (!confirm('OCR処理をキャンセルしますか？')) return;
-  
-  await axios.delete(`/api/ocr-jobs/${jobId}`, {
-    headers: { 'Authorization': 'Bearer ' + token }
-  });
-  
-  stopPolling();
-  showMessage('✓ ジョブをキャンセルしました');
-}
+# 本番環境に適用
+npx wrangler d1 migrations apply real-estate-200units-db
 ```
 
-**推定工数**: 1時間
-
-**実装ファイル**:
-- `src/index.tsx`: キャンセルボタンUI、イベントハンドラー
-
----
-
-## 🔧 中優先度タスク
-
-### 4. OCR履歴モーダルの改善 ⭐⭐
-**目的**: 履歴管理UIの使いやすさ向上
-
-**改善案**:
-- 検索機能: 物件名、所在地で検索
-- フィルター機能: 信頼度範囲、日付範囲
-- ソート機能: 作成日、信頼度
-- ページネーション: 大量履歴対応
-- 削除機能: 不要な履歴を削除
-
-**推定工数**: 2時間
+**確認項目**:
+- [ ] 全マイグレーションが正常に適用される
+- [ ] データ整合性チェック
+- [ ] インデックスが正しく作成される
 
 ---
 
-### 5. OCR設定の拡張 ⭐⭐
-**目的**: より柔軟なOCR動作設定
+### Task 2-2: 本番環境デプロイ
+**コマンド**:
+```bash
+# ビルド
+npm run build
 
-**追加設定項目案**:
-- タイムアウト設定（デフォルト: 120秒）
-- デフォルトファイル形式（PNG/PDF優先度）
-- 自動リトライ設定（失敗時の再試行回数）
-- OCR言語設定（日本語/英語/自動検出）
-
-**推定工数**: 1.5時間
-
----
-
-### 6. エラーハンドリングの強化 ⭐⭐
-**目的**: ユーザーフレンドリーなエラーメッセージ
-
-**改善案**:
-- APIエラーの詳細表示
-- リトライボタン追加
-- エラーログのダウンロード機能
-- エラー時の推奨アクション表示
-
-**推定工数**: 2時間
-
----
-
-## 🚀 低優先度タスク（将来的な実装）
-
-### 7. WebSocket対応 ⭐
-**目的**: ポーリングからプッシュ型通信への移行
-
-**技術要件**:
-- Cloudflare Durable Objects（有料機能）
-- WebSocket接続管理
-- 再接続ロジック
-- フォールバック機構（ポーリングへ）
-
-**推定工数**: 8時間
-
-**費用**: Durable Objects使用料が発生
-
----
-
-### 8. テンプレート機能の再検討 ⭐
-**現状**: v3.11.0で削除済み
-
-**再実装の条件**:
-- ユーザーから明示的な要望があった場合
-- 土地仕入れ業務での利用価値が確認された場合
-
-**推定工数**: 4時間（過去実装を復元）
-
----
-
-### 9. OCR精度の向上 ⭐
-**目的**: OpenAI APIのプロンプト最適化
-
-**改善案**:
-- Few-shot learningの活用
-- 専門用語辞書の追加
-- 手書き文字認識の強化
-- 複数ページPDFの文脈理解
-
-**推定工数**: 4時間
-
----
-
-### 10. モバイルアプリ化 ⭐
-**目的**: スマートフォンでの利用体験向上
-
-**技術選択肢**:
-- PWA（Progressive Web App）
-- React Native
-- Capacitor
-
-**推定工数**: 40時間以上
-
----
-
-## 📈 実装優先度マトリックス
-
-| タスク | 重要度 | 緊急度 | 工数 | 推奨順位 |
-|--------|--------|--------|------|---------|
-| 並列ファイル処理 | 高 | 高 | 2h | 1 |
-| 進捗永続化UI | 高 | 高 | 1.5h | 2 |
-| ジョブキャンセルUI | 高 | 高 | 1h | 3 |
-| OCR履歴改善 | 中 | 中 | 2h | 4 |
-| OCR設定拡張 | 中 | 中 | 1.5h | 5 |
-| エラーハンドリング | 中 | 中 | 2h | 6 |
-| WebSocket対応 | 低 | 低 | 8h | 7 |
-| テンプレート再検討 | 低 | 低 | 4h | 8 |
-| OCR精度向上 | 低 | 中 | 4h | 9 |
-| モバイルアプリ化 | 低 | 低 | 40h+ | 10 |
-
----
-
-## 🎯 次セッションの推奨アクション
-
-### 即座に着手可能（高優先度）
-1. **ジョブキャンセルUI**（1時間）
-   - 最も簡単で即効性が高い
-   - バックエンドAPIは実装済み
-   
-2. **進捗永続化UI**（1.5時間）
-   - LocalStorageのみで実装可能
-   - UX向上効果が大きい
-
-3. **並列ファイル処理**（2時間）
-   - パフォーマンス向上効果が大きい
-   - OpenAI APIレート制限に注意
-
-### 合計推定工数: 4.5時間（1セッション）
-
----
-
-## 📋 実装チェックリスト（次セッション用）
-
-### ジョブキャンセルUI
-- [ ] 進捗表示セクションにキャンセルボタンを追加
-- [ ] `cancelJob(jobId)` 関数を実装
-- [ ] DELETE APIエンドポイントを呼び出し
-- [ ] ポーリングを停止
-- [ ] 成功メッセージを表示
-- [ ] テスト実施（ローカル、本番）
-
-### 進捗永続化UI
-- [ ] OCRジョブ開始時に `localStorage.setItem('currentJobId', jobId)` 実装
-- [ ] ページロード時に `localStorage.getItem('currentJobId')` チェック
-- [ ] ジョブステータスAPIを呼び出し
-- [ ] ジョブが進行中なら進捗表示を再開
-- [ ] ジョブが完了/失敗ならLocalStorageをクリア
-- [ ] テスト実施（リロード後の動作確認）
-
-### 並列ファイル処理
-- [ ] `Promise.all()` を使用した並列処理ロジック実装
-- [ ] OpenAI APIレート制限チェック機能追加
-- [ ] エラーハンドリング強化（部分失敗対応）
-- [ ] 進捗表示を複数ジョブ対応に修正
-- [ ] テスト実施（複数ファイル、10ファイル）
-
----
-
-## 💡 技術的考慮事項
-
-### OpenAI APIレート制限対策
-```javascript
-// セマフォパターン（同時リクエスト数制限）
-class Semaphore {
-  constructor(max) {
-    this.max = max;
-    this.count = 0;
-    this.queue = [];
-  }
-  
-  async acquire() {
-    if (this.count < this.max) {
-      this.count++;
-      return;
-    }
-    await new Promise(resolve => this.queue.push(resolve));
-  }
-  
-  release() {
-    this.count--;
-    if (this.queue.length > 0) {
-      const resolve = this.queue.shift();
-      this.count++;
-      resolve();
-    }
-  }
-}
-
-// 使用例
-const semaphore = new Semaphore(5); // 最大5並列
-
-const results = await Promise.all(
-  files.map(async (file) => {
-    await semaphore.acquire();
-    try {
-      return await processOCR(file);
-    } finally {
-      semaphore.release();
-    }
-  })
-);
+# デプロイ
+npm run deploy:prod
 ```
 
----
-
-## 🔗 関連ドキュメント
-
-- `/home/user/webapp/HANDOVER_V3.10.0.md` - v3.10.0引き継ぎドキュメント
-- `/home/user/webapp/README.md` - プロジェクト概要
-- `/home/user/webapp/CHANGELOG.md` - 変更履歴
-- `src/routes/ocr-jobs.ts` - OCRジョブ管理API（行203-231: DELETE実装）
+**確認項目**:
+- [ ] ビルドエラーなし
+- [ ] デプロイ成功
+- [ ] 本番URL動作確認
 
 ---
 
-**作成日**: 2025-11-19  
-**作成者**: AI Assistant  
-**対象バージョン**: v3.11.0+  
-**ステータス**: ✅ 最新
+### Task 2-3: E2Eテスト
+**テストケース**:
+
+#### **ケース1: 渋谷区（ハザード情報表示）**
+1. ログイン
+2. 案件作成画面
+3. 住所入力: "東京都渋谷区恵比寿1-1-1"
+4. ハザード情報が自動表示される
+5. 確認項目:
+   - [ ] 洪水リスク表示
+   - [ ] 土砂災害リスク表示
+   - [ ] 津波リスク表示
+   - [ ] 液状化リスク表示
+
+#### **ケース2: 横浜市（NG条件判定）**
+1. 住所入力: "神奈川県横浜市〇〇区（市街化調整区域）"
+2. NG条件が表示される
+3. 確認項目:
+   - [ ] 赤色の「検討外エリア・条件」セクション表示
+   - [ ] NG条件名と説明文が正確
+   - [ ] 案件作成ボタンが無効化
+
+#### **ケース3: 千葉市（OK判定）**
+1. 住所入力: "千葉県千葉市中央区〇〇（リスクなし）"
+2. ハザード情報が表示される
+3. 確認項目:
+   - [ ] リスクレベルが全て"none"または"low"
+   - [ ] 融資判定が"OK"
+   - [ ] 案件作成ボタンが有効
+
+---
+
+## 📋 Phase 3: 機能拡張（将来）
+
+### Task 3-1: 条例データベース
+- 駐車場附置義務条例
+- ワンルーム規制条例
+- その他条例（風致地区、景観条例等）
+
+### Task 3-2: 収支計算DB
+- 賃料相場マスタ
+- 建築費マスタ
+- 融資基準マスタ
+- 市場価格評価マスタ
+
+### Task 3-3: 買主別基準DB
+- Felix（200棟プロジェクト）
+- GA Technologies
+- その他買主
+
+### Task 3-4: 高度な分析機能
+- P/L計算（利回り>6.5%）
+- 市場価格評価（5段階）
+- 融資適合性判定（オリックス>7%、スルガ>8%）
+
+---
+
+## ⚠️ 重要な注意事項
+
+### 1. API利用制限
+- 国交省APIにはレート制限がある
+- データ収集時は適切な間隔（1秒/1リクエスト推奨）
+- 大量データ取得時はバッチ処理
+
+### 2. データの正確性
+- 現在のデータは **サンプルデータ**
+- 本番運用には国交省APIからの正確なデータが **必須**
+- ファクトチェックを必ず実施
+
+### 3. データ保守
+- ハザードマップは随時更新される
+- 月次更新を推奨
+- `last_updated`フィールドで古いデータを管理
+
+### 4. エラーハンドリング
+- API障害時のフォールバック処理
+- データ不整合時の手動確認フロー
+- エラーログの詳細記録
+
+---
+
+## 📝 実装優先順位
+
+### 🔴 最優先（Phase 1）
+1. Task 1-1: 国交省APIからの正確なデータ取得
+2. Task 1-2: ファクトチェックシステム実装
+
+### 🟡 中優先（Phase 2）
+3. Task 2-1: 本番DBマイグレーション
+4. Task 2-2: 本番環境デプロイ
+5. Task 2-3: E2Eテスト
+
+### 🟢 低優先（Phase 3）
+6. Task 3-1: 条例データベース
+7. Task 3-2: 収支計算DB
+8. Task 3-3: 買主別基準DB
+9. Task 3-4: 高度な分析機能
+
+---
+
+## 📊 進捗トラッキング
+
+### Phase 1: データ精度向上
+- [ ] Task 1-1: 国交省API連携スクリプト作成
+- [ ] Task 1-2: ファクトチェックシステム実装
+- [ ] Task 1-3: データ更新自動化スクリプト作成
+
+### Phase 2: 本番環境デプロイ
+- [ ] Task 2-1: 本番DBマイグレーション
+- [ ] Task 2-2: 本番環境デプロイ
+- [ ] Task 2-3: E2Eテスト（3ケース）
+
+### Phase 3: 機能拡張
+- [ ] Task 3-1: 条例データベース
+- [ ] Task 3-2: 収支計算DB
+- [ ] Task 3-3: 買主別基準DB
+- [ ] Task 3-4: 高度な分析機能
+
+---
+
+**最終更新**: 2025-12-17  
+**次のアクション**: Phase 1 Task 1-1の実装開始

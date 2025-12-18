@@ -438,6 +438,11 @@ async function searchBuildingRegulations(
       level: regulationData.affects_loan, // 0: なし、1: 注意、2: 制限あり
       note: regulationData.loan_impact_note,
     },
+    // メタデータ（検証ステータス、情報源、信頼度）
+    data_source: regulationData.data_source,
+    confidence_level: regulationData.confidence_level,
+    verification_status: regulationData.verification_status,
+    last_fact_checked: regulationData.last_fact_checked,
     precision: searchLevel.includes('Level 1') ? 'pinpoint' : 
                searchLevel.includes('Level 2') ? 'chome_level' : 
                searchLevel.includes('Level 3') ? 'district_level' : 'city_level',

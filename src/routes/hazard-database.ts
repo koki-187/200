@@ -131,9 +131,11 @@ app.get('/info', async (c) => {
       WHERE prefecture = ? AND city = ?
     `).bind(prefecture, city).all();
 
-    // v3.153.120: 地理的リスクを取得
+    // v3.153.129: 地理的リスクを取得（district情報は参考値として使用）
+    // prefecture + city で検索し、該当するすべてのリスクを取得
     const geographyResults = await c.env.DB.prepare(`
       SELECT 
+        district,
         is_cliff_area,
         cliff_height,
         cliff_note,
@@ -145,9 +147,17 @@ app.get('/info', async (c) => {
         max_flood_depth,
         is_over_10m_flood,
         loan_decision,
-        loan_reason
+        loan_reason,
+        confidence_level,
+        verification_status
       FROM geography_risks
       WHERE prefecture = ? AND city = ?
+      ORDER BY 
+        is_over_10m_flood DESC,
+        is_cliff_area DESC,
+        is_building_collapse_area DESC,
+        is_river_adjacent DESC
+      LIMIT 10
     `).bind(prefecture, city).all();
 
     // データが見つからない場合
@@ -332,6 +342,32 @@ app.get('/info', async (c) => {
       loanJudgmentText = '融資不可（金融機関基準）';
     }
 
+    // v3.153.129: geography_risksをトップレベルにも追加（E2Eテスト用）
+    console.log('[DEBUG] geographyResults.results:', geographyResults.results?.length || 0, 'items');
+    const geographyRisksDetail = geographyResults.results && geographyResults.results.length > 0
+      ? geographyResults.results.filter((geo: any) => 
+          // null値を除外し、有効なリスクデータのみを含める
+          geo.is_cliff_area || geo.is_river_adjacent || geo.is_building_collapse_area || geo.is_over_10m_flood
+        ).map((geo: any) => ({
+          district: geo.district,
+          is_cliff_area: geo.is_cliff_area === 1,
+          cliff_height: geo.cliff_height,
+          is_river_adjacent: geo.is_river_adjacent === 1,
+          river_name: geo.river_name,
+          river_distance: geo.river_distance,
+          is_building_collapse_area: geo.is_building_collapse_area === 1,
+          collapse_type: geo.collapse_type,
+          max_flood_depth: geo.max_flood_depth,
+          is_over_10m_flood: geo.is_over_10m_flood === 1,
+          loan_decision: geo.loan_decision,
+          loan_reason: geo.loan_reason,
+          confidence_level: geo.confidence_level,
+          verification_status: geo.verification_status,
+        }))
+      : [];
+    
+    console.log('[DEBUG] geographyRisksDetail length:', geographyRisksDetail?.length || 0);
+
     return c.json({
       success: true,
       data: {
@@ -341,6 +377,7 @@ app.get('/info', async (c) => {
           address,
         },
         hazards,
+        geography_risks: geographyRisksDetail,  // v3.153.129: E2Eテスト用
         loan: {
           judgment: loanJudgment,
           judgment_text: loanJudgmentText,

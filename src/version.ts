@@ -2,9 +2,9 @@
  * Application Version Management
  */
 
-export const APP_VERSION = 'v3.153.138';
-export const BUILD_DATE = '2025-12-18';
-export const BUILD_DESCRIPTION = 'Phase 2 Tokyo Wards Data: 11 VERIFIED municipalities with CSV import and E2E testing';
+export const APP_VERSION = 'v3.153.139';
+export const BUILD_DATE = '2025-12-19';
+export const BUILD_DESCRIPTION = 'Kanagawa 4 cities + Chiba 5 cities: 9 new VERIFIED municipalities with full regulation data';
 
 export function logVersion() {
   console.log(`%c========== ${APP_VERSION} ==========`, 'color: #4CAF50; font-weight: bold;');

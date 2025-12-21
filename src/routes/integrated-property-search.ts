@@ -214,6 +214,11 @@ async function searchBuildingRegulations(
         AND (chome = ? OR chome IS NULL)
         AND (banchi_start IS NULL OR banchi_start <= ?)
         AND (banchi_end IS NULL OR banchi_end >= ?)
+      ORDER BY 
+        verification_status = 'VERIFIED' DESC,
+        confidence_level = 'HIGH' DESC,
+        chome IS NOT NULL DESC,
+        district IS NOT NULL DESC
       LIMIT 1
     `).bind(prefecture, city, district || '', chome, banchi, banchi).first();
 
@@ -230,6 +235,11 @@ async function searchBuildingRegulations(
       WHERE prefecture = ? AND city = ? 
         AND (district = ? OR district IS NULL)
         AND (chome = ? OR chome IS NULL)
+      ORDER BY 
+        verification_status = 'VERIFIED' DESC,
+        confidence_level = 'HIGH' DESC,
+        chome IS NOT NULL DESC,
+        district IS NOT NULL DESC
       LIMIT 1
     `).bind(prefecture, city, district || '', chome).first();
 
@@ -245,6 +255,10 @@ async function searchBuildingRegulations(
       SELECT * FROM building_regulations
       WHERE prefecture = ? AND city = ? 
         AND (district = ? OR district IS NULL)
+      ORDER BY 
+        verification_status = 'VERIFIED' DESC,
+        confidence_level = 'HIGH' DESC,
+        district IS NOT NULL DESC
       LIMIT 1
     `).bind(prefecture, city, district).first();
 
@@ -259,6 +273,9 @@ async function searchBuildingRegulations(
     const result = await db.prepare(`
       SELECT * FROM building_regulations
       WHERE prefecture = ? AND city = ?
+      ORDER BY 
+        verification_status = 'VERIFIED' DESC,
+        confidence_level = 'HIGH' DESC
       LIMIT 1
     `).bind(prefecture, city).first();
 

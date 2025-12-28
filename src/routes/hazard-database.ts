@@ -343,7 +343,7 @@ app.get('/info', async (c) => {
     }
 
     // v3.153.129: geography_risksをトップレベルにも追加（E2Eテスト用）
-    console.log('[DEBUG] geographyResults.results:', geographyResults.results?.length || 0, 'items');
+    // Production logging removed - use error tracking middleware instead
     const geographyRisksDetail = geographyResults.results && geographyResults.results.length > 0
       ? geographyResults.results.filter((geo: any) => 
           // null値を除外し、有効なリスクデータのみを含める
@@ -365,8 +365,6 @@ app.get('/info', async (c) => {
           verification_status: geo.verification_status,
         }))
       : [];
-    
-    console.log('[DEBUG] geographyRisksDetail length:', geographyRisksDetail?.length || 0);
 
     return c.json({
       success: true,

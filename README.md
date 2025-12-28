@@ -1,48 +1,56 @@
-# 200棟土地仕入れ管理システム v3.157.0 (Data Quality Improvement - Phase 3 Complete)
+# 200棟土地仕入れ管理システム v3.158.0 (Data Cleanup & Optimization - Phase 4 Complete)
 
 ## 🆕 最新アップデート
 
-**システムステータス**: 🟡 Phase 3完了 - データ品質改善実施済み（confidence_level統一100%、重複データ検出）
+**システムステータス**: 🟢 Phase 4完了 - データクリーンアップ & 最適化実施済み（重複削除100%、URL設定率75%）
 
-### v3.157.0の新機能（2025-12-28リリース）: ✅ Phase 3完了 - データ品質改善
+### v3.158.0の新機能（2025-12-28リリース）: ✅ Phase 4完了 - データクリーンアップ & 最適化
 
 **プロダクションURL**: https://c439086d.real-estate-200units-v2.pages.dev ✅ **最新**
 
-**🎯 データ品質スコア: 75.0/100（Phase 3完了、+13.2点改善）**
+**🎯 データ品質スコア: 93.75/100（Phase 4完了、+18.75点改善）**
 
-### v3.157.0の実装内容（Phase 3完了）
+### v3.158.0の実装内容（Phase 4完了）
 
-**データ品質改善状況:**
-- ✅ Phase 3-1: URL補完（一部完了、Phase 4で継続）
-- ✅ Phase 3-2: confidence_level統一完了（全244件が"high"、161件更新）
-- ✅ Phase 3-3: データ検証・重複データ検出（76件特定）
+**データクリーンアップ状況:**
+- ✅ Phase 4-1: 重複データ削除完了（76件削除、ユニーク率100%）
+- ✅ Phase 4-2: URL補完実施（千葉県88.37%達成、全体75.0%）
+- ✅ Phase 4-3: データ品質最終検証完了
+- ✅ データベース最適化（2.21 MB → 2.19 MB）
 
 **データ品質スコア:**
-- confidence_level "high"率: 58.9% → 100%（+41.1%）✅
-- データ一貫性: 80% → 100%（+20%）✅
-- URL設定率: 64.6% → 52.46%（Phase 4で改善予定）⚠️
-- 総合スコア: 61.8 → 75.0（+13.2点）🟡
+- ユニーク率: 68.85% → 100%（+31.15%）✅
+- URL設定率: 65.48% → 75.0%（+9.52%）✅
+- confidence_level "high": 100%（継続達成）✅
+- 総合スコア: 75.0 → 93.75（+18.75点）🟢
 
-**データベース統計（Phase 3完了後）:**
-- 総VERIFIED レコード数: 244件
+**データベース統計（Phase 4完了後）:**
+- 総VERIFIED レコード数: 168件
 - ユニーク自治体数: 168自治体
-- 重複レコード: 76件（Phase 4で削除予定）
-- データベースサイズ: 2.21 MB
+- 重複レコード: 0件（削除完了）
+- URL設定済み: 126件（75.0%）
+- データベースサイズ: 2.19 MB
 - テーブル数: 48
 
+**都道府県別URL設定率:**
+- 東京都: 49/49件（100%）✅
+- 神奈川県: 22/22件（100%）✅
+- 千葉県: 38/43件（88.37%）✅
+- 埼玉県: 17/54件（31.48%）⚠️
+
 **成果物:**
-- ✅ PHASE3_COMPLETION_REPORT.md（Phase 3完了報告書）
-- ✅ PHASE3_ANALYSIS_REPORT.md（Phase 3分析レポート）
-- ✅ scripts/update_confidence_level_phase3.sql（confidence_level統一SQL）
-- ✅ scripts/update_urls_phase3.py（URL抽出スクリプト）
+- ✅ PHASE4_COMPLETION_REPORT.md（Phase 4完了報告書）
+- ✅ scripts/delete_duplicates_phase4.sql（重複削除SQL）
+- ✅ scripts/update_missing_urls_batch1.sql（千葉県URL更新バッチ1）
+- ✅ scripts/update_missing_urls_batch2.sql（千葉県URL更新バッチ2）
+- ✅ scripts/collect_missing_urls_phase4.py（URL収集スクリプト）
 
-**次のステップ（Phase 4）:**
-1. [CRITICAL] Task 4-1: 重複データ削除（76件、推定30分）
-2. [HIGH] Task 4-2: URL補完（116件推定、2-3時間）
-3. [MEDIUM] Task 4-3: データ検証レポート最終版（30分）
-4. [MEDIUM] Task 4-4: README更新（15分）
+**次のステップ（Phase 5 - オプション）:**
+1. [HIGH] Task 5-1: 埼玉県URL補完（37自治体、2-3時間）
+2. [MEDIUM] Task 5-2: 品質レポート最終版作成（30分）
+3. [MEDIUM] Task 5-3: README.md最終更新（15分）
 
-**詳細**: [PHASE3_COMPLETION_REPORT.md](PHASE3_COMPLETION_REPORT.md) | [NEXT_CHAT_SUMMARY.md](NEXT_CHAT_SUMMARY.md)
+**詳細**: [PHASE4_COMPLETION_REPORT.md](PHASE4_COMPLETION_REPORT.md) | [NEXT_CHAT_SUMMARY.md](NEXT_CHAT_SUMMARY.md)
 
 ---
 

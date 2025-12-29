@@ -171,8 +171,31 @@ app.get('/info', async (c) => {
       }, 404);
     }
 
-    // レスポンス整形
-    const hazards = hazardResults.results.map((row: any) => ({
+    // レスポンス整形 - v3.161.0: 重複削除
+    // ハザードタイプごとに最も高いリスクレベルの情報のみを保持
+    const uniqueHazardsMap = new Map();
+    hazardResults.results?.forEach((row: any) => {
+      const key = row.hazard_type;
+      const existing = uniqueHazardsMap.get(key);
+      
+      // リスクレベルの優先度: high > medium > low > none
+      const getRiskPriority = (level: string): number => {
+        const priority: Record<string, number> = {
+          high: 3,
+          medium: 2,
+          low: 1,
+          none: 0,
+        };
+        return priority[level] || 0;
+      };
+      
+      // より高いリスクレベルを優先、または既存がない場合は追加
+      if (!existing || getRiskPriority(row.risk_level) > getRiskPriority(existing.risk_level)) {
+        uniqueHazardsMap.set(key, row);
+      }
+    });
+
+    const hazards = Array.from(uniqueHazardsMap.values()).map((row: any) => ({
       type: row.hazard_type,
       type_name: getHazardTypeName(row.hazard_type),
       risk_level: row.risk_level,
@@ -210,41 +233,47 @@ app.get('/info', async (c) => {
       }
     }
 
-    // v3.153.120: 地理的リスク情報
+    // v3.153.120: 地理的リスク情報 - v3.161.0: 重複削除
     const geographyRestrictions: any[] = [];
+    const geographyTypesAdded = new Set<string>();
+    
     if (geographyResults.results && geographyResults.results.length > 0) {
       geographyResults.results.forEach((geo: any) => {
-        if (geo.is_cliff_area === 1) {
+        if (geo.is_cliff_area === 1 && !geographyTypesAdded.has('cliff_area')) {
           geographyRestrictions.push({
             type: 'cliff_area',
             name: '崖地域',
             is_restricted: true,
             details: `${geo.cliff_note || '地盤の安定性や擁壁工事費用の問題から、対象外としています'}（崖の高さ: ${geo.cliff_height}m）`,
           });
+          geographyTypesAdded.add('cliff_area');
         }
-        if (geo.is_river_adjacent === 1) {
+        if (geo.is_river_adjacent === 1 && !geographyTypesAdded.has('river_adjacent')) {
           geographyRestrictions.push({
             type: 'river_adjacent',
             name: '河川隣接',
             is_restricted: true,
             details: `${geo.river_name}に隣接（距離: ${geo.river_distance}m）。洪水リスクが高く、対象外としています`,
           });
+          geographyTypesAdded.add('river_adjacent');
         }
-        if (geo.is_building_collapse_area === 1) {
+        if (geo.is_building_collapse_area === 1 && !geographyTypesAdded.has('building_collapse')) {
           geographyRestrictions.push({
             type: 'building_collapse',
             name: '家屋倒壊エリア',
             is_restricted: true,
             details: `家屋倒壊等氾濫想定区域（${geo.collapse_type}）。の融資限定対象`,
           });
+          geographyTypesAdded.add('building_collapse');
         }
-        if (geo.is_over_10m_flood === 1) {
+        if (geo.is_over_10m_flood === 1 && !geographyTypesAdded.has('over_10m_flood')) {
           geographyRestrictions.push({
             type: 'over_10m_flood',
             name: '10m以上の浸水',
             is_restricted: true,
             details: `浸水想定区域（${geo.max_flood_depth}m）は融資制限の対象となります`,
           });
+          geographyTypesAdded.add('over_10m_flood');
         }
       });
     }

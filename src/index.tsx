@@ -3232,6 +3232,11 @@ app.get('/property-ocr-legacy', (c) => {
       updateStep(2);
 
       try {
+        // v3.161.0: 認証トークンの検証
+        if (!token || token === 'null' || token === 'undefined') {
+          throw new Error('認証トークンが無効です。ログインしてください。');
+        }
+
         const formData = new FormData();
         selectedFiles.forEach((file, index) => {
           formData.append(\`file\${index}\`, file);
@@ -3241,8 +3246,14 @@ app.get('/property-ocr-legacy', (c) => {
           headers: {
             'Authorization': 'Bearer ' + token,
             'Content-Type': 'multipart/form-data'
-          }
+          },
+          timeout: 300000  // v3.161.0: 5分のタイムアウト設定
         });
+
+        // v3.161.0: レスポンス検証
+        if (!response.data || !response.data.data) {
+          throw new Error('OCRレスポンスが不正です');
+        }
 
         extractedData = response.data.data;
         
@@ -3259,11 +3270,40 @@ app.get('/property-ocr-legacy', (c) => {
 
       } catch (error) {
         console.error('OCR error:', error);
-        // alert removed per user requirement - see console for errors
-        console.error('OCR処理に失敗しました: ' + (error.response?.data?.error || error.message));
-        processingSection.classList.add('hidden');
-        uploadSection.classList.remove('hidden');
-        updateStep(1);
+        
+        // v3.161.0: ユーザーフレンドリーなエラーメッセージ表示
+        const errorMessage = error.response?.data?.error || error.message || 'OCR処理に失敗しました';
+        
+        // エラーメッセージをUI上に表示
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+        errorDiv.innerHTML = \`
+          <div class="flex items-center">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+              <strong class="font-bold">エラー</strong>
+              <span class="block sm:inline ml-2">\${errorMessage}</span>
+            </div>
+          </div>
+        \`;
+        
+        // エラーメッセージをprocessingSectionに挿入
+        if (processingSection.firstChild) {
+          processingSection.insertBefore(errorDiv, processingSection.firstChild);
+        } else {
+          processingSection.appendChild(errorDiv);
+        }
+        
+        // 3秒後に元の画面に戻る
+        setTimeout(() => {
+          processingSection.classList.add('hidden');
+          uploadSection.classList.remove('hidden');
+          updateStep(1);
+          // エラーメッセージを削除
+          errorDiv.remove();
+        }, 3000);
       }
     });
     }

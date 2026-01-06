@@ -10,6 +10,7 @@ import { adminOnly } from './utils/auth';
 import deals from './routes/deals';
 import messages from './routes/messages';
 import users from './routes/users';
+import sellers from './routes/sellers';
 import files from './routes/files';
 import proposals from './routes/proposals';
 import settings from './routes/settings';
@@ -139,6 +140,7 @@ app.use('/api/*', rateLimitPresets.api);
 // APIルートのマウント
 app.route('/api/auth', auth);
 app.route('/api/users', users);
+app.route('/api/sellers', sellers);
 app.route('/api/deals', deals);
 app.route('/api/deals', dealFiles);
 app.route('/api/deals', dealValidation);

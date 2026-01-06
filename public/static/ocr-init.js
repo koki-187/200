@@ -975,21 +975,31 @@ console.log('[OCR Init] ========================================');
 // CRITICAL FIX v3.153.106: DOM Event Listener Registration
 // This ensures OCR button/drop-zone work correctly
 function initializeOCREventListeners() {
-  console.log('[OCR Init] Initializing event listeners...');
+  console.log('[OCR Init v3.161.3] Initializing event listeners...');
+  
+  // v3.161.3: Guard against duplicate initialization
+  if (window._ocrEventListenersInitialized) {
+    console.warn('[OCR Init v3.161.3] ⚠️ Event listeners already initialized, skipping...');
+    return;
+  }
   
   // Get DOM elements
   const dropZone = document.getElementById('ocr-drop-zone');
   const fileInput = document.getElementById('ocr-file-input');
   
-  console.log('[OCR Init] dropZone element:', dropZone);
-  console.log('[OCR Init] fileInput element:', fileInput);
+  console.log('[OCR Init v3.161.3] dropZone element:', dropZone);
+  console.log('[OCR Init v3.161.3] fileInput element:', fileInput);
   
   if (!dropZone || !fileInput) {
-    console.error('[OCR Init] ❌ CRITICAL: DOM elements not found!');
-    console.error('[OCR Init] dropZone:', dropZone);
-    console.error('[OCR Init] fileInput:', fileInput);
+    console.error('[OCR Init v3.161.3] ❌ CRITICAL: DOM elements not found!');
+    console.error('[OCR Init v3.161.3] dropZone:', dropZone);
+    console.error('[OCR Init v3.161.3] fileInput:', fileInput);
     return;
   }
+  
+  // v3.161.3: Mark as initialized
+  window._ocrEventListenersInitialized = true;
+  console.log('[OCR Init v3.161.3] ✅ Event listeners initialization guard set');
   
   // Click event for drop zone
   // CRITICAL FIX v3.153.107: Remove preventDefault to allow fileInput.click()

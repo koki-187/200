@@ -1,29 +1,30 @@
 /**
  * Button Listeners Setup - Separate file to avoid scope issues
+ * v3.161.5 - CRITICAL FIX: Handle missing buttons gracefully (don't show alert if some buttons exist)
  * v3.161.4 - CRITICAL FIX: Use DOMContentLoaded to ensure DOM is ready
  * PREVIOUS: v3.153.77 - Move setupButtonListeners to separate file
  */
 
 console.log('[ButtonListeners] ========================================');
-console.log('[ButtonListeners] VERSION: v3.161.4 (2026-01-06)');
-console.log('[ButtonListeners] CRITICAL FIX: DOMContentLoaded event added');
+console.log('[ButtonListeners] VERSION: v3.161.5 (2026-01-06)');
+console.log('[ButtonListeners] CRITICAL FIX: Graceful handling of missing buttons');
 console.log('[ButtonListeners] Loading setupButtonListeners function');
 console.log('[ButtonListeners] ========================================');
 
 /**
  * ボタンイベントリスナー設定
- * CRITICAL FIX v3.161.4: Enhanced debugging and error handling
+ * CRITICAL FIX v3.161.5: Graceful handling of missing buttons
  */
 window.setupButtonListeners = function(retryCount = 0) {
-  console.log('[ButtonListeners v3.161.4] setupButtonListeners called, attempt:', retryCount);
-  console.log('[ButtonListeners v3.161.4] document.readyState:', document.readyState);
-  console.log('[ButtonListeners v3.161.4] DOM fully loaded:', document.readyState === 'complete');
+  console.log('[ButtonListeners v3.161.5] setupButtonListeners called, attempt:', retryCount);
+  console.log('[ButtonListeners v3.161.5] document.readyState:', document.readyState);
+  console.log('[ButtonListeners v3.161.5] DOM fully loaded:', document.readyState === 'complete');
   
   const autoFillBtn = document.getElementById('auto-fill-btn');
   const riskCheckBtn = document.getElementById('comprehensive-check-btn');
   
-  console.log('[ButtonListeners v3.161.4] auto-fill-btn found:', !!autoFillBtn);
-  console.log('[ButtonListeners v3.161.4] risk-check-btn found:', !!riskCheckBtn);
+  console.log('[ButtonListeners v3.161.5] auto-fill-btn found:', !!autoFillBtn);
+  console.log('[ButtonListeners v3.161.5] risk-check-btn found:', !!riskCheckBtn);
   
   let needsRetry = false;
   
@@ -68,37 +69,45 @@ window.setupButtonListeners = function(retryCount = 0) {
   // Retry if buttons not found and we haven't exceeded max retries
   const MAX_RETRIES = 10; // Increased from 5 to 10
   if (needsRetry && retryCount < MAX_RETRIES) {
-    console.log('[ButtonListeners v3.161.4] Retrying button setup in 500ms... (attempt ' + (retryCount + 1) + '/' + MAX_RETRIES + ')');
+    console.log('[ButtonListeners v3.161.5] Retrying button setup in 500ms... (attempt ' + (retryCount + 1) + '/' + MAX_RETRIES + ')');
     setTimeout(function() {
       window.setupButtonListeners(retryCount + 1);
     }, 500); // Increased from 300ms to 500ms
   } else if (needsRetry) {
-    console.error('[ButtonListeners v3.161.4] ❌ CRITICAL: Failed to find buttons after ' + MAX_RETRIES + ' retries');
-    console.error('[ButtonListeners v3.161.4] document.readyState:', document.readyState);
-    console.error('[ButtonListeners v3.161.4] All button IDs in document:', 
+    console.error('[ButtonListeners v3.161.5] ❌ WARNING: Some buttons not found after ' + MAX_RETRIES + ' retries');
+    console.error('[ButtonListeners v3.161.5] document.readyState:', document.readyState);
+    console.error('[ButtonListeners v3.161.5] All button IDs in document:', 
       Array.from(document.querySelectorAll('button[id]')).map(b => b.id).join(', '));
-    alert('ボタンの初期化に失敗しました。ページを再読み込みしてください。');
+    // v3.161.5: Don't show alert if at least one button was found
+    const autoFillBtn = document.getElementById('auto-fill-btn');
+    const riskCheckBtn = document.getElementById('comprehensive-check-btn');
+    if (!autoFillBtn && !riskCheckBtn) {
+      // Only show error if NO buttons were found
+      alert('ボタンの初期化に失敗しました。ページを再読み込みしてください。');
+    } else {
+      console.warn('[ButtonListeners v3.161.5] ⚠️ Some buttons missing but continuing (auto-fill: ' + !!autoFillBtn + ', risk-check: ' + !!riskCheckBtn + ')');
+    }
   } else {
-    console.log('[ButtonListeners v3.161.4] ✅ All button listeners successfully attached');
+    console.log('[ButtonListeners v3.161.5] ✅ All button listeners successfully attached');
   }
 };
 
-console.log('[ButtonListeners v3.161.4] ✅ window.setupButtonListeners defined');
-console.log('[ButtonListeners v3.161.4] typeof window.setupButtonListeners:', typeof window.setupButtonListeners);
+console.log('[ButtonListeners v3.161.5] ✅ window.setupButtonListeners defined');
+console.log('[ButtonListeners v3.161.5] typeof window.setupButtonListeners:', typeof window.setupButtonListeners);
 
 // CRITICAL FIX v3.161.4: Wait for DOMContentLoaded before calling setupButtonListeners
 if (document.readyState === 'loading') {
-  console.log('[ButtonListeners v3.161.4] DOM still loading, waiting for DOMContentLoaded...');
+  console.log('[ButtonListeners v3.161.5] DOM still loading, waiting for DOMContentLoaded...');
   document.addEventListener('DOMContentLoaded', function() {
-    console.log('[ButtonListeners v3.161.4] DOMContentLoaded fired, calling setupButtonListeners');
+    console.log('[ButtonListeners v3.161.5] DOMContentLoaded fired, calling setupButtonListeners');
     window.setupButtonListeners();
   });
 } else {
-  console.log('[ButtonListeners v3.161.4] DOM already loaded (readyState: ' + document.readyState + '), calling setupButtonListeners immediately');
+  console.log('[ButtonListeners v3.161.5] DOM already loaded (readyState: ' + document.readyState + '), calling setupButtonListeners immediately');
   // DOM already loaded, call immediately but with a small delay to ensure all scripts are processed
   setTimeout(function() {
     window.setupButtonListeners();
   }, 100);
 }
 
-console.log('[ButtonListeners v3.161.4] ========================================');
+console.log('[ButtonListeners v3.161.5] ========================================');

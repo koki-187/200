@@ -19,7 +19,8 @@ const app = new Hono<{ Bindings: Bindings }>();
  * 住所から都道府県・市区町村を抽出
  * v3.153.124 - 政令指定都市の区まで対応
  */
-function parseAddress(address: string): { prefecture: string; city: string } | null {
+function parseAddress(address: string): { prefecture: string; city: string; multipleDistricts?: boolean } | null {
+  // v3.161.1: 政令指定都市の区なし住所への対応
   // 一都三県のパターン（優先度順）
   const patterns = [
     // 東京都23区
@@ -51,6 +52,18 @@ function parseAddress(address: string): { prefecture: string; city: string } | n
   for (const pattern of patterns) {
     const match = address.match(pattern);
     if (match) {
+      const city = match[2];
+      
+      // v3.161.1: 政令指定都市で区が指定されていない場合
+      const designatedCities = ['横浜市', '川崎市', '相模原市', 'さいたま市', '千葉市'];
+      if (designatedCities.includes(city)) {
+        return {
+          prefecture: match[1],
+          city: city,
+          multipleDistricts: true, // 複数区のデータを取得する必要あり
+        };
+      }
+      
       return {
         prefecture: match[1],
         city: match[2],
@@ -86,79 +99,157 @@ app.get('/info', async (c) => {
       }, 400);
     }
 
-    const { prefecture, city } = location;
+    const { prefecture, city, multipleDistricts } = location;
 
-    // D1データベースからハザード情報を取得
-    const hazardResults = await c.env.DB.prepare(`
-      SELECT 
-        hazard_type,
-        risk_level,
-        description,
-        affected_area,
-        data_source
-      FROM hazard_info
-      WHERE prefecture = ? AND city = ?
-      ORDER BY 
-        CASE hazard_type
-          WHEN 'flood' THEN 1
-          WHEN 'landslide' THEN 2
-          WHEN 'tsunami' THEN 3
-          WHEN 'liquefaction' THEN 4
-          ELSE 5
-        END
-    `).bind(prefecture, city).all();
+    // v3.161.1: 政令指定都市の場合、全区のデータを取得
+    let hazardResults;
+    if (multipleDistricts) {
+      hazardResults = await c.env.DB.prepare(`
+        SELECT 
+          hazard_type,
+          risk_level,
+          description,
+          affected_area,
+          data_source
+        FROM hazard_info
+        WHERE prefecture = ? AND city LIKE ?
+        ORDER BY 
+          CASE hazard_type
+            WHEN 'flood' THEN 1
+            WHEN 'landslide' THEN 2
+            WHEN 'tsunami' THEN 3
+            WHEN 'liquefaction' THEN 4
+            ELSE 5
+          END
+      `).bind(prefecture, `${city}%`).all();
+    } else {
+      hazardResults = await c.env.DB.prepare(`
+        SELECT 
+          hazard_type,
+          risk_level,
+          description,
+          affected_area,
+          data_source
+        FROM hazard_info
+        WHERE prefecture = ? AND city = ?
+        ORDER BY 
+          CASE hazard_type
+            WHEN 'flood' THEN 1
+            WHEN 'landslide' THEN 2
+            WHEN 'tsunami' THEN 3
+            WHEN 'liquefaction' THEN 4
+            ELSE 5
+          END
+      `).bind(prefecture, city).all();
+    }
 
-    // ローン制限情報を取得
-    const loanResults = await c.env.DB.prepare(`
-      SELECT 
-        restriction_type,
-        is_restricted,
-        restriction_details
-      FROM loan_restrictions
-      WHERE prefecture = ? AND city = ?
-    `).bind(prefecture, city).all();
+    // v3.161.1: ローン制限情報を取得（政令指定都市対応）
+    let loanResults;
+    if (multipleDistricts) {
+      loanResults = await c.env.DB.prepare(`
+        SELECT 
+          restriction_type,
+          is_restricted,
+          restriction_details
+        FROM loan_restrictions
+        WHERE prefecture = ? AND city LIKE ?
+      `).bind(prefecture, `${city}%`).all();
+    } else {
+      loanResults = await c.env.DB.prepare(`
+        SELECT 
+          restriction_type,
+          is_restricted,
+          restriction_details
+        FROM loan_restrictions
+        WHERE prefecture = ? AND city = ?
+      `).bind(prefecture, city).all();
+    }
 
-    // v3.153.120: 用途地域制限を取得
-    const zoningResults = await c.env.DB.prepare(`
-      SELECT 
-        is_urbanization_control_area,
-        urbanization_note,
-        is_fire_prevention_area,
-        fire_prevention_note,
-        loan_decision,
-        loan_reason
-      FROM zoning_restrictions
-      WHERE prefecture = ? AND city = ?
-    `).bind(prefecture, city).all();
+    // v3.161.1: 用途地域制限を取得（政令指定都市対応）
+    let zoningResults;
+    if (multipleDistricts) {
+      zoningResults = await c.env.DB.prepare(`
+        SELECT 
+          is_urbanization_control_area,
+          urbanization_note,
+          is_fire_prevention_area,
+          fire_prevention_note,
+          loan_decision,
+          loan_reason
+        FROM zoning_restrictions
+        WHERE prefecture = ? AND city LIKE ?
+      `).bind(prefecture, `${city}%`).all();
+    } else {
+      zoningResults = await c.env.DB.prepare(`
+        SELECT 
+          is_urbanization_control_area,
+          urbanization_note,
+          is_fire_prevention_area,
+          fire_prevention_note,
+          loan_decision,
+          loan_reason
+        FROM zoning_restrictions
+        WHERE prefecture = ? AND city = ?
+      `).bind(prefecture, city).all();
+    }
 
-    // v3.153.129: 地理的リスクを取得（district情報は参考値として使用）
-    // prefecture + city で検索し、該当するすべてのリスクを取得
-    const geographyResults = await c.env.DB.prepare(`
-      SELECT 
-        district,
-        is_cliff_area,
-        cliff_height,
-        cliff_note,
-        is_river_adjacent,
-        river_name,
-        river_distance,
-        is_building_collapse_area,
-        collapse_type,
-        max_flood_depth,
-        is_over_10m_flood,
-        loan_decision,
-        loan_reason,
-        confidence_level,
-        verification_status
-      FROM geography_risks
-      WHERE prefecture = ? AND city = ?
-      ORDER BY 
-        is_over_10m_flood DESC,
-        is_cliff_area DESC,
-        is_building_collapse_area DESC,
-        is_river_adjacent DESC
-      LIMIT 10
-    `).bind(prefecture, city).all();
+    // v3.161.1: 地理的リスクを取得（政令指定都市対応）
+    let geographyResults;
+    if (multipleDistricts) {
+      geographyResults = await c.env.DB.prepare(`
+        SELECT 
+          district,
+          is_cliff_area,
+          cliff_height,
+          cliff_note,
+          is_river_adjacent,
+          river_name,
+          river_distance,
+          is_building_collapse_area,
+          collapse_type,
+          max_flood_depth,
+          is_over_10m_flood,
+          loan_decision,
+          loan_reason,
+          confidence_level,
+          verification_status
+        FROM geography_risks
+        WHERE prefecture = ? AND city LIKE ?
+        ORDER BY 
+          is_over_10m_flood DESC,
+          is_cliff_area DESC,
+          is_building_collapse_area DESC,
+          is_river_adjacent DESC
+        LIMIT 10
+      `).bind(prefecture, `${city}%`).all();
+    } else {
+      geographyResults = await c.env.DB.prepare(`
+        SELECT 
+          district,
+          is_cliff_area,
+          cliff_height,
+          cliff_note,
+          is_river_adjacent,
+          river_name,
+          river_distance,
+          is_building_collapse_area,
+          collapse_type,
+          max_flood_depth,
+          is_over_10m_flood,
+          loan_decision,
+          loan_reason,
+          confidence_level,
+          verification_status
+        FROM geography_risks
+        WHERE prefecture = ? AND city = ?
+        ORDER BY 
+          is_over_10m_flood DESC,
+          is_cliff_area DESC,
+          is_building_collapse_area DESC,
+          is_river_adjacent DESC
+        LIMIT 10
+      `).bind(prefecture, city).all();
+    }
 
     // データが見つからない場合
     if (!hazardResults.results || hazardResults.results.length === 0) {

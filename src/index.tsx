@@ -12796,29 +12796,8 @@ app.get('/deals/new', (c) => {
   <script src="/static/page-init.js"></script>
   
   <!-- CRITICAL FIX v3.153.77: Load button listeners from separate file to avoid scope issues -->
+  <!-- v3.161.4: button-listeners.js now handles DOMContentLoaded automatically -->
   <script src="/static/button-listeners.js"></script>
-  
-  <!-- CRITICAL FIX v3.153.77: Call setupButtonListeners after all functions are loaded -->
-  <script>
-    (function() {
-      console.log('[ButtonListeners] ===== INITIALIZING AFTER ALL SCRIPTS LOADED =====');
-      console.log('[ButtonListeners] typeof window.setupButtonListeners:', typeof window.setupButtonListeners);
-      console.log('[ButtonListeners] typeof window.autoFillFromReinfolib:', typeof window.autoFillFromReinfolib);
-      console.log('[ButtonListeners] typeof window.manualComprehensiveRiskCheck:', typeof window.manualComprehensiveRiskCheck);
-      
-      if (typeof window.setupButtonListeners === 'function') {
-        console.log('[ButtonListeners] Calling window.setupButtonListeners NOW');
-        try {
-          window.setupButtonListeners();
-        } catch (err) {
-          console.error('[ButtonListeners] ❌ ERROR:', err);
-        }
-      } else {
-        console.error('[ButtonListeners] ❌ window.setupButtonListeners function not found!');
-        console.error('[ButtonListeners] All window functions:', Object.keys(window).filter(k => k.includes('setup') || k.includes('Fill') || k.includes('Check')));
-      }
-    })();
-  </script>
   
   <!-- v3.153.99: Task A5 - OCR手動入力モーダル -->
   <div id="ocr-manual-input-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" style="backdrop-filter: blur(4px);">

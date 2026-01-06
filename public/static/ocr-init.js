@@ -1308,11 +1308,19 @@ window.autoRunRiskCheck = autoRunRiskCheck;
 console.log('[OCR Init v3.153.120] ✅ autoRunRiskCheck function created');
 
 // Wait for DOM to be ready
-if (document.readyState === 'loading') {
-  console.log('[OCR Init] Waiting for DOM content loaded...');
-  document.addEventListener('DOMContentLoaded', initializeOCREventListeners);
+// CRITICAL FIX v3.161.3: Add initialization guard to prevent multiple event listener registration
+if (!window._ocrInitLoaded) {
+  window._ocrInitLoaded = true;
+  console.log('[OCR Init v3.161.3] ✅ Initialization guard set - preventing duplicate initialization');
+  
+  if (document.readyState === 'loading') {
+    console.log('[OCR Init] Waiting for DOM content loaded...');
+    document.addEventListener('DOMContentLoaded', initializeOCREventListeners);
+  } else {
+    console.log('[OCR Init] DOM already loaded, initializing immediately...');
+    // DOM is already loaded
+    setTimeout(initializeOCREventListeners, 100);
+  }
 } else {
-  console.log('[OCR Init] DOM already loaded, initializing immediately...');
-  // DOM is already loaded
-  setTimeout(initializeOCREventListeners, 100);
+  console.warn('[OCR Init v3.161.3] ⚠️ OCR already initialized - skipping to prevent duplicate event listeners');
 }

@@ -7732,24 +7732,24 @@ app.get('/deals/new', (c) => {
       }
       
       try {
-        console.log('[Sellers v3.153.119] Calling /api/auth/users...');
-        console.log('[Sellers v3.153.119] Axios available:', typeof axios);
-        console.log('[Sellers v3.153.119] Request headers:', { 'Authorization': 'Bearer ' + currentToken.substring(0, 20) + '...' });
+        console.log('[Sellers v3.161.3] Calling /api/sellers...');
+        console.log('[Sellers v3.161.3] Axios available:', typeof axios);
+        console.log('[Sellers v3.161.3] Request headers:', { 'Authorization': 'Bearer ' + currentToken.substring(0, 20) + '...' });
         
-        const response = await axios.get('/api/auth/users', {
+        const response = await axios.get('/api/sellers', {
           headers: { 'Authorization': 'Bearer ' + currentToken },
           timeout: 10000
         });
         
-        console.log('[Sellers v3.153.119] ✅ Response received');
-        console.log('[Sellers v3.153.119] Response status:', response.status);
-        console.log('[Sellers v3.153.119] Response data structure:', Object.keys(response.data));
-        console.log('[Sellers v3.153.119] response.data.users exists:', !!response.data.users);
-        console.log('[Sellers v3.153.119] response.data.users length:', response.data.users?.length);
+        console.log('[Sellers v3.161.3] ✅ Response received');
+        console.log('[Sellers v3.161.3] Response status:', response.status);
+        console.log('[Sellers v3.161.3] Response data structure:', Object.keys(response.data));
+        console.log('[Sellers v3.161.3] response.data.sellers exists:', !!response.data.sellers);
+        console.log('[Sellers v3.161.3] response.data.sellers length:', response.data.sellers?.length);
         
-        const sellers = (response.data.users || []).filter(u => u.role === 'AGENT');
-        console.log('[Sellers v3.153.119] ✅ Found ' + sellers.length + ' AGENT users');
-        console.log('[Sellers v3.153.119] Seller details:', sellers.map(s => s.name).join(', '));
+        const sellers = response.data.sellers || [];
+        console.log('[Sellers v3.161.3] ✅ Found ' + sellers.length + ' sellers');
+        console.log('[Sellers v3.161.3] Seller details:', sellers.map(s => s.name).join(', '));
         
         // Clear and rebuild dropdown
         select.innerHTML = '';
@@ -7763,10 +7763,11 @@ app.get('/deals/new', (c) => {
         
         // Add sellers
         if (sellers.length === 0) {
-          console.warn('[Sellers v3.153.116] ⚠️ No sellers found - adding test sellers');
+          console.warn('[Sellers v3.161.3] ⚠️ No sellers found - adding fallback sellers');
           sellers.push(
-            { id: 'test-1', name: 'テスト売主A', company_name: '不動産会社A' },
-            { id: 'test-2', name: 'テスト売主B', company_name: '不動産会社B' }
+            { id: 'default-seller-001', name: 'テスト売主A', company_name: '不動産会社A株式会社' },
+            { id: 'default-seller-002', name: 'テスト売主B', company_name: '不動産会社B株式会社' },
+            { id: 'default-seller-003', name: 'テスト売主C', company_name: '不動産会社C株式会社' }
           );
         }
         
@@ -7775,7 +7776,7 @@ app.get('/deals/new', (c) => {
           opt.value = seller.id;
           opt.textContent = seller.name + (seller.company_name ? ' (' + seller.company_name + ')' : '');
           select.appendChild(opt);
-          console.log('[Sellers v3.153.116] ✓ ' + seller.name);
+          console.log('[Sellers v3.161.3] ✓ ' + seller.name);
         });
         
         // Auto-select first

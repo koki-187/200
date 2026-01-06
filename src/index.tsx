@@ -7675,37 +7675,35 @@ app.get('/deals/new', (c) => {
 
     // CRITICAL FIX v3.153.117: Ultra-robust seller loading with comprehensive error handling
     async function loadSellers() {
-      console.log('[Sellers v3.153.117] ========================================');
-      console.log('[Sellers v3.153.117] ========== LOAD SELLERS START ==========');
-      console.log('[Sellers v3.153.117] Timestamp:', new Date().toISOString());
-      console.log('[Sellers v3.153.117] ========================================');
+      console.log('[Sellers v3.161.6] ========================================');
+      console.log('[Sellers v3.161.6] ========== LOAD SELLERS START ==========');
+      console.log('[Sellers v3.161.6] Timestamp:', new Date().toISOString());
+      console.log('[Sellers v3.161.6] ========================================');
       
       const select = document.getElementById('seller_id');
       if (!select) {
-        console.error('[Sellers v3.153.117] ❌ CRITICAL: seller_id element not found');
-        console.error('[Sellers v3.153.117] Available select elements:', document.querySelectorAll('select').length);
+        console.error('[Sellers v3.161.6] ❌ CRITICAL: seller_id element not found');
+        console.error('[Sellers v3.161.6] Available select elements:', document.querySelectorAll('select').length);
         return;
       }
       
-      console.log('[Sellers v3.153.117] ✓ seller_id element found');
-      console.log('[Sellers v3.153.117] Current options:', select.options.length);
+      console.log('[Sellers v3.161.6] ✓ seller_id element found');
+      console.log('[Sellers v3.161.6] Current options:', select.options.length);
       
       // Show loading state
       select.innerHTML = '<option value="">読み込み中...</option>';
       select.disabled = true;
-      console.log('[Sellers v3.153.117] ✓ Loading state activated');
+      console.log('[Sellers v3.161.6] ✓ Loading state activated');
       
       // Get fresh token with detailed logging
       const currentToken = localStorage.getItem('token');
-      console.log('[Sellers v3.153.117] localStorage check:', typeof localStorage);
-      console.log('[Sellers v3.153.117] Token exists:', !!currentToken);
+      console.log('[Sellers v3.161.6] localStorage check:', typeof localStorage);
+      console.log('[Sellers v3.161.6] Token exists:', !!currentToken);
       if (currentToken) {
-        console.log('[Sellers v3.153.117] Token length:', currentToken.length, 'chars');
-        console.log('[Sellers v3.153.117] Token preview:', currentToken.substring(0, 40) + '...');
+        console.log('[Sellers v3.161.6] Token length:', currentToken.length, 'chars');
+        console.log('[Sellers v3.161.6] Token preview:', currentToken.substring(0, 40) + '...');
       } else {
-        console.error('[Sellers v3.153.117] ❌ TOKEN IS NULL');
-        console.error('[Sellers v3.153.117] localStorage.token:', localStorage.getItem('token'));
-        console.error('[Sellers v3.153.117] localStorage.user:', localStorage.getItem('user'));
+        console.log('[Sellers v3.161.6] ⚠️ TOKEN IS NULL - Will load fallback sellers');
       }
       
       // CRITICAL FIX v3.161.6: トークンがない場合もフォールバック売主を表示
@@ -7748,24 +7746,24 @@ app.get('/deals/new', (c) => {
       }
       
       try {
-        console.log('[Sellers v3.161.3] Calling /api/sellers...');
-        console.log('[Sellers v3.161.3] Axios available:', typeof axios);
-        console.log('[Sellers v3.161.3] Request headers:', { 'Authorization': 'Bearer ' + currentToken.substring(0, 20) + '...' });
+        console.log('[Sellers v3.161.6] Calling /api/sellers...');
+        console.log('[Sellers v3.161.6] Axios available:', typeof axios);
+        console.log('[Sellers v3.161.6] Request headers:', { 'Authorization': 'Bearer ' + currentToken.substring(0, 20) + '...' });
         
         const response = await axios.get('/api/sellers', {
           headers: { 'Authorization': 'Bearer ' + currentToken },
           timeout: 10000
         });
         
-        console.log('[Sellers v3.161.3] ✅ Response received');
-        console.log('[Sellers v3.161.3] Response status:', response.status);
-        console.log('[Sellers v3.161.3] Response data structure:', Object.keys(response.data));
-        console.log('[Sellers v3.161.3] response.data.sellers exists:', !!response.data.sellers);
-        console.log('[Sellers v3.161.3] response.data.sellers length:', response.data.sellers?.length);
+        console.log('[Sellers v3.161.6] ✅ Response received');
+        console.log('[Sellers v3.161.6] Response status:', response.status);
+        console.log('[Sellers v3.161.6] Response data structure:', Object.keys(response.data));
+        console.log('[Sellers v3.161.6] response.data.sellers exists:', !!response.data.sellers);
+        console.log('[Sellers v3.161.6] response.data.sellers length:', response.data.sellers?.length);
         
         const sellers = response.data.sellers || [];
-        console.log('[Sellers v3.161.3] ✅ Found ' + sellers.length + ' sellers');
-        console.log('[Sellers v3.161.3] Seller details:', sellers.map(s => s.name).join(', '));
+        console.log('[Sellers v3.161.6] ✅ Found ' + sellers.length + ' sellers');
+        console.log('[Sellers v3.161.6] Seller details:', sellers.map(s => s.name).join(', '));
         
         // Clear and rebuild dropdown
         select.innerHTML = '';
@@ -7779,7 +7777,7 @@ app.get('/deals/new', (c) => {
         
         // Add sellers
         if (sellers.length === 0) {
-          console.warn('[Sellers v3.161.3] ⚠️ No sellers found - adding fallback sellers');
+          console.warn('[Sellers v3.161.6] ⚠️ No sellers found - adding fallback sellers');
           sellers.push(
             { id: 'default-seller-001', name: 'テスト売主A', company_name: '不動産会社A株式会社' },
             { id: 'default-seller-002', name: 'テスト売主B', company_name: '不動産会社B株式会社' },
@@ -7792,7 +7790,7 @@ app.get('/deals/new', (c) => {
           opt.value = seller.id;
           opt.textContent = seller.name + (seller.company_name ? ' (' + seller.company_name + ')' : '');
           select.appendChild(opt);
-          console.log('[Sellers v3.161.3] ✓ ' + seller.name);
+          console.log('[Sellers v3.161.6] ✓ ' + seller.name);
         });
         
         // Auto-select first
@@ -7804,19 +7802,19 @@ app.get('/deals/new', (c) => {
         console.log('[Sellers v3.153.116] ========== SUCCESS ==========');
         
       } catch (error) {
-        console.error('[Sellers v3.153.119] ========================================');
-        console.error('[Sellers v3.153.119] ❌ CRITICAL ERROR CAUGHT');
-        console.error('[Sellers v3.153.119] ========================================');
-        console.error('[Sellers v3.153.119] Error type:', error.constructor.name);
-        console.error('[Sellers v3.153.119] Error message:', error.message);
-        console.error('[Sellers v3.153.119] Error code:', error.code);
-        console.error('[Sellers v3.153.119] Response status:', error.response?.status);
-        console.error('[Sellers v3.153.119] Response data:', error.response?.data);
-        console.error('[Sellers v3.153.119] Stack trace:', error.stack);
-        console.error('[Sellers v3.153.119] ========================================');
+        console.error('[Sellers v3.161.6] ========================================');
+        console.error('[Sellers v3.161.6] ❌ CRITICAL ERROR CAUGHT');
+        console.error('[Sellers v3.161.6] ========================================');
+        console.error('[Sellers v3.161.6] Error type:', error.constructor.name);
+        console.error('[Sellers v3.161.6] Error message:', error.message);
+        console.error('[Sellers v3.161.6] Error code:', error.code);
+        console.error('[Sellers v3.161.6] Response status:', error.response?.status);
+        console.error('[Sellers v3.161.6] Response data:', error.response?.data);
+        console.error('[Sellers v3.161.6] Stack trace:', error.stack);
+        console.error('[Sellers v3.161.6] ========================================');
         
         // CRITICAL FIX v3.153.119: Ensure fallback sellers are ALWAYS added on error
-        console.warn('[Sellers v3.153.119] 🚨 FORCING FALLBACK SELLERS DUE TO ERROR');
+        console.warn('[Sellers v3.161.6] 🚨 FORCING FALLBACK SELLERS DUE TO ERROR');
         select.innerHTML = '';
         select.disabled = false;
         
@@ -7824,7 +7822,7 @@ app.get('/deals/new', (c) => {
         defaultOpt.value = '';
         defaultOpt.textContent = '選択してください';
         select.appendChild(defaultOpt);
-        console.log('[Sellers v3.153.119] ✓ Default option added');
+        console.log('[Sellers v3.161.6] ✓ Default option added');
         
         const fallbackSellers = [
           { id: 'fallback-1', name: 'システムデフォルト売主A', company_name: 'エラー時代替' },
@@ -7836,12 +7834,12 @@ app.get('/deals/new', (c) => {
           opt.value = seller.id;
           opt.textContent = seller.name + ' (' + seller.company_name + ')';
           select.appendChild(opt);
-          console.log('[Sellers v3.153.119] ✓ Added fallback:', seller.name);
+          console.log('[Sellers v3.161.6] ✓ Added fallback:', seller.name);
         });
         
         select.selectedIndex = 1;
-        console.log('[Sellers v3.153.119] ✅ Fallback sellers applied - final option count:', select.options.length);
-        console.log('[Sellers v3.153.119] ========================================');
+        console.log('[Sellers v3.161.6] ✅ Fallback sellers applied - final option count:', select.options.length);
+        console.log('[Sellers v3.161.6] ========================================');
       }
     }
     

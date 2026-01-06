@@ -1,8 +1,12 @@
--- Migration: 0057_create_sellers_table.sql
--- Description: Create sellers table for property seller management
--- Version: v3.161.3
+-- Migration: 0058_fix_sellers_foreign_key.sql
+-- Description: Fix sellers table foreign key constraint issue
+-- Version: v3.161.6
 -- Date: 2026-01-06
 
+-- Drop existing sellers table if exists (to retry with correct data)
+DROP TABLE IF EXISTS sellers;
+
+-- Create sellers table
 CREATE TABLE IF NOT EXISTS sellers (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -34,4 +38,4 @@ VALUES
   ('default-seller-003', 'テスト売主C', '不動産会社C株式会社', 'seller-c@example.com', '03-3456-7890', 'admin-001', datetime('now'), datetime('now'), 0);
 
 -- Success message
-SELECT 'Migration 0057: sellers table created successfully' AS message;
+SELECT 'Migration 0058: sellers table foreign key fixed successfully' AS message;
